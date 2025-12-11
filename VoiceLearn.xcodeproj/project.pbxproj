@@ -29,16 +29,18 @@
 		63F3D9D850D9235A2A45C6E8 /* STTService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8998E9A5A77C8479C6840EC9 /* STTService.swift */; };
 		645B75E6E4117EEF61541600 /* TelemetryEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47903B0E20EAF003FA79E708 /* TelemetryEngine.swift */; };
 		6544D5BDFF62389EE39CF048 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 2B2AF5164826C00D3745FA7A /* LiveKit */; };
+		659549287AAB71F399D19B64 /* TestDataFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB78E1679120CB633741AA5C /* TestDataFactory.swift */; };
+		67AAFF06599079A85D50BDD1 /* ProgressTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 796649153218922464580B05 /* ProgressTrackerTests.swift */; };
 		6D7A2DF632E0DC9E1D7FD41F /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 979A0008641BECA9718FB660 /* Logging */; };
 		6EEE0509CC6D6481D46DC973 /* MockServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A8A6B9379FE371FFEDEF1AC /* MockServices.swift */; };
 		756EF19183A7B57FC6CE4BC7 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ECDBD58C2B5FD015AEE0F44 /* AnalyticsView.swift */; };
-		8555C21D1CBF94C89073646A /* ProgressTrackerTests.swift.disabled in Resources */ = {isa = PBXBuildFile; fileRef = C2AE19D4861C6E1EF52DAED5 /* ProgressTrackerTests.swift.disabled */; };
 		8A8A0EA375EBA0B193CFBC4F /* SessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A9B2D01533457DA47F7C663 /* SessionManager.swift */; };
 		91CFFCECF8519999A8A37ECC /* VoiceLearn.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 37108704C22D2AF176240356 /* VoiceLearn.xcdatamodeld */; };
 		939A4CD598021E7D2608076F /* SileroVADService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C3D0F50423CA0804E8D2323 /* SileroVADService.swift */; };
 		9AD986AC3C1103518ABD6AA7 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130F7FE33D6B9434561D7E5F /* PersistenceController.swift */; };
 		A5E353A948B2DE6013C9D344 /* AnthropicLLMServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C5C067618E2C8FC74E1F33 /* AnthropicLLMServiceTests.swift */; };
 		AD59AB97320E3A82409B6F91 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7246BE33512BCC042E23B833 /* HistoryView.swift */; };
+		B2CDE99451243202FC0AEB82 /* CurriculumEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71599E323CA773F8A514E7D3 /* CurriculumEngineTests.swift */; };
 		B8D4BA457002AC905CFE3E3F /* OpenAIEmbeddingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA550DB8790852526746794 /* OpenAIEmbeddingService.swift */; };
 		BBBBBD2EA90859E56F2F0F34 /* TTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 066A28895F859A971E648506 /* TTSService.swift */; };
 		BF409C6E576B70EDDF1B8422 /* VoiceLearnTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FFA7F1BC8578438E8C65E54 /* VoiceLearnTests.swift */; };
@@ -49,6 +51,7 @@
 		E4A9718A2BC3BEE2B5CA5E4F /* AssemblyAISTTService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6839806CB0A8B4C586FF10 /* AssemblyAISTTService.swift */; };
 		E5D418DA141E14B8F59D496F /* DeepgramTTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2F47CEED72DFFD39384E43C /* DeepgramTTSService.swift */; };
 		E6002B3D9EDF1E4CDC6AF6F6 /* ElevenLabsTTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDECFDD641B04BF76BFF029D /* ElevenLabsTTSService.swift */; };
+		EA5172B75096ABB7DE2C0DF3 /* DocumentProcessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E84372C34CDB567D72A2D878 /* DocumentProcessorTests.swift */; };
 		F3A1B3299F761CA0B3A359FD /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07F55967DD85A530CF98851 /* SettingsView.swift */; };
 		F6FB88EE88B2200BFEDB700F /* AnthropicLLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 509B24E559CC29015119472E /* AnthropicLLMService.swift */; };
 		FB933B4BB3E2F055E8146AC5 /* APIKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF8A71F6E29B1A60EB657AC /* APIKeyManager.swift */; };
@@ -87,8 +90,10 @@
 		68BEF421B3B705117D9CA31A /* VoiceLearn.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = VoiceLearn.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B6839806CB0A8B4C586FF10 /* AssemblyAISTTService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblyAISTTService.swift; sourceTree = "<group>"; };
 		6FFA7F1BC8578438E8C65E54 /* VoiceLearnTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLearnTests.swift; sourceTree = "<group>"; };
+		71599E323CA773F8A514E7D3 /* CurriculumEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumEngineTests.swift; sourceTree = "<group>"; };
 		7246BE33512BCC042E23B833 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		792F0BB33A7D5172ED835540 /* AudioEngineConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineConfig.swift; sourceTree = "<group>"; };
+		796649153218922464580B05 /* ProgressTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressTrackerTests.swift; sourceTree = "<group>"; };
 		7FE8A7ECB08243FD922BC210 /* ProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTests.swift; sourceTree = "<group>"; };
 		870651B4721B440C51FF2B25 /* SessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionView.swift; sourceTree = "<group>"; };
 		8937651F15BB51C3D6444444 /* AudioEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineTests.swift; sourceTree = "<group>"; };
@@ -102,10 +107,11 @@
 		B5F8DC1045251FDE321A9246 /* CurriculumView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumView.swift; sourceTree = "<group>"; };
 		BCA550DB8790852526746794 /* OpenAIEmbeddingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIEmbeddingService.swift; sourceTree = "<group>"; };
 		C07F55967DD85A530CF98851 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		C2AE19D4861C6E1EF52DAED5 /* ProgressTrackerTests.swift.disabled */ = {isa = PBXFileReference; path = ProgressTrackerTests.swift.disabled; sourceTree = "<group>"; };
 		C2F47CEED72DFFD39384E43C /* DeepgramTTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepgramTTSService.swift; sourceTree = "<group>"; };
 		CDECFDD641B04BF76BFF029D /* ElevenLabsTTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabsTTSService.swift; sourceTree = "<group>"; };
 		D356C6AB03EB875128D5945B /* SessionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManagerTests.swift; sourceTree = "<group>"; };
+		DB78E1679120CB633741AA5C /* TestDataFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDataFactory.swift; sourceTree = "<group>"; };
+		E84372C34CDB567D72A2D878 /* DocumentProcessorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentProcessorTests.swift; sourceTree = "<group>"; };
 		EAEF1C26EA42FA0CC980DB14 /* CurriculumModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumModels.swift; sourceTree = "<group>"; };
 		EFC0F774D8EC0E30A1EC2D96 /* LLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMService.swift; sourceTree = "<group>"; };
 		F0FE012EAB2DF6CAB3A1F56B /* AudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngine.swift; sourceTree = "<group>"; };
@@ -299,6 +305,7 @@
 			isa = PBXGroup;
 			children = (
 				3A8A6B9379FE371FFEDEF1AC /* MockServices.swift */,
+				DB78E1679120CB633741AA5C /* TestDataFactory.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -310,10 +317,12 @@
 				34C5C067618E2C8FC74E1F33 /* AnthropicLLMServiceTests.swift */,
 				181DC67767E99F3AAE3EF30C /* APIKeyManagerTests.swift */,
 				8937651F15BB51C3D6444444 /* AudioEngineTests.swift */,
+				71599E323CA773F8A514E7D3 /* CurriculumEngineTests.swift */,
 				649A4C232D5F60B29F8A3CC2 /* DeepgramSTTServiceTests.swift */,
+				E84372C34CDB567D72A2D878 /* DocumentProcessorTests.swift */,
 				3FE1485B0B0AE8F52678656C /* ElevenLabsTTSServiceTests.swift */,
 				49FC2289A12508DE51EA8F66 /* OpenAIEmbeddingServiceTests.swift */,
-				C2AE19D4861C6E1EF52DAED5 /* ProgressTrackerTests.swift.disabled */,
+				796649153218922464580B05 /* ProgressTrackerTests.swift */,
 				7FE8A7ECB08243FD922BC210 /* ProviderTests.swift */,
 				D356C6AB03EB875128D5945B /* SessionManagerTests.swift */,
 				AC61E5D57E08430947D46C5F /* TelemetryEngineTests.swift */,
@@ -407,7 +416,6 @@
 			buildConfigurationList = F75B46507B7324F27E669710 /* Build configuration list for PBXNativeTarget "VoiceLearnTests" */;
 			buildPhases = (
 				28DAA547B5B7606E2DA3E4A2 /* Sources */,
-				725276C948E4477841A58A62 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -484,17 +492,6 @@
 		};
 /* End PBXProject section */
 
-/* Begin PBXResourcesBuildPhase section */
-		725276C948E4477841A58A62 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				8555C21D1CBF94C89073646A /* ProgressTrackerTests.swift.disabled in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
 		28DAA547B5B7606E2DA3E4A2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -504,13 +501,17 @@
 				098AA76289CAF765C05E5F4D /* AnalyticsViewModelTests.swift in Sources */,
 				A5E353A948B2DE6013C9D344 /* AnthropicLLMServiceTests.swift in Sources */,
 				1D9A963EFEAB498D28F47ED3 /* AudioEngineTests.swift in Sources */,
+				B2CDE99451243202FC0AEB82 /* CurriculumEngineTests.swift in Sources */,
 				DBA6638373A4D9746B324D0A /* DeepgramSTTServiceTests.swift in Sources */,
+				EA5172B75096ABB7DE2C0DF3 /* DocumentProcessorTests.swift in Sources */,
 				61D0586DDED7EFC311050437 /* ElevenLabsTTSServiceTests.swift in Sources */,
 				6EEE0509CC6D6481D46DC973 /* MockServices.swift in Sources */,
 				34AAE979FCBAF1B670CD49A2 /* OpenAIEmbeddingServiceTests.swift in Sources */,
+				67AAFF06599079A85D50BDD1 /* ProgressTrackerTests.swift in Sources */,
 				58D25B9D0FF5811916E1F00C /* ProviderTests.swift in Sources */,
 				000CCBD668C2818134BBB9D8 /* SessionManagerTests.swift in Sources */,
 				1B532AA91F37FB00F3776A20 /* TelemetryEngineTests.swift in Sources */,
+				659549287AAB71F399D19B64 /* TestDataFactory.swift in Sources */,
 				BF409C6E576B70EDDF1B8422 /* VoiceLearnTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

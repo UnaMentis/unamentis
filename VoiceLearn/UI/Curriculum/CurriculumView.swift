@@ -75,7 +75,7 @@ struct TopicRow: View {
                 Text(topic.title ?? "Untitled Topic")
                     .font(.headline)
                 
-                if let summary = topic.summary, !summary.isEmpty {
+                if let summary = topic.outline, !summary.isEmpty {
                     Text(summary)
                         .font(.caption)
                         .foregroundStyle(.secondary)
