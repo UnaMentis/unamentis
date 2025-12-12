@@ -52,7 +52,7 @@ On December 11, 2025, the entire VoiceLearn iOS app (Phases 1-5 of a 12-week roa
 - **Swift 6.0 strict concurrency** - All services are actors
 - **Protocol-first design** - Services defined by protocols, swappable implementations
 - **TDD methodology** - Tests written before implementation
-- **Real implementations in tests** - Only mock truly external dependencies (APIs)
+- **Real implementations in tests** - Only mock truly external dependencies (see Testing Philosophy below)
 
 ### Key Directories
 ```
@@ -179,3 +179,143 @@ Use commas for parenthetical phrases. Use periods to break up long sentences. Do
 - Use active voice
 - Avoid jargon unless it's standard in the domain
 - Match the existing tone and style of the codebase
+
+---
+
+## Testing Philosophy: Real Over Mock
+
+**Mock testing is unacceptable for most scenarios.** Tests should exercise real code paths to provide genuine confidence in behavior.
+
+### When Mocking is VALID
+
+Mocks are only acceptable for:
+
+1. **Paid third-party APIs** (LLM, Embeddings, TTS, STT)
+   - These cost money per request
+   - Would make CI/CD expensive
+   - Rate limiting could break builds
+
+2. **APIs requiring credentials we don't have**
+   - Interim situation during development
+   - Should be replaced with real tests once credentials exist
+
+3. **Unreliable external services**
+   - Services with unpredictable uptime
+   - But only if local alternatives don't exist
+
+### When Mocking is NOT ACCEPTABLE
+
+Do NOT mock:
+
+1. **Internal services** (TelemetryEngine, PersistenceController, etc.)
+   - Use the real implementation with in-memory stores
+   - These are free to run and deterministic
+
+2. **File system operations**
+   - Use temp directories, clean up after
+
+3. **Core Data**
+   - Use `PersistenceController(inMemory: true)`
+
+4. **Free external APIs**
+   - If it doesn't cost money and doesn't require credentials, test against the real thing
+
+5. **Local computations**
+   - Cosine similarity, text chunking, etc. should always be tested with real implementations
+
+### Mock Requirements (When Mocking is Necessary)
+
+When you must mock, the mock must be **faithful and realistic**:
+
+1. **Reproduce real API behavior**
+   - Return data in the exact same format
+   - Emit tokens/chunks at realistic intervals
+   - Track input/output token counts accurately
+
+2. **Simulate all error conditions the real API produces**
+   - Rate limiting (with retry-after values)
+   - Authentication failures
+   - Network timeouts
+   - Invalid request errors
+   - Content filtering
+   - Context length exceeded
+   - Quota exceeded
+
+3. **Validate inputs like the real API**
+   - Check that requests are well-formed
+   - Throw appropriate errors for malformed requests
+
+4. **Match realistic performance characteristics**
+   - Simulate TTFT (time to first token)
+   - Simulate inter-token streaming delays
+   - Optionally respect rate limits in stress tests
+
+### Example: Good vs Bad Mocks
+
+**Bad Mock (unacceptable):**
+```swift
+actor BadMockLLM: LLMService {
+    func streamCompletion(...) async throws -> AsyncStream<LLMToken> {
+        // Single token, no validation, no realistic behavior
+        return AsyncStream { $0.yield(LLMToken(content: "response", isDone: true)); $0.finish() }
+    }
+}
+```
+
+**Good Mock (faithful):**
+```swift
+actor FaithfulMockLLM: LLMService {
+    var shouldSimulateRateLimit = false
+    var responseText = "Default response"
+
+    func streamCompletion(messages: [LLMMessage], config: LLMConfig) async throws -> AsyncStream<LLMToken> {
+        // Validate inputs like real API
+        guard !messages.isEmpty else {
+            throw LLMError.invalidRequest("Messages cannot be empty")
+        }
+        if config.maxTokens > 4096 {
+            throw LLMError.contextLengthExceeded(maxTokens: 4096)
+        }
+
+        // Simulate rate limiting
+        if shouldSimulateRateLimit {
+            throw LLMError.rateLimited(retryAfter: 30)
+        }
+
+        return AsyncStream { continuation in
+            Task {
+                // Simulate realistic TTFT (150ms)
+                try? await Task.sleep(nanoseconds: 150_000_000)
+
+                // Stream tokens with realistic delays
+                let words = responseText.split(separator: " ")
+                for (index, word) in words.enumerated() {
+                    let isLast = index == words.count - 1
+                    let token = LLMToken(
+                        content: String(word) + (isLast ? "" : " "),
+                        isDone: isLast,
+                        stopReason: isLast ? .endTurn : nil,
+                        tokenCount: 1
+                    )
+                    continuation.yield(token)
+                    // 20ms between tokens
+                    try? await Task.sleep(nanoseconds: 20_000_000)
+                }
+                continuation.finish()
+            }
+        }
+    }
+}
+```
+
+### Current Mock Inventory
+
+**Valid mocks (external paid APIs):**
+- `MockLLMService` - LLM API calls cost money
+- `MockEmbeddingService` - Embedding API calls cost money
+
+**Should NOT be mocked (use real implementations):**
+- `TelemetryEngine` - Internal, use real with in-memory store
+- `PersistenceController` - Use `PersistenceController(inMemory: true)`
+- File operations - Use temp directories
+- Cosine similarity, chunking, etc. - Test real implementations

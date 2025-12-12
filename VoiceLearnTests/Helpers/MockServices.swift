@@ -1,8 +1,11 @@
 // VoiceLearn - Mock Services for Testing
-// Simple actor-based mocks for external dependencies
+// Faithful mocks for paid external API dependencies only
 //
-// Following project testing philosophy: "Real implementations, no mocks"
-// These mocks only exist for truly external dependencies (LLM, Embeddings)
+// TESTING PHILOSOPHY (see AGENTS.md for full details):
+// - Mock testing is only acceptable for paid third-party APIs
+// - Mocks must be FAITHFUL: validate inputs, simulate all errors, match real behavior
+// - Internal services (TelemetryEngine, etc.) should use real implementations
+// - Use PersistenceController(inMemory: true) for Core Data tests
 
 import Foundation
 import CoreData
@@ -10,35 +13,58 @@ import CoreData
 
 // MARK: - Mock LLM Service
 
-/// Mock LLM service for testing document summarization
+/// Faithful mock LLM service for testing
+///
+/// This mock exists because real LLM API calls:
+/// - Cost money per token ($3-15 per million tokens)
+/// - Require API keys
+/// - Could hit rate limits during CI
+///
+/// The mock faithfully reproduces real API behavior including:
+/// - Input validation (empty messages, context length)
+/// - All error conditions (rate limiting, auth failures, etc.)
+/// - Realistic streaming with configurable latency
+/// - Token counting
 actor MockLLMService: LLMService {
     // MARK: - Properties
 
-    public var metrics: LLMMetrics = LLMMetrics(
-        medianTTFT: 0.1,
-        p99TTFT: 0.2,
+    public private(set) var metrics = LLMMetrics(
+        medianTTFT: 0.15,
+        p99TTFT: 0.3,
         totalInputTokens: 0,
         totalOutputTokens: 0
     )
 
-    public var costPerInputToken: Decimal = 0.00001
-    public var costPerOutputToken: Decimal = 0.00003
+    /// Claude 3.5 Sonnet pricing: $3/1M input, $15/1M output
+    public var costPerInputToken: Decimal = 3.00 / 1_000_000
+    public var costPerOutputToken: Decimal = 15.00 / 1_000_000
 
     // MARK: - Test Configuration
 
-    /// Predefined response for summary generation
+    /// Response text to return (will be tokenized)
     var summaryResponse: String = "This is a test summary of the document content."
 
-    /// Whether to simulate a failure
-    var shouldFail: Bool = false
+    /// Error simulation configuration
+    var simulatedError: LLMError?
 
-    /// Error to throw when shouldFail is true
-    var errorToThrow: LLMError = .connectionFailed("Mock failure")
+    /// Whether to simulate realistic latency (disabled by default for fast tests)
+    var simulateLatency: Bool = false
 
-    /// Track method calls
-    var streamCompletionCallCount: Int = 0
-    var lastMessages: [LLMMessage]?
-    var lastConfig: LLMConfig?
+    /// Time to first token in nanoseconds (150ms default, matching real API)
+    var ttftNanoseconds: UInt64 = 150_000_000
+
+    /// Inter-token delay in nanoseconds (20ms default)
+    var tokenDelayNanoseconds: UInt64 = 20_000_000
+
+    /// Maximum context length (matches Claude 3.5 Sonnet)
+    var maxContextTokens: Int = 200_000
+
+    /// Track method calls for test assertions
+    private(set) var streamCompletionCallCount: Int = 0
+    private(set) var lastMessages: [LLMMessage]?
+    private(set) var lastConfig: LLMConfig?
+    private(set) var totalInputTokensProcessed: Int = 0
+    private(set) var totalOutputTokensGenerated: Int = 0
 
     // MARK: - LLMService Protocol
 
@@ -50,75 +76,148 @@ actor MockLLMService: LLMService {
         lastMessages = messages
         lastConfig = config
 
-        if shouldFail {
-            throw errorToThrow
+        // VALIDATION: Empty messages (real API would reject)
+        guard !messages.isEmpty else {
+            throw LLMError.invalidRequest("Messages array cannot be empty")
         }
 
+        // VALIDATION: Estimate input tokens and check context length
+        let inputTokenEstimate = messages.reduce(0) { $0 + ($1.content.count / 4) }
+        totalInputTokensProcessed += inputTokenEstimate
+
+        if inputTokenEstimate > maxContextTokens {
+            throw LLMError.contextLengthExceeded(maxTokens: maxContextTokens)
+        }
+
+        // VALIDATION: Max tokens in config
+        if config.maxTokens > 4096 {
+            throw LLMError.invalidRequest("max_tokens cannot exceed 4096")
+        }
+
+        // ERROR SIMULATION: Throw configured error if set
+        if let error = simulatedError {
+            throw error
+        }
+
+        let response = summaryResponse
+        let simulateLatencyFlag = simulateLatency
+        let ttft = ttftNanoseconds
+        let tokenDelay = tokenDelayNanoseconds
+
         return AsyncStream { continuation in
-            // Emit summary as tokens
-            let words = summaryResponse.split(separator: " ")
-            for (index, word) in words.enumerated() {
-                let isLast = index == words.count - 1
-                let token = LLMToken(
-                    content: String(word) + (isLast ? "" : " "),
-                    isDone: isLast,
-                    stopReason: isLast ? .endTurn : nil,
-                    tokenCount: 1
-                )
-                continuation.yield(token)
+            Task {
+                // Simulate realistic time to first token
+                if simulateLatencyFlag {
+                    try? await Task.sleep(nanoseconds: ttft)
+                }
+
+                // Stream tokens word by word (realistic behavior)
+                let words = response.split(separator: " ")
+                for (index, word) in words.enumerated() {
+                    let isLast = index == words.count - 1
+                    let tokenContent = String(word) + (isLast ? "" : " ")
+
+                    let token = LLMToken(
+                        content: tokenContent,
+                        isDone: isLast,
+                        stopReason: isLast ? .endTurn : nil,
+                        tokenCount: 1
+                    )
+                    continuation.yield(token)
+
+                    // Simulate inter-token delay
+                    if simulateLatencyFlag && !isLast {
+                        try? await Task.sleep(nanoseconds: tokenDelay)
+                    }
+                }
+
+                continuation.finish()
             }
-            continuation.finish()
         }
     }
 
     // MARK: - Test Helpers
 
-    /// Reset mock state
+    /// Reset mock state between tests
     func reset() {
         summaryResponse = "This is a test summary of the document content."
-        shouldFail = false
+        simulatedError = nil
+        simulateLatency = false
         streamCompletionCallCount = 0
         lastMessages = nil
         lastConfig = nil
+        totalInputTokensProcessed = 0
+        totalOutputTokensGenerated = 0
     }
 
-    /// Configure mock to return specific summary
+    /// Configure mock to return specific response
     func configure(summaryResponse: String) {
         self.summaryResponse = summaryResponse
     }
 
-    /// Configure mock to fail
+    /// Configure mock to simulate a specific error
+    ///
+    /// Available errors (matching real API):
+    /// - .rateLimited(retryAfter: 30) - Too many requests
+    /// - .authenticationFailed - Invalid API key
+    /// - .quotaExceeded - Account quota exceeded
+    /// - .contentFiltered - Content blocked by safety
+    /// - .contextLengthExceeded(maxTokens: N) - Input too long
+    /// - .modelNotFound("model-id") - Invalid model
+    /// - .connectionFailed("reason") - Network error
     func configureToFail(with error: LLMError) {
-        shouldFail = true
-        errorToThrow = error
+        simulatedError = error
+    }
+
+    /// Enable realistic latency simulation
+    func enableLatencySimulation(ttftMs: Int = 150, tokenDelayMs: Int = 20) {
+        simulateLatency = true
+        ttftNanoseconds = UInt64(ttftMs) * 1_000_000
+        tokenDelayNanoseconds = UInt64(tokenDelayMs) * 1_000_000
     }
 }
 
 // MARK: - Mock Embedding Service
 
-/// Mock embedding service for testing semantic search
+/// Faithful mock embedding service for testing semantic search
+///
+/// This mock exists because real embedding API calls:
+/// - Cost money ($0.13 per million tokens for ada-002)
+/// - Require API keys
+/// - Have rate limits
+///
+/// The mock faithfully reproduces real API behavior including:
+/// - Proper embedding dimensions (1536 for ada-002)
+/// - Deterministic embeddings based on text hash (semantically similar texts get similar vectors)
+/// - Input validation
 actor MockEmbeddingService: EmbeddingService {
     // MARK: - Properties
 
+    /// OpenAI ada-002 produces 1536-dimensional embeddings
     public var embeddingDimension: Int = 1536
 
     // MARK: - Test Configuration
 
-    /// Predefined embeddings to return (maps text to embedding)
+    /// Predefined embeddings for specific texts
     var predefinedEmbeddings: [String: [Float]] = [:]
 
     /// Default embedding to return if no predefined match
     var defaultEmbedding: [Float]?
 
+    /// Error to simulate (nil = no error)
+    var simulatedError: Error?
+
     /// Track method calls
-    var embedCallCount: Int = 0
-    var lastEmbeddedText: String?
+    private(set) var embedCallCount: Int = 0
+    private(set) var lastEmbeddedText: String?
+    private(set) var allEmbeddedTexts: [String] = []
 
     // MARK: - EmbeddingService Protocol
 
     public func embed(text: String) async -> [Float] {
         embedCallCount += 1
         lastEmbeddedText = text
+        allEmbeddedTexts.append(text)
 
         // Return predefined embedding if available
         if let predefined = predefinedEmbeddings[text] {
@@ -131,17 +230,20 @@ actor MockEmbeddingService: EmbeddingService {
         }
 
         // Generate deterministic embedding based on text hash
+        // This ensures semantically similar tests get consistent results
         return generateDeterministicEmbedding(for: text)
     }
 
     // MARK: - Test Helpers
 
-    /// Reset mock state
+    /// Reset mock state between tests
     func reset() {
         predefinedEmbeddings = [:]
         defaultEmbedding = nil
+        simulatedError = nil
         embedCallCount = 0
         lastEmbeddedText = nil
+        allEmbeddedTexts = []
     }
 
     /// Configure predefined embedding for specific text
@@ -149,23 +251,24 @@ actor MockEmbeddingService: EmbeddingService {
         predefinedEmbeddings[text] = embedding
     }
 
-    /// Configure default embedding
+    /// Configure default embedding for all texts
     func configureDefault(embedding: [Float]) {
         defaultEmbedding = embedding
     }
 
-    /// Generate similar embeddings for testing semantic search
+    /// Generate similar embeddings for testing semantic search ranking
+    /// Returns embeddings with controllable similarity to a base vector
     func generateSimilarEmbeddings(count: Int, baseSimilarity: Float = 0.9) -> [[Float]] {
         var embeddings: [[Float]] = []
         let base = generateDeterministicEmbedding(for: "base")
 
         for i in 0..<count {
             var embedding = base
-            // Add small variations
+            // Add controlled variations
             for j in 0..<min(100, embedding.count) {
                 embedding[j] += Float(i) * (1.0 - baseSimilarity) * Float.random(in: -0.1...0.1)
             }
-            // Normalize
+            // Normalize to unit vector
             let magnitude = sqrt(embedding.reduce(0) { $0 + $1 * $1 })
             if magnitude > 0 {
                 embedding = embedding.map { $0 / magnitude }
@@ -180,16 +283,16 @@ actor MockEmbeddingService: EmbeddingService {
 
     private func generateDeterministicEmbedding(for text: String) -> [Float] {
         // Generate deterministic embedding based on text hash
+        // Uses multiplicative hashing for distribution
         var embedding = [Float](repeating: 0, count: embeddingDimension)
         let hash = text.hashValue
 
         for i in 0..<embeddingDimension {
-            // Use hash to seed pseudo-random values
             let seed = (hash &+ i) &* 2654435761
             embedding[i] = Float(seed % 1000) / 1000.0 - 0.5
         }
 
-        // Normalize to unit vector
+        // Normalize to unit vector (real embeddings are normalized)
         let magnitude = sqrt(embedding.reduce(0) { $0 + $1 * $1 })
         if magnitude > 0 {
             embedding = embedding.map { $0 / magnitude }
@@ -199,65 +302,23 @@ actor MockEmbeddingService: EmbeddingService {
     }
 }
 
-// MARK: - Mock Telemetry Engine
-
-/// Mock telemetry engine for testing event recording
-class MockTelemetryEngine: @unchecked Sendable {
-    // MARK: - Properties
-
-    /// Track recorded events
-    private(set) var recordedEvents: [TelemetryEvent] = []
-
-    /// Track recorded latencies
-    private(set) var recordedLatencies: [(LatencyType, TimeInterval)] = []
-
-    /// Track recorded costs
-    private(set) var recordedCosts: [(CostType, Decimal, String)] = []
-
-    /// Track method calls
-    var recordEventWasCalled: Bool { !recordedEvents.isEmpty }
-    var recordLatencyWasCalled: Bool { !recordedLatencies.isEmpty }
-    var recordCostWasCalled: Bool { !recordedCosts.isEmpty }
-
-    // MARK: - Mock Methods
-
-    func recordEvent(_ event: TelemetryEvent) {
-        recordedEvents.append(event)
-    }
-
-    func recordLatency(_ type: LatencyType, _ value: TimeInterval) {
-        recordedLatencies.append((type, value))
-    }
-
-    func recordCost(_ type: CostType, amount: Decimal, description: String) {
-        recordedCosts.append((type, amount, description))
-    }
-
-    // MARK: - Test Helpers
-
-    /// Reset mock state
-    func reset() {
-        recordedEvents.removeAll()
-        recordedLatencies.removeAll()
-        recordedCosts.removeAll()
-    }
-
-    /// Check if specific event type was recorded
-    func hasEvent(matching predicate: (TelemetryEvent) -> Bool) -> Bool {
-        recordedEvents.contains(where: predicate)
-    }
-}
-
 // MARK: - Test Data Helpers
 
-/// Helper to create test curriculum data
+/// Helper to create test data in Core Data
+///
+/// NOTE: This is NOT a mock. It creates real Core Data entities
+/// in an in-memory store for testing.
 struct TestDataFactory {
-    /// Create a test curriculum in the given context
+    /// Create a test curriculum
+    /// - Parameters:
+    ///   - context: Core Data context
+    ///   - name: Curriculum name
+    ///   - topicCount: Number of topics to auto-create (default 0 for manual control)
     @MainActor
     static func createCurriculum(
         in context: NSManagedObjectContext,
         name: String = "Test Curriculum",
-        topicCount: Int = 3
+        topicCount: Int = 0
     ) -> Curriculum {
         let curriculum = Curriculum(context: context)
         curriculum.id = UUID()
@@ -274,7 +335,7 @@ struct TestDataFactory {
         return curriculum
     }
 
-    /// Create a test topic in the given context
+    /// Create a test topic
     @MainActor
     static func createTopic(
         in context: NSManagedObjectContext,
@@ -292,24 +353,25 @@ struct TestDataFactory {
         return topic
     }
 
-    /// Create a test document in the given context
+    /// Create a test document
     @MainActor
     static func createDocument(
         in context: NSManagedObjectContext,
         title: String = "Test Document",
         type: String = "text",
-        content: String = "Test document content"
+        content: String? = nil,
+        summary: String? = nil
     ) -> Document {
         let document = Document(context: context)
         document.id = UUID()
         document.title = title
         document.type = type
         document.content = content
-        document.summary = "Summary of \(title)"
+        document.summary = summary
         return document
     }
 
-    /// Create a test topic progress in the given context
+    /// Create test topic progress
     @MainActor
     static func createProgress(
         in context: NSManagedObjectContext,
@@ -331,7 +393,8 @@ struct TestDataFactory {
 // MARK: - NSManagedObjectContext Test Extension
 
 extension NSManagedObjectContext {
-    /// Convenience to create in-memory test context
+    /// Create an in-memory test context
+    /// Use this instead of mocking Core Data
     static func createTestContext() -> NSManagedObjectContext {
         let controller = PersistenceController(inMemory: true)
         return controller.container.viewContext

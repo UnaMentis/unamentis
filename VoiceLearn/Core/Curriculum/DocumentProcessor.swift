@@ -170,13 +170,18 @@ public actor DocumentProcessor {
         var chunkIndex = 0
 
         for word in words {
-            currentChunk.append(word)
+            // Check if adding this word would exceed the limit
+            var testChunk = currentChunk
+            testChunk.append(word)
+            let testText = testChunk.joined(separator: " ")
 
-            let currentText = currentChunk.joined(separator: " ")
-            if currentText.count >= maxChunkSize {
-                chunks.append((currentText, chunkIndex))
+            if testText.count > maxChunkSize && !currentChunk.isEmpty {
+                // Output current chunk before adding the word that exceeds limit
+                chunks.append((currentChunk.joined(separator: " "), chunkIndex))
                 chunkIndex += 1
-                currentChunk = []
+                currentChunk = [word]
+            } else {
+                currentChunk.append(word)
             }
         }
 

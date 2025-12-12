@@ -266,8 +266,19 @@ final class AudioEngineTests: XCTestCase {
     }
 }
 
-// MARK: - Mock VAD Service
+// MARK: - Test Spy for VAD Service
 
+/// Test spy for verifying AudioEngine's interaction with VAD service
+///
+/// NOTE: This is a TEST SPY, not a mock. It verifies that AudioEngine
+/// correctly calls VAD methods (interaction testing).
+///
+/// The actual SileroVADService behavior is tested separately in
+/// VADServiceTests (ProviderTests.swift) using the REAL implementation.
+///
+/// Per testing philosophy: VAD is local (no API cost), so its behavior
+/// is tested with real implementation. This spy just verifies AudioEngine
+/// calls VAD correctly.
 actor MockVADService: VADService {
     var configuration: VADConfiguration = .default
     var isActive: Bool = false
