@@ -83,12 +83,12 @@ final class DocumentProcessorTests: XCTestCase {
         // Given
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("summary_test.txt")
         try "Content to summarize".write(to: tempURL, atomically: true, encoding: .utf8)
-        
+
         let doc = TestDataFactory.createDocument(in: context)
         doc.sourceURL = tempURL
         doc.type = "text"
-        
-        mockLLMService.mockCompletion = "This is a summary."
+
+        await mockLLMService.configure(summaryResponse: "This is a summary.")
 
         // When
         try await documentProcessor.processDocument(doc)
@@ -96,8 +96,9 @@ final class DocumentProcessorTests: XCTestCase {
         // Then
         XCTAssertEqual(doc.content, "Content to summarize")
         XCTAssertEqual(doc.summary, "This is a summary.")
-        XCTAssertTrue(mockLLMService.streamCompletionCalled)
-        
+        let callCount = await mockLLMService.streamCompletionCallCount
+        XCTAssertGreaterThan(callCount, 0)
+
         // Cleanup
         try? FileManager.default.removeItem(at: tempURL)
     }
@@ -134,12 +135,12 @@ final class DocumentProcessorTests: XCTestCase {
         // Given
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("embed_test.txt")
         try "One Two Three".write(to: tempURL, atomically: true, encoding: .utf8)
-        
+
         let doc = TestDataFactory.createDocument(in: context)
         doc.sourceURL = tempURL
         doc.type = "text"
-        
-        mockEmbeddingService.mockEmbedding = [0.1, 0.2]
+
+        await mockEmbeddingService.configureDefault(embedding: [0.1, 0.2])
 
         // When
         try await documentProcessor.processDocument(doc)
@@ -150,29 +151,10 @@ final class DocumentProcessorTests: XCTestCase {
         XCTAssertNotNil(chunks)
         XCTAssertFalse(chunks!.isEmpty)
         XCTAssertEqual(chunks![0].embedding, [0.1, 0.2])
-        
+
         // Cleanup
         try? FileManager.default.removeItem(at: tempURL)
     }
 }
 
-// MARK: - Mocks
-
-actor MockLLMService: LLMService {
-    var metrics: LLMMetrics = LLMMetrics(medianTTFT: 0, p99TTFT: 0, totalInputTokens: 0, totalOutputTokens: 0)
-    var costPerInputToken: Decimal = 0
-    var costPerOutputToken: Decimal = 0
-    
-    var streamCompletionCalled = false
-    var mockCompletion = "Mock completion"
-    
-    func streamCompletion(messages: [LLMMessage], config: LLMConfig) async throws -> AsyncStream<LLMToken> {
-        streamCompletionCalled = true
-        let content = mockCompletion
-        
-        return AsyncStream { continuation in
-            continuation.yield(LLMToken(content: content, isDone: true))
-            continuation.finish()
-        }
-    }
-}
+// Note: Uses MockLLMService and MockEmbeddingService from MockServices.swift

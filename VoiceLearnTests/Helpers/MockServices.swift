@@ -253,11 +253,15 @@ class MockTelemetryEngine: @unchecked Sendable {
 /// Helper to create test curriculum data
 struct TestDataFactory {
     /// Create a test curriculum in the given context
+    /// - Parameters:
+    ///   - context: Core Data context
+    ///   - name: Curriculum name
+    ///   - topicCount: Number of topics to auto-create (default 0 for manual control)
     @MainActor
     static func createCurriculum(
         in context: NSManagedObjectContext,
         name: String = "Test Curriculum",
-        topicCount: Int = 3
+        topicCount: Int = 0
     ) -> Curriculum {
         let curriculum = Curriculum(context: context)
         curriculum.id = UUID()
@@ -298,14 +302,15 @@ struct TestDataFactory {
         in context: NSManagedObjectContext,
         title: String = "Test Document",
         type: String = "text",
-        content: String = "Test document content"
+        content: String? = nil,
+        summary: String? = nil
     ) -> Document {
         let document = Document(context: context)
         document.id = UUID()
         document.title = title
         document.type = type
         document.content = content
-        document.summary = "Summary of \(title)"
+        document.summary = summary
         return document
     }
 

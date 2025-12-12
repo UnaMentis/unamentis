@@ -176,20 +176,21 @@ final class CurriculumEngineTests: XCTestCase {
         let topic = TestDataFactory.createTopic(in: context)
         let doc = TestDataFactory.createDocument(in: context)
         doc.topic = topic
-        
+
         // Create chunk in document (manually setting bytes)
         let chunk = DocumentChunk(id: UUID(), documentId: doc.id!, text: "Hello", embedding: [0.1, 0.2], chunkIndex: 0)
         doc.embedding = try JSONEncoder().encode([chunk])
-        
+
         try context.save()
-        
-        mockEmbeddingService.mockEmbedding = [0.1, 0.2] // Perfect match
+
+        await mockEmbeddingService.configureDefault(embedding: [0.1, 0.2]) // Perfect match
 
         // When
         let contextString = await curriculumEngine.generateContextForQuery(query: "Hello", topic: topic)
 
         // Then
-        XCTAssertTrue(mockEmbeddingService.embedCalled)
+        let embedCallCount = await mockEmbeddingService.embedCallCount
+        XCTAssertGreaterThan(embedCallCount, 0)
         XCTAssertTrue(contextString.contains("Hello"))
     }
     
@@ -224,39 +225,4 @@ final class CurriculumEngineTests: XCTestCase {
     }
 }
 
-// MARK: - Mocks
-
-actor MockEmbeddingService: EmbeddingService {
-    var embedCalled = false
-    var mockEmbedding: [Float] = [0.1, 0.1]
-    
-    func embed(text: String) async -> [Float] {
-        embedCalled = true
-        return mockEmbedding
-    }
-    
-    var embeddingDimension: Int { return 2 }
-}
-
-// Verify TestDataFactory Extensions for Curriculum
-extension TestDataFactory {
-    @discardableResult
-    static func createCurriculum(in context: NSManagedObjectContext, name: String = "Test Curriculum") -> Curriculum {
-        let curriculum = Curriculum(context: context)
-        curriculum.id = UUID()
-        curriculum.name = name
-        curriculum.createdAt = Date()
-        curriculum.updatedAt = Date()
-        return curriculum
-    }
-    
-    @discardableResult
-    static func createDocument(in context: NSManagedObjectContext, title: String = "Doc", summary: String? = nil) -> Document {
-        let doc = Document(context: context)
-        doc.id = UUID()
-        doc.title = title
-        doc.summary = summary
-        doc.type = "text"
-        return doc
-    }
-}
+// Note: Uses MockEmbeddingService and TestDataFactory from MockServices.swift
