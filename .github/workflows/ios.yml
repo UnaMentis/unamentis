@@ -35,6 +35,16 @@ jobs:
     - name: SwiftFormat Check
       run: swiftformat --lint .
 
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Lint Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| SwiftLint | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| SwiftFormat | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+
   unit-tests:
     name: Unit Tests
     runs-on: macos-26
@@ -91,6 +101,33 @@ jobs:
         path: UnitTestResults.xcresult
         retention-days: 7
 
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Unit Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -d "UnitTestResults.xcresult" ]; then
+          # Extract test summary using xcresulttool
+          xcrun xcresulttool get --path UnitTestResults.xcresult --format json 2>/dev/null | \
+            python3 -c "
+        import json, sys
+        try:
+            data = json.load(sys.stdin)
+            metrics = data.get('metrics', {})
+            tests = metrics.get('testsCount', {}).get('_value', 'N/A')
+            failures = metrics.get('testsFailedCount', {}).get('_value', '0')
+            print(f'| Metric | Value |')
+            print(f'|--------|-------|')
+            print(f'| Tests Run | {tests} |')
+            print(f'| Failures | {failures} |')
+            print(f'| Status | {\"Passed\" if failures == \"0\" or failures == 0 else \"Failed\"} |')
+        except:
+            print('Could not parse test results')
+        " >> $GITHUB_STEP_SUMMARY || echo "Could not parse xcresult" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "No test results found" >> $GITHUB_STEP_SUMMARY
+        fi
+
   integration-tests:
     name: Integration Tests
     runs-on: macos-26
@@ -143,3 +180,29 @@ jobs:
         name: integration-test-results
         path: IntegrationTestResults.xcresult
         retention-days: 7
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Integration Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -d "IntegrationTestResults.xcresult" ]; then
+          xcrun xcresulttool get --path IntegrationTestResults.xcresult --format json 2>/dev/null | \
+            python3 -c "
+        import json, sys
+        try:
+            data = json.load(sys.stdin)
+            metrics = data.get('metrics', {})
+            tests = metrics.get('testsCount', {}).get('_value', 'N/A')
+            failures = metrics.get('testsFailedCount', {}).get('_value', '0')
+            print(f'| Metric | Value |')
+            print(f'|--------|-------|')
+            print(f'| Tests Run | {tests} |')
+            print(f'| Failures | {failures} |')
+            print(f'| Status | {\"Passed\" if failures == \"0\" or failures == 0 else \"Failed\"} |')
+        except:
+            print('Could not parse test results')
+        " >> $GITHUB_STEP_SUMMARY || echo "Could not parse xcresult" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "No test results found" >> $GITHUB_STEP_SUMMARY
+        fi
