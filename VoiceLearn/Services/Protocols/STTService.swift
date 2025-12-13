@@ -126,12 +126,13 @@ public enum STTProvider: String, Codable, Sendable, CaseIterable {
     case deepgramNova3 = "Deepgram Nova-3"
     case openAIWhisper = "OpenAI Whisper"
     case appleSpeech = "Apple Speech (On-Device)"
-    
+    case glmASRNano = "GLM-ASR-Nano (Self-Hosted)"
+
     /// Display name for UI
     public var displayName: String {
         rawValue
     }
-    
+
     /// Short identifier
     public var identifier: String {
         switch self {
@@ -139,12 +140,34 @@ public enum STTProvider: String, Codable, Sendable, CaseIterable {
         case .deepgramNova3: return "deepgram"
         case .openAIWhisper: return "whisper"
         case .appleSpeech: return "apple"
+        case .glmASRNano: return "glm-asr"
         }
     }
-    
+
     /// Whether this provider requires network connectivity
     public var requiresNetwork: Bool {
-        self != .appleSpeech
+        switch self {
+        case .appleSpeech:
+            return false
+        default:
+            return true
+        }
+    }
+
+    /// Cost per hour for this provider
+    public var costPerHour: Decimal {
+        switch self {
+        case .assemblyAI: return Decimal(string: "0.37")!    // $0.37/hour
+        case .deepgramNova3: return Decimal(string: "0.258")! // $0.258/hour
+        case .openAIWhisper: return Decimal(string: "0.36")!  // $0.006/min
+        case .appleSpeech: return 0                           // Free (on-device)
+        case .glmASRNano: return 0                            // Self-hosted
+        }
+    }
+
+    /// Whether this provider is self-hosted
+    public var isSelfHosted: Bool {
+        self == .glmASRNano
     }
 }
 
