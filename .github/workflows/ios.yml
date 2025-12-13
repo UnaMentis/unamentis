@@ -206,3 +206,65 @@ jobs:
         else
           echo "No test results found" >> $GITHUB_STEP_SUMMARY
         fi
+
+  commit-results:
+    name: Commit CI Results
+    runs-on: ubuntu-latest
+    needs: [lint, unit-tests]
+    if: always() && github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-ci-log]')
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generate CI Results Log
+      env:
+        RUN_ID: ${{ github.run_id }}
+        BRANCH: ${{ github.ref_name }}
+        COMMIT_SHA: ${{ github.sha }}
+        ACTOR: ${{ github.actor }}
+        REPO: ${{ github.repository }}
+        LINT_RESULT: ${{ needs.lint.result }}
+        UNIT_RESULT: ${{ needs.unit-tests.result }}
+      run: |
+        mkdir -p ci-logs
+        cat > ci-logs/latest-results.md << EOF
+        # CI Results
+
+        **Run:** ${RUN_ID}
+        **Branch:** ${BRANCH}
+        **Commit:** \`${COMMIT_SHA:0:7}\`
+        **Triggered by:** ${ACTOR}
+        **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+        ## Job Results
+
+        | Job | Status |
+        |-----|--------|
+        | Lint | ${LINT_RESULT} |
+        | Unit Tests | ${UNIT_RESULT} |
+
+        EOF
+
+        # Add failure details if any job failed
+        if [ "${LINT_RESULT}" == "failure" ] || [ "${UNIT_RESULT}" == "failure" ]; then
+          echo "" >> ci-logs/latest-results.md
+          echo "## Failure Details" >> ci-logs/latest-results.md
+          echo "" >> ci-logs/latest-results.md
+          echo "Check the [workflow run](https://github.com/${REPO}/actions/runs/${RUN_ID}) for detailed logs." >> ci-logs/latest-results.md
+        fi
+
+        # Add link to full logs
+        echo "" >> ci-logs/latest-results.md
+        echo "---" >> ci-logs/latest-results.md
+        echo "[View full workflow run](https://github.com/${REPO}/actions/runs/${RUN_ID})" >> ci-logs/latest-results.md
+
+    - name: Commit Results
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add ci-logs/latest-results.md
+        git diff --staged --quiet || git commit -m "chore: Update CI results [skip-ci-log]"
+        git push || echo "Nothing to push"
