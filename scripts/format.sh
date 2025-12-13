@@ -1,5 +1,5 @@
 #!/bin/bash
 set -e
-echo "🎨 Formatting code..."
+echo "Formatting code..."
 swiftformat .
-echo "✓ Code formatted"
+echo "Code formatted"

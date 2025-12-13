@@ -1,5 +1,5 @@
 #!/bin/bash
 set -e
-echo "🔍 Running SwiftLint..."
+echo "Running SwiftLint..."
 swiftlint lint --strict
-echo "✓ Code passes linting"
+echo "Code passes linting"

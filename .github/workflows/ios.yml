@@ -5,41 +5,266 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      run_integration:
+        description: 'Run integration tests'
+        required: false
+        default: false
+        type: boolean
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    runs-on: macos-14
-    
+  lint:
+    name: Lint
+    runs-on: macos-26
+
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_15.2.app
-    
-    - name: Install dependencies
-      run: |
-        brew install swiftlint swiftformat
-    
+
+    - name: Install linting tools
+      run: brew install swiftlint swiftformat
+
     - name: SwiftLint
-      run: swiftlint lint --strict
-    
+      run: swiftlint lint --strict --reporter github-actions-logging
+
     - name: SwiftFormat Check
       run: swiftformat --lint .
-    
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Lint Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| SwiftLint | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| SwiftFormat | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: macos-26
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Select Xcode 26
+      run: sudo xcode-select -s /Applications/Xcode_26.app
+
+    - name: Show Xcode version
+      run: xcodebuild -version
+
+    - name: Install xcbeautify
+      run: brew install xcbeautify
+
+    - name: Cache SPM packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          .build
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved', '**/project.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+
     - name: Build
       run: |
-        xcodebuild -scheme VoiceLearn \
-          -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max' \
-          build
-    
+        set -o pipefail
+        xcodebuild build \
+          -scheme VoiceLearn \
+          -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+          -skipPackagePluginValidation \
+          CODE_SIGNING_ALLOWED=NO \
+          | xcbeautify --renderer github-actions
+
     - name: Run Unit Tests
       run: |
+        set -o pipefail
         xcodebuild test \
           -scheme VoiceLearn \
-          -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max' \
-          -only-testing:VoiceLearnTests/Unit
-    
-    - name: Upload Coverage
-      uses: codecov/codecov-action@v3
+          -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+          -only-testing:VoiceLearnTests/Unit \
+          -enableCodeCoverage YES \
+          -resultBundlePath UnitTestResults.xcresult \
+          CODE_SIGNING_ALLOWED=NO \
+          | xcbeautify --renderer github-actions
+
+    - name: Upload Unit Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        files: ./coverage.lcov
+        name: unit-test-results
+        path: UnitTestResults.xcresult
+        retention-days: 7
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Unit Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -d "UnitTestResults.xcresult" ]; then
+          # Extract test summary using xcresulttool
+          xcrun xcresulttool get --path UnitTestResults.xcresult --format json 2>/dev/null | \
+            python3 -c "
+        import json, sys
+        try:
+            data = json.load(sys.stdin)
+            metrics = data.get('metrics', {})
+            tests = metrics.get('testsCount', {}).get('_value', 'N/A')
+            failures = metrics.get('testsFailedCount', {}).get('_value', '0')
+            print(f'| Metric | Value |')
+            print(f'|--------|-------|')
+            print(f'| Tests Run | {tests} |')
+            print(f'| Failures | {failures} |')
+            print(f'| Status | {\"Passed\" if failures == \"0\" or failures == 0 else \"Failed\"} |')
+        except:
+            print('Could not parse test results')
+        " >> $GITHUB_STEP_SUMMARY || echo "Could not parse xcresult" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "No test results found" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: macos-26
+    if: github.ref == 'refs/heads/main' || github.event.inputs.run_integration == 'true'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Select Xcode 26
+      run: sudo xcode-select -s /Applications/Xcode_26.app
+
+    - name: Install xcbeautify
+      run: brew install xcbeautify
+
+    - name: Cache SPM packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          .build
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved', '**/project.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+
+    - name: Build
+      run: |
+        set -o pipefail
+        xcodebuild build \
+          -scheme VoiceLearn \
+          -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+          -skipPackagePluginValidation \
+          CODE_SIGNING_ALLOWED=NO \
+          | xcbeautify --renderer github-actions
+
+    - name: Run Integration Tests
+      run: |
+        set -o pipefail
+        xcodebuild test \
+          -scheme VoiceLearn \
+          -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+          -only-testing:VoiceLearnTests/Integration \
+          -resultBundlePath IntegrationTestResults.xcresult \
+          CODE_SIGNING_ALLOWED=NO \
+          | xcbeautify --renderer github-actions
+
+    - name: Upload Integration Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-test-results
+        path: IntegrationTestResults.xcresult
+        retention-days: 7
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Integration Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -d "IntegrationTestResults.xcresult" ]; then
+          xcrun xcresulttool get --path IntegrationTestResults.xcresult --format json 2>/dev/null | \
+            python3 -c "
+        import json, sys
+        try:
+            data = json.load(sys.stdin)
+            metrics = data.get('metrics', {})
+            tests = metrics.get('testsCount', {}).get('_value', 'N/A')
+            failures = metrics.get('testsFailedCount', {}).get('_value', '0')
+            print(f'| Metric | Value |')
+            print(f'|--------|-------|')
+            print(f'| Tests Run | {tests} |')
+            print(f'| Failures | {failures} |')
+            print(f'| Status | {\"Passed\" if failures == \"0\" or failures == 0 else \"Failed\"} |')
+        except:
+            print('Could not parse test results')
+        " >> $GITHUB_STEP_SUMMARY || echo "Could not parse xcresult" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "No test results found" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  commit-results:
+    name: Commit CI Results
+    runs-on: ubuntu-latest
+    needs: [lint, unit-tests]
+    if: always() && github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-ci-log]')
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generate CI Results Log
+      env:
+        RUN_ID: ${{ github.run_id }}
+        BRANCH: ${{ github.ref_name }}
+        COMMIT_SHA: ${{ github.sha }}
+        ACTOR: ${{ github.actor }}
+        REPO: ${{ github.repository }}
+        LINT_RESULT: ${{ needs.lint.result }}
+        UNIT_RESULT: ${{ needs.unit-tests.result }}
+      run: |
+        mkdir -p ci-logs
+        cat > ci-logs/latest-results.md << EOF
+        # CI Results
+
+        **Run:** ${RUN_ID}
+        **Branch:** ${BRANCH}
+        **Commit:** \`${COMMIT_SHA:0:7}\`
+        **Triggered by:** ${ACTOR}
+        **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+        ## Job Results
+
+        | Job | Status |
+        |-----|--------|
+        | Lint | ${LINT_RESULT} |
+        | Unit Tests | ${UNIT_RESULT} |
+
+        EOF
+
+        # Add failure details if any job failed
+        if [ "${LINT_RESULT}" == "failure" ] || [ "${UNIT_RESULT}" == "failure" ]; then
+          echo "" >> ci-logs/latest-results.md
+          echo "## Failure Details" >> ci-logs/latest-results.md
+          echo "" >> ci-logs/latest-results.md
+          echo "Check the [workflow run](https://github.com/${REPO}/actions/runs/${RUN_ID}) for detailed logs." >> ci-logs/latest-results.md
+        fi
+
+        # Add link to full logs
+        echo "" >> ci-logs/latest-results.md
+        echo "---" >> ci-logs/latest-results.md
+        echo "[View full workflow run](https://github.com/${REPO}/actions/runs/${RUN_ID})" >> ci-logs/latest-results.md
+
+    - name: Commit Results
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add ci-logs/latest-results.md
+        git diff --staged --quiet || git commit -m "chore: Update CI results [skip-ci-log]"
+        git push || echo "Nothing to push"
