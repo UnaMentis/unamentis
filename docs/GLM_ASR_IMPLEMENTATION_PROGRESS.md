@@ -5,8 +5,9 @@
 **Related Documents:**
 - `GLM_ASR_NANO_2512.md` - Model evaluation and integration roadmap
 - `GLM_ASR_SERVER_TRD.md` - Server technical requirements document
+- `GLM_ASR_ON_DEVICE_GUIDE.md` - On-device implementation guide
 
-**Branch:** `claude/glm-asr-implementation-01VSDToTw1FhpydzJVFLcg9n`
+**Last Updated:** December 2025
 
 ---
 
@@ -19,13 +20,17 @@
 | | Unit Tests - STTProviderRouter | 🟢 Complete | 10 tests |
 | | Unit Tests - Audio Conversion | 🟢 Complete | Included in STTService tests |
 | | Integration Tests | 🟢 Complete | 7 tests (require server) |
-| **Phase 2: Implementation** | GLMASRSTTService | 🟢 Complete | ~400 lines |
+| **Phase 2: Server Implementation** | GLMASRSTTService | 🟢 Complete | ~400 lines |
 | | GLMASRHealthMonitor | 🟢 Complete | ~150 lines |
 | | STTProviderRouter | 🟢 Complete | ~200 lines |
 | | STTProvider enum update | 🟢 Complete | Added glmASRNano case |
-| **Phase 3: Integration** | CI Workflow update | 🟢 Complete | Auto-picks up new tests |
-| | Documentation update | 🟢 Complete | This file |
-| | Final verification | 🟡 In Progress | Build/test verification |
+| **Phase 3: On-Device Implementation** | GLMASROnDeviceSTTService | 🟢 Complete | CoreML + llama.cpp |
+| | CoreML Model Integration | 🟢 Complete | Whisper encoder, adapter, embed head |
+| | llama.cpp Text Decoder | 🟢 Complete | Q4_K_M quantized GGUF |
+| | Simulator Support | 🟢 Complete | Enabled when models present |
+| **Phase 4: Integration** | CI Workflow update | 🟢 Complete | Auto-picks up new tests |
+| | Documentation update | 🟢 Complete | Full documentation |
+| | Final verification | 🟢 Complete | `swift build` succeeds |
 
 **Legend:** 🔴 Not Started | 🟡 In Progress | 🟢 Complete | ⏸️ Blocked
 
@@ -33,11 +38,11 @@
 
 ## Files Created/Modified
 
-### New Files
+### New Files - Server Implementation
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `VoiceLearn/Services/STT/GLMASRSTTService.swift` | Main STT service implementation | ~400 |
+| `VoiceLearn/Services/STT/GLMASRSTTService.swift` | Server-based STT service | ~400 |
 | `VoiceLearn/Services/STT/GLMASRHealthMonitor.swift` | Server health monitoring | ~150 |
 | `VoiceLearn/Services/STT/STTProviderRouter.swift` | Provider routing with failover | ~200 |
 | `VoiceLearnTests/Unit/Services/GLMASRSTTServiceTests.swift` | Unit tests for service | ~250 |
@@ -45,11 +50,26 @@
 | `VoiceLearnTests/Unit/Services/STTProviderRouterTests.swift` | Unit tests for router | ~300 |
 | `VoiceLearnTests/Integration/GLMASRIntegrationTests.swift` | Integration tests | ~250 |
 
+### New Files - On-Device Implementation
+
+| File | Purpose | Lines |
+|------|---------|-------|
+| `VoiceLearn/Services/STT/GLMASROnDeviceSTTService.swift` | On-device STT with CoreML + llama.cpp | ~600 |
+
+### New Documentation
+
+| File | Purpose |
+|------|---------|
+| `docs/GLM_ASR_ON_DEVICE_GUIDE.md` | Complete on-device setup and usage guide |
+
 ### Modified Files
 
 | File | Changes |
 |------|---------|
 | `VoiceLearn/Services/Protocols/STTService.swift` | Added `glmASRNano` to `STTProvider` enum, cost info |
+| `Package.swift` | Added llama.cpp dependency, C++ interop settings |
+| `VoiceLearn/Core/Persistence/ManagedObjects/*.swift` | Manual NSManagedObject subclasses for SPM |
+| `VoiceLearn/VoiceLearn.xcdatamodeld` | Changed codegen to manual/none |
 
 ---
 
@@ -262,7 +282,50 @@ for await result in results {
 
 ---
 
+## On-Device Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│               GLMASROnDeviceSTTService Pipeline                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Audio Input (16kHz PCM)                                        │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                   │
+│  │     GLMASRWhisperEncoder (CoreML)       │ 1.2 GB            │
+│  └─────────────────────────────────────────┘                   │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                   │
+│  │     GLMASRAudioAdapter (CoreML)         │ 56 MB             │
+│  └─────────────────────────────────────────┘                   │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                   │
+│  │     GLMASREmbedHead (CoreML)            │ 232 MB            │
+│  └─────────────────────────────────────────┘                   │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                   │
+│  │     GLM-4 Decoder (llama.cpp Q4_K_M)    │ 935 MB            │
+│  └─────────────────────────────────────────┘                   │
+│       │                                                         │
+│       ▼                                                         │
+│  Transcribed Text                                               │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+Total Model Size: ~2.4 GB
+Supported Devices: iPhone 15 Pro+ (8GB+ RAM)
+Optimal Device: iPhone 17 Pro Max (12GB RAM)
+```
+
+---
+
 ## Next Steps (Production)
+
+### Server Deployment (Optional)
 
 1. **Server Deployment**
    - [ ] Set up GPU server (RunPod/AWS/GCP)
@@ -270,15 +333,17 @@ for await result in results {
    - [ ] Configure TLS/SSL certificates
    - [ ] Set up monitoring (Prometheus/Grafana)
 
-2. **iOS Integration**
-   - [ ] Add settings UI for GLM-ASR configuration
-   - [ ] Wire up in SessionManager
-   - [ ] Add telemetry events for GLM-ASR specific metrics
+### On-Device Setup (Required for Local Testing)
 
-3. **Testing**
-   - [ ] Load testing (50+ concurrent sessions)
-   - [ ] Latency benchmarking vs Deepgram
-   - [ ] Accuracy comparison (WER testing)
+1. **Model Files**
+   - [ ] Download models from Hugging Face (~2.4GB)
+   - [ ] Place in `models/glm-asr-nano/`
+   - [ ] Add to Xcode target (Copy Bundle Resources)
+
+2. **Testing**
+   - [ ] Test on physical iPhone 15 Pro or later
+   - [ ] Profile performance and latency
+   - [ ] Verify thermal management under load
 
 ---
 
@@ -292,14 +357,24 @@ for await result in results {
 - Wrote integration tests
 - Updated documentation
 
+### Session 2 - December 2025
+- Implemented GLMASROnDeviceSTTService
+- Added CoreML model integration (Whisper encoder, adapter, embed head)
+- Integrated llama.cpp for text decoding
+- Fixed Core Data SPM compatibility (manual NSManagedObject subclasses)
+- Fixed macOS API compatibility (#if os(iOS) guards)
+- Enabled simulator support when models present
+- Created comprehensive on-device guide
+- Updated all documentation
+
 ---
 
 ## How to Resume Work
 
 1. Check this document for current status
-2. Run build to verify compilation: `xcodebuild build -scheme VoiceLearn`
-3. Run tests to verify passing: `xcodebuild test -scheme VoiceLearn`
-4. Continue with production steps above
+2. Run build to verify compilation: `swift build`
+3. Run tests to verify passing: `swift test`
+4. For on-device testing: See `GLM_ASR_ON_DEVICE_GUIDE.md`
 
 ---
 

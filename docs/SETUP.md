@@ -3,10 +3,12 @@
 ## System Requirements
 
 - **macOS**: 14.0+ (Sonoma or later)
-- **Xcode**: 15.2+
+- **Xcode**: 15.4+
+- **Swift**: 6.0 (included with Xcode)
 - **RAM**: 16GB+ recommended
-- **Disk**: 10GB+ free space
-- **iOS Device**: iPhone 16/17 Pro Max (or simulator)
+- **Disk**: 15GB+ free space (10GB for project + 2.4GB for on-device models)
+- **iOS Device**: iPhone 15 Pro or later (or simulator)
+- **iOS Target**: 18.0+
 
 ## Development Tools
 
@@ -108,22 +110,71 @@ This must be done manually because Xcode project files are binary:
 5. **Save** to project directory
 6. **Don't** check "Create Git repository" (already done)
 
-### 3. Swift Package Dependencies
+### 3. Swift Package Manager
 
-Add via Xcode:
+The project uses Swift Package Manager. Dependencies are defined in `Package.swift`:
 
-1. **File → Add Package Dependencies**
-2. Add these packages:
+```swift
+dependencies: [
+    .package(url: "https://github.com/livekit/client-sdk-swift.git", from: "2.0.0"),
+    .package(url: "https://github.com/apple/swift-log.git", from: "1.5.0"),
+    .package(url: "https://github.com/apple/swift-collections.git", from: "1.1.0"),
+    .package(url: "https://github.com/StanfordBDHG/llama.cpp.git", from: "0.3.3"),
+]
+```
 
-```
-LiveKit Swift SDK
-https://github.com/livekit/client-sdk-swift
+Dependencies are resolved automatically when building:
+
+```bash
+swift build
+# Or open Package.swift in Xcode
 ```
 
-```
-Swift Log
-https://github.com/apple/swift-log
-```
+### 4. On-Device GLM-ASR Models (Optional)
+
+For on-device speech recognition without API costs:
+
+#### Model Files Required
+
+| Model | Size | Format |
+|-------|------|--------|
+| GLMASRWhisperEncoder | 1.2 GB | .mlpackage |
+| GLMASRAudioAdapter | 56 MB | .mlpackage |
+| GLMASREmbedHead | 232 MB | .mlpackage |
+| glm-asr-nano-q4km | 935 MB | .gguf |
+
+**Total: ~2.4 GB**
+
+#### Setup Steps
+
+1. **Download models** from Hugging Face:
+   ```bash
+   # Models available at:
+   # https://huggingface.co/zai-org/GLM-ASR-Nano-2512
+   ```
+
+2. **Create models directory**:
+   ```bash
+   mkdir -p models/glm-asr-nano
+   ```
+
+3. **Place models**:
+   ```
+   models/glm-asr-nano/
+   ├── GLMASRWhisperEncoder.mlpackage/
+   ├── GLMASRAudioAdapter.mlpackage/
+   ├── GLMASREmbedHead.mlpackage/
+   └── glm-asr-nano-q4km.gguf
+   ```
+
+4. **Add to Xcode** (for device builds):
+   - Right-click VoiceLearn folder
+   - Add Files to VoiceLearn
+   - Select model files
+   - Check "Copy items if needed"
+   - Check "Add to targets: VoiceLearn"
+
+See [GLM_ASR_ON_DEVICE_GUIDE.md](GLM_ASR_ON_DEVICE_GUIDE.md) for complete setup.
 
 ## Configuration
 
@@ -290,10 +341,37 @@ GitHub Actions is configured in `.github/workflows/ios.yml`.
 - GitHub repository
 - Secrets configured (if using real API keys in CI)
 
+## AI Simulator Testing Setup
+
+VoiceLearn supports AI-driven iOS Simulator testing via MCP (Model Context Protocol).
+
+### Install ios-simulator-mcp
+
+```bash
+claude mcp add ios-simulator npx ios-simulator-mcp
+```
+
+### Capabilities
+
+With the MCP server installed, Claude Code can:
+- Boot/shutdown simulators
+- Install and launch apps
+- Tap, swipe, type
+- Take screenshots
+- Inspect accessibility elements
+
+### Usage
+
+After restarting Claude Code, simulator tools become available. See [AI_SIMULATOR_TESTING.md](AI_SIMULATOR_TESTING.md) for workflow details.
+
+---
+
 ## Next Steps
 
 - Read [TESTING.md](TESTING.md) for testing strategy
 - Read [DEBUG_TESTING_UI.md](DEBUG_TESTING_UI.md) for built-in troubleshooting tools
+- Read [GLM_ASR_ON_DEVICE_GUIDE.md](GLM_ASR_ON_DEVICE_GUIDE.md) for on-device speech recognition
+- Read [AI_SIMULATOR_TESTING.md](AI_SIMULATOR_TESTING.md) for AI testing workflow
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) for workflow
 - Review [TASK_STATUS.md](TASK_STATUS.md) for current implementation status
 
