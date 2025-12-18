@@ -46,17 +46,34 @@ public final class PersistenceController: @unchecked Sendable {
     /// - Parameter inMemory: If true, uses in-memory store (for previews/tests)
     public init(inMemory: Bool = false) {
         container = NSPersistentContainer(name: "VoiceLearn")
-        
+
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
         }
-        
+
+        // Use semaphore to ensure store loads synchronously before init completes
+        // This prevents race conditions when views access viewContext before store is ready
+        let semaphore = DispatchSemaphore(value: 0)
+        var loadError: Error?
+
         container.loadPersistentStores { [weak self] description, error in
             if let error = error {
-                // In production, handle this more gracefully
-                fatalError("Failed to load Core Data store: \(error)")
+                loadError = error
+            } else {
+                self?.configureContext()
             }
-            self?.configureContext()
+            semaphore.signal()
+        }
+
+        // Wait for store to load (with timeout to prevent infinite hangs)
+        let result = semaphore.wait(timeout: .now() + 10)
+
+        if result == .timedOut {
+            fatalError("Core Data store load timed out after 10 seconds")
+        }
+
+        if let error = loadError {
+            fatalError("Failed to load Core Data store: \(error)")
         }
     }
     

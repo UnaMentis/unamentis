@@ -143,10 +143,8 @@ struct ContentView: View {
             .tabItem {
                 Label("Debug", systemImage: "ladybug")
             }
-            .task {
-                // Auto-run test on launch for debugging
-                await testOnDeviceLLM()
-            }
+            // Note: Auto-LLM test removed - it caused hangs on physical device
+            // when trying to connect to localhost. Use the Test button manually.
             #endif
 
             SessionView()

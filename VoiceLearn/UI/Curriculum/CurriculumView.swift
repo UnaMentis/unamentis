@@ -190,11 +190,8 @@ struct CurriculumView: View {
                 self.topics = sortedTopics
                 self.curriculumName = curriculum.name
                 self.isLoading = false
-
-                // Also try to load into the engine if available
-                if let engine = appState.curriculum, let id = curriculum.id {
-                    try? await engine.loadCurriculum(id)
-                }
+                // Note: CurriculumEngine.loadCurriculum() is called when starting a session,
+                // not when viewing the curriculum list (avoids actor isolation deadlock)
             } else {
                 print("DEBUG: No curriculum found")
                 self.topics = []
