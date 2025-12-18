@@ -623,14 +623,19 @@ class SessionViewModel: ObservableObject {
         self.topic = topic
     }
 
-    /// Generate system prompt based on topic and depth level
+    /// Generate system prompt based on topic, depth level, and audience profile
     func generateSystemPrompt() -> String {
+        // Get active audience profile
+        let audienceProfile = AudienceProfileManager.shared.getActiveProfile()
+
         guard let topic = topic else {
-            // Default conversational system prompt
+            // Default conversational system prompt with audience awareness
             return """
             You are a helpful educational assistant in a voice conversation.
             Keep responses concise and natural for spoken delivery.
             Avoid visual references, code blocks, or complex formatting.
+
+            \(audienceProfile.generateAIInstructions())
             """
         }
 
@@ -644,7 +649,12 @@ class SessionViewModel: ObservableObject {
         TOPIC: \(topicTitle)
         DEPTH LEVEL: \(depth.displayName)
 
-        \(depth.aiInstructions)
+        """
+
+        // Add combined audience + depth instructions
+        prompt += audienceProfile.generateCombinedInstructions(for: depth)
+
+        prompt += """
 
         AUDIO-FRIENDLY GUIDELINES:
         - This is an audio-only format. The learner cannot see any visual content.

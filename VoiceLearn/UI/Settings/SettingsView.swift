@@ -44,6 +44,27 @@ public struct SettingsView: View {
                     Text("Tap a provider to see details, pricing, and configure your API key.")
                 }
 
+                // Audience Profile Section
+                Section {
+                    NavigationLink {
+                        AudienceProfileView()
+                    } label: {
+                        HStack {
+                            Label("Audience Profile", systemImage: "person.crop.circle")
+                            Spacer()
+                            if let active = AudienceProfileManager.shared.activeProfile {
+                                Text(active.name)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Learning Profile")
+                } footer: {
+                    Text("Configure how content is delivered based on who is learning.")
+                }
+
                 // Audio Settings Section
                 Section("Audio") {
                     Picker("Sample Rate", selection: $viewModel.sampleRate) {
