@@ -204,8 +204,19 @@ public struct SettingsView: View {
                 Section("Voice") {
                     Picker("Provider", selection: $viewModel.ttsProvider) {
                         Text("Apple TTS (On-Device)").tag(TTSProvider.appleTTS)
+                        if viewModel.selfHostedEnabled {
+                            Text("Self-Hosted (Piper)").tag(TTSProvider.selfHosted)
+                        }
                         Text("ElevenLabs").tag(TTSProvider.elevenLabsFlash)
                         Text("Deepgram Aura").tag(TTSProvider.deepgramAura2)
+                    }
+
+                    if viewModel.ttsProvider == .selfHosted && !viewModel.discoveredVoices.isEmpty {
+                        Picker("Voice", selection: $viewModel.ttsVoice) {
+                            ForEach(viewModel.discoveredVoices, id: \.self) { voice in
+                                Text(voice).tag(voice)
+                            }
+                        }
                     }
 
                     VStack(alignment: .leading) {
@@ -213,11 +224,11 @@ public struct SettingsView: View {
                         Slider(value: $viewModel.speakingRate, in: 0.5...2.0)
                     }
 
-                    if !viewModel.ttsProvider.requiresNetwork {
+                    if !viewModel.ttsProvider.requiresAPIKey {
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                            Text("Works offline - Free")
+                            Text(viewModel.ttsProvider == .selfHosted ? "Uses self-hosted server - Free" : "Works offline - Free")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -475,6 +486,7 @@ class SettingsViewModel: ObservableObject {
         didSet { UserDefaults.standard.set(ttsProvider.rawValue, forKey: "ttsProvider") }
     }
     @AppStorage("speakingRate") var speakingRate: Double = 1.0
+    @AppStorage("ttsVoice") var ttsVoice: String = "nova"
 
     // Debug
     @AppStorage("debugMode") var debugMode = false
@@ -704,7 +716,9 @@ class SettingsViewModel: ObservableObject {
             maxTokens = 512
 
         case .selfHosted:
+            selfHostedEnabled = true
             llmProvider = .selfHosted
+            ttsProvider = .selfHosted
             sampleRate = 48000
             vadThreshold = 0.5
             llmModel = "qwen2.5:7b"

@@ -198,12 +198,13 @@ public enum TTSProvider: String, Codable, Sendable, CaseIterable {
     case elevenLabsTurbo = "ElevenLabs Turbo"
     case playHT = "PlayHT"
     case appleTTS = "Apple TTS (On-Device)"
-    
+    case selfHosted = "Self-Hosted (Piper)"
+
     /// Display name for UI
     public var displayName: String {
         rawValue
     }
-    
+
     /// Short identifier
     public var identifier: String {
         switch self {
@@ -212,12 +213,30 @@ public enum TTSProvider: String, Codable, Sendable, CaseIterable {
         case .elevenLabsTurbo: return "elevenlabs-turbo"
         case .playHT: return "playht"
         case .appleTTS: return "apple"
+        case .selfHosted: return "piper"
         }
     }
-    
+
     /// Whether this provider requires network connectivity
     public var requiresNetwork: Bool {
-        self != .appleTTS
+        switch self {
+        case .appleTTS:
+            return false
+        case .selfHosted:
+            return true  // Requires local network to self-hosted server
+        default:
+            return true
+        }
+    }
+
+    /// Whether this provider requires an API key
+    public var requiresAPIKey: Bool {
+        switch self {
+        case .appleTTS, .selfHosted:
+            return false
+        default:
+            return true
+        }
     }
 }
 

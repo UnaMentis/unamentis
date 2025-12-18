@@ -105,14 +105,28 @@ public actor SileroVADService: VADService {
             }
         }
         
-        // Fallback: simple RMS-based detection when model unavailable
+        // Fallback: dB-based detection when model unavailable
+        // Use dB scale for more reliable speech/silence discrimination
         let rms = calculateRMS(floatData: floatData, frameLength: frameLength)
-        let normalizedRMS = min(rms * 10, 1.0) // Normalize to 0-1 range
-        let isSpeech = normalizedRMS >= configuration.threshold
-        
+        let db = 20 * log10(max(rms, 1e-10))
+
+        // dB thresholds: speech typically > -35dB, silence typically < -50dB
+        // Map dB to 0-1 confidence: -60dB -> 0.0, -20dB -> 1.0
+        let dbMin: Float = -60.0
+        let dbMax: Float = -20.0
+        let normalizedDB = max(0, min(1, (db - dbMin) / (dbMax - dbMin)))
+
+        // Apply smoothing to the dB-based value
+        let smoothedConfidence = applySmoothing(normalizedDB)
+
+        // Use threshold comparison (default 0.5 means ~-40dB)
+        let isSpeech = smoothedConfidence >= configuration.threshold
+
+        logger.trace("VAD fallback: db=\(db), normalized=\(normalizedDB), smoothed=\(smoothedConfidence), isSpeech=\(isSpeech)")
+
         return VADResult(
             isSpeech: isSpeech,
-            confidence: normalizedRMS,
+            confidence: smoothedConfidence,
             timestamp: startTime.timeIntervalSince1970,
             segmentDuration: Double(frameLength) / buffer.format.sampleRate
         )
