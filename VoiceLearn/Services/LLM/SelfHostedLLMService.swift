@@ -96,7 +96,15 @@ public actor SelfHostedLLMService: LLMService {
         messages: [LLMMessage],
         config: LLMConfig
     ) async throws -> AsyncStream<LLMToken> {
-        let effectiveModel = config.model.isEmpty ? modelName : config.model
+        // For self-hosted services, prefer the constructor-provided model
+        // Only use config.model if it looks like a valid Ollama model (not OpenAI)
+        let openAIModels = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]
+        let effectiveModel: String
+        if config.model.isEmpty || openAIModels.contains(config.model) {
+            effectiveModel = modelName
+        } else {
+            effectiveModel = config.model
+        }
 
         logger.info("Starting stream completion with model: \(effectiveModel)")
         let startTime = Date()

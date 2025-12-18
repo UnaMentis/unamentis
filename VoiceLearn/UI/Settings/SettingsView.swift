@@ -516,6 +516,7 @@ class SettingsViewModel: ObservableObject {
     @AppStorage("logServerUsesSameIP") var logServerUsesSameIP: Bool = true
     @Published var remoteLoggingEnabled: Bool = true {
         didSet {
+            UserDefaults.standard.set(remoteLoggingEnabled, forKey: "remoteLoggingEnabled")
             if remoteLoggingEnabled {
                 RemoteLogging.enable()
             } else {
@@ -557,6 +558,9 @@ class SettingsViewModel: ObservableObject {
         } else {
             self.ttsProvider = .appleTTS  // Default to on-device
         }
+
+        // Load remote logging setting (defaults to true)
+        self.remoteLoggingEnabled = UserDefaults.standard.object(forKey: "remoteLoggingEnabled") as? Bool ?? true
 
         Task {
             await loadKeyStatus()
@@ -810,6 +814,19 @@ struct DiagnosticsView: View {
                 )
             }
 
+            Section("Remote Servers") {
+                DiagnosticRow(
+                    name: "Logging Server",
+                    status: viewModel.loggingServerStatus,
+                    detail: viewModel.loggingServerDetail
+                )
+                DiagnosticRow(
+                    name: "LLM Server (Ollama)",
+                    status: viewModel.ollamaServerStatus,
+                    detail: viewModel.ollamaServerDetail
+                )
+            }
+
             Section("System") {
                 DiagnosticRow(
                     name: "Thermal State",
@@ -911,6 +928,12 @@ class DiagnosticsViewModel: ObservableObject {
     @Published var memoryStatus: DiagnosticStatus = .unknown
     @Published var memoryDetail = "Not checked"
 
+    // Remote Servers
+    @Published var loggingServerStatus: DiagnosticStatus = .unknown
+    @Published var loggingServerDetail = "Not checked"
+    @Published var ollamaServerStatus: DiagnosticStatus = .unknown
+    @Published var ollamaServerDetail = "Not checked"
+
     func runAllDiagnostics() async {
         isRunning = true
         defer { isRunning = false }
@@ -1011,6 +1034,115 @@ class DiagnosticsViewModel: ObservableObject {
         await Task.yield()
         memoryStatus = .ok
         memoryDetail = "Within limits"
+
+        // Check remote servers
+        await checkRemoteServers()
+    }
+
+    /// Check logging server and Ollama server connectivity
+    private func checkRemoteServers() async {
+        // Get server IP from settings
+        let selfHostedEnabled = UserDefaults.standard.bool(forKey: "selfHostedEnabled")
+        let primaryServerIP = UserDefaults.standard.string(forKey: "primaryServerIP") ?? ""
+        let remoteLoggingEnabled = UserDefaults.standard.bool(forKey: "remoteLoggingEnabled")
+        let logServerUsesSameIP = UserDefaults.standard.bool(forKey: "logServerUsesSameIP")
+        let logServerIP = UserDefaults.standard.string(forKey: "logServerIP") ?? ""
+
+        // Determine effective log server IP
+        let effectiveLogIP: String
+        if logServerUsesSameIP && selfHostedEnabled && !primaryServerIP.isEmpty {
+            effectiveLogIP = primaryServerIP
+        } else {
+            effectiveLogIP = logServerIP
+        }
+
+        // Check logging server
+        loggingServerStatus = .checking
+        loggingServerDetail = "Checking..."
+        await Task.yield()
+
+        if !remoteLoggingEnabled {
+            loggingServerStatus = .warning
+            loggingServerDetail = "Remote logging disabled"
+        } else if effectiveLogIP.isEmpty {
+            loggingServerStatus = .error
+            loggingServerDetail = "No server IP configured"
+        } else {
+            // Try to connect to logging server on port 8765
+            let logURL = URL(string: "http://\(effectiveLogIP):8765/health")
+            if let url = logURL {
+                do {
+                    var request = URLRequest(url: url)
+                    request.timeoutInterval = 5
+                    let (_, response) = try await URLSession.shared.data(for: request)
+                    if let httpResponse = response as? HTTPURLResponse {
+                        if httpResponse.statusCode == 200 {
+                            loggingServerStatus = .ok
+                            loggingServerDetail = "\(effectiveLogIP):8765 connected"
+                        } else {
+                            loggingServerStatus = .warning
+                            loggingServerDetail = "HTTP \(httpResponse.statusCode)"
+                        }
+                    } else {
+                        loggingServerStatus = .error
+                        loggingServerDetail = "Invalid response"
+                    }
+                } catch {
+                    loggingServerStatus = .error
+                    loggingServerDetail = "Cannot reach \(effectiveLogIP):8765"
+                }
+            } else {
+                loggingServerStatus = .error
+                loggingServerDetail = "Invalid URL"
+            }
+        }
+
+        // Check Ollama server
+        ollamaServerStatus = .checking
+        ollamaServerDetail = "Checking..."
+        await Task.yield()
+
+        if !selfHostedEnabled {
+            ollamaServerStatus = .warning
+            ollamaServerDetail = "Self-hosted disabled"
+        } else if primaryServerIP.isEmpty {
+            ollamaServerStatus = .error
+            ollamaServerDetail = "No server IP configured"
+        } else {
+            // Try to connect to Ollama on port 11434
+            let ollamaURL = URL(string: "http://\(primaryServerIP):11434/api/tags")
+            if let url = ollamaURL {
+                do {
+                    var request = URLRequest(url: url)
+                    request.timeoutInterval = 5
+                    let (data, response) = try await URLSession.shared.data(for: request)
+                    if let httpResponse = response as? HTTPURLResponse {
+                        if httpResponse.statusCode == 200 {
+                            // Try to parse model count
+                            var modelCount = 0
+                            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                               let models = json["models"] as? [[String: Any]] {
+                                modelCount = models.count
+                            }
+                            ollamaServerStatus = .ok
+                            ollamaServerDetail = "\(primaryServerIP):11434 - \(modelCount) models"
+                        } else {
+                            ollamaServerStatus = .warning
+                            ollamaServerDetail = "HTTP \(httpResponse.statusCode)"
+                        }
+                    } else {
+                        ollamaServerStatus = .error
+                        ollamaServerDetail = "Invalid response"
+                    }
+                } catch {
+                    ollamaServerStatus = .error
+                    ollamaServerDetail = "Cannot reach \(primaryServerIP):11434"
+                }
+            } else {
+                ollamaServerStatus = .error
+                ollamaServerDetail = "Invalid URL"
+            }
+        }
     }
 }
 
