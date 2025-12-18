@@ -31,7 +31,7 @@ struct VoiceLearnApp: App {
         let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
         let buildDate = Self.getBuildDate()
         // Unique build ID - change this each time to verify new build is running
-        let buildID = "CURRICULUM_FIX_20251218_I"
+        let buildID = "TTS_PIPER_FIX_20251218_J"
         print("=======================================================")
         print("VoiceLearn App Starting")
         print("Version: \(appVersion) (Build \(buildNumber))")

@@ -22,14 +22,20 @@ public actor SelfHostedTTSService: TTSService {
     private let logger = Logger(label: "com.voicelearn.tts.selfhosted")
     private let baseURL: URL
     private let authToken: String?
-    private let voiceId: String
+    private var voiceId: String
     private let outputFormat: AudioFormat
 
     /// Performance metrics
     public private(set) var metrics: TTSMetrics = TTSMetrics(
-        averageLatency: 0.1,
-        averageCharactersPerSecond: 150
+        medianTTFB: 0.1,
+        p99TTFB: 0.3
     )
+
+    /// Cost per character (free for self-hosted)
+    public var costPerCharacter: Decimal { 0 }
+
+    /// Current voice configuration
+    public private(set) var voiceConfig: TTSVoiceConfig
 
     private var latencyValues: [TimeInterval] = []
     private var characterCounts: [Int] = []
@@ -53,6 +59,7 @@ public actor SelfHostedTTSService: TTSService {
         self.voiceId = voiceId
         self.outputFormat = outputFormat
         self.authToken = authToken
+        self.voiceConfig = TTSVoiceConfig(voiceId: voiceId)
         logger.info("SelfHostedTTSService initialized: \(baseURL.absoluteString)")
     }
 
@@ -65,6 +72,7 @@ public actor SelfHostedTTSService: TTSService {
         self.voiceId = voiceId
         self.outputFormat = .wav
         self.authToken = nil
+        self.voiceConfig = TTSVoiceConfig(voiceId: voiceId)
         logger.info("SelfHostedTTSService initialized from server config: \(server.name)")
     }
 
@@ -82,73 +90,94 @@ public actor SelfHostedTTSService: TTSService {
         self.voiceId = "nova"
         self.outputFormat = .wav
         self.authToken = nil
+        self.voiceConfig = TTSVoiceConfig(voiceId: "nova")
     }
 
     // MARK: - TTSService Protocol
 
-    /// Synthesize text to audio data
-    public func synthesize(text: String) async throws -> Data {
-        let startTime = Date()
-
-        // Build URL for speech endpoint
-        let speechURL = baseURL.appendingPathComponent("v1/audio/speech")
-
-        var request = URLRequest(url: speechURL)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        if let token = authToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        // Build request body (OpenAI-compatible format)
-        let body: [String: Any] = [
-            "model": "tts-1",  // Standard model identifier
-            "input": text,
-            "voice": voiceId,
-            "response_format": outputFormat.rawValue
-        ]
-
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        // Make request
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw TTSError.connectionFailed("Invalid response")
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            throw TTSError.connectionFailed("HTTP \(httpResponse.statusCode)")
-        }
-
-        // Update metrics
-        let latency = Date().timeIntervalSince(startTime)
-        latencyValues.append(latency)
-        characterCounts.append(text.count)
-        synthesisTimings.append(latency)
-        updateMetrics()
-
-        logger.debug("TTS synthesis complete: \(text.count) chars in \(String(format: "%.3f", latency))s")
-
-        return data
+    /// Configure voice settings
+    public func configure(_ config: TTSVoiceConfig) async {
+        self.voiceConfig = config
+        self.voiceId = config.voiceId
+        logger.debug("Voice configured: \(config.voiceId)")
     }
 
-    /// Synthesize text to audio data with streaming
-    public func synthesizeStreaming(text: String) -> AsyncStream<Data> {
-        AsyncStream { continuation in
+    /// Synthesize text to audio stream
+    public func synthesize(text: String) async throws -> AsyncStream<TTSAudioChunk> {
+        logger.info("Synthesizing text: \(text.prefix(50))...")
+
+        let startTime = Date()
+        let currentVoiceId = voiceId
+
+        return AsyncStream { continuation in
             Task {
                 do {
-                    // For non-streaming servers, synthesize the whole thing and yield once
-                    let data = try await self.synthesize(text: text)
-                    continuation.yield(data)
+                    // Build URL for speech endpoint
+                    let speechURL = self.baseURL.appendingPathComponent("v1/audio/speech")
+
+                    var request = URLRequest(url: speechURL)
+                    request.httpMethod = "POST"
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+                    if let token = self.authToken {
+                        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    }
+
+                    // Build request body (OpenAI-compatible format)
+                    let body: [String: Any] = [
+                        "model": "tts-1",
+                        "input": text,
+                        "voice": currentVoiceId,
+                        "response_format": self.outputFormat.rawValue
+                    ]
+
+                    request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+                    // Make request
+                    let (data, response) = try await URLSession.shared.data(for: request)
+
+                    guard let httpResponse = response as? HTTPURLResponse else {
+                        throw TTSError.connectionFailed("Invalid response")
+                    }
+
+                    guard httpResponse.statusCode == 200 else {
+                        throw TTSError.connectionFailed("HTTP \(httpResponse.statusCode)")
+                    }
+
+                    // Create audio chunk from response data
+                    // Piper outputs WAV which is PCM 16-bit at 22050 Hz (mono)
+                    let chunk = TTSAudioChunk(
+                        audioData: data,
+                        format: .pcmInt16(sampleRate: 22050, channels: 1),
+                        sequenceNumber: 0,
+                        isFirst: true,
+                        isLast: true
+                    )
+
+                    continuation.yield(chunk)
+
+                    // Update metrics
+                    let latency = Date().timeIntervalSince(startTime)
+                    self.latencyValues.append(latency)
+                    self.characterCounts.append(text.count)
+                    self.synthesisTimings.append(latency)
+                    self.updateMetrics()
+
+                    self.logger.debug("TTS synthesis complete: \(text.count) chars in \(String(format: "%.3f", latency))s")
+
                     continuation.finish()
                 } catch {
-                    self.logger.error("Streaming synthesis failed: \(error.localizedDescription)")
+                    self.logger.error("TTS synthesis failed: \(error.localizedDescription)")
                     continuation.finish()
                 }
             }
         }
+    }
+
+    /// Flush any pending audio and stop synthesis
+    public func flush() async throws {
+        // For non-streaming TTS, nothing to flush
+        logger.debug("TTS flush called (no-op for non-streaming)")
     }
 
     // MARK: - Health Check
@@ -225,20 +254,16 @@ public actor SelfHostedTTSService: TTSService {
     // MARK: - Private Methods
 
     private func updateMetrics() {
-        let avgLatency = latencyValues.isEmpty ? 0.1 : latencyValues.reduce(0, +) / Double(latencyValues.count)
+        // Calculate median and p99 TTFB from latency values
+        guard !latencyValues.isEmpty else { return }
 
-        var avgCharsPerSecond: Double = 150
-        if !characterCounts.isEmpty && !synthesisTimings.isEmpty {
-            let totalChars = characterCounts.reduce(0, +)
-            let totalTime = synthesisTimings.reduce(0, +)
-            if totalTime > 0 {
-                avgCharsPerSecond = Double(totalChars) / totalTime
-            }
-        }
+        let sorted = latencyValues.sorted()
+        let medianIndex = sorted.count / 2
+        let p99Index = min(Int(Double(sorted.count) * 0.99), sorted.count - 1)
 
         metrics = TTSMetrics(
-            averageLatency: avgLatency,
-            averageCharactersPerSecond: avgCharsPerSecond
+            medianTTFB: sorted[medianIndex],
+            p99TTFB: sorted[p99Index]
         )
     }
 }
@@ -293,27 +318,4 @@ public struct VoiceInfo: Sendable, Identifiable {
     public let gender: String?
 }
 
-/// TTS service metrics
-public struct TTSMetrics: Sendable {
-    public let averageLatency: TimeInterval
-    public let averageCharactersPerSecond: Double
-}
-
-/// TTS service errors
-public enum TTSError: Error, LocalizedError {
-    case connectionFailed(String)
-    case authenticationFailed
-    case invalidInput
-    case voiceNotFound(String)
-    case serverError(String)
-
-    public var errorDescription: String? {
-        switch self {
-        case .connectionFailed(let message): return "Connection failed: \(message)"
-        case .authenticationFailed: return "Authentication failed"
-        case .invalidInput: return "Invalid input text"
-        case .voiceNotFound(let voice): return "Voice not found: \(voice)"
-        case .serverError(let message): return "Server error: \(message)"
-        }
-    }
-}
+// Note: TTSMetrics and TTSError are defined in TTSService.swift

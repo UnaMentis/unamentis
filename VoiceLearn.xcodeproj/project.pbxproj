@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -24,6 +24,7 @@
 		28865C61A3BE75C3B0B2A4C1 /* ServerSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C3ADA6BBB45F55E3A80A9B /* ServerSettingsView.swift */; };
 		297C76CDF47CC24210E07E63 /* DebugConversationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B44F033CD785EAF43C173FA /* DebugConversationViewModel.swift */; };
 		33FF23ECEC4817E42018C4F6 /* TranscriptEntry+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = D163A8B7A48C1652E19C6B6D /* TranscriptEntry+CoreDataClass.swift */; };
+		346770D26046571A1926F258 /* SelfHostedTTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06ED99751C7FA350A8CCDE6 /* SelfHostedTTSService.swift */; };
 		34AAE979FCBAF1B670CD49A2 /* OpenAIEmbeddingServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49FC2289A12508DE51EA8F66 /* OpenAIEmbeddingServiceTests.swift */; };
 		379A987FAA1EA545F12E6A90 /* AppleTTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA3D04DFB23B4F1E9FA82ED /* AppleTTSService.swift */; };
 		396D2F55A0D16F01C4091404 /* VADService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB061474227993A5FFF2041 /* VADService.swift */; };
@@ -124,7 +125,7 @@
 		2F071D566CF6B15C33627C41 /* Session+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Session+CoreDataClass.swift"; sourceTree = "<group>"; };
 		2FFCEBA98BD1D322FF6847BE /* LLMTaskTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMTaskTypeTests.swift; sourceTree = "<group>"; };
 		34C5C067618E2C8FC74E1F33 /* AnthropicLLMServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicLLMServiceTests.swift; sourceTree = "<group>"; };
-		39E4F2055DE2CE3BAAF263DD /* llama-3.2-3b-instruct-q4_k_m.gguf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "llama-3.2-3b-instruct-q4_k_m.gguf"; sourceTree = "<group>"; };
+		39E4F2055DE2CE3BAAF263DD /* llama-3.2-3b-instruct-q4_k_m.gguf */ = {isa = PBXFileReference; path = "llama-3.2-3b-instruct-q4_k_m.gguf"; sourceTree = "<group>"; };
 		3A7B4E67E98C1D80D002000E /* ServerConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerConfigManager.swift; sourceTree = "<group>"; };
 		3A8A6B9379FE371FFEDEF1AC /* MockServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockServices.swift; sourceTree = "<group>"; };
 		3A9B2D01533457DA47F7C663 /* SessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManager.swift; sourceTree = "<group>"; };
@@ -141,7 +142,7 @@
 		5C3D0F50423CA0804E8D2323 /* SileroVADService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SileroVADService.swift; sourceTree = "<group>"; };
 		642F2F56F4708A528BA96651 /* STTProviderRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = STTProviderRouter.swift; sourceTree = "<group>"; };
 		649A4C232D5F60B29F8A3CC2 /* DeepgramSTTServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepgramSTTServiceTests.swift; sourceTree = "<group>"; };
-		68BEF421B3B705117D9CA31A /* VoiceLearn.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceLearn.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		68BEF421B3B705117D9CA31A /* VoiceLearn.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = VoiceLearn.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B6839806CB0A8B4C586FF10 /* AssemblyAISTTService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblyAISTTService.swift; sourceTree = "<group>"; };
 		6FFA7F1BC8578438E8C65E54 /* VoiceLearnTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLearnTests.swift; sourceTree = "<group>"; };
 		71599E323CA773F8A514E7D3 /* CurriculumEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumEngineTests.swift; sourceTree = "<group>"; };
@@ -167,6 +168,7 @@
 		AA5E84CBF89FBA53518EF814 /* VoiceLearn.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = VoiceLearn.xcdatamodel; sourceTree = "<group>"; };
 		AC61E5D57E08430947D46C5F /* TelemetryEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryEngineTests.swift; sourceTree = "<group>"; };
 		B041C01E235EB5974E93FCBA /* ProgressTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressTracker.swift; sourceTree = "<group>"; };
+		B06ED99751C7FA350A8CCDE6 /* SelfHostedTTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfHostedTTSService.swift; sourceTree = "<group>"; };
 		B3FB5E0280E27A09D5A38E04 /* LLMTaskType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMTaskType.swift; sourceTree = "<group>"; };
 		B5F8DC1045251FDE321A9246 /* CurriculumView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumView.swift; sourceTree = "<group>"; };
 		B7F302C76F1C862A325FB047 /* GLMASROnDeviceSTTService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GLMASROnDeviceSTTService.swift; sourceTree = "<group>"; };
@@ -253,6 +255,7 @@
 				EDA3D04DFB23B4F1E9FA82ED /* AppleTTSService.swift */,
 				C2F47CEED72DFFD39384E43C /* DeepgramTTSService.swift */,
 				CDECFDD641B04BF76BFF029D /* ElevenLabsTTSService.swift */,
+				B06ED99751C7FA350A8CCDE6 /* SelfHostedTTSService.swift */,
 			);
 			path = TTS;
 			sourceTree = "<group>";
@@ -641,6 +644,9 @@
 					AD40FD102870715F99DDA61A = {
 						DevelopmentTeam = "";
 					};
+					F3A617C1E824546C188FE132 = {
+						DevelopmentTeam = "";
+					};
 				};
 			};
 			buildConfigurationList = 3564F834BDCDAF14C11CBC9C /* Build configuration list for PBXProject "VoiceLearn" */;
@@ -658,6 +664,7 @@
 				F0265842A78D3BED995F1309 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 				4951890113EB170D07DBC23A /* XCRemoteSwiftPackageReference "swift-log" */,
 			);
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -757,6 +764,7 @@
 				63F3D9D850D9235A2A45C6E8 /* STTService.swift in Sources */,
 				5D6BC2C163BEAB85ED06AC1E /* SampleCurriculumSeeder.swift in Sources */,
 				AB042B9651B52E88AB3CE566 /* SelfHostedLLMService.swift in Sources */,
+				346770D26046571A1926F258 /* SelfHostedTTSService.swift in Sources */,
 				B5F9ED07D0252707EC7D0EE0 /* ServerConfigManager.swift in Sources */,
 				28865C61A3BE75C3B0B2A4C1 /* ServerSettingsView.swift in Sources */,
 				BA5459F61F63A6B53DB6B7F7 /* Session+CoreDataClass.swift in Sources */,
@@ -792,7 +800,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = VoiceLearn/VoiceLearn.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VoiceLearn/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -832,7 +839,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = VoiceLearn/VoiceLearn.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VoiceLearn/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;

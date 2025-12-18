@@ -969,42 +969,76 @@ class DiagnosticsViewModel: ObservableObject {
         vadStatus = .ok
         vadDetail = "Silero VAD ready"
 
-        // Check API keys for services
+        // Check API keys for services (respecting self-hosted and on-device settings)
         let apiKeys = APIKeyManager.shared
+        let selfHostedEnabled = UserDefaults.standard.bool(forKey: "selfHostedEnabled")
+        let sttProviderRaw = UserDefaults.standard.string(forKey: "sttProvider") ?? ""
+        let ttsProviderRaw = UserDefaults.standard.string(forKey: "ttsProvider") ?? ""
+        let llmProviderRaw = UserDefaults.standard.string(forKey: "llmProvider") ?? ""
 
+        // STT Check - raw values are display names like "Apple Speech (On-Device)"
         sttStatus = .checking
         await Task.yield()
-        let hasDeepgram = await apiKeys.hasKey(.deepgram)
-        let hasAssemblyAI = await apiKeys.hasKey(.assemblyAI)
-        if hasDeepgram || hasAssemblyAI {
+        let isOnDeviceSTT = sttProviderRaw.contains("On-Device")
+        if isOnDeviceSTT {
             sttStatus = .ok
-            sttDetail = "API key configured"
+            sttDetail = "On-device (no API needed)"
         } else {
-            sttStatus = .error
-            sttDetail = "No API key"
+            let hasDeepgram = await apiKeys.hasKey(.deepgram)
+            let hasAssemblyAI = await apiKeys.hasKey(.assemblyAI)
+            if hasDeepgram || hasAssemblyAI {
+                sttStatus = .ok
+                sttDetail = "API key configured"
+            } else {
+                sttStatus = .error
+                sttDetail = "No API key"
+            }
         }
 
+        // TTS Check - raw values are display names like "Apple TTS (On-Device)", "Self-Hosted (Piper)"
         ttsStatus = .checking
         await Task.yield()
-        let hasElevenLabs = await apiKeys.hasKey(.elevenLabs)
-        if hasElevenLabs || hasDeepgram {
+        let isOnDeviceTTS = ttsProviderRaw.contains("On-Device")
+        let isSelfHostedTTS = ttsProviderRaw.contains("Self-Hosted")
+        if isOnDeviceTTS {
             ttsStatus = .ok
-            ttsDetail = "API key configured"
+            ttsDetail = "On-device (no API needed)"
+        } else if isSelfHostedTTS && selfHostedEnabled {
+            ttsStatus = .ok
+            ttsDetail = "Using self-hosted server"
         } else {
-            ttsStatus = .error
-            ttsDetail = "No API key"
+            let hasElevenLabs = await apiKeys.hasKey(.elevenLabs)
+            let hasDeepgram = await apiKeys.hasKey(.deepgram)
+            if hasElevenLabs || hasDeepgram {
+                ttsStatus = .ok
+                ttsDetail = "API key configured"
+            } else {
+                ttsStatus = .error
+                ttsDetail = "No API key"
+            }
         }
 
+        // LLM Check - raw values are display names like "Local MLX", "Self-Hosted"
         llmStatus = .checking
         await Task.yield()
-        let hasAnthropic = await apiKeys.hasKey(.anthropic)
-        let hasOpenAI = await apiKeys.hasKey(.openAI)
-        if hasAnthropic || hasOpenAI {
+        let isOnDeviceLLM = llmProviderRaw.contains("Local")
+        let isSelfHostedLLM = llmProviderRaw.contains("Self-Hosted")
+        if isOnDeviceLLM {
             llmStatus = .ok
-            llmDetail = "API key configured"
+            llmDetail = "On-device (no API needed)"
+        } else if isSelfHostedLLM && selfHostedEnabled {
+            llmStatus = .ok
+            llmDetail = "Using self-hosted server"
         } else {
-            llmStatus = .error
-            llmDetail = "No API key"
+            let hasAnthropic = await apiKeys.hasKey(.anthropic)
+            let hasOpenAI = await apiKeys.hasKey(.openAI)
+            if hasAnthropic || hasOpenAI {
+                llmStatus = .ok
+                llmDetail = "API key configured"
+            } else {
+                llmStatus = .error
+                llmDetail = "No API key"
+            }
         }
 
         // Check thermal state

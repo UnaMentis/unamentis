@@ -774,6 +774,10 @@ class SessionViewModel: ObservableObject {
         let ttsProviderSetting = UserDefaults.standard.string(forKey: "ttsProvider")
             .flatMap { TTSProvider(rawValue: $0) } ?? .appleTTS
 
+        // Get self-hosted server settings (needed for TTS and LLM configuration)
+        let selfHostedEnabled = UserDefaults.standard.bool(forKey: "selfHostedEnabled")
+        let serverIP = UserDefaults.standard.string(forKey: "primaryServerIP") ?? ""
+
         let sttService: any STTService
         let ttsService: any TTSService
         let llmService: any LLMService
@@ -817,9 +821,21 @@ class SessionViewModel: ObservableObject {
         }
 
         // Configure TTS based on settings
+        logger.info("TTS provider setting: \(ttsProviderSetting.rawValue)")
         switch ttsProviderSetting {
         case .appleTTS:
+            logger.info("Using AppleTTSService")
             ttsService = AppleTTSService()
+        case .selfHosted:
+            // Use SelfHostedTTSService to connect to Piper server
+            let ttsVoiceSetting = UserDefaults.standard.string(forKey: "ttsVoice") ?? "nova"
+            if selfHostedEnabled && !serverIP.isEmpty {
+                logger.info("Using self-hosted TTS (Piper) at \(serverIP):11402 with voice: \(ttsVoiceSetting)")
+                ttsService = SelfHostedTTSService.piper(host: serverIP, voice: ttsVoiceSetting)
+            } else {
+                logger.warning("Self-hosted TTS selected but no server IP configured - falling back to Apple TTS")
+                ttsService = AppleTTSService()
+            }
         case .elevenLabsFlash, .elevenLabsTurbo:
             guard let apiKey = await appState.apiKeys.getKey(.elevenLabs) else {
                 errorMessage = "ElevenLabs API key not configured. Please add it in Settings or switch to Apple TTS."
@@ -835,15 +851,12 @@ class SessionViewModel: ObservableObject {
             }
             ttsService = DeepgramTTSService(apiKey: apiKey)
         default:
+            logger.info("Using Apple TTS as default TTS provider")
             ttsService = AppleTTSService()
         }
 
         // Configure LLM based on settings
         logger.info("LLM provider setting: \(llmProviderSetting.rawValue)")
-
-        // Get self-hosted server IP from settings (used for localMLX and selfHosted providers)
-        let selfHostedEnabled = UserDefaults.standard.bool(forKey: "selfHostedEnabled")
-        let serverIP = UserDefaults.standard.string(forKey: "primaryServerIP") ?? ""
 
         switch llmProviderSetting {
         case .localMLX:
