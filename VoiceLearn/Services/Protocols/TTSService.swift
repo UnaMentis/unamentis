@@ -47,21 +47,66 @@ public struct TTSAudioChunk: Sendable {
     public func toAVAudioPCMBuffer() throws -> AVAudioPCMBuffer {
         // Implementation depends on format
         guard let audioFormat = format.avAudioFormat else {
+            print("[TTS Buffer] ERROR: Invalid audio format - cannot convert to AVAudioFormat")
             throw TTSError.invalidAudioFormat
         }
-        
-        let frameCount = UInt32(audioData.count) / audioFormat.streamDescription.pointee.mBytesPerFrame
-        guard let buffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: frameCount) else {
-            throw TTSError.bufferCreationFailed
-        }
-        
-        buffer.frameLength = frameCount
-        audioData.withUnsafeBytes { rawBuffer in
-            if let baseAddress = rawBuffer.baseAddress {
-                memcpy(buffer.floatChannelData?[0], baseAddress, audioData.count)
+
+        print("[TTS Buffer] Converting audio: inputSize=\(audioData.count) bytes, format=\(format)")
+
+        // For WAV data, we need to strip the header (44 bytes for standard WAV)
+        // WAV files start with "RIFF" magic bytes
+        var pcmData = audioData
+        if audioData.count > 44 {
+            let headerBytes = [UInt8](audioData.prefix(4))
+            let isWav = headerBytes == [0x52, 0x49, 0x46, 0x46] // "RIFF"
+            print("[TTS Buffer] Header check: first 4 bytes = \(headerBytes.map { String(format: "%02X", $0) }.joined(separator: " ")), isWAV=\(isWav)")
+            if isWav {
+                // This is a WAV file - skip the 44-byte header to get raw PCM
+                pcmData = audioData.dropFirst(44)
+                print("[TTS Buffer] Stripped WAV header, PCM data size: \(pcmData.count) bytes")
             }
         }
-        
+
+        let bytesPerFrame = audioFormat.streamDescription.pointee.mBytesPerFrame
+        let frameCount = UInt32(pcmData.count) / bytesPerFrame
+        print("[TTS Buffer] bytesPerFrame=\(bytesPerFrame), frameCount=\(frameCount), sampleRate=\(audioFormat.sampleRate)")
+
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: frameCount) else {
+            print("[TTS Buffer] ERROR: Failed to create AVAudioPCMBuffer")
+            throw TTSError.bufferCreationFailed
+        }
+
+        buffer.frameLength = frameCount
+
+        // Copy data to the correct channel data type based on format
+        pcmData.withUnsafeBytes { rawBuffer in
+            if let baseAddress = rawBuffer.baseAddress {
+                switch format {
+                case .pcmFloat32:
+                    if let channelData = buffer.floatChannelData?[0] {
+                        memcpy(channelData, baseAddress, pcmData.count)
+                        print("[TTS Buffer] Copied \(pcmData.count) bytes to float32 buffer")
+                    } else {
+                        print("[TTS Buffer] ERROR: floatChannelData is nil")
+                    }
+                case .pcmInt16:
+                    if let channelData = buffer.int16ChannelData?[0] {
+                        memcpy(channelData, baseAddress, pcmData.count)
+                        print("[TTS Buffer] Copied \(pcmData.count) bytes to int16 buffer")
+                    } else {
+                        print("[TTS Buffer] ERROR: int16ChannelData is nil")
+                    }
+                default:
+                    // For other formats, try float32
+                    if let channelData = buffer.floatChannelData?[0] {
+                        memcpy(channelData, baseAddress, pcmData.count)
+                        print("[TTS Buffer] Copied \(pcmData.count) bytes to float32 buffer (default)")
+                    }
+                }
+            }
+        }
+
+        print("[TTS Buffer] Successfully created buffer with \(frameCount) frames")
         return buffer
     }
 }

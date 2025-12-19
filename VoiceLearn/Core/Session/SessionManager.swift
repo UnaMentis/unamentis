@@ -188,7 +188,10 @@ public final class SessionManager: ObservableObject {
             return
         }
 
-        logger.info("Starting session (lectureMode: \(lectureMode))")
+        logger.info("SessionManager.startSession called (lectureMode: \(lectureMode))")
+        logger.info("  LLM service type: \(type(of: llmService))")
+        logger.info("  TTS service type: \(type(of: ttsService))")
+        logger.info("  STT service type: \(type(of: sttService))")
 
         // Store services
         self.sttService = sttService
@@ -651,34 +654,65 @@ public final class SessionManager: ObservableObject {
     // MARK: - TTS Handling
     
     private func synthesizeAndPlayResponse(_ text: String) async {
-        guard let ttsService = ttsService else { return }
-        
+        logger.info("synthesizeAndPlayResponse called with text length: \(text.count)")
+
+        guard let ttsService = ttsService else {
+            logger.error("TTS service is nil - cannot synthesize")
+            return
+        }
+
+        logger.info("TTS service available, starting synthesis...")
+
         do {
+            logger.debug("Calling ttsService.synthesize...")
             let stream = try await ttsService.synthesize(text: text)
-            
+            logger.info("TTS synthesis stream created successfully")
+
             ttsStreamTask = Task {
+                var chunkCount = 0
+                logger.debug("Starting TTS stream iteration...")
+
                 for await chunk in stream {
+                    chunkCount += 1
+                    logger.debug("Received TTS chunk \(chunkCount): isFirst=\(chunk.isFirst), isLast=\(chunk.isLast), dataSize=\(chunk.audioData.count)")
+
                     // Record TTFB on first chunk
                     if chunk.isFirst, let ttfb = chunk.timeToFirstByte {
                         await self.telemetry.recordLatency(.ttsTTFB, ttfb)
+                        logger.info("TTS TTFB: \(String(format: "%.3f", ttfb))s")
                     }
-                    
+
                     // Play audio chunk
-                    try? await self.audioEngine?.playAudio(chunk)
-                    
+                    logger.debug("Attempting to play audio chunk...")
+                    if let audioEngine = self.audioEngine {
+                        do {
+                            try await audioEngine.playAudio(chunk)
+                            logger.debug("Audio chunk played successfully")
+                        } catch {
+                            logger.error("Failed to play audio chunk: \(error.localizedDescription)")
+                        }
+                    } else {
+                        logger.error("AudioEngine is nil - cannot play audio")
+                    }
+
                     if chunk.isLast {
+                        logger.info("Received last TTS chunk, total chunks: \(chunkCount)")
                         break
                     }
                 }
-                
+
+                logger.info("TTS stream completed with \(chunkCount) chunks")
+
                 // Record end-to-end latency
                 if let turnStart = self.currentTurnStartTime {
                     let e2e = Date().timeIntervalSince(turnStart)
                     await self.telemetry.recordLatency(.endToEndTurn, e2e)
+                    logger.info("Turn E2E latency: \(String(format: "%.3f", e2e))s")
                 }
-                
+
                 // Ready for next user turn
                 await self.telemetry.recordEvent(.aiFinishedSpeaking)
+                logger.info("AI finished speaking, transitioning to userSpeaking state")
 
                 // Reset silence tracking for new turn
                 self.hasDetectedSpeech = false
@@ -692,9 +726,9 @@ public final class SessionManager: ObservableObject {
                     self.userTranscript = ""
                 }
             }
-            
+
         } catch {
-            logger.error("TTS synthesis failed: \(error.localizedDescription)")
+            logger.error("TTS synthesis failed: \(error.localizedDescription), full error: \(error)")
             await setState(.error)
         }
     }

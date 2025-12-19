@@ -19,6 +19,7 @@ public actor SelfHostedLLMService: LLMService {
     // MARK: - Properties
 
     private let logger = Logger(label: "com.voicelearn.llm.selfhosted")
+    private let instanceID: String  // Unique ID for tracking this instance
     private let baseURL: URL
     private let modelName: String
     private let authToken: String?
@@ -48,10 +49,11 @@ public actor SelfHostedLLMService: LLMService {
     ///   - modelName: Model name to use (e.g., "qwen2.5:7b", "llama3.2:3b")
     ///   - authToken: Optional authentication token
     public init(baseURL: URL, modelName: String, authToken: String? = nil) {
+        self.instanceID = String(UUID().uuidString.prefix(8))
         self.baseURL = baseURL
         self.modelName = modelName
         self.authToken = authToken
-        logger.info("SelfHostedLLMService initialized: \(baseURL.absoluteString) with model \(modelName)")
+        logger.info("SelfHostedLLMService[\(instanceID)] CREATED: baseURL=\(baseURL.absoluteString), modelName=\(modelName)")
     }
 
     /// Initialize from ServerConfig
@@ -62,10 +64,11 @@ public actor SelfHostedLLMService: LLMService {
         guard let baseURL = server.baseURL else {
             return nil
         }
+        self.instanceID = String(UUID().uuidString.prefix(8))
         self.baseURL = baseURL
         self.modelName = modelName
         self.authToken = nil
-        logger.info("SelfHostedLLMService initialized from server config: \(server.name)")
+        logger.info("SelfHostedLLMService[\(instanceID)] CREATED from ServerConfig: server=\(server.name), modelName=\(modelName)")
     }
 
     /// Initialize with auto-discovery
@@ -79,6 +82,7 @@ public actor SelfHostedLLMService: LLMService {
             return nil
         }
 
+        self.instanceID = String(UUID().uuidString.prefix(8))
         self.baseURL = baseURL
         // Try to get model from discovered services, or use default
         if let llmService = server.discoveredServices.first(where: { $0.type == .llm }),
@@ -88,6 +92,7 @@ public actor SelfHostedLLMService: LLMService {
             self.modelName = "qwen2.5:7b"  // Default model
         }
         self.authToken = nil
+        logger.info("SelfHostedLLMService[\(instanceID)] CREATED via auto-discovery: baseURL=\(baseURL.absoluteString), modelName=\(modelName)")
     }
 
     // MARK: - LLMService Protocol
@@ -96,17 +101,12 @@ public actor SelfHostedLLMService: LLMService {
         messages: [LLMMessage],
         config: LLMConfig
     ) async throws -> AsyncStream<LLMToken> {
-        // For self-hosted services, prefer the constructor-provided model
-        // Only use config.model if it looks like a valid Ollama model (not OpenAI)
-        let openAIModels = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]
-        let effectiveModel: String
-        if config.model.isEmpty || openAIModels.contains(config.model) {
-            effectiveModel = modelName
-        } else {
-            effectiveModel = config.model
-        }
+        // For self-hosted services, ALWAYS use the constructor-provided model
+        // This ensures we use the Ollama model regardless of what's in config
+        // (config.model defaults to "gpt-4o" which doesn't exist on Ollama)
+        let effectiveModel = modelName
 
-        logger.info("Starting stream completion with model: \(effectiveModel)")
+        logger.info("SelfHostedLLMService[\(instanceID)] streamCompletion: model=\(effectiveModel), messageCount=\(messages.count), config.model=\(config.model)")
         let startTime = Date()
 
         // Build request URL - use /v1/chat/completions for OpenAI compatibility
@@ -152,6 +152,11 @@ public actor SelfHostedLLMService: LLMService {
         }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        // Log the actual request body for debugging
+        if let requestBodyString = String(data: request.httpBody!, encoding: .utf8) {
+            logger.info("LLM request body: \(requestBodyString.prefix(500))")
+        }
 
         // Estimate input tokens (rough: 4 chars per token)
         let inputChars = apiMessages.reduce(0) { $0 + ($1["content"]?.count ?? 0) }

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -125,7 +125,7 @@
 		2F071D566CF6B15C33627C41 /* Session+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Session+CoreDataClass.swift"; sourceTree = "<group>"; };
 		2FFCEBA98BD1D322FF6847BE /* LLMTaskTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMTaskTypeTests.swift; sourceTree = "<group>"; };
 		34C5C067618E2C8FC74E1F33 /* AnthropicLLMServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicLLMServiceTests.swift; sourceTree = "<group>"; };
-		39E4F2055DE2CE3BAAF263DD /* llama-3.2-3b-instruct-q4_k_m.gguf */ = {isa = PBXFileReference; path = "llama-3.2-3b-instruct-q4_k_m.gguf"; sourceTree = "<group>"; };
+		39E4F2055DE2CE3BAAF263DD /* llama-3.2-3b-instruct-q4_k_m.gguf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "llama-3.2-3b-instruct-q4_k_m.gguf"; sourceTree = "<group>"; };
 		3A7B4E67E98C1D80D002000E /* ServerConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerConfigManager.swift; sourceTree = "<group>"; };
 		3A8A6B9379FE371FFEDEF1AC /* MockServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockServices.swift; sourceTree = "<group>"; };
 		3A9B2D01533457DA47F7C663 /* SessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManager.swift; sourceTree = "<group>"; };
@@ -142,7 +142,7 @@
 		5C3D0F50423CA0804E8D2323 /* SileroVADService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SileroVADService.swift; sourceTree = "<group>"; };
 		642F2F56F4708A528BA96651 /* STTProviderRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = STTProviderRouter.swift; sourceTree = "<group>"; };
 		649A4C232D5F60B29F8A3CC2 /* DeepgramSTTServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepgramSTTServiceTests.swift; sourceTree = "<group>"; };
-		68BEF421B3B705117D9CA31A /* VoiceLearn.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = VoiceLearn.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		68BEF421B3B705117D9CA31A /* VoiceLearn.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceLearn.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B6839806CB0A8B4C586FF10 /* AssemblyAISTTService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssemblyAISTTService.swift; sourceTree = "<group>"; };
 		6FFA7F1BC8578438E8C65E54 /* VoiceLearnTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLearnTests.swift; sourceTree = "<group>"; };
 		71599E323CA773F8A514E7D3 /* CurriculumEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumEngineTests.swift; sourceTree = "<group>"; };
@@ -644,9 +644,6 @@
 					AD40FD102870715F99DDA61A = {
 						DevelopmentTeam = "";
 					};
-					F3A617C1E824546C188FE132 = {
-						DevelopmentTeam = "";
-					};
 				};
 			};
 			buildConfigurationList = 3564F834BDCDAF14C11CBC9C /* Build configuration list for PBXProject "VoiceLearn" */;
@@ -664,7 +661,6 @@
 				F0265842A78D3BED995F1309 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 				4951890113EB170D07DBC23A /* XCRemoteSwiftPackageReference "swift-log" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -800,6 +796,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = VoiceLearn/VoiceLearn.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VoiceLearn/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -839,6 +836,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = VoiceLearn/VoiceLearn.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = VoiceLearn/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;

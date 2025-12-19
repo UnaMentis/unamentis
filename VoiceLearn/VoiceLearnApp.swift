@@ -31,7 +31,7 @@ struct VoiceLearnApp: App {
         let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
         let buildDate = Self.getBuildDate()
         // Unique build ID - change this each time to verify new build is running
-        let buildID = "ATS_LOCAL_NET_20251218_K"
+        let buildID = "TTS_AUDIO_FIX_20251218_R"
         print("=======================================================")
         print("VoiceLearn App Starting")
         print("Version: \(appVersion) (Build \(buildNumber))")
@@ -49,10 +49,24 @@ struct VoiceLearnApp: App {
         // For simulator: localhost works automatically
         // For device: set the IP of your Mac running log_server.py
         #if DEBUG
-        // Read server IP from UserDefaults or use localhost
-        if let serverIP = UserDefaults.standard.string(forKey: "logServerIP"), !serverIP.isEmpty {
-            RemoteLogging.configure(serverIP: serverIP)
+        // Determine effective log server IP (same logic as SettingsView)
+        let selfHostedEnabled = UserDefaults.standard.bool(forKey: "selfHostedEnabled")
+        let primaryServerIP = UserDefaults.standard.string(forKey: "primaryServerIP") ?? ""
+        let logServerUsesSameIP = UserDefaults.standard.bool(forKey: "logServerUsesSameIP")
+        let logServerIP = UserDefaults.standard.string(forKey: "logServerIP") ?? ""
+
+        let effectiveLogIP: String
+        if logServerUsesSameIP && selfHostedEnabled && !primaryServerIP.isEmpty {
+            effectiveLogIP = primaryServerIP
         } else {
+            effectiveLogIP = logServerIP
+        }
+
+        if !effectiveLogIP.isEmpty {
+            print("[Logging] Using log server IP: \(effectiveLogIP)")
+            RemoteLogging.configure(serverIP: effectiveLogIP)
+        } else {
+            print("[Logging] No log server IP configured, using localhost (simulator only)")
             RemoteLogging.configure() // Uses localhost for simulator
         }
         #endif

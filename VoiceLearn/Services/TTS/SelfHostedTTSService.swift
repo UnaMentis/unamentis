@@ -104,7 +104,8 @@ public actor SelfHostedTTSService: TTSService {
 
     /// Synthesize text to audio stream
     public func synthesize(text: String) async throws -> AsyncStream<TTSAudioChunk> {
-        logger.info("Synthesizing text: \(text.prefix(50))...")
+        logger.info("SelfHostedTTS.synthesize called - text length: \(text.count), first 50 chars: '\(text.prefix(50))...'")
+        logger.info("SelfHostedTTS config - baseURL: \(baseURL.absoluteString), voice: \(voiceId), format: \(outputFormat.rawValue)")
 
         let startTime = Date()
         let currentVoiceId = voiceId
@@ -114,10 +115,12 @@ public actor SelfHostedTTSService: TTSService {
                 do {
                     // Build URL for speech endpoint
                     let speechURL = self.baseURL.appendingPathComponent("v1/audio/speech")
+                    self.logger.info("TTS request URL: \(speechURL.absoluteString)")
 
                     var request = URLRequest(url: speechURL)
                     request.httpMethod = "POST"
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    request.timeoutInterval = 60  // Allow up to 60 seconds for TTS
 
                     if let token = self.authToken {
                         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -132,20 +135,31 @@ public actor SelfHostedTTSService: TTSService {
                     ]
 
                     request.httpBody = try JSONSerialization.data(withJSONObject: body)
+                    self.logger.debug("TTS request body: model=tts-1, voice=\(currentVoiceId), format=\(self.outputFormat.rawValue)")
 
                     // Make request
+                    self.logger.info("Sending TTS request to Piper server...")
                     let (data, response) = try await URLSession.shared.data(for: request)
+                    self.logger.info("TTS response received - data size: \(data.count) bytes")
 
                     guard let httpResponse = response as? HTTPURLResponse else {
-                        throw TTSError.connectionFailed("Invalid response")
+                        self.logger.error("TTS response is not HTTPURLResponse")
+                        throw TTSError.connectionFailed("Invalid response type")
                     }
 
+                    self.logger.info("TTS HTTP status: \(httpResponse.statusCode)")
+
                     guard httpResponse.statusCode == 200 else {
+                        // Try to read error body
+                        if let errorBody = String(data: data, encoding: .utf8) {
+                            self.logger.error("TTS error response body: \(errorBody)")
+                        }
                         throw TTSError.connectionFailed("HTTP \(httpResponse.statusCode)")
                     }
 
                     // Create audio chunk from response data
                     // Piper outputs WAV which is PCM 16-bit at 22050 Hz (mono)
+                    self.logger.info("Creating TTSAudioChunk with \(data.count) bytes of audio data")
                     let chunk = TTSAudioChunk(
                         audioData: data,
                         format: .pcmInt16(sampleRate: 22050, channels: 1),
@@ -154,6 +168,7 @@ public actor SelfHostedTTSService: TTSService {
                         isLast: true
                     )
 
+                    self.logger.info("Yielding TTS chunk to stream")
                     continuation.yield(chunk)
 
                     // Update metrics
@@ -163,11 +178,11 @@ public actor SelfHostedTTSService: TTSService {
                     self.synthesisTimings.append(latency)
                     self.updateMetrics()
 
-                    self.logger.debug("TTS synthesis complete: \(text.count) chars in \(String(format: "%.3f", latency))s")
+                    self.logger.info("TTS synthesis complete: \(text.count) chars -> \(data.count) bytes in \(String(format: "%.3f", latency))s")
 
                     continuation.finish()
                 } catch {
-                    self.logger.error("TTS synthesis failed: \(error.localizedDescription)")
+                    self.logger.error("TTS synthesis failed: \(error.localizedDescription), full error: \(error)")
                     continuation.finish()
                 }
             }

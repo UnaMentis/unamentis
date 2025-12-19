@@ -857,16 +857,18 @@ class SessionViewModel: ObservableObject {
 
         // Configure LLM based on settings
         logger.info("LLM provider setting: \(llmProviderSetting.rawValue)")
+        logger.info("LLM config - selfHostedEnabled: \(selfHostedEnabled), serverIP: '\(serverIP)'")
 
         switch llmProviderSetting {
         case .localMLX:
             // On-device LLM not currently available (API incompatible), fall back to self-hosted
             logger.info("localMLX selected - falling back to SelfHostedLLMService (Ollama)")
             let llmModelSetting = UserDefaults.standard.string(forKey: "llmModel") ?? "llama3.2:3b"
+            logger.info("LLM model from UserDefaults: '\(llmModelSetting)'")
 
             // Use configured server IP if available, otherwise fall back to localhost (simulator only)
             if selfHostedEnabled && !serverIP.isEmpty {
-                logger.info("Using self-hosted server at \(serverIP):11434")
+                logger.info("Creating SelfHostedLLMService.ollama(host: \(serverIP), model: \(llmModelSetting))")
                 llmService = SelfHostedLLMService.ollama(host: serverIP, model: llmModelSetting)
             } else {
                 logger.warning("No server IP configured - using localhost (only works on simulator)")
@@ -889,10 +891,12 @@ class SessionViewModel: ObservableObject {
         case .selfHosted:
             // Use SelfHostedLLMService to connect to Ollama server
             var llmModelSetting = UserDefaults.standard.string(forKey: "llmModel") ?? "llama3.2:3b"
+            logger.info("selfHosted selected - initial llmModel from UserDefaults: '\(llmModelSetting)'")
 
             // If the model setting looks like an OpenAI model, use discovered models or fallback
             let openAIModels = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"]
             if openAIModels.contains(llmModelSetting) {
+                logger.warning("Model '\(llmModelSetting)' looks like an OpenAI model, attempting to discover server models")
                 // Get discovered models from server config
                 let discoveredModels = await ServerConfigManager.shared.getAllDiscoveredModels()
                 if !discoveredModels.isEmpty {
@@ -906,7 +910,7 @@ class SessionViewModel: ObservableObject {
 
             // Use configured server IP if available, otherwise fall back to localhost (simulator only)
             if selfHostedEnabled && !serverIP.isEmpty {
-                logger.info("Using self-hosted LLM at \(serverIP):11434 with model: \(llmModelSetting)")
+                logger.info("Creating SelfHostedLLMService.ollama(host: \(serverIP), model: \(llmModelSetting))")
                 llmService = SelfHostedLLMService.ollama(host: serverIP, model: llmModelSetting)
             } else {
                 logger.warning("No server IP configured - using localhost (only works on simulator)")
