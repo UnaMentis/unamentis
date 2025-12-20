@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceLearn Management Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        dark: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            850: '#162032',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        accent: {
+                            primary: '#6366f1',
+                            secondary: '#8b5cf6',
+                            success: '#10b981',
+                            warning: '#f59e0b',
+                            danger: '#ef4444',
+                            info: '#3b82f6',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #334155 #1e293b;
+        }
+        *::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        *::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        *::-webkit-scrollbar-thumb {
+            background-color: #334155;
+            border-radius: 4px;
+        }
+        *::-webkit-scrollbar-thumb:hover {
+            background-color: #475569;
+        }
+        .gradient-border {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            padding: 1px;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+        }
+        .glow-success {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+        .glow-danger {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+        .glow-primary {
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.2);
+        }
+        .log-entry {
+            transition: all 0.15s ease;
+        }
+        .log-entry:hover {
+            background: rgba(51, 65, 85, 0.5);
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        .status-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-dark-950 text-dark-100 font-sans min-h-screen">
+    <!-- Background Pattern -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl from-accent-primary/5 via-transparent to-transparent"></div>
+        <div class="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr from-accent-secondary/5 via-transparent to-transparent"></div>
+    </div>
+
+    <div class="relative z-10">
+        <!-- Header -->
+        <header class="border-b border-dark-800/50 glass sticky top-0 z-50">
+            <div class="max-w-[1920px] mx-auto px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-primary to-accent-secondary flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h1 class="text-xl font-bold gradient-text">VoiceLearn</h1>
+                                <p class="text-xs text-dark-400">Management Console</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-6">
+                        <!-- Connection Status -->
+                        <div id="connection-status" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-dark-800/50 border border-dark-700/50">
+                            <div id="connection-dot" class="w-2 h-2 rounded-full bg-dark-500"></div>
+                            <span id="connection-text" class="text-sm text-dark-400">Connecting...</span>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div class="hidden md:flex items-center gap-4 text-sm">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-accent-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path>
+                                </svg>
+                                <span class="text-dark-300"><span id="header-logs" class="font-semibold text-dark-100">0</span> logs</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-accent-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                </svg>
+                                <span class="text-dark-300"><span id="header-clients" class="font-semibold text-dark-100">0</span> clients</span>
+                            </div>
+                        </div>
+
+                        <!-- Time -->
+                        <div class="text-sm text-dark-400 font-mono" id="current-time">--:--:--</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="border-b border-dark-800/50 bg-dark-900/50">
+            <div class="max-w-[1920px] mx-auto px-6">
+                <div class="flex gap-1">
+                    <button class="nav-tab active" data-tab="dashboard">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                        </svg>
+                        Dashboard
+                    </button>
+                    <button class="nav-tab" data-tab="metrics">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        Metrics
+                    </button>
+                    <button class="nav-tab" data-tab="logs">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Logs
+                    </button>
+                    <button class="nav-tab" data-tab="clients">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        Clients
+                    </button>
+                    <button class="nav-tab" data-tab="servers">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                        </svg>
+                        Servers
+                    </button>
+                    <button class="nav-tab" data-tab="models">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                        </svg>
+                        Models
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <style>
+            .nav-tab {
+                @apply flex items-center gap-2 px-4 py-3 text-sm font-medium text-dark-400 border-b-2 border-transparent transition-all duration-200 hover:text-dark-200 hover:bg-dark-800/30;
+            }
+            .nav-tab.active {
+                @apply text-accent-primary border-accent-primary bg-dark-800/20;
+            }
+        </style>
+
+        <!-- Main Content -->
+        <main class="max-w-[1920px] mx-auto p-6">
+            <!-- Dashboard Tab -->
+            <div id="tab-dashboard" class="tab-content">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-accent-primary/20 text-accent-primary">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="stat-uptime">0s</div>
+                            <div class="stat-label">Uptime</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-accent-success/20 text-accent-success">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="stat-healthy-servers">0/0</div>
+                            <div class="stat-label">Healthy Servers</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-accent-info/20 text-accent-info">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="stat-online-clients">0</div>
+                            <div class="stat-label">Online Clients</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-accent-secondary/20 text-accent-secondary">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="stat-total-logs">0</div>
+                            <div class="stat-label">Total Logs</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-accent-warning/20 text-accent-warning">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="stat-warnings">0</div>
+                            <div class="stat-label">Warnings</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-accent-danger/20 text-accent-danger">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="stat-errors">0</div>
+                            <div class="stat-label">Errors</div>
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    .stat-card {
+                        @apply flex items-center gap-3 p-4 rounded-xl bg-dark-800/50 border border-dark-700/50 hover:border-dark-600/50 transition-all duration-200;
+                    }
+                    .stat-icon {
+                        @apply w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0;
+                    }
+                    .stat-value {
+                        @apply text-xl font-bold text-dark-100;
+                    }
+                    .stat-label {
+                        @apply text-xs text-dark-400;
+                    }
+                </style>
+
+                <!-- Dashboard Content -->
+                <div class="grid lg:grid-cols-3 gap-6">
+                    <!-- Latency Chart -->
+                    <div class="lg:col-span-2 card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                </svg>
+                                Latency Overview
+                            </h3>
+                        </div>
+                        <div class="p-4">
+                            <canvas id="latency-chart" height="200"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Recent Activity
+                            </h3>
+                        </div>
+                        <div class="p-4 max-h-[300px] overflow-y-auto" id="recent-activity">
+                            <div class="text-center text-dark-500 py-8">
+                                <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                </svg>
+                                <p>No recent activity</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Server Status -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                                </svg>
+                                Server Status
+                            </h3>
+                        </div>
+                        <div class="p-4" id="dashboard-servers">
+                            <div class="shimmer h-16 rounded-lg mb-2"></div>
+                            <div class="shimmer h-16 rounded-lg mb-2"></div>
+                            <div class="shimmer h-16 rounded-lg"></div>
+                        </div>
+                    </div>
+
+                    <!-- Connected Clients -->
+                    <div class="card lg:col-span-2">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                Connected Clients
+                            </h3>
+                        </div>
+                        <div class="p-4" id="dashboard-clients">
+                            <div class="text-center text-dark-500 py-8">
+                                <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                <p>No clients connected</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metrics Tab -->
+            <div id="tab-metrics" class="tab-content hidden">
+                <!-- Metrics Cards -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-label">Avg E2E Latency</span>
+                            <span class="metric-badge bg-accent-primary/20 text-accent-primary">median</span>
+                        </div>
+                        <div class="metric-value" id="metric-e2e">-- ms</div>
+                        <div class="metric-chart">
+                            <canvas id="e2e-sparkline" height="40"></canvas>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-label">LLM TTFT</span>
+                            <span class="metric-badge bg-accent-secondary/20 text-accent-secondary">median</span>
+                        </div>
+                        <div class="metric-value" id="metric-llm">-- ms</div>
+                        <div class="metric-chart">
+                            <canvas id="llm-sparkline" height="40"></canvas>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-label">STT Latency</span>
+                            <span class="metric-badge bg-accent-success/20 text-accent-success">median</span>
+                        </div>
+                        <div class="metric-value" id="metric-stt">-- ms</div>
+                        <div class="metric-chart">
+                            <canvas id="stt-sparkline" height="40"></canvas>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-label">TTS TTFB</span>
+                            <span class="metric-badge bg-accent-info/20 text-accent-info">median</span>
+                        </div>
+                        <div class="metric-value" id="metric-tts">-- ms</div>
+                        <div class="metric-chart">
+                            <canvas id="tts-sparkline" height="40"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    .metric-card {
+                        @apply p-4 rounded-xl bg-dark-800/50 border border-dark-700/50;
+                    }
+                    .metric-header {
+                        @apply flex items-center justify-between mb-2;
+                    }
+                    .metric-label {
+                        @apply text-sm text-dark-400;
+                    }
+                    .metric-badge {
+                        @apply text-xs px-2 py-0.5 rounded-full font-medium;
+                    }
+                    .metric-value {
+                        @apply text-2xl font-bold text-dark-100 mb-2;
+                    }
+                    .metric-chart {
+                        @apply mt-2;
+                    }
+                </style>
+
+                <!-- Charts -->
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Latency Distribution</h3>
+                        </div>
+                        <div class="p-4">
+                            <canvas id="latency-distribution-chart" height="250"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Cost Breakdown</h3>
+                        </div>
+                        <div class="p-4">
+                            <canvas id="cost-chart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metrics Table -->
+                <div class="card mt-6">
+                    <div class="card-header">
+                        <h3 class="card-title">Session History</h3>
+                        <button class="btn-secondary text-sm" onclick="refreshMetrics()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-dark-700/50">
+                                    <th class="table-header">Time</th>
+                                    <th class="table-header">Client</th>
+                                    <th class="table-header">Duration</th>
+                                    <th class="table-header">Turns</th>
+                                    <th class="table-header">E2E</th>
+                                    <th class="table-header">LLM</th>
+                                    <th class="table-header">Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody id="metrics-table-body">
+                                <tr>
+                                    <td colspan="7" class="text-center text-dark-500 py-8">No session data yet</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <style>
+                    .table-header {
+                        @apply text-left text-xs font-medium text-dark-400 uppercase tracking-wider px-4 py-3;
+                    }
+                    .table-cell {
+                        @apply px-4 py-3 text-sm;
+                    }
+                </style>
+            </div>
+
+            <!-- Logs Tab -->
+            <div id="tab-logs" class="tab-content hidden">
+                <!-- Log Filters -->
+                <div class="flex flex-wrap items-center gap-4 mb-6">
+                    <div class="flex-1 min-w-[200px]">
+                        <div class="relative">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input type="text" id="log-search" placeholder="Search logs..." class="input-field pl-10">
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="log-level-btn active" data-level="">All</button>
+                        <button class="log-level-btn" data-level="DEBUG">Debug</button>
+                        <button class="log-level-btn" data-level="INFO">Info</button>
+                        <button class="log-level-btn" data-level="WARNING">Warning</button>
+                        <button class="log-level-btn" data-level="ERROR">Error</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="btn-secondary" id="logs-pause-btn" onclick="toggleLogsPause()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Pause
+                        </button>
+                        <button class="btn-secondary" onclick="clearLogs()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <style>
+                    .input-field {
+                        @apply w-full px-4 py-2 bg-dark-800 border border-dark-700 rounded-lg text-dark-100 placeholder-dark-500 focus:outline-none focus:border-accent-primary focus:ring-1 focus:ring-accent-primary transition-all;
+                    }
+                    .log-level-btn {
+                        @apply px-3 py-1.5 text-sm font-medium rounded-lg border border-dark-700 text-dark-400 hover:text-dark-200 hover:bg-dark-700/50 transition-all;
+                    }
+                    .log-level-btn.active {
+                        @apply bg-accent-primary/20 border-accent-primary/50 text-accent-primary;
+                    }
+                    .btn-secondary {
+                        @apply flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-dark-700 text-dark-300 hover:text-dark-100 hover:bg-dark-700/50 transition-all;
+                    }
+                </style>
+
+                <!-- Log Viewer -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            Live Logs
+                            <span id="logs-count" class="ml-2 text-sm font-normal text-dark-400">(0 entries)</span>
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <div id="logs-live-indicator" class="flex items-center gap-1.5 text-sm text-accent-success">
+                                <div class="w-2 h-2 rounded-full bg-accent-success status-dot"></div>
+                                Live
+                            </div>
+                        </div>
+                    </div>
+                    <div class="log-viewer" id="log-container">
+                        <div class="text-center text-dark-500 py-12">
+                            <svg class="w-16 h-16 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-lg font-medium">Waiting for logs...</p>
+                            <p class="text-sm mt-1">Logs will appear here in real-time</p>
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    .log-viewer {
+                        @apply font-mono text-sm overflow-y-auto max-h-[600px] bg-dark-900/50;
+                    }
+                    .log-entry {
+                        @apply px-4 py-2 border-b border-dark-800/50 flex items-start gap-3;
+                    }
+                    .log-time {
+                        @apply text-dark-500 flex-shrink-0 w-24;
+                    }
+                    .log-level {
+                        @apply flex-shrink-0 w-16 text-center text-xs font-bold uppercase px-2 py-0.5 rounded;
+                    }
+                    .log-level-debug { @apply bg-dark-600/50 text-dark-300; }
+                    .log-level-info { @apply bg-accent-info/20 text-accent-info; }
+                    .log-level-warning { @apply bg-accent-warning/20 text-accent-warning; }
+                    .log-level-error { @apply bg-accent-danger/20 text-accent-danger; }
+                    .log-level-critical { @apply bg-accent-danger/40 text-accent-danger; }
+                    .log-message {
+                        @apply flex-1 text-dark-200 break-all;
+                    }
+                    .log-source {
+                        @apply text-dark-500 text-xs flex-shrink-0;
+                    }
+                </style>
+            </div>
+
+            <!-- Clients Tab -->
+            <div id="tab-clients" class="tab-content hidden">
+                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-accent-success/20 text-accent-success">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="clients-online">0</div>
+                            <div class="stat-label">Online</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-accent-warning/20 text-accent-warning">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="clients-idle">0</div>
+                            <div class="stat-label">Idle</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon bg-dark-500/20 text-dark-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="clients-offline">0</div>
+                            <div class="stat-label">Offline</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Remote Clients</h3>
+                        <button class="btn-secondary text-sm" onclick="refreshClients()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="p-4" id="clients-list">
+                        <div class="text-center text-dark-500 py-12">
+                            <svg class="w-16 h-16 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                            <p class="text-lg font-medium">No clients connected</p>
+                            <p class="text-sm mt-1">Clients will appear here when they connect</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Servers Tab -->
+            <div id="tab-servers" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">Backend Servers</h2>
+                    <div class="flex gap-2">
+                        <button class="btn-secondary" onclick="refreshServers()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                        <button class="btn-primary" onclick="showAddServerModal()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Server
+                        </button>
+                    </div>
+                </div>
+
+                <style>
+                    .btn-primary {
+                        @apply flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-accent-primary hover:bg-accent-primary/80 text-white transition-all;
+                    }
+                </style>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="servers-grid">
+                    <!-- Server cards will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Models Tab -->
+            <div id="tab-models" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">Available Models</h2>
+                    <button class="btn-secondary" onclick="refreshModels()">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Model Type Filters -->
+                <div class="flex gap-4 mb-6">
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-secondary/10 border border-accent-secondary/30">
+                        <svg class="w-5 h-5 text-accent-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="font-medium" id="models-llm-count">0</span>
+                        <span class="text-dark-400">LLM</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-success/10 border border-accent-success/30">
+                        <svg class="w-5 h-5 text-accent-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                        </svg>
+                        <span class="font-medium" id="models-stt-count">0</span>
+                        <span class="text-dark-400">STT</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-info/10 border border-accent-info/30">
+                        <svg class="w-5 h-5 text-accent-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 0112.728 0"></path>
+                        </svg>
+                        <span class="font-medium" id="models-tts-count">0</span>
+                        <span class="text-dark-400">TTS</span>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="models-grid">
+                    <!-- Model cards will be inserted here -->
+                </div>
+            </div>
+        </main>
+
+        <style>
+            .card {
+                @apply rounded-xl bg-dark-800/50 border border-dark-700/50 overflow-hidden;
+            }
+            .card-header {
+                @apply flex items-center justify-between px-4 py-3 border-b border-dark-700/50 bg-dark-800/30;
+            }
+            .card-title {
+                @apply flex items-center gap-2 text-sm font-semibold text-dark-200;
+            }
+        </style>
+    </div>
+
+    <!-- Add Server Modal -->
+    <div id="add-server-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-dark-950/80 backdrop-blur-sm" onclick="hideAddServerModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
+            <div class="card animate-slide-up">
+                <div class="card-header">
+                    <h3 class="card-title">Add Server</h3>
+                    <button onclick="hideAddServerModal()" class="text-dark-400 hover:text-dark-200">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <form id="add-server-form" class="p-4 space-y-4" onsubmit="addServer(event)">
+                    <div>
+                        <label class="block text-sm font-medium text-dark-300 mb-1">Name</label>
+                        <input type="text" name="name" required class="input-field" placeholder="My Server">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-dark-300 mb-1">Type</label>
+                        <select name="type" class="input-field">
+                            <option value="ollama">Ollama (LLM)</option>
+                            <option value="whisper">Whisper (STT)</option>
+                            <option value="piper">Piper (TTS)</option>
+                            <option value="voicelearnGateway">VoiceLearn Gateway</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-dark-300 mb-1">URL</label>
+                        <input type="url" name="url" required class="input-field" placeholder="http://localhost:11434">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" class="btn-secondary" onclick="hideAddServerModal()">Cancel</button>
+                        <button type="submit" class="btn-primary">Add Server</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
