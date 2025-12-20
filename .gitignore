@@ -70,3 +70,7 @@ models/
 # llama.cpp XCFramework (large binary, download separately)
 llama.xcframework/
 llama-xcframework.tar.gz
+
+# llama.cpp source clones (used for building, not tracked)
+llama.cpp/
+tools/llama.cpp/
