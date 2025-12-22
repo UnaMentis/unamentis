@@ -393,12 +393,13 @@ struct TopicDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Start Session Button - Always visible at top
+            // Uses waveform icon (not microphone) because the AI speaks first in curriculum sessions
             Button {
                 showingSession = true
             } label: {
                 HStack {
-                    Image(systemName: "mic.fill")
-                    Text("Start Voice Session")
+                    Image(systemName: "waveform")
+                    Text("Start Lesson")
                 }
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 20)

@@ -44,9 +44,18 @@ public struct SessionView: View {
                 .ignoresSafeArea()
 
                 VStack(spacing: 12) {
+                    // Topic progress bar - only for curriculum sessions
+                    if topic != nil && viewModel.totalSegments > 0 {
+                        TopicProgressBar(
+                            completedSegments: viewModel.completedSegmentCount,
+                            totalSegments: viewModel.totalSegments
+                        )
+                        .padding(.top, 8)
+                    }
+
                     // Status indicator
                     SessionStatusView(state: viewModel.state)
-                        .padding(.top, 12)
+                        .padding(.top, topic != nil ? 4 : 12)
 
                     // Transcript display - takes most of the space
                     TranscriptView(
@@ -138,6 +147,49 @@ public struct SessionView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Topic Progress Bar
+
+/// Minimal progress bar showing how far through a topic session the user is
+struct TopicProgressBar: View {
+    let completedSegments: Int
+    let totalSegments: Int
+
+    private var progress: Double {
+        guard totalSegments > 0 else { return 0 }
+        return Double(completedSegments) / Double(totalSegments)
+    }
+
+    var body: some View {
+        VStack(spacing: 4) {
+            // Progress bar
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // Background track
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 4)
+
+                    // Progress fill
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.blue)
+                        .frame(width: geometry.size.width * progress, height: 4)
+                        .animation(.easeInOut(duration: 0.3), value: progress)
+                }
+            }
+            .frame(height: 4)
+
+            // Progress text (minimal)
+            HStack {
+                Spacer()
+                Text("\(completedSegments)/\(totalSegments)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 16)
     }
 }
 
@@ -839,8 +891,20 @@ class SessionViewModel: ObservableObject {
     /// Audio player for direct transcript playback
     private var audioPlayer: AVAudioPlayer?
 
-    /// Audio queue for sequential playback of transcript segments
-    /// Each item contains the audio data and associated text for synchronized display
+    /// Audio queue for sequential playback of transcript segments.
+    ///
+    /// **DESIGN PRINCIPLE: Synchronized Text/Audio Display**
+    ///
+    /// Text is ONLY displayed when its corresponding audio starts playing.
+    /// This prevents the jarring UX of seeing 4-6 paragraphs appear at once.
+    /// The experience should feel "live" - as if the AI is speaking in real-time.
+    ///
+    /// Flow:
+    /// 1. Server sends text → buffered in `pendingTextSegments`
+    /// 2. Server sends audio → combined with buffered text, queued here
+    /// 3. `playNextAudioSegment()` → displays text AND starts audio together
+    ///
+    /// See docs/CURRICULUM_SESSION_UX.md for full design documentation.
     private var audioQueue: [(audio: Data, text: String, index: Int)] = []
 
     /// Whether audio is currently playing
@@ -867,11 +931,13 @@ class SessionViewModel: ObservableObject {
         return state == .aiSpeaking || state == .aiThinking
     }
 
-    /// Pending text segments waiting for audio (keyed by segment index)
+    /// Pending text segments waiting for audio (keyed by segment index).
+    /// Text is buffered here until its audio arrives, then both are displayed together.
+    /// See `audioQueue` documentation for the full synchronization design.
     private var pendingTextSegments: [Int: String] = [:]
 
     /// Total segments for progress tracking
-    private var totalSegments: Int = 0
+    @Published var totalSegments: Int = 0
 
     /// Completed segment count for progress tracking
     @Published var completedSegmentCount: Int = 0
