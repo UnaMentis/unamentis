@@ -6,6 +6,7 @@
 import SwiftUI
 import Combine
 import Logging
+import AVFoundation
 
 #if os(macOS)
 import AppKit
@@ -81,7 +82,7 @@ public struct SessionView: View {
                 }
                 .padding(.horizontal, 20)
             }
-            .navigationTitle("Voice Session")
+            .navigationTitle(topic?.title ?? "Voice Session")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -110,6 +111,12 @@ public struct SessionView: View {
                 Button("OK") { viewModel.showError = false }
             } message: {
                 Text(viewModel.errorMessage)
+            }
+            .task {
+                // Auto-start session when initiated from a topic (lecture mode)
+                if topic != nil && !viewModel.isSessionActive && !viewModel.isLoading {
+                    await viewModel.toggleSession(appState: appState)
+                }
             }
         }
     }
@@ -695,6 +702,21 @@ struct ConversationMessage: Identifiable {
     let timestamp: Date
 }
 
+// MARK: - Audio Player Delegate
+
+/// Delegate to handle audio playback completion for sequential segment playback
+final class AudioPlayerDelegate: NSObject, AVAudioPlayerDelegate, @unchecked Sendable {
+    private let onFinish: () -> Void
+
+    init(onFinish: @escaping () -> Void) {
+        self.onFinish = onFinish
+    }
+
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        onFinish()
+    }
+}
+
 // MARK: - Session View Model
 
 @MainActor
@@ -725,6 +747,24 @@ class SessionViewModel: ObservableObject {
     private let logger = Logger(label: "com.unamentis.session.viewmodel")
     private var sessionManager: SessionManager?
     private var subscribers = Set<AnyCancellable>()
+
+    /// Transcript streaming service for direct TTS playback (bypasses LLM)
+    private let transcriptStreamer = TranscriptStreamingService()
+
+    /// Audio player for direct transcript playback
+    private var audioPlayer: AVAudioPlayer?
+
+    /// Audio queue for sequential playback of transcript segments
+    private var audioQueue: [Data] = []
+
+    /// Whether audio is currently playing
+    private var isPlayingAudio: Bool = false
+
+    /// Audio player delegate for handling playback completion
+    private var audioDelegate: AudioPlayerDelegate?
+
+    /// Whether we're using direct transcript streaming (bypasses LLM)
+    @Published var isDirectStreamingMode: Bool = false
 
     /// Topic for curriculum-based sessions (optional)
     let topic: Topic?
@@ -786,8 +826,10 @@ class SessionViewModel: ObservableObject {
         if let curriculum = topic.curriculum,
            let curriculumId = curriculum.id {
             do {
-                // Configure service if needed
-                try await CurriculumService.shared.configure(host: "localhost", port: 8765)
+                // Configure service using server IP from UserDefaults
+                let serverIP = UserDefaults.standard.string(forKey: "primaryServerIP") ?? ""
+                let host = serverIP.isEmpty ? "localhost" : serverIP
+                try await CurriculumService.shared.configure(host: host, port: 8766)
 
                 vlcfTranscript = try await CurriculumService.shared.fetchTopicTranscript(
                     curriculumId: curriculumId.uuidString,
@@ -1037,6 +1079,89 @@ class SessionViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
+        // Get self-hosted server settings
+        let selfHostedEnabled = UserDefaults.standard.bool(forKey: "selfHostedEnabled")
+        let serverIP = UserDefaults.standard.string(forKey: "primaryServerIP") ?? ""
+
+        // Check if we should use direct transcript streaming (bypasses LLM for pre-written content)
+        // Use sourceId (UMLCF ID) for server communication, not the Core Data UUID
+        if let topic = topic,
+           let topicSourceId = topic.sourceId,
+           let curriculum = topic.curriculum,
+           let curriculumSourceId = curriculum.sourceId,
+           selfHostedEnabled,
+           !serverIP.isEmpty {
+
+            // Check if server has transcript for this topic
+            logger.info("Checking for direct transcript streaming for topic: \(topic.title ?? "unknown")")
+            logger.info("Using sourceIds - curriculum: \(curriculumSourceId), topic: \(topicSourceId)")
+
+            // Configure transcript streamer
+            await transcriptStreamer.configure(host: serverIP, port: 8766)
+
+            // Try direct streaming - this bypasses the LLM entirely
+            isDirectStreamingMode = true
+            state = .aiThinking  // Start with "AI thinking" while fetching transcript
+            conversationHistory.removeAll()
+
+            logger.info("Starting direct transcript streaming (bypassing LLM)")
+
+            await transcriptStreamer.streamTopicAudio(
+                curriculumId: curriculumSourceId,
+                topicId: topicSourceId,
+                voice: UserDefaults.standard.string(forKey: "ttsVoice") ?? "nova",
+                onSegmentText: { [weak self] index, type, text in
+                    Task { @MainActor in
+                        guard let self = self else { return }
+                        // Add segment text to conversation history for display
+                        self.aiResponse = text
+                        self.conversationHistory.append(ConversationMessage(
+                            text: text,
+                            isUser: false,
+                            timestamp: Date()
+                        ))
+                        self.logger.info("Segment \(index): \(type) - \(text.prefix(50))...")
+                    }
+                },
+                onSegmentAudio: { [weak self] index, audioData in
+                    Task { @MainActor in
+                        guard let self = self else { return }
+                        // Transition to "AI speaking" when first audio arrives
+                        if self.state == .aiThinking {
+                            self.state = .aiSpeaking
+                            self.logger.info("Transitioning to aiSpeaking - first audio received")
+                        }
+                        // Play the audio
+                        self.playAudioData(audioData)
+                    }
+                },
+                onComplete: { [weak self] in
+                    Task { @MainActor in
+                        guard let self = self else { return }
+                        self.logger.info("Direct transcript streaming complete")
+                        // Note: Stay in aiSpeaking until audio queue is empty
+                        // The audio queue completion will set state to userSpeaking
+                    }
+                },
+                onError: { [weak self] error in
+                    Task { @MainActor in
+                        guard let self = self else { return }
+                        self.logger.error("Direct streaming failed: \(error), falling back to LLM mode")
+                        self.isDirectStreamingMode = false
+                        // Fall through to regular LLM-based session
+                        await self.startLLMSession(appState: appState)
+                    }
+                }
+            )
+            return
+        }
+
+        // Fall back to LLM-based session
+        await startLLMSession(appState: appState)
+    }
+
+    /// Start a traditional LLM-based session (used when no transcript available or direct streaming fails)
+    private func startLLMSession(appState: AppState) async {
         // Read user settings from UserDefaults
         let sttProviderSetting = UserDefaults.standard.string(forKey: "sttProvider")
             .flatMap { STTProvider(rawValue: $0) } ?? .glmASROnDevice
@@ -1240,6 +1365,14 @@ class SessionViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
+        // Stop direct streaming if active
+        if isDirectStreamingMode {
+            await transcriptStreamer.stopStreaming()
+            audioPlayer?.stop()
+            audioPlayer = nil
+            isDirectStreamingMode = false
+        }
+
         if let manager = sessionManager {
             await manager.stopSession()
         }
@@ -1252,6 +1385,57 @@ class SessionViewModel: ObservableObject {
         conversationHistory.removeAll()
         lastUserTranscript = ""
         lastAiResponse = ""
+    }
+
+    /// Queue audio data for sequential playback (for transcript streaming mode)
+    private func playAudioData(_ audioData: Data) {
+        audioQueue.append(audioData)
+        logger.info("Queued audio segment (\(audioData.count) bytes), queue size: \(audioQueue.count)")
+
+        // Start playback if not already playing
+        if !isPlayingAudio {
+            playNextAudioSegment()
+        }
+    }
+
+    /// Play the next audio segment from the queue
+    private func playNextAudioSegment() {
+        guard !audioQueue.isEmpty else {
+            isPlayingAudio = false
+            logger.info("Audio queue empty, playback complete")
+
+            // If we were in direct streaming mode and audio is done, transition state
+            if isDirectStreamingMode {
+                logger.info("Direct streaming audio complete, transitioning to userSpeaking")
+                state = .userSpeaking
+                isDirectStreamingMode = false
+            }
+            return
+        }
+
+        let audioData = audioQueue.removeFirst()
+        isPlayingAudio = true
+
+        do {
+            // The audio data is in WAV format from the TTS server
+            audioPlayer = try AVAudioPlayer(data: audioData)
+
+            // Set up delegate to play next segment when this one finishes
+            audioDelegate = AudioPlayerDelegate { [weak self] in
+                Task { @MainActor in
+                    self?.playNextAudioSegment()
+                }
+            }
+            audioPlayer?.delegate = audioDelegate
+
+            audioPlayer?.prepareToPlay()
+            audioPlayer?.play()
+            logger.info("Playing audio segment (\(audioData.count) bytes), \(audioQueue.count) remaining in queue")
+        } catch {
+            logger.error("Failed to play audio: \(error)")
+            // Try the next segment
+            playNextAudioSegment()
+        }
     }
 
     private func bindToSessionManager(_ manager: SessionManager) {

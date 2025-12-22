@@ -8,10 +8,9 @@ import Logging
 
 struct CurriculumView: View {
     @EnvironmentObject var appState: AppState
-    @State private var topics: [Topic] = []
-    @State private var curriculumName: String?
+    @State private var curricula: [Curriculum] = []
     @State private var isLoading = false
-    @State private var selectedTopic: Topic?
+    @State private var selectedCurriculum: Curriculum?
     @State private var showingImportOptions = false
     @State private var showingServerBrowser = false
     @State private var importError: String?
@@ -27,7 +26,7 @@ struct CurriculumView: View {
         let _ = Self.logger.debug("CurriculumView body START")
         NavigationStack {
             List {
-                if topics.isEmpty && !isLoading {
+                if curricula.isEmpty && !isLoading {
                     VStack(spacing: 20) {
                         ContentUnavailableView(
                             "No Curriculum Loaded",
@@ -44,29 +43,15 @@ struct CurriculumView: View {
                     }
                     .listRowBackground(Color.clear)
                 } else {
-                    if let name = curriculumName {
-                        Section {
-                            ForEach(topics, id: \.id) { topic in
-                                TopicRow(topic: topic)
-                                    .onTapGesture {
-                                        Self.logger.debug("Topic tapped: \(topic.title ?? "unknown")")
-                                        selectedTopic = topic
-                                    }
+                    ForEach(curricula, id: \.id) { curriculum in
+                        CurriculumRow(curriculum: curriculum)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                Self.logger.debug("Curriculum tapped: \(curriculum.name ?? "unknown")")
+                                selectedCurriculum = curriculum
                             }
-                        } header: {
-                            Text(name)
-                        } footer: {
-                            Text("\(topics.count) topics")
-                        }
-                    } else {
-                        ForEach(topics, id: \.id) { topic in
-                            TopicRow(topic: topic)
-                                .onTapGesture {
-                                    Self.logger.debug("Topic tapped: \(topic.title ?? "unknown")")
-                                    selectedTopic = topic
-                                }
-                        }
                     }
+                    .onDelete(perform: deleteCurricula)
                 }
             }
             .navigationTitle("Curriculum")
@@ -79,12 +64,12 @@ struct CurriculumView: View {
                             Label("Import Curriculum", systemImage: "square.and.arrow.down")
                         }
 
-                        if !topics.isEmpty {
+                        if !curricula.isEmpty {
                             Divider()
                             Button(role: .destructive) {
-                                Task { await deleteCurriculum() }
+                                Task { await deleteAllCurricula() }
                             } label: {
-                                Label("Delete Curriculum", systemImage: "trash")
+                                Label("Delete All Curricula", systemImage: "trash")
                             }
                         }
                     } label: {
@@ -97,20 +82,20 @@ struct CurriculumView: View {
             }
             .task {
                 Self.logger.info("CurriculumView .task STARTED")
-                await loadCurriculumAndTopics()
+                await loadCurricula()
                 Self.logger.info("CurriculumView .task COMPLETED")
             }
             .refreshable {
-                await loadCurriculumAndTopics()
+                await loadCurricula()
             }
-            .sheet(item: $selectedTopic) { topic in
+            .sheet(item: $selectedCurriculum) { curriculum in
                 NavigationStack {
-                    TopicDetailView(topic: topic)
+                    CurriculumDetailView(curriculum: curriculum)
                         .environmentObject(appState)
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
-                                Button("Done") {
-                                    selectedTopic = nil
+                                Button("Close") {
+                                    selectedCurriculum = nil
                                 }
                             }
                         }
@@ -131,7 +116,7 @@ struct CurriculumView: View {
                 ServerCurriculumBrowser { downloadedCurriculum in
                     // Curriculum was downloaded, refresh the view
                     showingServerBrowser = false
-                    Task { await loadCurriculumAndTopics() }
+                    Task { await loadCurricula() }
                 }
             }
             .alert("Import Error", isPresented: $showingError) {
@@ -150,7 +135,7 @@ struct CurriculumView: View {
             let seeder = SampleCurriculumSeeder()
             try seeder.seedPyTorchCurriculum()
             Self.logger.info("Sample curriculum seeded successfully")
-            await loadCurriculumAndTopics()
+            await loadCurricula()
         } catch {
             Self.logger.error("Failed to seed curriculum: \(error)")
             importError = error.localizedDescription
@@ -159,57 +144,169 @@ struct CurriculumView: View {
         }
     }
 
-    private func deleteCurriculum() async {
+    private func deleteAllCurricula() async {
         do {
             let seeder = SampleCurriculumSeeder()
             try seeder.deleteSampleCurriculum()
-            topics = []
-            curriculumName = nil
+            curricula = []
         } catch {
             importError = error.localizedDescription
             showingError = true
         }
     }
 
-    @MainActor
-    private func loadCurriculumAndTopics() async {
-        isLoading = true
-        Self.logger.info("loadCurriculumAndTopics START")
+    private func deleteCurricula(at offsets: IndexSet) {
+        let context = PersistenceController.shared.viewContext
 
-        // Load curriculum directly from Core Data (no engine required)
+        for index in offsets {
+            let curriculum = curricula[index]
+            Self.logger.info("Deleting curriculum: \(curriculum.name ?? "unknown")")
+            context.delete(curriculum)
+        }
+
+        do {
+            try context.save()
+            curricula.remove(atOffsets: offsets)
+            Self.logger.info("Successfully deleted \(offsets.count) curriculum(s)")
+        } catch {
+            Self.logger.error("Failed to delete curriculum: \(error)")
+            importError = error.localizedDescription
+            showingError = true
+        }
+    }
+
+    @MainActor
+    private func loadCurricula() async {
+        isLoading = true
+        Self.logger.info("loadCurricula START")
+
+        // Load all curricula from Core Data
         let context = PersistenceController.shared.viewContext
         let request = Curriculum.fetchRequest()
-        request.fetchLimit = 1
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Curriculum.createdAt, ascending: false)]
 
         do {
             let results = try context.fetch(request)
-            if let curriculum = results.first {
-                Self.logger.info("Found curriculum: \(curriculum.name ?? "unknown")")
-
-                // Get topics from the curriculum's relationship
-                var topicsList: [Topic] = []
-                if let orderedSet = curriculum.topics {
-                    topicsList = orderedSet.array as? [Topic] ?? []
-                }
-                let sortedTopics = topicsList.sorted { $0.orderIndex < $1.orderIndex }
-
-                self.topics = sortedTopics
-                self.curriculumName = curriculum.name
-                Self.logger.info("Loaded \(sortedTopics.count) topics")
-            } else {
-                Self.logger.info("No curriculum found in database")
-                self.topics = []
-                self.curriculumName = nil
-            }
+            self.curricula = results
+            Self.logger.info("Loaded \(results.count) curricula")
         } catch {
-            Self.logger.error("Failed to load curriculum: \(error)")
-            self.topics = []
-            self.curriculumName = nil
+            Self.logger.error("Failed to load curricula: \(error)")
+            self.curricula = []
         }
 
         self.isLoading = false
-        Self.logger.info("loadCurriculumAndTopics COMPLETE")
+        Self.logger.info("loadCurricula COMPLETE")
+    }
+}
+
+// MARK: - Curriculum Row (for list view)
+
+struct CurriculumRow: View {
+    @ObservedObject var curriculum: Curriculum
+
+    var body: some View {
+        HStack {
+            // Curriculum icon
+            ZStack {
+                Circle()
+                    .fill(Color.blue.opacity(0.1))
+                    .frame(width: 44, height: 44)
+
+                Image(systemName: "book.fill")
+                    .foregroundStyle(.blue)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(curriculum.name ?? "Untitled Curriculum")
+                    .font(.headline)
+
+                if let summary = curriculum.summary, !summary.isEmpty {
+                    Text(summary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                // Show topic count
+                let topicCount = curriculum.topics?.count ?? 0
+                Text("\(topicCount) topics")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: - Curriculum Detail View (shows topics)
+
+struct CurriculumDetailView: View {
+    @EnvironmentObject var appState: AppState
+    @ObservedObject var curriculum: Curriculum
+    @State private var selectedTopic: Topic?
+
+    private static let logger = Logger(label: "com.unamentis.curriculum.detail")
+
+    var sortedTopics: [Topic] {
+        guard let orderedSet = curriculum.topics else { return [] }
+        let topicsList = orderedSet.array as? [Topic] ?? []
+        return topicsList.sorted { $0.orderIndex < $1.orderIndex }
+    }
+
+    var body: some View {
+        List {
+            // Curriculum info section
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    if let summary = curriculum.summary, !summary.isEmpty {
+                        Text(summary)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    HStack {
+                        Label("\(sortedTopics.count) topics", systemImage: "list.bullet")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                }
+            }
+
+            // Topics section
+            Section("Topics") {
+                ForEach(sortedTopics, id: \.id) { topic in
+                    TopicRow(topic: topic)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            Self.logger.debug("Topic tapped: \(topic.title ?? "unknown")")
+                            selectedTopic = topic
+                        }
+                }
+            }
+        }
+        .navigationTitle(curriculum.name ?? "Curriculum")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.large)
+        #endif
+        .sheet(item: $selectedTopic) { topic in
+            NavigationStack {
+                TopicDetailView(topic: topic)
+                    .environmentObject(appState)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                selectedTopic = nil
+                            }
+                        }
+                    }
+            }
+        }
     }
 }
 
@@ -411,6 +508,8 @@ struct ServerCurriculumBrowser: View {
     @State private var curriculumDetail: CurriculumDetail?
     @State private var isDownloading = false
     @State private var downloadProgress: String?
+    @State private var downloadError: String?
+    @State private var showingDownloadError = false
 
     private static let logger = Logger(label: "com.unamentis.curriculum.browser")
 
@@ -487,14 +586,22 @@ struct ServerCurriculumBrowser: View {
                     onDownload: { await downloadCurriculum(curriculum) }
                 )
             }
+            .alert("Download Failed", isPresented: $showingDownloadError) {
+                Button("OK") { }
+            } message: {
+                Text(downloadError ?? "An unknown error occurred while downloading the curriculum.")
+            }
         }
     }
 
     private func configureCurriculumService() async {
-        // Get server configuration from ServerConfigManager
-        // For now, use a default local server address
+        // Get server IP from UserDefaults (configured in Settings)
+        let serverIP = UserDefaults.standard.string(forKey: "primaryServerIP") ?? ""
+        let host = serverIP.isEmpty ? "localhost" : serverIP
+
         do {
-            try await CurriculumService.shared.configure(host: "localhost", port: 8765)
+            try await CurriculumService.shared.configure(host: host, port: 8766)
+            Self.logger.info("Configured curriculum service with host: \(host):8766")
         } catch {
             Self.logger.error("Failed to configure curriculum service: \(error)")
         }
@@ -525,26 +632,73 @@ struct ServerCurriculumBrowser: View {
 
     @MainActor
     private func downloadCurriculum(_ curriculum: CurriculumSummary) async {
+        Self.logger.info("⬇️ Download initiated for curriculum: \(curriculum.title) (id: \(curriculum.id))")
+
         isDownloading = true
-        downloadProgress = "Downloading curriculum..."
+        downloadProgress = "Connecting to server..."
+        downloadError = nil
 
         do {
+            Self.logger.info("⬇️ Step 1: Creating parser...")
             let parser = VLCFParser()
-            downloadProgress = "Importing to device..."
+
+            Self.logger.info("⬇️ Step 2: Starting download from server...")
+            downloadProgress = "Downloading curriculum data..."
+
             let downloadedCurriculum = try await CurriculumService.shared.downloadAndImport(
                 curriculumId: curriculum.id,
                 parser: parser
             )
 
-            Self.logger.info("Successfully downloaded and imported curriculum: \(curriculum.title)")
+            Self.logger.info("✅ Successfully downloaded and imported curriculum: \(curriculum.title)")
+            Self.logger.info("✅ Curriculum has \(downloadedCurriculum.topics?.count ?? 0) topics")
+
+            downloadProgress = "Download complete!"
+
+            // Brief delay to show success message
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+
             isDownloading = false
             downloadProgress = nil
             selectedCurriculum = nil
             onDownload(downloadedCurriculum)
         } catch {
-            Self.logger.error("Failed to download curriculum: \(error)")
+            // Log full error details for debugging
+            Self.logger.error("❌ Failed to download curriculum: \(error)")
+            Self.logger.error("❌ Error type: \(type(of: error))")
+
+            var errorDetail = error.localizedDescription
+
+            if let decodingError = error as? DecodingError {
+                switch decodingError {
+                case .keyNotFound(let key, let context):
+                    let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
+                    Self.logger.error("❌ Missing key '\(key.stringValue)' at path: \(path)")
+                    errorDetail = "Missing data field: \(key.stringValue) at \(path)"
+                case .typeMismatch(let type, let context):
+                    let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
+                    Self.logger.error("❌ Type mismatch for \(type) at path: \(path)")
+                    errorDetail = "Data format error at: \(path)"
+                case .valueNotFound(let type, let context):
+                    let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
+                    Self.logger.error("❌ Value not found for \(type) at path: \(path)")
+                    errorDetail = "Missing value at: \(path)"
+                case .dataCorrupted(let context):
+                    let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
+                    Self.logger.error("❌ Data corrupted at path: \(path)")
+                    errorDetail = "Corrupted data at: \(path)"
+                @unknown default:
+                    Self.logger.error("❌ Unknown decoding error")
+                    errorDetail = "Unknown data format error"
+                }
+            } else if let serviceError = error as? CurriculumServiceError {
+                errorDetail = serviceError.errorDescription ?? error.localizedDescription
+            }
+
             isDownloading = false
-            downloadProgress = "Error: \(error.localizedDescription)"
+            downloadProgress = nil
+            downloadError = errorDetail
+            showingDownloadError = true
         }
     }
 }

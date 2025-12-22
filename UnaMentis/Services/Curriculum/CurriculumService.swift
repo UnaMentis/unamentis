@@ -226,7 +226,7 @@ public actor CurriculumService {
             throw CurriculumServiceError.noServerConfigured
         }
 
-        var components = URLComponents(url: baseURL.appendingPathComponent("/api/curricula"), resolvingAgainstBaseURL: false)
+        var components = URLComponents(url: baseURL.appendingPathComponent("api/curricula"), resolvingAgainstBaseURL: false)
         var queryItems: [URLQueryItem] = []
 
         if let search = search, !search.isEmpty {
@@ -269,7 +269,7 @@ public actor CurriculumService {
             throw CurriculumServiceError.noServerConfigured
         }
 
-        let url = baseURL.appendingPathComponent("/api/curricula/\(id)")
+        let url = baseURL.appendingPathComponent("api/curricula/\(id)")
 
         let (data, response) = try await session.data(from: url)
 
@@ -298,7 +298,7 @@ public actor CurriculumService {
             throw CurriculumServiceError.noServerConfigured
         }
 
-        let url = baseURL.appendingPathComponent("/api/curricula/\(id)/full")
+        let url = baseURL.appendingPathComponent("api/curricula/\(id)/full")
 
         let (data, response) = try await session.data(from: url)
 
@@ -325,6 +325,26 @@ public actor CurriculumService {
             // Try direct decoding
             do {
                 return try JSONDecoder().decode(UMLCFDocument.self, from: data)
+            } catch let decodingError as DecodingError {
+                // Provide detailed decoding error information
+                let errorDetail: String
+                switch decodingError {
+                case .keyNotFound(let key, let context):
+                    let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
+                    errorDetail = "Missing key '\(key.stringValue)' at path: \(path.isEmpty ? "root" : path)"
+                case .typeMismatch(let type, let context):
+                    let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
+                    errorDetail = "Type mismatch: expected \(type) at path: \(path.isEmpty ? "root" : path). \(context.debugDescription)"
+                case .valueNotFound(let type, let context):
+                    let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
+                    errorDetail = "Value not found: expected \(type) at path: \(path.isEmpty ? "root" : path)"
+                case .dataCorrupted(let context):
+                    let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
+                    errorDetail = "Data corrupted at path: \(path.isEmpty ? "root" : path). \(context.debugDescription)"
+                @unknown default:
+                    errorDetail = decodingError.localizedDescription
+                }
+                throw CurriculumServiceError.decodingError(errorDetail)
             } catch {
                 throw CurriculumServiceError.decodingError(error.localizedDescription)
             }
@@ -340,7 +360,7 @@ public actor CurriculumService {
             throw CurriculumServiceError.noServerConfigured
         }
 
-        let url = baseURL.appendingPathComponent("/api/curricula/\(curriculumId)/topics/\(topicId)/transcript")
+        let url = baseURL.appendingPathComponent("api/curricula/\(curriculumId)/topics/\(topicId)/transcript")
 
         let (data, response) = try await session.data(from: url)
 
@@ -369,7 +389,7 @@ public actor CurriculumService {
             throw CurriculumServiceError.noServerConfigured
         }
 
-        var request = URLRequest(url: baseURL.appendingPathComponent("/api/curricula/reload"))
+        var request = URLRequest(url: baseURL.appendingPathComponent("api/curricula/reload"))
         request.httpMethod = "POST"
 
         let (data, response) = try await session.data(for: request)

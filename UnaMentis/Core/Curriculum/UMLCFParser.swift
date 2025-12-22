@@ -26,9 +26,34 @@ public struct UMLCFDocument: Codable, Sendable {
     }
 }
 
+/// Flexible identifier that can decode from either a simple string or an object with catalog/value
 public struct UMLCFIdentifier: Codable, Sendable {
     public let catalog: String?
     public let value: String
+
+    public init(catalog: String? = nil, value: String) {
+        self.catalog = catalog
+        self.value = value
+    }
+
+    public init(from decoder: Decoder) throws {
+        // Try to decode as a simple string first
+        if let container = try? decoder.singleValueContainer(),
+           let stringValue = try? container.decode(String.self) {
+            self.catalog = nil
+            self.value = stringValue
+            return
+        }
+
+        // Try to decode as an object with catalog and value
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.catalog = try container.decodeIfPresent(String.self, forKey: .catalog)
+        self.value = try container.decode(String.self, forKey: .value)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case catalog, value
+    }
 }
 
 public struct UMLCFVersionInfo: Codable, Sendable {
@@ -58,13 +83,36 @@ public struct UMLCFMetadata: Codable, Sendable {
 }
 
 public struct UMLCFEducationalContext: Codable, Sendable {
+    // Server-provided fields
+    public let interactivityType: String?
+    public let interactivityLevel: String?
+    public let learningResourceType: [String]?
+    public let intendedEndUserRole: [String]?
+    public let context: [String]?
+    public let typicalAgeRange: String?
+    public let difficulty: String?
+    public let typicalLearningTime: String?
+    public let educationalAlignment: [UMLCFEducationalAlignment]?
+    public let audienceProfile: UMLCFAudienceProfile?
+
+    // Legacy/alternative fields (for backwards compatibility)
     public let alignment: UMLCFAlignment?
     public let targetAudience: UMLCFTargetAudience?
     public let prerequisites: [UMLCFPrerequisite]?
     public let estimatedDuration: String?
-    public let difficulty: String?
-    public let interactivityType: String?
-    public let learningResourceType: String?
+}
+
+public struct UMLCFEducationalAlignment: Codable, Sendable {
+    public let alignmentType: String?
+    public let educationalFramework: String?
+    public let targetName: String?
+    public let targetDescription: String?
+}
+
+public struct UMLCFAudienceProfile: Codable, Sendable {
+    public let educationLevel: String?
+    public let gradeLevel: String?
+    public let prerequisites: [UMLCFPrerequisite]?
 }
 
 public struct UMLCFAlignment: Codable, Sendable {
@@ -301,6 +349,7 @@ public actor UMLCFParser {
         // Create new Curriculum
         let curriculum = Curriculum(context: context)
         curriculum.id = UUID(uuidString: curriculumIdValue) ?? UUID()
+        curriculum.sourceId = curriculumIdValue  // Store UMLCF ID for server sync
         curriculum.name = document.title
         curriculum.summary = document.description
         curriculum.createdAt = parseDate(document.lifecycle?.created) ?? Date()
@@ -338,6 +387,7 @@ public actor UMLCFParser {
         if node.type == "topic" || node.type == "subtopic" || node.type == "lesson" {
             let topic = Topic(context: context)
             topic.id = UUID(uuidString: node.id.value) ?? UUID()
+            topic.sourceId = node.id.value  // Store UMLCF ID for server sync
             topic.title = node.title
             topic.orderIndex = currentIndex
             topic.mastery = 0.0

@@ -1200,8 +1200,8 @@ class DiagnosticsViewModel: ObservableObject {
             loggingServerStatus = .error
             loggingServerDetail = "No server IP configured"
         } else {
-            // Try to connect to logging server on port 8765
-            let logURL = URL(string: "http://\(effectiveLogIP):8765/health")
+            // Try to connect to logging server on port 8766
+            let logURL = URL(string: "http://\(effectiveLogIP):8766/health")
             if let url = logURL {
                 do {
                     var request = URLRequest(url: url)
@@ -1210,7 +1210,7 @@ class DiagnosticsViewModel: ObservableObject {
                     if let httpResponse = response as? HTTPURLResponse {
                         if httpResponse.statusCode == 200 {
                             loggingServerStatus = .ok
-                            loggingServerDetail = "\(effectiveLogIP):8765 connected"
+                            loggingServerDetail = "\(effectiveLogIP):8766 connected"
                         } else {
                             loggingServerStatus = .warning
                             loggingServerDetail = "HTTP \(httpResponse.statusCode)"
@@ -1221,7 +1221,7 @@ class DiagnosticsViewModel: ObservableObject {
                     }
                 } catch {
                     loggingServerStatus = .error
-                    loggingServerDetail = "Cannot reach \(effectiveLogIP):8765"
+                    loggingServerDetail = "Cannot reach \(effectiveLogIP):8766"
                 }
             } else {
                 loggingServerStatus = .error

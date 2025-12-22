@@ -15,6 +15,7 @@ public class Topic: NSManagedObject {
 
     @NSManaged public var id: UUID?
     @NSManaged public var title: String?
+    @NSManaged public var sourceId: String?  // UMLCF identifier for server sync
     @NSManaged public var outline: String?
     @NSManaged public var objectives: [String]?
     @NSManaged public var orderIndex: Int32

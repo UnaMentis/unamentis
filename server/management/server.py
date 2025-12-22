@@ -1523,10 +1523,12 @@ async def handle_get_topic_transcript(request: web.Request) -> web.Response:
             child_id = child.get("id", {}).get("value", "")
             if child_id == topic_id:
                 transcript = child.get("transcript", {})
+                # Extract segments directly for iOS client compatibility
+                segments = transcript.get("segments", []) if isinstance(transcript, dict) else []
                 return web.json_response({
                     "topic_id": topic_id,
                     "topic_title": child.get("title", ""),
-                    "transcript": transcript,
+                    "segments": segments,
                     "misconceptions": child.get("misconceptions", []),
                     "examples": child.get("examples", []),
                     "assessments": child.get("assessments", [])
@@ -1536,6 +1538,134 @@ async def handle_get_topic_transcript(request: web.Request) -> web.Response:
 
     except Exception as e:
         logger.error(f"Error getting topic transcript: {e}")
+        return web.json_response({"error": str(e)}, status=500)
+
+
+async def handle_stream_topic_audio(request: web.Request) -> web.StreamResponse:
+    """Stream audio for a topic's transcript segments.
+
+    This endpoint bypasses the LLM and directly converts transcript text to audio,
+    enabling near-instant playback of pre-written curriculum content.
+
+    Query params:
+        voice: TTS voice ID (default: "nova")
+        tts_server: TTS server to use - "vibevoice" (default) or "piper"
+    """
+    try:
+        curriculum_id = request.match_info.get("curriculum_id")
+        topic_id = request.match_info.get("topic_id")
+        voice = request.query.get("voice", "nova")
+        tts_server = request.query.get("tts_server", "vibevoice")
+
+        logger.info(f"Stream topic audio: curriculum={curriculum_id}, topic={topic_id}, voice={voice}, tts={tts_server}")
+
+        if curriculum_id not in state.curriculum_raw:
+            return web.json_response({"error": "Curriculum not found"}, status=404)
+
+        umlcf = state.curriculum_raw[curriculum_id]
+        content = umlcf.get("content", [])
+
+        if not content:
+            return web.json_response({"error": "No content in curriculum"}, status=404)
+
+        # Find the topic
+        root = content[0]
+        children = root.get("children", [])
+        transcript_segments = None
+        topic_title = ""
+
+        for child in children:
+            child_id = child.get("id", {}).get("value", "")
+            if child_id == topic_id:
+                transcript = child.get("transcript", {})
+                transcript_segments = transcript.get("segments", []) if isinstance(transcript, dict) else []
+                topic_title = child.get("title", "")
+                break
+
+        if transcript_segments is None:
+            return web.json_response({"error": "Topic not found"}, status=404)
+
+        if not transcript_segments:
+            return web.json_response({"error": "Topic has no transcript segments"}, status=404)
+
+        # Determine TTS server URL
+        if tts_server == "piper":
+            tts_url = "http://localhost:11402/v1/audio/speech"
+        else:  # vibevoice
+            tts_url = "http://localhost:8880/v1/audio/speech"
+
+        # Create streaming response
+        response = web.StreamResponse(
+            status=200,
+            reason="OK",
+            headers={
+                "Content-Type": "application/octet-stream",
+                "X-Topic-Title": topic_title,
+                "X-Segment-Count": str(len(transcript_segments)),
+                "Transfer-Encoding": "chunked"
+            }
+        )
+        await response.prepare(request)
+
+        # Stream audio for each segment
+        for idx, segment in enumerate(transcript_segments):
+            segment_text = segment.get("content", "")
+            segment_type = segment.get("type", "narration")
+
+            if not segment_text.strip():
+                continue
+
+            logger.info(f"  Segment {idx + 1}/{len(transcript_segments)}: {segment_type}, {len(segment_text)} chars")
+
+            # Send segment metadata as a header chunk
+            meta_header = f"SEG:{idx}:{segment_type}:{len(segment_text)}\n".encode('utf-8')
+            await response.write(meta_header)
+
+            # Request TTS for this segment
+            try:
+                async with aiohttp.ClientSession() as session:
+                    tts_payload = {
+                        "model": "tts-1",
+                        "input": segment_text,
+                        "voice": voice,
+                        "response_format": "wav"
+                    }
+
+                    async with session.post(tts_url, json=tts_payload, timeout=aiohttp.ClientTimeout(total=30)) as tts_response:
+                        if tts_response.status == 200:
+                            # Stream audio data as it arrives
+                            audio_data = await tts_response.read()
+
+                            # Send audio size header
+                            size_header = f"AUD:{len(audio_data)}\n".encode('utf-8')
+                            await response.write(size_header)
+
+                            # Send audio data in chunks
+                            chunk_size = 8192
+                            for i in range(0, len(audio_data), chunk_size):
+                                chunk = audio_data[i:i + chunk_size]
+                                await response.write(chunk)
+
+                            logger.info(f"    Sent {len(audio_data)} bytes of audio")
+                        else:
+                            error_text = await tts_response.text()
+                            logger.error(f"    TTS error: {tts_response.status} - {error_text}")
+                            # Send error marker
+                            await response.write(f"ERR:{tts_response.status}\n".encode('utf-8'))
+
+            except Exception as e:
+                logger.error(f"    TTS request failed: {e}")
+                await response.write(f"ERR:{str(e)}\n".encode('utf-8'))
+
+        # Send end marker
+        await response.write(b"END\n")
+        await response.write_eof()
+
+        logger.info(f"Completed streaming {len(transcript_segments)} segments for topic {topic_id}")
+        return response
+
+    except Exception as e:
+        logger.error(f"Error streaming topic audio: {e}")
         return web.json_response({"error": str(e)}, status=500)
 
 
@@ -1836,6 +1966,7 @@ def create_app() -> web.Application:
     app.router.add_get("/api/curricula/{curriculum_id}", handle_get_curriculum_detail)
     app.router.add_get("/api/curricula/{curriculum_id}/full", handle_get_curriculum_full)
     app.router.add_get("/api/curricula/{curriculum_id}/topics/{topic_id}/transcript", handle_get_topic_transcript)
+    app.router.add_get("/api/curricula/{curriculum_id}/topics/{topic_id}/stream-audio", handle_stream_topic_audio)
     app.router.add_post("/api/curricula/reload", handle_reload_curricula)
     app.router.add_post("/api/curricula/import", handle_import_curriculum)
     app.router.add_put("/api/curricula/{curriculum_id}", handle_save_curriculum)
