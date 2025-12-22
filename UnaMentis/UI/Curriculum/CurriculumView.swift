@@ -391,88 +391,93 @@ struct TopicDetailView: View {
     @State private var showingSession = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                // Status and Progress Section
+        VStack(spacing: 0) {
+            // Start Session Button - Always visible at top
+            Button {
+                showingSession = true
+            } label: {
                 HStack {
-                    StatusIcon(status: topic.status)
-                        .scaleEffect(1.5)
+                    Image(systemName: "mic.fill")
+                    Text("Start Voice Session")
+                }
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+            }
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity)
+            .background(Color(.systemBackground))
 
-                    VStack(alignment: .leading) {
-                        Text(topic.status.rawValue.capitalized)
-                            .font(.headline)
-                        if let progress = topic.progress {
-                            Text("\(Int(progress.timeSpent / 60)) minutes spent")
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Status and Progress Section
+                    HStack {
+                        StatusIcon(status: topic.status)
+                            .scaleEffect(1.5)
+
+                        VStack(alignment: .leading) {
+                            Text(topic.status.rawValue.capitalized)
+                                .font(.headline)
+                            if let progress = topic.progress {
+                                Text("\(Int(progress.timeSpent / 60)) minutes spent")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        Spacer()
+
+                        // Mastery indicator
+                        VStack {
+                            Text("\(Int(topic.mastery * 100))%")
+                                .font(.title2.bold())
+                            Text("Mastery")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
-
-                    Spacer()
-
-                    // Mastery indicator
-                    VStack {
-                        Text("\(Int(topic.mastery * 100))%")
-                            .font(.title2.bold())
-                        Text("Mastery")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    .padding()
+                    .background {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.ultraThinMaterial)
                     }
-                }
-                .padding()
-                .background {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(.ultraThinMaterial)
-                }
 
-                // Overview Section
-                if let outline = topic.outline, !outline.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Overview")
-                            .font(.headline)
-                        Text(outline)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
+                    // Overview Section
+                    if let outline = topic.outline, !outline.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Overview")
+                                .font(.headline)
+                            Text(outline)
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                        }
                     }
-                }
 
-                // Learning Objectives Section
-                if let objectives = topic.objectives, !objectives.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Learning Objectives")
-                            .font(.headline)
+                    // Learning Objectives Section
+                    if let objectives = topic.objectives, !objectives.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Learning Objectives")
+                                .font(.headline)
 
-                        ForEach(objectives, id: \.self) { objective in
-                            HStack(alignment: .top, spacing: 12) {
-                                Image(systemName: "checkmark.circle")
-                                    .foregroundStyle(.green)
-                                    .font(.body)
-                                Text(objective)
-                                    .font(.body)
+                            ForEach(objectives, id: \.self) { objective in
+                                HStack(alignment: .top, spacing: 12) {
+                                    Image(systemName: "checkmark.circle")
+                                        .foregroundStyle(.green)
+                                        .font(.body)
+                                    Text(objective)
+                                        .font(.body)
+                                }
                             }
                         }
                     }
                 }
-
-                Spacer(minLength: 40)
-
-                // Start Session Button
-                Button {
-                    showingSession = true
-                } label: {
-                    HStack {
-                        Image(systemName: "mic.fill")
-                        Text("Start Voice Session")
-                    }
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                }
+                .padding()
             }
-            .padding()
         }
         .navigationTitle(topic.title ?? "Topic")
         #if os(iOS)
@@ -807,31 +812,68 @@ struct ServerCurriculumDetailView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Header
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(curriculum.title)
-                            .font(.title2.bold())
-
-                        Text(curriculum.description)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-
-                        HStack(spacing: 16) {
-                            if let difficulty = curriculum.difficulty {
-                                Label(difficulty, systemImage: "gauge")
-                            }
-                            Label("\(curriculum.topicCount) topics", systemImage: "list.bullet")
-                            if let duration = curriculum.totalDuration {
-                                Label(formatDuration(duration), systemImage: "clock")
-                            }
+            VStack(spacing: 0) {
+                // Download Button - Always visible at top
+                if isDownloading {
+                    HStack(spacing: 12) {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        if let progress = downloadProgress {
+                            Text(progress)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
                     }
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity)
+                    .background(Color(.systemBackground))
+                } else {
+                    Button {
+                        Task { await onDownload() }
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.down.circle.fill")
+                            Text("Download Curriculum")
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                    }
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity)
+                    .background(Color(.systemBackground))
+                }
 
-                    Divider()
+                Divider()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        // Header
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(curriculum.title)
+                                .font(.title2.bold())
+
+                            Text(curriculum.description)
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+
+                            HStack(spacing: 16) {
+                                if let difficulty = curriculum.difficulty {
+                                    Label(difficulty, systemImage: "gauge")
+                                }
+                                Label("\(curriculum.topicCount) topics", systemImage: "list.bullet")
+                                if let duration = curriculum.totalDuration {
+                                    Label(formatDuration(duration), systemImage: "clock")
+                                }
+                            }
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
+                        }
+
+                        Divider()
 
                     // Topics
                     if let detail = detail, !detail.topics.isEmpty {
@@ -901,41 +943,11 @@ struct ServerCurriculumDetailView: View {
                             }
                         }
                     }
-
-                    Spacer(minLength: 40)
-
-                    // Download Button
-                    if isDownloading {
-                        VStack(spacing: 12) {
-                            ProgressView()
-                            if let progress = downloadProgress {
-                                Text(progress)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                    } else {
-                        Button {
-                            Task { await onDownload() }
-                        } label: {
-                            HStack {
-                                Image(systemName: "arrow.down.circle.fill")
-                                Text("Download Curriculum")
-                            }
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                        }
-                    }
                 }
                 .padding()
             }
-            .navigationTitle("Curriculum Details")
+        }
+        .navigationTitle("Curriculum Details")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif

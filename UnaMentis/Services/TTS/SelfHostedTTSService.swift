@@ -16,7 +16,25 @@ import AVFoundation
 /// - Coqui TTS server
 /// - UnaMentis gateway TTS endpoint
 /// - Any OpenAI-compatible TTS API
+///
+/// Supports automatic fallback: if the primary TTS server fails (e.g., HTTP 500),
+/// it will automatically try the fallback server (e.g., VibeVoice -> Piper).
 public actor SelfHostedTTSService: TTSService {
+
+    // MARK: - Types
+
+    /// TTS server configuration for fallback support
+    public struct TTSServerConfig: Sendable {
+        let baseURL: URL
+        let sampleRate: Double
+        let providerName: String
+
+        public init(baseURL: URL, sampleRate: Double, providerName: String) {
+            self.baseURL = baseURL
+            self.sampleRate = sampleRate
+            self.providerName = providerName
+        }
+    }
 
     // MARK: - Properties
 
@@ -27,6 +45,12 @@ public actor SelfHostedTTSService: TTSService {
     private let outputFormat: AudioFormat
     private let sampleRate: Double  // Sample rate for audio output (22050 for Piper, 24000 for VibeVoice)
     private let providerName: String  // For logging purposes
+
+    /// Fallback server configurations (tried in order if primary fails)
+    private var fallbackServers: [TTSServerConfig] = []
+
+    /// Whether to enable automatic fallback on failure
+    private var enableFallback: Bool = true
 
     /// Performance metrics
     public private(set) var metrics: TTSMetrics = TTSMetrics(
@@ -54,13 +78,15 @@ public actor SelfHostedTTSService: TTSService {
     ///   - sampleRate: Audio sample rate (22050 for Piper, 24000 for VibeVoice)
     ///   - providerName: Name for logging (e.g., "Piper", "VibeVoice")
     ///   - authToken: Optional authentication token
+    ///   - fallbackServers: Optional list of fallback servers to try if primary fails
     public init(
         baseURL: URL,
         voiceId: String = "nova",
         outputFormat: AudioFormat = .wav,
         sampleRate: Double = 22050,
         providerName: String = "SelfHosted",
-        authToken: String? = nil
+        authToken: String? = nil,
+        fallbackServers: [TTSServerConfig] = []
     ) {
         self.baseURL = baseURL
         self.voiceId = voiceId
@@ -69,7 +95,8 @@ public actor SelfHostedTTSService: TTSService {
         self.providerName = providerName
         self.authToken = authToken
         self.voiceConfig = TTSVoiceConfig(voiceId: voiceId)
-        logger.info("\(providerName)TTSService initialized: \(baseURL.absoluteString), sampleRate=\(Int(sampleRate))Hz")
+        self.fallbackServers = fallbackServers
+        logger.info("\(providerName)TTSService initialized: \(baseURL.absoluteString), sampleRate=\(Int(sampleRate))Hz, fallbacks=\(fallbackServers.count)")
     }
 
     /// Initialize from ServerConfig
@@ -115,7 +142,7 @@ public actor SelfHostedTTSService: TTSService {
         logger.debug("Voice configured: \(config.voiceId)")
     }
 
-    /// Synthesize text to audio stream
+    /// Synthesize text to audio stream (with automatic fallback support)
     public func synthesize(text: String) async throws -> AsyncStream<TTSAudioChunk> {
         logger.info("[\(providerName)] synthesize called - text length: \(text.count), first 50 chars: '\(text.prefix(50))...'")
         logger.info("[\(providerName)] config - baseURL: \(baseURL.absoluteString), voice: \(voiceId), sampleRate: \(Int(sampleRate))Hz")
@@ -123,83 +150,129 @@ public actor SelfHostedTTSService: TTSService {
         let startTime = Date()
         let currentVoiceId = voiceId
 
+        // Build list of servers to try (primary + fallbacks)
+        var serversToTry: [TTSServerConfig] = [
+            TTSServerConfig(baseURL: baseURL, sampleRate: sampleRate, providerName: providerName)
+        ]
+        if enableFallback {
+            serversToTry.append(contentsOf: fallbackServers)
+        }
+
         return AsyncStream { continuation in
             Task {
-                do {
-                    // Build URL for speech endpoint
-                    let speechURL = self.baseURL.appendingPathComponent("v1/audio/speech")
-                    self.logger.info("TTS request URL: \(speechURL.absoluteString)")
+                var lastError: Error?
 
-                    var request = URLRequest(url: speechURL)
-                    request.httpMethod = "POST"
-                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                    request.timeoutInterval = 60  // Allow up to 60 seconds for TTS
+                for (index, server) in serversToTry.enumerated() {
+                    let isPrimary = index == 0
+                    let serverLabel = isPrimary ? server.providerName : "\(server.providerName) (fallback)"
 
-                    if let token = self.authToken {
-                        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                    }
+                    do {
+                        let result = try await self.performTTSRequest(
+                            text: text,
+                            voiceId: currentVoiceId,
+                            server: server,
+                            serverLabel: serverLabel
+                        )
 
-                    // Build request body (OpenAI-compatible format)
-                    let body: [String: Any] = [
-                        "model": "tts-1",
-                        "input": text,
-                        "voice": currentVoiceId,
-                        "response_format": self.outputFormat.rawValue
-                    ]
+                        // Success! Create audio chunk and yield
+                        self.logger.info("[\(serverLabel)] Creating TTSAudioChunk with \(result.data.count) bytes of audio data, sampleRate=\(Int(server.sampleRate))Hz")
+                        let chunk = TTSAudioChunk(
+                            audioData: result.data,
+                            format: .pcmInt16(sampleRate: server.sampleRate, channels: 1),
+                            sequenceNumber: 0,
+                            isFirst: true,
+                            isLast: true
+                        )
 
-                    request.httpBody = try JSONSerialization.data(withJSONObject: body)
-                    self.logger.debug("TTS request body: model=tts-1, voice=\(currentVoiceId), format=\(self.outputFormat.rawValue)")
+                        self.logger.info("[\(serverLabel)] Yielding TTS chunk to stream")
+                        continuation.yield(chunk)
 
-                    // Make request
-                    self.logger.info("Sending TTS request to Piper server...")
-                    let (data, response) = try await URLSession.shared.data(for: request)
-                    self.logger.info("TTS response received - data size: \(data.count) bytes")
+                        // Update metrics
+                        let latency = Date().timeIntervalSince(startTime)
+                        self.latencyValues.append(latency)
+                        self.characterCounts.append(text.count)
+                        self.synthesisTimings.append(latency)
+                        self.updateMetrics()
 
-                    guard let httpResponse = response as? HTTPURLResponse else {
-                        self.logger.error("TTS response is not HTTPURLResponse")
-                        throw TTSError.connectionFailed("Invalid response type")
-                    }
+                        self.logger.info("[\(serverLabel)] TTS synthesis complete: \(text.count) chars -> \(result.data.count) bytes in \(String(format: "%.3f", latency))s")
 
-                    self.logger.info("TTS HTTP status: \(httpResponse.statusCode)")
+                        continuation.finish()
+                        return  // Exit after success
 
-                    guard httpResponse.statusCode == 200 else {
-                        // Try to read error body
-                        if let errorBody = String(data: data, encoding: .utf8) {
-                            self.logger.error("TTS error response body: \(errorBody)")
+                    } catch {
+                        lastError = error
+                        self.logger.warning("[\(serverLabel)] TTS failed: \(error.localizedDescription)")
+
+                        if index < serversToTry.count - 1 {
+                            self.logger.info("Trying next TTS server...")
                         }
-                        throw TTSError.connectionFailed("HTTP \(httpResponse.statusCode)")
                     }
-
-                    // Create audio chunk from response data
-                    // Piper outputs WAV at 22050 Hz, VibeVoice outputs WAV at 24000 Hz (both PCM 16-bit mono)
-                    self.logger.info("[\(self.providerName)] Creating TTSAudioChunk with \(data.count) bytes of audio data, sampleRate=\(Int(self.sampleRate))Hz")
-                    let chunk = TTSAudioChunk(
-                        audioData: data,
-                        format: .pcmInt16(sampleRate: self.sampleRate, channels: 1),
-                        sequenceNumber: 0,
-                        isFirst: true,
-                        isLast: true
-                    )
-
-                    self.logger.info("Yielding TTS chunk to stream")
-                    continuation.yield(chunk)
-
-                    // Update metrics
-                    let latency = Date().timeIntervalSince(startTime)
-                    self.latencyValues.append(latency)
-                    self.characterCounts.append(text.count)
-                    self.synthesisTimings.append(latency)
-                    self.updateMetrics()
-
-                    self.logger.info("TTS synthesis complete: \(text.count) chars -> \(data.count) bytes in \(String(format: "%.3f", latency))s")
-
-                    continuation.finish()
-                } catch {
-                    self.logger.error("TTS synthesis failed: \(error.localizedDescription), full error: \(error)")
-                    continuation.finish()
                 }
+
+                // All servers failed
+                self.logger.error("All TTS servers failed. Last error: \(lastError?.localizedDescription ?? "unknown")")
+                continuation.finish()
             }
         }
+    }
+
+    /// Perform a TTS request to a specific server
+    private func performTTSRequest(
+        text: String,
+        voiceId: String,
+        server: TTSServerConfig,
+        serverLabel: String
+    ) async throws -> (data: Data, sampleRate: Double) {
+        let speechURL = server.baseURL.appendingPathComponent("v1/audio/speech")
+        logger.info("[\(serverLabel)] TTS request URL: \(speechURL.absoluteString)")
+
+        var request = URLRequest(url: speechURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 60  // Allow up to 60 seconds for TTS
+
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        // Build request body (OpenAI-compatible format)
+        let body: [String: Any] = [
+            "model": "tts-1",
+            "input": text,
+            "voice": voiceId,
+            "response_format": outputFormat.rawValue
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        logger.debug("[\(serverLabel)] TTS request body: model=tts-1, voice=\(voiceId), format=\(outputFormat.rawValue)")
+
+        // Make request
+        logger.info("[\(serverLabel)] Sending TTS request...")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        logger.info("[\(serverLabel)] TTS response received - data size: \(data.count) bytes")
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            logger.error("[\(serverLabel)] TTS response is not HTTPURLResponse")
+            throw TTSError.connectionFailed("Invalid response type")
+        }
+
+        logger.info("[\(serverLabel)] TTS HTTP status: \(httpResponse.statusCode)")
+
+        guard httpResponse.statusCode == 200 else {
+            // Try to read error body
+            if let errorBody = String(data: data, encoding: .utf8) {
+                logger.error("[\(serverLabel)] TTS error response body: \(errorBody.prefix(200))")
+            }
+            throw TTSError.connectionFailed("HTTP \(httpResponse.statusCode) from \(serverLabel)")
+        }
+
+        // Validate audio data (WAV should have at least 44 bytes header)
+        if data.count < 44 {
+            logger.error("[\(serverLabel)] Audio data too small: \(data.count) bytes")
+            throw TTSError.connectionFailed("Audio data too small from \(serverLabel)")
+        }
+
+        return (data: data, sampleRate: server.sampleRate)
     }
 
     /// Flush any pending audio and stop synthesis
@@ -296,6 +369,29 @@ public actor SelfHostedTTSService: TTSService {
     }
 }
 
+// MARK: - Fallback Configuration
+
+extension SelfHostedTTSService {
+
+    /// Add a fallback server to try if the primary fails
+    public func addFallback(server: TTSServerConfig) {
+        fallbackServers.append(server)
+        logger.info("Added fallback TTS server: \(server.providerName) at \(server.baseURL.absoluteString)")
+    }
+
+    /// Add a fallback server by URL
+    public func addFallback(baseURL: URL, sampleRate: Double, providerName: String) {
+        let config = TTSServerConfig(baseURL: baseURL, sampleRate: sampleRate, providerName: providerName)
+        addFallback(server: config)
+    }
+
+    /// Enable or disable automatic fallback
+    public func setFallbackEnabled(_ enabled: Bool) {
+        enableFallback = enabled
+        logger.info("TTS fallback \(enabled ? "enabled" : "disabled")")
+    }
+}
+
 // MARK: - Factory
 
 extension SelfHostedTTSService {
@@ -305,18 +401,24 @@ extension SelfHostedTTSService {
     ///   - host: Server hostname or IP (default: localhost)
     ///   - port: Piper port (default: 11402)
     ///   - voice: Voice ID (default: nova)
-    /// - Returns: Configured TTS service for Piper (22050 Hz)
+    /// - Returns: Configured TTS service for Piper (22050 Hz) with VibeVoice fallback
     public static func piper(
         host: String = "localhost",
         port: Int = 11402,
         voice: String = "nova"
     ) -> SelfHostedTTSService {
         let url = URL(string: "http://\(host):\(port)")!
+        // Configure fallback: VibeVoice as backup
+        let vibeVoiceURL = URL(string: "http://\(host):8880")!
+        let fallbacks = [
+            TTSServerConfig(baseURL: vibeVoiceURL, sampleRate: 24000, providerName: "VibeVoice")
+        ]
         return SelfHostedTTSService(
             baseURL: url,
             voiceId: voice,
             sampleRate: 22050,  // Piper outputs 22050 Hz
-            providerName: "Piper"
+            providerName: "Piper",
+            fallbackServers: fallbacks
         )
     }
 
@@ -325,18 +427,24 @@ extension SelfHostedTTSService {
     ///   - host: Server hostname or IP (default: localhost)
     ///   - port: VibeVoice port (default: 8880)
     ///   - voice: Voice ID - supports OpenAI aliases: alloy, echo, fable, onyx, nova, shimmer (default: nova)
-    /// - Returns: Configured TTS service for VibeVoice (24000 Hz)
+    /// - Returns: Configured TTS service for VibeVoice (24000 Hz) with Piper fallback
     public static func vibeVoice(
         host: String = "localhost",
         port: Int = 8880,
         voice: String = "nova"
     ) -> SelfHostedTTSService {
         let url = URL(string: "http://\(host):\(port)")!
+        // Configure fallback: Piper as backup
+        let piperURL = URL(string: "http://\(host):11402")!
+        let fallbacks = [
+            TTSServerConfig(baseURL: piperURL, sampleRate: 22050, providerName: "Piper")
+        ]
         return SelfHostedTTSService(
             baseURL: url,
             voiceId: voice,
             sampleRate: 24000,  // VibeVoice outputs 24000 Hz
-            providerName: "VibeVoice"
+            providerName: "VibeVoice",
+            fallbackServers: fallbacks
         )
     }
 

@@ -56,20 +56,38 @@ public struct SessionView: View {
                     )
                     .frame(maxHeight: .infinity)
 
-                    // Bottom control area - record button and VU meter side by side
+                    // Bottom control area - different controls for curriculum vs regular mode
                     HStack(alignment: .bottom, spacing: 16) {
-                        // Main control button - smaller when recording, positioned left
-                        SessionControlButton(
-                            isActive: viewModel.isSessionActive,
-                            isLoading: viewModel.isLoading,
-                            action: {
-                                await viewModel.toggleSession(appState: appState)
-                            }
-                        )
+                        if viewModel.showCurriculumControls {
+                            // Curriculum playback controls: Stop | Pause/Play
+                            CurriculumPlaybackControls(
+                                isPaused: viewModel.isPaused,
+                                onPauseResume: {
+                                    if viewModel.isPaused {
+                                        viewModel.resumePlayback()
+                                    } else {
+                                        viewModel.pausePlayback()
+                                    }
+                                },
+                                onStop: {
+                                    viewModel.stopPlayback()
+                                }
+                            )
+                        } else {
+                            // Main control button - for regular conversation mode
+                            SessionControlButton(
+                                isActive: viewModel.isSessionActive,
+                                isLoading: viewModel.isLoading,
+                                action: {
+                                    await viewModel.toggleSession(appState: appState)
+                                }
+                            )
+                        }
 
-                        // VU meter - only visible when recording
+                        // VU meter - visible when session active
+                        // Color scheme: Blue for AI speaking, Green for user speaking
                         if viewModel.isSessionActive {
-                            AudioLevelView(level: viewModel.audioLevel)
+                            AudioLevelView(level: viewModel.audioLevel, state: viewModel.state)
                                 .frame(height: 50)
                                 .frame(maxWidth: .infinity)
                                 .transition(.opacity.combined(with: .scale))
@@ -79,6 +97,7 @@ public struct SessionView: View {
                     }
                     .padding(.bottom, 20)
                     .animation(.spring(response: 0.3), value: viewModel.isSessionActive)
+                    .animation(.spring(response: 0.3), value: viewModel.isDirectStreamingMode)
                 }
                 .padding(.horizontal, 20)
             }
@@ -285,9 +304,15 @@ struct TranscriptBubble: View {
 
 struct AudioLevelView: View {
     let level: Float
-    
+    let state: SessionState
+
     private let barCount = 20
-    
+
+    /// Whether this is showing AI audio (blue tones) vs user audio (green tones)
+    private var isAIAudio: Bool {
+        state == .aiSpeaking || state == .aiThinking
+    }
+
     var body: some View {
         HStack(spacing: 4) {
             ForEach(0..<barCount, id: \.self) { index in
@@ -300,22 +325,35 @@ struct AudioLevelView: View {
         }
         .frame(height: 40)
     }
-    
+
     private func barScale(for index: Int) -> CGFloat {
         // Convert dB to 0-1 range (-60dB to 0dB)
         let normalizedLevel = max(0, min(1, (level + 60) / 60))
         let threshold = Float(index) / Float(barCount)
         return normalizedLevel > threshold ? 1.0 : 0.2
     }
-    
+
     private func barColor(for index: Int) -> Color {
         let ratio = Float(index) / Float(barCount)
-        if ratio < 0.6 {
-            return .green
-        } else if ratio < 0.8 {
-            return .yellow
+
+        if isAIAudio {
+            // AI speaking: Blue color scheme
+            if ratio < 0.6 {
+                return .blue
+            } else if ratio < 0.8 {
+                return .cyan
+            } else {
+                return .purple
+            }
         } else {
-            return .red
+            // User speaking: Green color scheme
+            if ratio < 0.6 {
+                return .green
+            } else if ratio < 0.8 {
+                return .yellow
+            } else {
+                return .red
+            }
         }
     }
 }
@@ -364,12 +402,59 @@ struct SessionControlButton: View {
     }
 }
 
+// MARK: - Curriculum Playback Controls
+
+/// Controls for curriculum playback mode: Pause/Play and Stop buttons
+struct CurriculumPlaybackControls: View {
+    let isPaused: Bool
+    let onPauseResume: () -> Void
+    let onStop: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Stop button - exits curriculum playback
+            Button {
+                onStop()
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(Color.red.opacity(0.15))
+                        .frame(width: 50, height: 50)
+
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.red)
+                }
+            }
+            .accessibilityLabel("Stop")
+
+            // Pause/Play button
+            Button {
+                onPauseResume()
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(Color.blue)
+                        .frame(width: 60, height: 60)
+                        .shadow(color: Color.blue.opacity(0.4), radius: 8)
+
+                    Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.white)
+                }
+            }
+            .accessibilityLabel(isPaused ? "Resume" : "Pause")
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPaused)
+    }
+}
+
 // MARK: - Metrics Badge
 
 struct MetricsBadge: View {
     let latency: TimeInterval
     let cost: Decimal
-    
+
     var body: some View {
         HStack(spacing: 8) {
             // Latency
@@ -379,7 +464,7 @@ struct MetricsBadge: View {
                 Text(String(format: "%.0fms", latency * 1000))
                     .font(.caption.monospacedDigit())
             }
-            
+
             // Cost
             HStack(spacing: 4) {
                 Image(systemName: "dollarsign.circle")
@@ -755,16 +840,41 @@ class SessionViewModel: ObservableObject {
     private var audioPlayer: AVAudioPlayer?
 
     /// Audio queue for sequential playback of transcript segments
-    private var audioQueue: [Data] = []
+    /// Each item contains the audio data and associated text for synchronized display
+    private var audioQueue: [(audio: Data, text: String, index: Int)] = []
 
     /// Whether audio is currently playing
-    private var isPlayingAudio: Bool = false
+    @Published private(set) var isPlayingAudio: Bool = false
 
     /// Audio player delegate for handling playback completion
     private var audioDelegate: AudioPlayerDelegate?
 
     /// Whether we're using direct transcript streaming (bypasses LLM)
-    @Published var isDirectStreamingMode: Bool = false
+    @Published var isDirectStreamingMode: Bool = false {
+        didSet {
+            logger.info("🎬 isDirectStreamingMode changed: \(oldValue) -> \(isDirectStreamingMode)")
+        }
+    }
+
+    /// Whether playback is paused (for curriculum mode)
+    @Published var isPaused: Bool = false
+
+    /// Whether curriculum controls should be shown
+    /// This is true when we have a topic AND the AI is speaking (curriculum playback mode)
+    var showCurriculumControls: Bool {
+        guard topic != nil else { return false }
+        // Show curriculum controls when AI is speaking or thinking in a topic-based session
+        return state == .aiSpeaking || state == .aiThinking
+    }
+
+    /// Pending text segments waiting for audio (keyed by segment index)
+    private var pendingTextSegments: [Int: String] = [:]
+
+    /// Total segments for progress tracking
+    private var totalSegments: Int = 0
+
+    /// Completed segment count for progress tracking
+    @Published var completedSegmentCount: Int = 0
 
     /// Topic for curriculum-based sessions (optional)
     let topic: Topic?
@@ -1102,7 +1212,19 @@ class SessionViewModel: ObservableObject {
             // Try direct streaming - this bypasses the LLM entirely
             isDirectStreamingMode = true
             state = .aiThinking  // Start with "AI thinking" while fetching transcript
+
+            // Clear all previous session state
             conversationHistory.removeAll()
+            userTranscript = ""
+            aiResponse = ""
+            audioQueue.removeAll()
+            pendingTextSegments.removeAll()
+            isPlayingAudio = false
+            isPaused = false
+            audioLevel = -60
+            currentSegmentIndex = 0
+            completedSegmentCount = 0
+            totalSegments = 0
 
             logger.info("Starting direct transcript streaming (bypassing LLM)")
 
@@ -1113,32 +1235,33 @@ class SessionViewModel: ObservableObject {
                 onSegmentText: { [weak self] index, type, text in
                     Task { @MainActor in
                         guard let self = self else { return }
-                        // Add segment text to conversation history for display
-                        self.aiResponse = text
-                        self.conversationHistory.append(ConversationMessage(
-                            text: text,
-                            isUser: false,
-                            timestamp: Date()
-                        ))
-                        self.logger.info("Segment \(index): \(type) - \(text.prefix(50))...")
+                        // Buffer text - DON'T display yet, wait for audio to arrive
+                        // This ensures text and audio stay synchronized
+                        self.pendingTextSegments[index] = text
+                        self.totalSegments = max(self.totalSegments, index + 1)
+                        self.logger.info("Buffered segment \(index) text: \(type) - \(text.prefix(50))...")
                     }
                 },
                 onSegmentAudio: { [weak self] index, audioData in
                     Task { @MainActor in
                         guard let self = self else { return }
+                        // Get the buffered text for this segment
+                        let text = self.pendingTextSegments.removeValue(forKey: index) ?? ""
+
                         // Transition to "AI speaking" when first audio arrives
                         if self.state == .aiThinking {
                             self.state = .aiSpeaking
                             self.logger.info("Transitioning to aiSpeaking - first audio received")
                         }
-                        // Play the audio
-                        self.playAudioData(audioData)
+
+                        // Queue the audio WITH its associated text for synchronized playback
+                        self.queueAudioWithText(audioData: audioData, text: text, index: index)
                     }
                 },
                 onComplete: { [weak self] in
                     Task { @MainActor in
                         guard let self = self else { return }
-                        self.logger.info("Direct transcript streaming complete")
+                        self.logger.info("Direct transcript streaming complete - \(self.totalSegments) total segments")
                         // Note: Stay in aiSpeaking until audio queue is empty
                         // The audio queue completion will set state to userSpeaking
                     }
@@ -1387,19 +1510,124 @@ class SessionViewModel: ObservableObject {
         lastAiResponse = ""
     }
 
-    /// Queue audio data for sequential playback (for transcript streaming mode)
-    private func playAudioData(_ audioData: Data) {
-        audioQueue.append(audioData)
-        logger.info("Queued audio segment (\(audioData.count) bytes), queue size: \(audioQueue.count)")
+    /// Queue audio with associated text for synchronized playback (for transcript streaming mode)
+    /// Text is only displayed when the audio for that segment starts playing
+    private func queueAudioWithText(audioData: Data, text: String, index: Int) {
+        audioQueue.append((audio: audioData, text: text, index: index))
+        logger.info("Queued segment \(index) audio (\(audioData.count) bytes), queue size: \(audioQueue.count)")
 
-        // Start playback if not already playing
-        if !isPlayingAudio {
+        // Start playback if not already playing and not paused
+        if !isPlayingAudio && !isPaused {
+            // Configure audio session for playback (required for direct streaming mode)
+            configureAudioSessionForPlayback()
             playNextAudioSegment()
         }
     }
 
+    /// Pause curriculum playback - freezes everything in place
+    func pausePlayback() {
+        guard showCurriculumControls else { return }
+        isPaused = true
+        audioPlayer?.pause()
+        logger.info("Playback paused at segment \(currentSegmentIndex)")
+    }
+
+    /// Resume curriculum playback from where it was paused
+    func resumePlayback() {
+        guard showCurriculumControls && isPaused else { return }
+        isPaused = false
+
+        // If we have a paused audio player, resume it
+        if let player = audioPlayer, !player.isPlaying {
+            player.play()
+            logger.info("Resumed playing current segment")
+        } else if !audioQueue.isEmpty {
+            // Otherwise, start next segment
+            playNextAudioSegment()
+        }
+        logger.info("Playback resumed")
+    }
+
+    /// Stop curriculum playback completely and save progress
+    func stopPlayback() {
+        guard showCurriculumControls else { return }
+
+        logger.info("Stopping playback at segment \(currentSegmentIndex)/\(totalSegments)")
+
+        // Stop audio
+        audioPlayer?.stop()
+        audioPlayer = nil
+        audioQueue.removeAll()
+        pendingTextSegments.removeAll()
+        isPlayingAudio = false
+        isPaused = false
+
+        // Save progress to topic if available
+        if let topic = topic {
+            saveProgress(to: topic)
+        }
+
+        // Transition to idle
+        isDirectStreamingMode = false
+        state = .idle
+    }
+
+    /// Save progress to the topic
+    private func saveProgress(to topic: Topic) {
+        guard totalSegments > 0 else { return }
+
+        let progress = Float(completedSegmentCount) / Float(totalSegments)
+        logger.info("Saving progress: \(completedSegmentCount)/\(totalSegments) segments = \(Int(progress * 100))%")
+
+        // Update topic mastery based on progress
+        // Note: This is a simple linear progress - could be enhanced with actual comprehension tracking
+        let context = PersistenceController.shared.viewContext
+        topic.mastery = max(topic.mastery, progress)
+
+        // Update or create topic progress
+        if let topicProgress = topic.progress {
+            topicProgress.timeSpent += Double(completedSegmentCount * 30)  // Estimate ~30s per segment
+            topicProgress.lastAccessed = Date()
+        } else {
+            // Create new progress record
+            let newProgress = TopicProgress(context: context)
+            newProgress.id = UUID()
+            newProgress.timeSpent = Double(completedSegmentCount * 30)
+            newProgress.lastAccessed = Date()
+            topic.progress = newProgress
+        }
+
+        do {
+            try context.save()
+            logger.info("Progress saved successfully")
+        } catch {
+            logger.error("Failed to save progress: \(error)")
+        }
+    }
+
+    /// Configure AVAudioSession for audio playback (needed in direct streaming mode)
+    private func configureAudioSessionForPlayback() {
+        #if os(iOS)
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try session.setActive(true)
+            logger.info("Audio session configured for playback")
+        } catch {
+            logger.error("Failed to configure audio session: \(error)")
+        }
+        #endif
+    }
+
     /// Play the next audio segment from the queue
+    /// Text is displayed ONLY when the audio for that segment starts playing
     private func playNextAudioSegment() {
+        // Don't proceed if paused
+        guard !isPaused else {
+            logger.info("Playback paused, not starting next segment")
+            return
+        }
+
         guard !audioQueue.isEmpty else {
             isPlayingAudio = false
             logger.info("Audio queue empty, playback complete")
@@ -1407,14 +1635,47 @@ class SessionViewModel: ObservableObject {
             // If we were in direct streaming mode and audio is done, transition state
             if isDirectStreamingMode {
                 logger.info("Direct streaming audio complete, transitioning to userSpeaking")
+
+                // Save progress before transitioning
+                if let topic = topic {
+                    completedSegmentCount = totalSegments
+                    saveProgress(to: topic)
+                }
+
                 state = .userSpeaking
                 isDirectStreamingMode = false
             }
             return
         }
 
-        let audioData = audioQueue.removeFirst()
+        let segment = audioQueue.removeFirst()
+        let audioData = segment.audio
+        let text = segment.text
+        let index = segment.index
+
         isPlayingAudio = true
+        currentSegmentIndex = index
+
+        // NOW display the text - synchronized with audio playback start
+        if !text.isEmpty {
+            aiResponse = text
+            conversationHistory.append(ConversationMessage(
+                text: text,
+                isUser: false,
+                timestamp: Date()
+            ))
+            logger.info("Displaying segment \(index) text (synced with audio start)")
+        }
+
+        // Log WAV header info for debugging
+        if audioData.count >= 44 {
+            let headerBytes = Array(audioData.prefix(44))
+            let riffHeader = String(bytes: headerBytes[0..<4], encoding: .ascii) ?? "?"
+            let waveHeader = String(bytes: headerBytes[8..<12], encoding: .ascii) ?? "?"
+            logger.info("WAV header check - RIFF: '\(riffHeader)', WAVE: '\(waveHeader)', size: \(audioData.count) bytes")
+        } else {
+            logger.warning("Audio data too small for WAV header: \(audioData.count) bytes")
+        }
 
         do {
             // The audio data is in WAV format from the TTS server
@@ -1423,17 +1684,36 @@ class SessionViewModel: ObservableObject {
             // Set up delegate to play next segment when this one finishes
             audioDelegate = AudioPlayerDelegate { [weak self] in
                 Task { @MainActor in
-                    self?.playNextAudioSegment()
+                    guard let self = self else { return }
+                    // Mark segment as completed
+                    self.completedSegmentCount = index + 1
+                    self.playNextAudioSegment()
                 }
             }
             audioPlayer?.delegate = audioDelegate
 
-            audioPlayer?.prepareToPlay()
-            audioPlayer?.play()
-            logger.info("Playing audio segment (\(audioData.count) bytes), \(audioQueue.count) remaining in queue")
+            // Set volume to maximum
+            audioPlayer?.volume = 1.0
+
+            let prepared = audioPlayer?.prepareToPlay() ?? false
+            logger.info("Audio player prepared: \(prepared), duration: \(audioPlayer?.duration ?? 0)s, format: \(audioPlayer?.format.description ?? "unknown")")
+
+            let playing = audioPlayer?.play() ?? false
+            logger.info("Audio player play() returned: \(playing), isPlaying: \(audioPlayer?.isPlaying ?? false)")
+
+            if !playing {
+                logger.error("AVAudioPlayer.play() returned false - audio will not play")
+                // Mark as completed and try the next segment
+                completedSegmentCount = index + 1
+                playNextAudioSegment()
+                return
+            }
+
+            logger.info("Playing segment \(index) audio (\(audioData.count) bytes), \(audioQueue.count) remaining in queue")
         } catch {
-            logger.error("Failed to play audio: \(error)")
-            // Try the next segment
+            logger.error("Failed to create AVAudioPlayer: \(error.localizedDescription)")
+            // Mark as completed and try the next segment
+            completedSegmentCount = index + 1
             playNextAudioSegment()
         }
     }
