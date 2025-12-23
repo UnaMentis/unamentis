@@ -336,7 +336,7 @@ actor MockSTTService: STTService {
         }
     }
 
-    func sendAudio(_ buffer: AVAudioPCMBuffer) async throws {
+    func sendAudio(_ buffer: sending AVAudioPCMBuffer) async throws {
         sendAudioWasCalled = true
         guard isStreaming else { throw STTError.notStreaming }
     }
@@ -374,7 +374,7 @@ actor MockSTTService: STTService {
 // MARK: - Mock Health Monitor
 
 /// Mock Health Monitor for testing router behavior
-actor MockHealthMonitor {
+actor MockHealthMonitor: HealthMonitorProtocol {
     private var _status: GLMASRHealthMonitor.HealthStatus = .healthy
 
     var currentStatus: GLMASRHealthMonitor.HealthStatus { _status }

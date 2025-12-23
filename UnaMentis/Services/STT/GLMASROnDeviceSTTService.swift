@@ -291,7 +291,7 @@ public actor GLMASROnDeviceSTTService: STTService {
         }
     }
 
-    public func sendAudio(_ buffer: AVAudioPCMBuffer) async throws {
+    public func sendAudio(_ buffer: sending AVAudioPCMBuffer) async throws {
         guard isStreaming else {
             throw STTError.notStreaming
         }

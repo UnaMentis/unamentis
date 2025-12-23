@@ -167,7 +167,7 @@ public actor GLMASRSTTService: STTService {
 
     /// Send audio buffer for transcription
     /// - Parameter buffer: Audio buffer to transcribe
-    public func sendAudio(_ buffer: AVAudioPCMBuffer) async throws {
+    public func sendAudio(_ buffer: sending AVAudioPCMBuffer) async throws {
         guard isStreaming, let ws = webSocket else {
             throw STTError.notStreaming
         }

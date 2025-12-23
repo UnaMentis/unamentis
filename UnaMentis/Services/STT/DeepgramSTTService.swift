@@ -88,7 +88,7 @@ public actor DeepgramSTTService: STTService {
         }
     }
     
-    public func sendAudio(_ buffer: AVAudioPCMBuffer) async throws {
+    public func sendAudio(_ buffer: sending AVAudioPCMBuffer) async throws {
         guard isStreaming, let ws = webSocketTask else { throw STTError.notStreaming }
         
         // Convert to 16-bit PCM Data

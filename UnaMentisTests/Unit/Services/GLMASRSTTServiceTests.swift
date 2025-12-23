@@ -236,7 +236,7 @@ final class GLMASRSTTServiceTests: XCTestCase {
         XCTAssertNotNil(result)
         XCTAssertEqual(result?.text, "Hello how are")
         XCTAssertEqual(result?.isFinal, false)
-        XCTAssertEqual(result?.confidence, 0.82, accuracy: 0.01)
+        XCTAssertEqual(Double(result?.confidence ?? 0), 0.82, accuracy: 0.01)
         XCTAssertEqual(result?.words?.count, 3)
         XCTAssertEqual(result?.words?.first?.word, "Hello")
     }
@@ -262,7 +262,7 @@ final class GLMASRSTTServiceTests: XCTestCase {
         XCTAssertEqual(result?.text, "Hello, how are you today?")
         XCTAssertEqual(result?.isFinal, true)
         XCTAssertEqual(result?.isEndOfUtterance, true)
-        XCTAssertEqual(result?.confidence, 0.94, accuracy: 0.01)
+        XCTAssertEqual(Double(result?.confidence ?? 0), 0.94, accuracy: 0.01)
     }
 
     func testParseErrorMessage() {

@@ -116,7 +116,7 @@ final class GLMASRIntegrationTests: XCTestCase {
         try await service.sendAudio(buffer)
 
         // Stop and wait for final result
-        _ = await service.stopStreaming()
+        _ = try await service.stopStreaming()
 
         // Collect results (with timeout)
         var results: [STTResult] = []
@@ -158,26 +158,28 @@ final class GLMASRIntegrationTests: XCTestCase {
         isStreaming = await service.isStreaming
         XCTAssertTrue(isStreaming)
 
-        // Send some audio
+        // Send some audio - create new buffers each time for Swift 6 sending requirements
         guard let audioFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: 16000,
             channels: 1,
             interleaved: false
-        ),
-        let buffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: 1600) else {
-            XCTFail("Failed to create audio buffer")
+        ) else {
+            XCTFail("Failed to create audio format")
             return
         }
 
-        buffer.frameLength = 1600
-
         for _ in 0..<10 {
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: 1600) else {
+                XCTFail("Failed to create audio buffer")
+                return
+            }
+            buffer.frameLength = 1600
             try await service.sendAudio(buffer)
         }
 
         // Stop streaming
-        _ = await service.stopStreaming()
+        try await service.stopStreaming()
 
         isStreaming = await service.isStreaming
         XCTAssertFalse(isStreaming)
@@ -276,33 +278,35 @@ final class GLMASRIntegrationTests: XCTestCase {
             sampleRate: 16000,
             channels: 1,
             interleaved: false
-        ),
-        let buffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: 1600) else {
-            XCTFail("Failed to create audio buffer")
+        ) else {
+            XCTFail("Failed to create audio format")
             return
         }
-
-        buffer.frameLength = 1600
 
         var latencies: [TimeInterval] = []
         let startTime = Date()
 
-        // Send audio and measure latency
+        // Send audio and collect results - create new buffers each time for Swift 6 sending
         for _ in 0..<20 {
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: 1600) else {
+                XCTFail("Failed to create audio buffer")
+                return
+            }
+            buffer.frameLength = 1600
+
             let sendTime = Date()
             try await service.sendAudio(buffer)
 
-            // Try to get a result (non-blocking)
-            var iterator = resultStream.makeAsyncIterator()
-            if let result = try? await withTimeout(seconds: 0.5) {
-                try? await iterator.next()
-            } {
-                let latency = Date().timeIntervalSince(sendTime)
-                latencies.append(latency)
-            }
+            let latency = Date().timeIntervalSince(sendTime)
+            latencies.append(latency)
         }
 
         await service.cancelStreaming()
+
+        // Consume any remaining results
+        for await _ in resultStream {
+            break
+        }
 
         // Check latency metrics
         if !latencies.isEmpty {
@@ -341,7 +345,7 @@ final class GLMASRIntegrationTests: XCTestCase {
 // MARK: - Test Helpers
 
 /// Helper to add timeout to async operations
-func withTimeout<T>(seconds: TimeInterval, operation: @escaping () async throws -> T) async throws -> T {
+func withTimeout<T: Sendable>(seconds: TimeInterval, operation: @Sendable @escaping () async throws -> T) async throws -> T {
     try await withThrowingTaskGroup(of: T.self) { group in
         group.addTask {
             try await operation()

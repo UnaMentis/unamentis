@@ -32,7 +32,7 @@ public actor STTProviderRouter: STTService {
     #endif
     private let glmASRService: any STTService
     private let deepgramService: any STTService
-    private let healthMonitor: GLMASRHealthMonitor
+    private let healthMonitor: any HealthMonitorProtocol
 
     private var activeProvider: any STTService
     private var healthStatus: GLMASRHealthMonitor.HealthStatus = .healthy
@@ -93,7 +93,7 @@ public actor STTProviderRouter: STTService {
         onDeviceService: GLMASROnDeviceSTTService? = nil,
         glmASRService: any STTService,
         deepgramService: any STTService,
-        healthMonitor: GLMASRHealthMonitor
+        healthMonitor: any HealthMonitorProtocol
     ) {
         self.onDeviceService = onDeviceService
         self.glmASRService = glmASRService
@@ -141,7 +141,7 @@ public actor STTProviderRouter: STTService {
     public init(
         glmASRService: any STTService,
         deepgramService: any STTService,
-        healthMonitor: GLMASRHealthMonitor
+        healthMonitor: any HealthMonitorProtocol
     ) {
         self.glmASRService = glmASRService
         self.deepgramService = deepgramService
@@ -181,7 +181,7 @@ public actor STTProviderRouter: STTService {
 
     /// Send audio buffer for transcription
     /// - Parameter buffer: Audio buffer to transcribe
-    public func sendAudio(_ buffer: AVAudioPCMBuffer) async throws {
+    public func sendAudio(_ buffer: sending AVAudioPCMBuffer) async throws {
         try await activeProvider.sendAudio(buffer)
     }
 

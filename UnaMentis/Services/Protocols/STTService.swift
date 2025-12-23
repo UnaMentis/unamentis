@@ -109,7 +109,7 @@ public protocol STTService: Actor {
     
     /// Send audio data for transcription
     /// - Parameter buffer: Audio buffer to transcribe
-    func sendAudio(_ buffer: AVAudioPCMBuffer) async throws
+    func sendAudio(_ buffer: sending AVAudioPCMBuffer) async throws
     
     /// Stop streaming and finalize
     func stopStreaming() async throws
