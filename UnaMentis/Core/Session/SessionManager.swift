@@ -670,10 +670,17 @@ public final class SessionManager: ObservableObject {
     
     private func startSTTStreaming() async throws {
         guard let sttService = sttService,
-              let format = await audioEngine?.format else {
+              let sourceFormat = await audioEngine?.format,
+              // Create a copy to satisfy Swift 6 sending requirements
+              let format = AVAudioFormat(
+                  commonFormat: sourceFormat.commonFormat,
+                  sampleRate: sourceFormat.sampleRate,
+                  channels: sourceFormat.channelCount,
+                  interleaved: sourceFormat.isInterleaved
+              ) else {
             throw SessionError.servicesNotConfigured
         }
-        
+
         let stream = try await sttService.startStreaming(audioFormat: format)
         
         sttStreamTask = Task {

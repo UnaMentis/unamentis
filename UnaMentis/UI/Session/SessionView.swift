@@ -2098,8 +2098,14 @@ class SessionViewModel: ObservableObject {
 
         logger.info("Transcribing \(bargeInAudioBuffers.count) audio buffers for barge-in")
 
-        // Get format from first buffer
-        guard let format = bargeInAudioBuffers.first?.format else {
+        // Get format from first buffer and create a copy to satisfy Swift 6 sending requirements
+        guard let sourceFormat = bargeInAudioBuffers.first?.format,
+              let format = AVAudioFormat(
+                  commonFormat: sourceFormat.commonFormat,
+                  sampleRate: sourceFormat.sampleRate,
+                  channels: sourceFormat.channelCount,
+                  interleaved: sourceFormat.isInterleaved
+              ) else {
             logger.error("No audio format available from buffers")
             return ""
         }
