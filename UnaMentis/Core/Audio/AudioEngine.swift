@@ -86,6 +86,11 @@ public actor AudioEngine: ObservableObject {
     nonisolated private func sendToAudioStream(_ buffer: AVAudioPCMBuffer, _ vadResult: VADResult) {
         audioStreamSubject.send((buffer, vadResult))
     }
+
+    /// Get audio stream subject wrapped in sendable box (nonisolated for use in closures from async context)
+    nonisolated private var audioStreamSubjectBox: UncheckedSendableBox<PassthroughSubject<(AVAudioPCMBuffer, VADResult), Never>> {
+        UncheckedSendableBox(value: audioStreamSubject)
+    }
     
     // Thermal monitoring
     private var thermalStateObserver: NSObjectProtocol?
@@ -192,7 +197,7 @@ public actor AudioEngine: ObservableObject {
         // Install new tap with @Sendable closure to avoid Swift 6 actor isolation crash
         // The closure runs on a real-time audio thread and must not reference the actor
         // Wrap non-Sendable types in UncheckedSendableBox for use in @Sendable closure
-        let audioSubjectBox = UncheckedSendableBox(value: self.audioStreamSubject)
+        let audioSubjectBox = audioStreamSubjectBox
         let vadServiceBox = UncheckedSendableBox(value: self.vadService)
         let telemetryBox = UncheckedSendableBox(value: self.telemetry)
 
