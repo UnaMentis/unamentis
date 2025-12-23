@@ -1,10 +1,12 @@
 included:
-  - VoiceLearn
+  - UnaMentis
+  - UnaMentisTests
 excluded:
   - Pods
   - .build
+  - build
   - DerivedData
-  - VoiceLearn/Generated
+  - UnaMentis/Generated
 
 opt_in_rules:
   - closure_spacing

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -170,14 +170,14 @@
 		95969F48DA15F89D70603334 /* MockLLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockLLMService.swift; sourceTree = "<group>"; };
 		99F01835E4A6FD36F8723764 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		9A39F3F414367641F29F2D0D /* CurriculumService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumService.swift; sourceTree = "<group>"; };
-		9ADF33B783CB8AAF071997F6 /* llama-3.2-3b-instruct-q4_k_m.gguf */ = {isa = PBXFileReference; path = "llama-3.2-3b-instruct-q4_k_m.gguf"; sourceTree = "<group>"; };
+		9ADF33B783CB8AAF071997F6 /* llama-3.2-3b-instruct-q4_k_m.gguf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "llama-3.2-3b-instruct-q4_k_m.gguf"; sourceTree = "<group>"; };
 		9ED21B50524DB5FEFE3F9E99 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A008CBD6F2FA374F46DDB324 /* AudioEngineConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineConfig.swift; sourceTree = "<group>"; };
 		A0587423D8A881D64F373B4D /* PatchPanelServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatchPanelServiceTests.swift; sourceTree = "<group>"; };
 		A3BE5EA29C7D8C9D7CC12E45 /* SelfHostedTTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfHostedTTSService.swift; sourceTree = "<group>"; };
 		A762A01A1D23D9C411A9E650 /* LLMTaskTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMTaskTypeTests.swift; sourceTree = "<group>"; };
 		ABA2D0F2C7B340A0F71796A7 /* LMAPIProviderInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LMAPIProviderInfo.swift; sourceTree = "<group>"; };
-		B0F749D0A7C343F32481093F /* UnaMentis.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = UnaMentis.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0F749D0A7C343F32481093F /* UnaMentis.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UnaMentis.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B28BF0821DBE85148E339B50 /* AudioEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineTests.swift; sourceTree = "<group>"; };
 		B83ACA2137AC7B35D6BDAB74 /* TelemetryEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryEngineTests.swift; sourceTree = "<group>"; };
 		BCE3930747CBA58C712C9834 /* VisualAssetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualAssetView.swift; sourceTree = "<group>"; };
@@ -676,9 +676,6 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1520;
 				TargetAttributes = {
-					250B3CE20887198C8B0639A2 = {
-						DevelopmentTeam = "";
-					};
 					C998553426CFA644B116D266 = {
 						DevelopmentTeam = "";
 					};
@@ -699,7 +696,6 @@
 				725D430F7D40FF1825D85A13 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 				3157FAD29363A7813CCFD6FA /* XCRemoteSwiftPackageReference "swift-log" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -874,6 +870,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = UnaMentis/UnaMentis.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = UnaMentis/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -1020,6 +1017,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = UnaMentis/UnaMentis.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = UnaMentis/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;

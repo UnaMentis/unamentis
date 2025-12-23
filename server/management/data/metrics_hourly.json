@@ -36,36 +36,70 @@
   },
   "2025-12-22T20:00:00": {
     "hour": "2025-12-22T20:00:00",
-    "avg_battery_draw_w": 10.63,
-    "max_battery_draw_w": 21.43,
-    "min_battery_percent": 85.0,
-    "max_battery_percent": 90.0,
+    "avg_battery_draw_w": 33.13,
+    "max_battery_draw_w": 54.8,
+    "min_battery_percent": 82.0,
+    "max_battery_percent": 84.0,
     "avg_thermal_level": 0.0,
     "max_thermal_level": 0,
     "avg_cpu_temp_c": 0.0,
     "max_cpu_temp_c": 0.0,
-    "avg_cpu_percent": 160.8,
-    "max_cpu_percent": 402.4,
+    "avg_cpu_percent": 161.9,
+    "max_cpu_percent": 453.5,
     "service_cpu_avg": {
-      "management": 4.8,
+      "management": 4.5,
       "ollama": 0.0,
-      "vibevoice": 0.1,
+      "vibevoice": 0.2,
       "nextjs": 0.1,
       "piper": 0.0
     },
     "service_cpu_max": {
-      "management": 5.6,
-      "ollama": 0.0,
-      "vibevoice": 0.1,
-      "nextjs": 1.6,
+      "management": 5.4,
+      "ollama": 0.1,
+      "vibevoice": 1.1,
+      "nextjs": 1.0,
       "piper": 0.0
     },
     "total_requests": 0,
     "total_inferences": 0,
     "idle_state_seconds": {
-      "cool": 1499,
-      "cold": 480
+      "warm": 270,
+      "cool": 480
     },
-    "sample_count": 67
+    "sample_count": 26
+  },
+  "2025-12-22T21:00:00": {
+    "hour": "2025-12-22T21:00:00",
+    "avg_battery_draw_w": 18.24,
+    "max_battery_draw_w": 49.92,
+    "min_battery_percent": 85.0,
+    "max_battery_percent": 100.0,
+    "avg_thermal_level": 0.0,
+    "max_thermal_level": 0,
+    "avg_cpu_temp_c": 0.0,
+    "max_cpu_temp_c": 0.0,
+    "avg_cpu_percent": 195.0,
+    "max_cpu_percent": 1383.6,
+    "service_cpu_avg": {
+      "management": 4.7,
+      "ollama": 0.0,
+      "vibevoice": 0.1,
+      "nextjs": 0.0,
+      "piper": 0.0
+    },
+    "service_cpu_max": {
+      "management": 6.5,
+      "ollama": 0.2,
+      "vibevoice": 1.1,
+      "nextjs": 2.0,
+      "piper": 0.0
+    },
+    "total_requests": 0,
+    "total_inferences": 0,
+    "idle_state_seconds": {
+      "cool": 988,
+      "cold": 2580
+    },
+    "sample_count": 120
   }
 }
