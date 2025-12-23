@@ -60,9 +60,20 @@ private final class RemoteLogConfiguration: @unchecked Sendable {
         #endif
 
         // Generate stable client ID based on device
+        // Use a stable UUID as fallback since UIDevice requires main actor in Swift 6
         #if os(iOS)
-        _clientID = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
-        _clientName = UIDevice.current.name
+        if Thread.isMainThread {
+            _clientID = MainActor.assumeIsolated {
+                UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
+            }
+            _clientName = MainActor.assumeIsolated {
+                UIDevice.current.name
+            }
+        } else {
+            // Fallback for non-main thread initialization
+            _clientID = UUID().uuidString
+            _clientName = "UnaMentis"
+        }
         #else
         _clientID = UUID().uuidString
         _clientName = Host.current().localizedName ?? "Unknown"
