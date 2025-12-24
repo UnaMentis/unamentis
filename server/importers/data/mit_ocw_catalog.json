@@ -405,17 +405,21 @@
       ]
     },
     {
-      "id": "8-01-physics-i-classical-mechanics-fall-1999",
-      "number": "8.01",
+      "id": "8-01sc-classical-mechanics-fall-2016",
+      "number": "8.01SC",
       "title": "Physics I: Classical Mechanics",
       "department": "Physics",
       "instructors": [
-        "Walter Lewin"
+        "Deepto Chakrabarty",
+        "Peter Dourmashkin",
+        "Michelle Tomasik",
+        "Anna Frebel",
+        "Vladan Vuletic"
       ],
-      "semester": "Fall 1999",
+      "semester": "Fall 2016",
       "level": "undergraduate",
-      "description": "Newton's laws, motion, energy and momentum, rotation, gravitation, oscillations, waves. Physical intuition developed through problem solving and demonstrations.",
-      "url": "https://ocw.mit.edu/courses/8-01-physics-i-classical-mechanics-fall-1999/",
+      "description": "Classical mechanics including kinematics, Newton's laws, momentum, energy, rotation, angular momentum, oscillations, gravitation, and fluid mechanics. This Scholar course features interactive simulations, problem solving videos, and complete course notes.",
+      "url": "https://ocw.mit.edu/courses/8-01sc-classical-mechanics-fall-2016/",
       "features": [
         "video",
         "transcript",
@@ -428,7 +432,10 @@
         "physics",
         "mechanics",
         "newton",
-        "classical physics"
+        "classical physics",
+        "kinematics",
+        "momentum",
+        "energy"
       ]
     },
     {
