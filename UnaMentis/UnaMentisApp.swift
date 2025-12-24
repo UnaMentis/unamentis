@@ -99,8 +99,65 @@ struct UnaMentisApp: App {
                 .environmentObject(appState)
                 // Enable Dynamic Type scaling for accessibility
                 .dynamicTypeSize(.medium ... .accessibility3)
+                // Handle deep links from Siri and Shortcuts
+                .onOpenURL { url in
+                    handleDeepLink(url)
+                }
         }
     }
+
+    /// Handle deep links from Siri Shortcuts and App Intents
+    private func handleDeepLink(_ url: URL) {
+        guard url.scheme == "unamentis" else { return }
+
+        switch url.host {
+        case "lesson":
+            // Handle: unamentis://lesson?id=UUID&depth=intermediate
+            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+               let idString = components.queryItems?.first(where: { $0.name == "id" })?.value,
+               let _ = UUID(uuidString: idString) {
+                // Navigate to lesson with the specified topic
+                // The appState.selectedTab and navigation will be handled by ContentView
+                print("[DeepLink] Start lesson: \(idString)")
+                NotificationCenter.default.post(
+                    name: .startLessonFromDeepLink,
+                    object: nil,
+                    userInfo: ["topicId": idString]
+                )
+            }
+
+        case "resume":
+            // Handle: unamentis://resume?id=UUID
+            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+               let idString = components.queryItems?.first(where: { $0.name == "id" })?.value {
+                print("[DeepLink] Resume lesson: \(idString)")
+                NotificationCenter.default.post(
+                    name: .resumeLessonFromDeepLink,
+                    object: nil,
+                    userInfo: ["topicId": idString]
+                )
+            }
+
+        case "analytics":
+            // Handle: unamentis://analytics
+            print("[DeepLink] Show analytics")
+            NotificationCenter.default.post(name: .showAnalyticsFromDeepLink, object: nil)
+
+        default:
+            print("[DeepLink] Unknown path: \(url.host ?? "nil")")
+        }
+    }
+}
+
+// MARK: - Deep Link Notifications
+
+extension Notification.Name {
+    /// Posted when a lesson should start from a deep link
+    static let startLessonFromDeepLink = Notification.Name("startLessonFromDeepLink")
+    /// Posted when a lesson should resume from a deep link
+    static let resumeLessonFromDeepLink = Notification.Name("resumeLessonFromDeepLink")
+    /// Posted when analytics should be shown from a deep link
+    static let showAnalyticsFromDeepLink = Notification.Name("showAnalyticsFromDeepLink")
 }
 
 // MARK: - Launch Screen View

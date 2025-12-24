@@ -102,6 +102,12 @@
 		F6515847BF5C9C7953D34854 /* LLMTaskType.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9AD07E27AF281275DC11BE0 /* LLMTaskType.swift */; };
 		FAD3F8A6F3DD20E8B474CF37 /* GLMASRIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ED7DFE0AA0EFDFDA0E2997B /* GLMASRIntegrationTests.swift */; };
 		FFF26AE98F6DDE371CA0B169 /* VADService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F889719749AE4061E8AD19F /* VADService.swift */; };
+		8F78E075FB82A7A9B12DF403 /* AppShortcutsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB26748D45D242A39EAC394F /* AppShortcutsProvider.swift */; };
+		4046BCD06909934C307657A2 /* CurriculumEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7671220E5F01F1527D0880 /* CurriculumEntity.swift */; };
+		DDB8F9FA27FB41776BEC5E4F /* ResumeLearningIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95ADD176671FCC091AE0A2E6 /* ResumeLearningIntent.swift */; };
+		9B2D0344F603FE6374A5AD82 /* ShowProgressIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE99DEACD70682FBFDDAC185 /* ShowProgressIntent.swift */; };
+		C98EF8EA4DC6D3C81607F6A3 /* StartLessonIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16503A70E42DE0BC81F08C21 /* StartLessonIntent.swift */; };
+		ADDED877DD6C660DA5B03FD5 /* TopicEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 141E1CE7FED01904DABB416D /* TopicEntity.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -212,6 +218,12 @@
 		F969DA1B3AC136EEE9F4063F /* Curriculum+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Curriculum+CoreDataClass.swift"; sourceTree = "<group>"; };
 		FD17BD85661AA22279D27BA4 /* CurriculumEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumEngineTests.swift; sourceTree = "<group>"; };
 		FEAAC040F0D5B735565FA7B1 /* AnalyticsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsViewModelTests.swift; sourceTree = "<group>"; };
+		DB26748D45D242A39EAC394F /* AppShortcutsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnaMentis/Intents/AppShortcutsProvider.swift"; sourceTree = SOURCE_ROOT; };
+		CB7671220E5F01F1527D0880 /* CurriculumEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnaMentis/Intents/CurriculumEntity.swift"; sourceTree = SOURCE_ROOT; };
+		95ADD176671FCC091AE0A2E6 /* ResumeLearningIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnaMentis/Intents/ResumeLearningIntent.swift"; sourceTree = SOURCE_ROOT; };
+		BE99DEACD70682FBFDDAC185 /* ShowProgressIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnaMentis/Intents/ShowProgressIntent.swift"; sourceTree = SOURCE_ROOT; };
+		16503A70E42DE0BC81F08C21 /* StartLessonIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnaMentis/Intents/StartLessonIntent.swift"; sourceTree = SOURCE_ROOT; };
+		141E1CE7FED01904DABB416D /* TopicEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnaMentis/Intents/TopicEntity.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -719,6 +731,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8F78E075FB82A7A9B12DF403 /* AppShortcutsProvider.swift in Sources */,
+				4046BCD06909934C307657A2 /* CurriculumEntity.swift in Sources */,
+				DDB8F9FA27FB41776BEC5E4F /* ResumeLearningIntent.swift in Sources */,
+				9B2D0344F603FE6374A5AD82 /* ShowProgressIntent.swift in Sources */,
+				C98EF8EA4DC6D3C81607F6A3 /* StartLessonIntent.swift in Sources */,
+				ADDED877DD6C660DA5B03FD5 /* TopicEntity.swift in Sources */,
 				05D30C780E95912853747429 /* APIKeyManager.swift in Sources */,
 				63DA72E27AD8F3C5AF92BEDF /* APIProviderDetailView.swift in Sources */,
 				6204F933534BE8F950C6B32B /* AnalyticsView.swift in Sources */,
