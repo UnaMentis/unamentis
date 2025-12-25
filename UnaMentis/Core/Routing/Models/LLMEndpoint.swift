@@ -317,6 +317,26 @@ public enum ComputeUnits: String, Codable, Sendable {
     case all
 }
 
+// MARK: - Static Value Helpers
+
+/// Helper to create Decimal from a static string that is known to be valid at compile time.
+/// Uses preconditionFailure in debug to catch any typos during development.
+private func staticDecimal(_ value: String) -> Decimal {
+    guard let decimal = Decimal(string: value) else {
+        preconditionFailure("Invalid static Decimal string: \(value)")
+    }
+    return decimal
+}
+
+/// Helper to create URL from a static string that is known to be valid at compile time.
+/// Uses preconditionFailure in debug to catch any typos during development.
+private func staticURL(_ value: String) -> URL {
+    guard let url = URL(string: value) else {
+        preconditionFailure("Invalid static URL string: \(value)")
+    }
+    return url
+}
+
 // MARK: - Default Registry
 
 extension LLMEndpoint {
@@ -340,11 +360,11 @@ extension LLMEndpoint {
             expectedTTFTMs: 300,
             expectedTokensPerSec: 80,
             reliabilityScore: 0.99,
-            costPerInputToken: Decimal(string: "0.0000025")!,   // $2.50/1M
-            costPerOutputToken: Decimal(string: "0.00001")!,    // $10/1M
+            costPerInputToken: staticDecimal("0.0000025"),   // $2.50/1M
+            costPerOutputToken: staticDecimal("0.00001"),    // $10/1M
             connectionConfig: .cloudConfig(
                 apiKeyReference: "openai_api_key",
-                baseURL: URL(string: "https://api.openai.com/v1")!
+                baseURL: staticURL("https://api.openai.com/v1")
             )
         ),
 
@@ -361,11 +381,11 @@ extension LLMEndpoint {
             expectedTTFTMs: 200,
             expectedTokensPerSec: 100,
             reliabilityScore: 0.99,
-            costPerInputToken: Decimal(string: "0.00000015")!,  // $0.15/1M
-            costPerOutputToken: Decimal(string: "0.0000006")!,  // $0.60/1M
+            costPerInputToken: staticDecimal("0.00000015"),  // $0.15/1M
+            costPerOutputToken: staticDecimal("0.0000006"),  // $0.60/1M
             connectionConfig: .cloudConfig(
                 apiKeyReference: "openai_api_key",
-                baseURL: URL(string: "https://api.openai.com/v1")!
+                baseURL: staticURL("https://api.openai.com/v1")
             )
         ),
 
@@ -384,11 +404,11 @@ extension LLMEndpoint {
             expectedTTFTMs: 500,
             expectedTokensPerSec: 60,
             reliabilityScore: 0.98,
-            costPerInputToken: Decimal(string: "0.000003")!,    // $3/1M
-            costPerOutputToken: Decimal(string: "0.000015")!,   // $15/1M
+            costPerInputToken: staticDecimal("0.000003"),    // $3/1M
+            costPerOutputToken: staticDecimal("0.000015"),   // $15/1M
             connectionConfig: .cloudConfig(
                 apiKeyReference: "anthropic_api_key",
-                baseURL: URL(string: "https://api.anthropic.com/v1")!,
+                baseURL: staticURL("https://api.anthropic.com/v1"),
                 apiVersion: "2023-06-01"
             )
         ),
@@ -406,11 +426,11 @@ extension LLMEndpoint {
             expectedTTFTMs: 300,
             expectedTokensPerSec: 100,
             reliabilityScore: 0.98,
-            costPerInputToken: Decimal(string: "0.0000008")!,   // $0.80/1M
-            costPerOutputToken: Decimal(string: "0.000004")!,   // $4/1M
+            costPerInputToken: staticDecimal("0.0000008"),   // $0.80/1M
+            costPerOutputToken: staticDecimal("0.000004"),   // $4/1M
             connectionConfig: .cloudConfig(
                 apiKeyReference: "anthropic_api_key",
-                baseURL: URL(string: "https://api.anthropic.com/v1")!,
+                baseURL: staticURL("https://api.anthropic.com/v1"),
                 apiVersion: "2023-06-01"
             )
         ),

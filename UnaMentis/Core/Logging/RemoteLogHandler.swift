@@ -232,21 +232,22 @@ public enum RemoteLogging {
     /// Configure remote logging with auto-discovery
     /// Attempts to find the logging server on the local network
     public static func configure(serverIP: String? = nil, port: Int = 8766) {
-        if let ip = serverIP {
+        if let ip = serverIP, !ip.isEmpty {
+            // Valid server IP provided - configure and enable
             RemoteLogHandler.defaultServerURL = URL(string: "http://\(ip):\(port)/api/logs")!
+            RemoteLogHandler.isEnabled = true
         } else {
-            // For simulator, localhost works
-            // For device, you need to specify the IP
+            // No server IP provided
             #if targetEnvironment(simulator)
+            // Simulator can use localhost to reach the Mac
             RemoteLogHandler.defaultServerURL = URL(string: "http://localhost:\(port)/api/logs")!
+            RemoteLogHandler.isEnabled = true
             #else
-            // Device needs actual IP - will be set from settings
-            // Default to localhost which won't work but won't crash either
-            RemoteLogHandler.defaultServerURL = URL(string: "http://localhost:\(port)/api/logs")!
+            // Physical device: localhost won't work, so don't attempt remote logging
+            // This prevents failed HTTP requests on every log statement
+            RemoteLogHandler.isEnabled = false
             #endif
         }
-
-        RemoteLogHandler.isEnabled = true
     }
 
     /// Disable remote logging

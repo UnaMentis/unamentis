@@ -1493,19 +1493,19 @@ class SessionViewModel: ObservableObject {
             logger.info("Using AppleSpeechSTTService (user selected)")
             sttService = AppleSpeechSTTService()
         case .deepgramNova3:
-            guard let apiKey = await appState.apiKeys.getKey(.deepgram) else {
-                errorMessage = "Deepgram API key not configured. Please add it in Settings or switch to on-device mode."
-                showError = true
-                return
+            if let apiKey = await appState.apiKeys.getKey(.deepgram) {
+                sttService = DeepgramSTTService(apiKey: apiKey)
+            } else {
+                logger.warning("Deepgram API key not configured, falling back to Apple Speech")
+                sttService = AppleSpeechSTTService()
             }
-            sttService = DeepgramSTTService(apiKey: apiKey)
         case .assemblyAI:
-            guard let apiKey = await appState.apiKeys.getKey(.assemblyAI) else {
-                errorMessage = "AssemblyAI API key not configured. Please add it in Settings or switch to on-device mode."
-                showError = true
-                return
+            if let apiKey = await appState.apiKeys.getKey(.assemblyAI) {
+                sttService = AssemblyAISTTService(apiKey: apiKey)
+            } else {
+                logger.warning("AssemblyAI API key not configured, falling back to Apple Speech")
+                sttService = AppleSpeechSTTService()
             }
-            sttService = AssemblyAISTTService(apiKey: apiKey)
         default:
             // Default fallback to Apple Speech (always available)
             logger.info("Using Apple Speech as default STT provider")
@@ -1539,57 +1539,109 @@ class SessionViewModel: ObservableObject {
                 ttsService = AppleTTSService()
             }
         case .elevenLabsFlash, .elevenLabsTurbo:
-            guard let apiKey = await appState.apiKeys.getKey(.elevenLabs) else {
-                errorMessage = "ElevenLabs API key not configured. Please add it in Settings or switch to Apple TTS."
-                showError = true
-                return
+            if let apiKey = await appState.apiKeys.getKey(.elevenLabs) {
+                ttsService = ElevenLabsTTSService(apiKey: apiKey)
+            } else {
+                logger.warning("ElevenLabs API key not configured, falling back to Apple TTS")
+                ttsService = AppleTTSService()
             }
-            ttsService = ElevenLabsTTSService(apiKey: apiKey)
         case .deepgramAura2:
-            guard let apiKey = await appState.apiKeys.getKey(.deepgram) else {
-                errorMessage = "Deepgram API key not configured. Please add it in Settings or switch to Apple TTS."
-                showError = true
-                return
+            if let apiKey = await appState.apiKeys.getKey(.deepgram) {
+                ttsService = DeepgramTTSService(apiKey: apiKey)
+            } else {
+                logger.warning("Deepgram TTS API key not configured, falling back to Apple TTS")
+                ttsService = AppleTTSService()
             }
-            ttsService = DeepgramTTSService(apiKey: apiKey)
         default:
             logger.info("Using Apple TTS as default TTS provider")
             ttsService = AppleTTSService()
         }
 
-        // Configure LLM based on settings
+        // Configure LLM based on settings with graceful fallback
+        // Priority: User selection → Self-hosted → On-device → Error
         logger.info("LLM provider setting: \(llmProviderSetting.rawValue)")
         logger.info("LLM config - selfHostedEnabled: \(selfHostedEnabled), serverIP: '\(serverIP)'")
 
+        // Helper to create on-device LLM if available
+        func createOnDeviceLLMIfAvailable() -> (any LLMService)? {
+            #if LLAMA_AVAILABLE
+            if OnDeviceLLMService.isDeviceSupported && OnDeviceLLMService.areModelsAvailable {
+                logger.info("Using OnDeviceLLMService as fallback (device supported, models available)")
+                return OnDeviceLLMService()
+            }
+            #endif
+            return nil
+        }
+
+        // Helper to create self-hosted LLM if available
+        func createSelfHostedLLMIfAvailable() -> (any LLMService)? {
+            if selfHostedEnabled && !serverIP.isEmpty {
+                let llmModelSetting = UserDefaults.standard.string(forKey: "llmModel") ?? "llama3.2:3b"
+                logger.info("Using SelfHostedLLMService as fallback (host: \(serverIP), model: \(llmModelSetting))")
+                return SelfHostedLLMService.ollama(host: serverIP, model: llmModelSetting)
+            }
+            return nil
+        }
+
         switch llmProviderSetting {
         case .localMLX:
-            // On-device LLM not currently available (API incompatible), fall back to self-hosted
-            logger.info("localMLX selected - falling back to SelfHostedLLMService (Ollama)")
-            let llmModelSetting = UserDefaults.standard.string(forKey: "llmModel") ?? "llama3.2:3b"
-            logger.info("LLM model from UserDefaults: '\(llmModelSetting)'")
-
-            // Use configured server IP if available, otherwise fall back to localhost (simulator only)
-            if selfHostedEnabled && !serverIP.isEmpty {
-                logger.info("Creating SelfHostedLLMService.ollama(host: \(serverIP), model: \(llmModelSetting))")
-                llmService = SelfHostedLLMService.ollama(host: serverIP, model: llmModelSetting)
+            // Try on-device LLM first (the intended behavior for localMLX)
+            #if LLAMA_AVAILABLE
+            if OnDeviceLLMService.isDeviceSupported && OnDeviceLLMService.areModelsAvailable {
+                logger.info("localMLX selected - using OnDeviceLLMService")
+                llmService = OnDeviceLLMService()
+            } else if let selfHosted = createSelfHostedLLMIfAvailable() {
+                logger.warning("On-device LLM not available, falling back to self-hosted")
+                llmService = selfHosted
             } else {
-                logger.warning("No server IP configured - using localhost (only works on simulator)")
-                llmService = SelfHostedLLMService.ollama(model: llmModelSetting)
+                logger.warning("No LLM available - on-device not supported and no server configured")
+                errorMessage = "On-device LLM requires model files. Please download models or configure a server."
+                showError = true
+                return
             }
+            #else
+            // LLAMA not available, try self-hosted
+            if let selfHosted = createSelfHostedLLMIfAvailable() {
+                logger.warning("LLAMA not available in build, falling back to self-hosted")
+                llmService = selfHosted
+            } else {
+                logger.warning("No LLM available - LLAMA not in build and no server configured")
+                errorMessage = "On-device LLM not available in this build. Please configure a server."
+                showError = true
+                return
+            }
+            #endif
+
         case .anthropic:
-            guard let apiKey = await appState.apiKeys.getKey(.anthropic) else {
-                errorMessage = "Anthropic API key not configured. Please add it in Settings or switch to on-device mode."
+            if let apiKey = await appState.apiKeys.getKey(.anthropic) {
+                llmService = AnthropicLLMService(apiKey: apiKey)
+            } else if let selfHosted = createSelfHostedLLMIfAvailable() {
+                logger.warning("Anthropic API key not configured, falling back to self-hosted")
+                llmService = selfHosted
+            } else if let onDevice = createOnDeviceLLMIfAvailable() {
+                logger.warning("Anthropic API key not configured, falling back to on-device LLM")
+                llmService = onDevice
+            } else {
+                errorMessage = "Anthropic API key not configured and no fallback available. Please add it in Settings or configure a server."
                 showError = true
                 return
             }
-            llmService = AnthropicLLMService(apiKey: apiKey)
+
         case .openAI:
-            guard let apiKey = await appState.apiKeys.getKey(.openAI) else {
-                errorMessage = "OpenAI API key not configured. Please add it in Settings or switch to on-device mode."
+            if let apiKey = await appState.apiKeys.getKey(.openAI) {
+                llmService = OpenAILLMService(apiKey: apiKey)
+            } else if let selfHosted = createSelfHostedLLMIfAvailable() {
+                logger.warning("OpenAI API key not configured, falling back to self-hosted")
+                llmService = selfHosted
+            } else if let onDevice = createOnDeviceLLMIfAvailable() {
+                logger.warning("OpenAI API key not configured, falling back to on-device LLM")
+                llmService = onDevice
+            } else {
+                errorMessage = "OpenAI API key not configured and no fallback available. Please add it in Settings or configure a server."
                 showError = true
                 return
             }
-            llmService = OpenAILLMService(apiKey: apiKey)
+
         case .selfHosted:
             // Use SelfHostedLLMService to connect to Ollama server
             var llmModelSetting = UserDefaults.standard.string(forKey: "llmModel") ?? "llama3.2:3b"
@@ -1610,13 +1662,24 @@ class SessionViewModel: ObservableObject {
                 }
             }
 
-            // Use configured server IP if available, otherwise fall back to localhost (simulator only)
+            // Use configured server IP if available
             if selfHostedEnabled && !serverIP.isEmpty {
                 logger.info("Creating SelfHostedLLMService.ollama(host: \(serverIP), model: \(llmModelSetting))")
                 llmService = SelfHostedLLMService.ollama(host: serverIP, model: llmModelSetting)
+            } else if let onDevice = createOnDeviceLLMIfAvailable() {
+                logger.warning("No server configured, falling back to on-device LLM")
+                llmService = onDevice
             } else {
-                logger.warning("No server IP configured - using localhost (only works on simulator)")
+                #if targetEnvironment(simulator)
+                // Simulator can use localhost to reach Ollama on the Mac
+                logger.info("Using localhost for self-hosted LLM (simulator only)")
                 llmService = SelfHostedLLMService.ollama(model: llmModelSetting)
+                #else
+                // Physical device: localhost won't work, show error
+                errorMessage = "Self-hosted LLM requires a server IP. Please configure in Settings."
+                showError = true
+                return
+                #endif
             }
         }
 

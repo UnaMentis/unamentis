@@ -127,69 +127,79 @@ This document tracks all tasks for completing the UnaMentis iOS project. Tasks a
 | 9.9 | Write App Intents tests | completed | UnaMentisTests/Unit/Intents/AppIntentsTests.swift | 23 tests passing |
 | 9.10 | Create Apple Intelligence docs | completed | docs/APPLE_INTELLIGENCE.md | Integration guide |
 
+### 10. Graceful Degradation & Fallback Architecture
+
+| ID | Task | Status | File(s) | Notes |
+|----|------|--------|---------|-------|
+| 10.1 | Add STT fallback to Apple Speech | completed | UnaMentis/UI/Session/SessionView.swift | Deepgram/AssemblyAI → Apple Speech |
+| 10.2 | Add TTS fallback to Apple TTS | completed | UnaMentis/UI/Session/SessionView.swift | ElevenLabs/Deepgram → Apple TTS |
+| 10.3 | Add LLM multi-tier fallback | completed | UnaMentis/UI/Session/SessionView.swift | Cloud → Self-Hosted → On-Device |
+| 10.4 | Enable OnDeviceLLMService integration | completed | UnaMentis/UI/Session/SessionView.swift | localMLX uses real on-device LLM |
+| 10.5 | Document fallback architecture | completed | docs/FALLBACK_ARCHITECTURE.md | Complete degradation guide |
+
 ---
 
 ## PART 2: Collaborative Tasks (User Participation Required)
 
-### 10. API Configuration
+### 11. API Configuration
 
 | ID | Task | Status | Depends On | Notes |
 |----|------|--------|------------|-------|
-| 10.1 | Get Deepgram API key | pending | User | STT/TTS provider |
-| 10.2 | Get ElevenLabs API key | pending | User | TTS provider |
-| 10.3 | Get Anthropic API key | pending | User | LLM provider (Claude) |
-| 10.4 | Get OpenAI API key | pending | User | LLM/Embeddings provider |
-| 10.5 | Get AssemblyAI API key | pending | User | STT provider |
-| 10.6 | Configure keys in app | pending | 10.1-10.5 | Use APIKeyManager |
-| 10.7 | Test provider connectivity | pending | 10.6 | Verify each API works |
+| 11.1 | Get Deepgram API key | pending | User | STT/TTS provider |
+| 11.2 | Get ElevenLabs API key | pending | User | TTS provider |
+| 11.3 | Get Anthropic API key | pending | User | LLM provider (Claude) |
+| 11.4 | Get OpenAI API key | pending | User | LLM/Embeddings provider |
+| 11.5 | Get AssemblyAI API key | pending | User | STT provider |
+| 11.6 | Configure keys in app | pending | 11.1-11.5 | Use APIKeyManager |
+| 11.7 | Test provider connectivity | pending | 11.6 | Verify each API works |
 
-### 11. On-Device Model Setup
-
-| ID | Task | Status | Depends On | Notes |
-|----|------|--------|------------|-------|
-| 11.1 | Download GLM-ASR models | pending | User | ~2.4GB from Hugging Face |
-| 11.2 | Place in models directory | pending | 11.1 | models/glm-asr-nano/ |
-| 11.3 | Add to Xcode target | pending | 11.2 | Copy Bundle Resources |
-| 11.4 | Test on-device inference | pending | 11.3 | Verify CoreML + llama.cpp |
-
-### 12. Device Testing
+### 12. On-Device Model Setup
 
 | ID | Task | Status | Depends On | Notes |
 |----|------|--------|------------|-------|
-| 12.1 | Test on physical iPhone | pending | Part 1, 10.x | iPhone 15 Pro+ / 16/17 Pro Max |
-| 12.2 | Verify microphone permissions | pending | 12.1 | Check Info.plist config |
-| 12.3 | Test audio session config | pending | 12.1 | AVAudioSession voice chat mode |
-| 12.4 | Test VAD on Neural Engine | pending | 12.1 | Silero model performance |
-| 12.5 | Profile latency | pending | 12.1-12.4 | Target: <500ms E2E |
-| 12.6 | 90-minute session test | pending | 12.5 | Stability & memory check |
+| 12.1 | Download GLM-ASR models | pending | User | ~2.4GB from Hugging Face |
+| 12.2 | Place in models directory | pending | 12.1 | models/glm-asr-nano/ |
+| 12.3 | Add to Xcode target | pending | 12.2 | Copy Bundle Resources |
+| 12.4 | Test on-device inference | pending | 12.3 | Verify CoreML + llama.cpp |
 
-### 13. Content Setup
+### 13. Device Testing
 
 | ID | Task | Status | Depends On | Notes |
 |----|------|--------|------------|-------|
-| 13.1 | Create test curriculum | pending | Part 1 | Sample topics for testing |
-| 13.2 | Test PDF import | pending | 13.1 | DocumentProcessor verification |
-| 13.3 | Test OpenStax API | pending | 10.x | Online resource integration |
-| 13.4 | Test Wikipedia API | pending | - | Online resource integration |
+| 13.1 | Test on physical iPhone | pending | Part 1, 11.x | iPhone 15 Pro+ / 16/17 Pro Max |
+| 13.2 | Verify microphone permissions | pending | 13.1 | Check Info.plist config |
+| 13.3 | Test audio session config | pending | 13.1 | AVAudioSession voice chat mode |
+| 13.4 | Test VAD on Neural Engine | pending | 13.1 | Silero model performance |
+| 13.5 | Profile latency | pending | 13.1-13.4 | Target: <500ms E2E |
+| 13.6 | 90-minute session test | pending | 13.5 | Stability & memory check |
 
-### 14. VLCF Implementation (Future)
-
-| ID | Task | Status | Depends On | Notes |
-|----|------|--------|------------|-------|
-| 14.1 | Implement Python importer package | pending | 8.x spec | Entry points, CLI, API |
-| 14.2 | Build CK-12 importer | pending | 14.1 | K-12 EPUB import |
-| 14.3 | Build Fast.ai importer | pending | 14.1 | Jupyter notebook import |
-| 14.4 | Build AI enrichment pipeline | pending | 14.1 | Sparse → rich transformation |
-| 14.5 | Create web-based editor | pending | 14.1-14.4 | Human-in-the-loop review |
-| 14.6 | Integrate UMLCF with iOS app | pending | 14.1 | Replace current curriculum format |
-
-### 15. Final Polish
+### 14. Content Setup
 
 | ID | Task | Status | Depends On | Notes |
 |----|------|--------|------------|-------|
-| 15.1 | UI/UX refinements | pending | 12.x, 13.x | Based on testing feedback |
-| 15.2 | Performance optimization | pending | 12.5 | Based on profiling results |
-| 15.3 | Bug fixes | pending | 12.x, 13.x | Issues from testing |
+| 14.1 | Create test curriculum | pending | Part 1 | Sample topics for testing |
+| 14.2 | Test PDF import | pending | 14.1 | DocumentProcessor verification |
+| 14.3 | Test OpenStax API | pending | 11.x | Online resource integration |
+| 14.4 | Test Wikipedia API | pending | - | Online resource integration |
+
+### 15. UMLCF Implementation (Future)
+
+| ID | Task | Status | Depends On | Notes |
+|----|------|--------|------------|-------|
+| 15.1 | Implement Python importer package | pending | 8.x spec | Entry points, CLI, API |
+| 15.2 | Build CK-12 importer | pending | 15.1 | K-12 EPUB import |
+| 15.3 | Build Fast.ai importer | pending | 15.1 | Jupyter notebook import |
+| 15.4 | Build AI enrichment pipeline | pending | 15.1 | Sparse → rich transformation |
+| 15.5 | Create web-based editor | pending | 15.1-15.4 | Human-in-the-loop review |
+| 15.6 | Integrate UMLCF with iOS app | pending | 15.1 | Replace current curriculum format |
+
+### 16. Final Polish
+
+| ID | Task | Status | Depends On | Notes |
+|----|------|--------|------------|-------|
+| 16.1 | UI/UX refinements | pending | 13.x, 14.x | Based on testing feedback |
+| 16.2 | Performance optimization | pending | 13.5 | Based on profiling results |
+| 16.3 | Bug fixes | pending | 13.x, 14.x | Issues from testing |
 
 ---
 
@@ -211,6 +221,7 @@ This document tracks all tasks for completing the UnaMentis iOS project. Tasks a
 | 7.1-7.2 | Infrastructure & docs | Claude Code | 2025-12-16 | MCP setup, documentation |
 | 8.1-8.10 | UMLCF specification complete | Claude Code | 2025-12-17 | Schema, spec, examples, importers, AI pipeline |
 | 9.1-9.10 | Apple Intelligence integration | Claude Code | 2025-12-24 | Siri voice commands, App Intents, deep links, 23 tests |
+| 10.1-10.5 | Graceful degradation architecture | Claude Code | 2025-12-24 | STT/TTS/LLM fallbacks to built-in services |
 
 ---
 
@@ -242,6 +253,7 @@ This document tracks all tasks for completing the UnaMentis iOS project. Tasks a
 - [x] All unit tests pass (126+ tests, including 23 App Intents tests)
 - [x] All integration tests pass (16 new tests)
 - [x] `swift build` succeeds with zero errors
+- [x] **Graceful degradation** (STT/TTS/LLM fallback to Apple services)
 - [x] Core Data works with SPM builds
 - [x] Platform compatibility (iOS + macOS)
 - [x] GLM-ASR server implementation
@@ -260,7 +272,7 @@ This document tracks all tasks for completing the UnaMentis iOS project. Tasks a
 - **STT**: GLMASRSTTService.swift, GLMASROnDeviceSTTService.swift, STTProviderRouter.swift
 - **UI**: SessionView.swift, HistoryView.swift, AnalyticsView.swift, SettingsView.swift
 - **Intents**: StartLessonIntent.swift, ResumeLearningIntent.swift, ShowProgressIntent.swift, CurriculumEntity.swift, TopicEntity.swift, AppShortcutsProvider.swift
-- **Docs**: UnaMentis_TDD.md, GLM_ASR_ON_DEVICE_GUIDE.md, AI_SIMULATOR_TESTING.md, APPLE_INTELLIGENCE.md
+- **Docs**: UnaMentis_TDD.md, GLM_ASR_ON_DEVICE_GUIDE.md, AI_SIMULATOR_TESTING.md, APPLE_INTELLIGENCE.md, FALLBACK_ARCHITECTURE.md
 
 ### New Documentation
 | Document | Purpose |
@@ -268,9 +280,10 @@ This document tracks all tasks for completing the UnaMentis iOS project. Tasks a
 | GLM_ASR_ON_DEVICE_GUIDE.md | Complete on-device STT setup guide |
 | AI_SIMULATOR_TESTING.md | AI-driven testing workflow |
 | APPLE_INTELLIGENCE.md | Apple Intelligence & Siri integration guide |
+| FALLBACK_ARCHITECTURE.md | Graceful degradation and service fallbacks |
 | (Updated) QUICKSTART.md | Current project state |
 | (Updated) SETUP.md | Model setup instructions |
-| (Updated) PROJECT_OVERVIEW.md | Added Intents architecture |
+| (Updated) PROJECT_OVERVIEW.md | Added Intents architecture, Graceful Degradation |
 
 ### Curriculum Format (UMLCF) Documentation
 | Document | Purpose |

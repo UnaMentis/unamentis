@@ -22,6 +22,7 @@ public actor APIKeyManager {
     // MARK: - Properties
 
     private let logger = Logger(label: "com.unamentis.apikeys")
+    private static let migrationLogger = Logger(label: "com.unamentis.apikeys.migration")
     private let serviceName = "com.unamentis.apikeys"
     private let legacyServiceName = "com.voicelearn.apikeys"
 
@@ -69,7 +70,7 @@ public actor APIKeyManager {
     /// This is called once on first launch after upgrade to preserve user's keys
     /// Note: nonisolated because it's called from init and only uses synchronous Keychain APIs
     private nonisolated func migrateFromLegacyService() {
-        print("[APIKeyManager] Checking for legacy API keys to migrate...")
+        Self.migrationLogger.debug("Checking for legacy API keys to migrate...")
 
         var migratedCount = 0
 
@@ -81,9 +82,9 @@ public actor APIKeyManager {
                     // Migrate: save to new service
                     if saveToKeychainSync(keyType: keyType, value: legacyKey) {
                         migratedCount += 1
-                        print("[APIKeyManager] Migrated API key: \(keyType.displayName)")
+                        Self.migrationLogger.info("Migrated API key: \(keyType.displayName)")
                     } else {
-                        print("[APIKeyManager] Failed to migrate \(keyType.displayName)")
+                        Self.migrationLogger.error("Failed to migrate \(keyType.displayName)")
                     }
                 }
 
@@ -93,9 +94,9 @@ public actor APIKeyManager {
         }
 
         if migratedCount > 0 {
-            print("[APIKeyManager] Successfully migrated \(migratedCount) API key(s) from legacy storage")
+            Self.migrationLogger.info("Successfully migrated \(migratedCount) API key(s) from legacy storage")
         } else {
-            print("[APIKeyManager] No legacy API keys found to migrate")
+            Self.migrationLogger.debug("No legacy API keys found to migrate")
         }
     }
 

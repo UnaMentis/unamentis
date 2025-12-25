@@ -12,6 +12,9 @@ struct UnaMentisApp: App {
     /// Application state container
     @StateObject private var appState = AppState()
 
+    /// Logger for app-level events (used after logging system is bootstrapped)
+    private static let logger = Logger(label: "com.unamentis.app")
+
     /// Get the build date from the app bundle's executable
     private static func getBuildDate() -> String {
         guard let executablePath = Bundle.main.executablePath,
@@ -118,7 +121,7 @@ struct UnaMentisApp: App {
                let _ = UUID(uuidString: idString) {
                 // Navigate to lesson with the specified topic
                 // The appState.selectedTab and navigation will be handled by ContentView
-                print("[DeepLink] Start lesson: \(idString)")
+                Self.logger.info("DeepLink: Start lesson \(idString)")
                 NotificationCenter.default.post(
                     name: .startLessonFromDeepLink,
                     object: nil,
@@ -130,7 +133,7 @@ struct UnaMentisApp: App {
             // Handle: unamentis://resume?id=UUID
             if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
                let idString = components.queryItems?.first(where: { $0.name == "id" })?.value {
-                print("[DeepLink] Resume lesson: \(idString)")
+                Self.logger.info("DeepLink: Resume lesson \(idString)")
                 NotificationCenter.default.post(
                     name: .resumeLessonFromDeepLink,
                     object: nil,
@@ -140,7 +143,7 @@ struct UnaMentisApp: App {
 
         case "analytics":
             // Handle: unamentis://analytics
-            print("[DeepLink] Show analytics")
+            Self.logger.info("DeepLink: Show analytics")
             NotificationCenter.default.post(name: .showAnalyticsFromDeepLink, object: nil)
 
         case "chat":
@@ -158,7 +161,7 @@ struct UnaMentisApp: App {
             )
 
         default:
-            print("[DeepLink] Unknown path: \(url.host ?? "nil")")
+            Self.logger.warning("DeepLink: Unknown path: \(url.host ?? "nil")")
         }
     }
 }

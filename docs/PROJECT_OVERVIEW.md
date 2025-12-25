@@ -25,12 +25,24 @@ All components are **protocol-based and swappable**:
 | **VAD** | Silero (CoreML on Neural Engine) | - | - |
 | **Embeddings** | - | OpenAI text-embedding-3-small | - |
 
+### Graceful Degradation
+
+The app is designed to work on any device, even without API keys or servers. See [FALLBACK_ARCHITECTURE.md](FALLBACK_ARCHITECTURE.md) for complete details.
+
+| Component | Built-in Fallback | Always Available |
+|-----------|-------------------|------------------|
+| **STT** | Apple Speech | Yes |
+| **TTS** | Apple TTS | Yes |
+| **LLM** | OnDeviceLLMService | Requires bundled models |
+| **VAD** | RMS-based detection | Yes |
+
 ### STT Provider Router
 
 Intelligent automatic failover system for speech-to-text:
 - Primary: On-device STT (GLM-ASR-Nano or Apple Speech)
 - Fallback: Server-based STT (GLM-ASR server)
 - Final fallback: Cloud providers (Deepgram, AssemblyAI)
+- Ultimate fallback: Apple Speech (always available)
 
 ### LLM Routing (Patch Panel)
 
@@ -386,6 +398,7 @@ UnaMentis/
 | Document | Purpose |
 |----------|---------|
 | [APPLE_INTELLIGENCE.md](APPLE_INTELLIGENCE.md) | Apple Intelligence integration guide |
+| [FALLBACK_ARCHITECTURE.md](FALLBACK_ARCHITECTURE.md) | Graceful degradation and service fallbacks |
 | [PATCH_PANEL_ARCHITECTURE.md](PATCH_PANEL_ARCHITECTURE.md) | LLM routing system |
 | [VISUAL_ASSET_SUPPORT.md](VISUAL_ASSET_SUPPORT.md) | Curriculum visual assets |
 | [GLM_ASR_ON_DEVICE_GUIDE.md](GLM_ASR_ON_DEVICE_GUIDE.md) | On-device STT setup |

@@ -410,9 +410,18 @@ public enum ThermalState: String, Codable, Sendable, Comparable {
     case serious
     case critical
 
+    /// Ordinal value for comparison (lower is better)
+    private var ordinal: Int {
+        switch self {
+        case .nominal: return 0
+        case .fair: return 1
+        case .serious: return 2
+        case .critical: return 3
+        }
+    }
+
     public static func < (lhs: ThermalState, rhs: ThermalState) -> Bool {
-        let order: [ThermalState] = [.nominal, .fair, .serious, .critical]
-        return order.firstIndex(of: lhs)! < order.firstIndex(of: rhs)!
+        return lhs.ordinal < rhs.ordinal
     }
 }
 

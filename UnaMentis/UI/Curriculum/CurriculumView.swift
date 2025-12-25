@@ -565,8 +565,7 @@ struct ServerCurriculumBrowser: View {
     @State private var searchText = ""
     @State private var selectedCurriculum: CurriculumSummary?
     @State private var curriculumDetail: CurriculumDetail?
-    @State private var isDownloading = false
-    @State private var downloadProgress: String?
+    @State private var showingTopicSelection = false
     @State private var downloadError: String?
     @State private var showingDownloadError = false
 
@@ -640,10 +639,24 @@ struct ServerCurriculumBrowser: View {
                 ServerCurriculumDetailView(
                     curriculum: curriculum,
                     detail: curriculumDetail,
-                    isDownloading: isDownloading,
-                    downloadProgress: downloadProgress,
-                    onDownload: { await downloadCurriculum(curriculum) }
+                    onSelectTopics: {
+                        showingTopicSelection = true
+                    }
                 )
+            }
+            .sheet(isPresented: $showingTopicSelection) {
+                if let curriculum = selectedCurriculum {
+                    TopicSelectionView(
+                        curriculum: curriculum,
+                        detail: curriculumDetail,
+                        onDownload: { selectedTopicIds in
+                            await downloadCurriculum(curriculum, selectedTopicIds: selectedTopicIds)
+                        },
+                        onCancel: {
+                            showingTopicSelection = false
+                        }
+                    )
+                }
             }
             .alert("Download Failed", isPresented: $showingDownloadError) {
                 Button("OK") { }
@@ -690,41 +703,36 @@ struct ServerCurriculumBrowser: View {
     }
 
     @MainActor
-    private func downloadCurriculum(_ curriculum: CurriculumSummary) async {
-        Self.logger.info("⬇️ Download initiated for curriculum: \(curriculum.title) (id: \(curriculum.id))")
+    private func downloadCurriculum(_ curriculum: CurriculumSummary, selectedTopicIds: Set<String>) async {
+        Self.logger.info("⬇️ Download initiated for curriculum: \(curriculum.title) (id: \(curriculum.id)) with \(selectedTopicIds.count) topics")
 
-        isDownloading = true
-        downloadProgress = "Connecting to server..."
         downloadError = nil
 
         do {
-            Self.logger.info("⬇️ Step 1: Creating parser...")
+            // Configure download manager with same server settings
+            let serverIP = UserDefaults.standard.string(forKey: "primaryServerIP") ?? ""
+            let host = serverIP.isEmpty ? "localhost" : serverIP
+            try await CurriculumDownloadManager.shared.configure(host: host, port: 8766)
+
+            Self.logger.info("⬇️ Starting download via CurriculumDownloadManager...")
             let parser = UMLCFParser()
 
-            Self.logger.info("⬇️ Step 2: Starting download from server...")
-            downloadProgress = "Downloading curriculum with assets..."
-
-            let downloadedCurriculum = try await CurriculumService.shared.downloadAndImportWithAssets(
-                curriculumId: curriculum.id,
+            let downloadedCurriculum = try await CurriculumDownloadManager.shared.downloadCurriculum(
+                id: curriculum.id,
+                title: curriculum.title,
+                selectedTopicIds: selectedTopicIds,
                 parser: parser
             )
 
             Self.logger.info("✅ Successfully downloaded and imported curriculum: \(curriculum.title)")
             Self.logger.info("✅ Curriculum has \(downloadedCurriculum.topics?.count ?? 0) topics")
 
-            downloadProgress = "Download complete!"
-
-            // Brief delay to show success message
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-
-            isDownloading = false
-            downloadProgress = nil
+            // Close sheets and notify parent
+            showingTopicSelection = false
             selectedCurriculum = nil
             onDownload(downloadedCurriculum)
         } catch {
-            // Log full error details for debugging
             Self.logger.error("❌ Failed to download curriculum: \(error)")
-            Self.logger.error("❌ Error type: \(type(of: error))")
 
             var errorDetail = error.localizedDescription
 
@@ -732,30 +740,24 @@ struct ServerCurriculumBrowser: View {
                 switch decodingError {
                 case .keyNotFound(let key, let context):
                     let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
-                    Self.logger.error("❌ Missing key '\(key.stringValue)' at path: \(path)")
                     errorDetail = "Missing data field: \(key.stringValue) at \(path)"
                 case .typeMismatch(let type, let context):
                     let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
-                    Self.logger.error("❌ Type mismatch for \(type) at path: \(path)")
                     errorDetail = "Data format error at: \(path)"
                 case .valueNotFound(let type, let context):
                     let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
-                    Self.logger.error("❌ Value not found for \(type) at path: \(path)")
                     errorDetail = "Missing value at: \(path)"
                 case .dataCorrupted(let context):
                     let path = context.codingPath.map { $0.stringValue }.joined(separator: ".")
-                    Self.logger.error("❌ Data corrupted at path: \(path)")
                     errorDetail = "Corrupted data at: \(path)"
                 @unknown default:
-                    Self.logger.error("❌ Unknown decoding error")
                     errorDetail = "Unknown data format error"
                 }
             } else if let serviceError = error as? CurriculumServiceError {
                 errorDetail = serviceError.errorDescription ?? error.localizedDescription
             }
 
-            isDownloading = false
-            downloadProgress = nil
+            showingTopicSelection = false
             downloadError = errorDetail
             showingDownloadError = true
         }
@@ -858,48 +860,31 @@ struct ServerCurriculumRow: View {
 struct ServerCurriculumDetailView: View {
     let curriculum: CurriculumSummary
     let detail: CurriculumDetail?
-    let isDownloading: Bool
-    let downloadProgress: String?
-    let onDownload: () async -> Void
+    let onSelectTopics: () -> Void
 
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Download Button - Always visible at top
-                if isDownloading {
-                    HStack(spacing: 12) {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                        if let progress = downloadProgress {
-                            Text(progress)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
+                // Download Button - Opens topic selection
+                Button {
+                    onSelectTopics()
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.down.circle.fill")
+                        Text("Download Topics")
                     }
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-                    .background(Color(.systemBackground))
-                } else {
-                    Button {
-                        Task { await onDownload() }
-                    } label: {
-                        HStack {
-                            Image(systemName: "arrow.down.circle.fill")
-                            Text("Download Curriculum")
-                        }
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                    }
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-                    .background(Color(.systemBackground))
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
                 }
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity)
+                .background(Color(.systemBackground))
 
                 Divider()
 

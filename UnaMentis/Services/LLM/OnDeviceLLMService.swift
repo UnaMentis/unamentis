@@ -105,6 +105,7 @@ public actor OnDeviceLLMService: LLMService {
     // MARK: - Properties
 
     private let logger = Logger(label: "com.unamentis.llm.ondevice")
+    private static let staticLogger = Logger(label: "com.unamentis.llm.ondevice.static")
     private let configuration: Configuration
 
     // llama.cpp state
@@ -154,47 +155,44 @@ public actor OnDeviceLLMService: LLMService {
 
     public func loadModel() async throws {
         guard !isLoaded else {
-            print("[OnDeviceLLM] Model already loaded")
+            logger.debug("Model already loaded")
             return
         }
 
         // Use the configured model path
         let modelPath = configuration.modelPath.path
 
-        print("[OnDeviceLLM] loadModel() called, path: \(modelPath)")
         logger.info("Loading on-device LLM from \(modelPath)")
 
         guard FileManager.default.fileExists(atPath: modelPath) else {
-            print("[OnDeviceLLM] ERROR: Model file not found at: \(modelPath)")
             logger.error("Model file not found at: \(modelPath)")
             throw OnDeviceLLMError.modelNotFound(configuration.modelPath.lastPathComponent)
         }
 
-        print("[OnDeviceLLM] Model file exists, initializing backend...")
+        logger.debug("Model file exists, initializing backend...")
 
         // Initialize llama backend
         llama_backend_init()
-        print("[OnDeviceLLM] Backend initialized")
+        logger.debug("Backend initialized")
 
         // Load model
         var modelParams = llama_model_default_params()
 
         #if targetEnvironment(simulator)
         modelParams.n_gpu_layers = 0
-        print("[OnDeviceLLM] Running on simulator, n_gpu_layers = 0")
-        logger.info("Running on simulator, force use n_gpu_layers = 0")
+        logger.info("Running on simulator, n_gpu_layers = 0")
         #else
         modelParams.n_gpu_layers = configuration.gpuLayers
-        print("[OnDeviceLLM] Running on device, n_gpu_layers = \(configuration.gpuLayers)")
+        logger.info("Running on device, n_gpu_layers = \(configuration.gpuLayers)")
         #endif
 
-        print("[OnDeviceLLM] Loading model file (this may take a while for 2GB file)...")
+        logger.info("Loading model file (this may take a while for 2GB file)...")
         model = llama_load_model_from_file(modelPath, modelParams)
         guard model != nil else {
-            print("[OnDeviceLLM] ERROR: llama_load_model_from_file failed!")
+            logger.error("llama_load_model_from_file failed")
             throw OnDeviceLLMError.modelLoadFailed("llama_load_model_from_file failed")
         }
-        print("[OnDeviceLLM] Model loaded successfully!")
+        logger.info("Model loaded successfully")
 
         // Create context
         let nThreads = max(1, min(8, ProcessInfo.processInfo.processorCount - 2))
@@ -203,17 +201,16 @@ public actor OnDeviceLLMService: LLMService {
         ctxParams.n_threads = Int32(nThreads)
         ctxParams.n_threads_batch = Int32(nThreads)
 
-        print("[OnDeviceLLM] Creating context with \(nThreads) threads, context size: \(configuration.contextSize)")
+        logger.debug("Creating context with \(nThreads) threads, context size: \(configuration.contextSize)")
         context = llama_new_context_with_model(model, ctxParams)
         guard context != nil else {
             llama_free_model(model)
             model = nil
-            print("[OnDeviceLLM] ERROR: llama_new_context_with_model failed!")
+            logger.error("llama_new_context_with_model failed")
             throw OnDeviceLLMError.modelLoadFailed("llama_new_context_with_model failed")
         }
 
         isLoaded = true
-        print("[OnDeviceLLM] Context created - LLM ready!")
         logger.info("On-device LLM loaded successfully with \(nThreads) threads")
     }
 
@@ -236,22 +233,22 @@ public actor OnDeviceLLMService: LLMService {
         messages: [LLMMessage],
         config: LLMConfig
     ) async throws -> AsyncStream<LLMToken> {
-        print("[OnDeviceLLM] streamCompletion() called with \(messages.count) messages")
+        logger.debug("streamCompletion called with \(messages.count) messages")
 
         // Load model if needed
         if !isLoaded {
-            print("[OnDeviceLLM] Model not loaded, loading now...")
+            logger.info("Model not loaded, loading now...")
             try await loadModel()
         }
 
         guard let ctx = context, let mdl = model else {
-            print("[OnDeviceLLM] ERROR: context or model is nil after loading!")
+            logger.error("Context or model is nil after loading")
             throw OnDeviceLLMError.notConfigured
         }
 
         // Format messages into prompt
         let prompt = formatChatPrompt(messages: messages, systemPrompt: config.systemPrompt)
-        print("[OnDeviceLLM] Formatted prompt length: \(prompt.count) chars")
+        logger.debug("Formatted prompt length: \(prompt.count) chars")
         logger.debug("Prompt: \(prompt.prefix(200))...")
 
         let startTime = Date()
@@ -260,10 +257,10 @@ public actor OnDeviceLLMService: LLMService {
             Task {
                 do {
                     // Tokenize prompt
-                    print("[OnDeviceLLM] Tokenizing prompt...")
+                    self.logger.debug("Tokenizing prompt...")
                     let tokens = self.tokenize(prompt, model: mdl)
                     self.totalInputTokens += tokens.count
-                    print("[OnDeviceLLM] Tokenized to \(tokens.count) tokens")
+                    self.logger.debug("Tokenized to \(tokens.count) tokens")
 
                     // Create batch for processing
                     var batch = llama_batch_init(512, 0, 1)
@@ -277,12 +274,12 @@ public actor OnDeviceLLMService: LLMService {
                     batch.logits[Int(batch.n_tokens) - 1] = 1  // Enable logits for last token
 
                     // Process prompt
-                    print("[OnDeviceLLM] Processing prompt through decoder...")
+                    self.logger.debug("Processing prompt through decoder...")
                     if llama_decode(ctx, batch) != 0 {
-                        print("[OnDeviceLLM] ERROR: Initial decode failed!")
+                        self.logger.error("Initial decode failed")
                         throw OnDeviceLLMError.inferenceError("Initial decode failed")
                     }
-                    print("[OnDeviceLLM] Prompt processed, starting generation...")
+                    self.logger.debug("Prompt processed, starting generation...")
 
                     // Generate tokens
                     var nCur = batch.n_tokens
@@ -522,32 +519,32 @@ extension OnDeviceLLMService {
         // Check for Ministral 3B in bundle (primary - requires llama.cpp ≥b7263)
         if let bundleURL = Bundle.main.url(forResource: "ministral-3b-instruct-q4_k_m", withExtension: "gguf") {
             let exists = FileManager.default.fileExists(atPath: bundleURL.path)
-            print("[OnDeviceLLM] Ministral 3B bundle URL: \(bundleURL.path), exists: \(exists)")
+            staticLogger.debug("Ministral 3B bundle URL: \(bundleURL.path), exists: \(exists)")
             if exists { return true }
         }
 
         // Check filesystem path for Ministral 3B (development)
         let ministralPath = "models/ministral-3b-instruct-q4_k_m.gguf"
         if FileManager.default.fileExists(atPath: ministralPath) {
-            print("[OnDeviceLLM] Ministral 3B filesystem path exists: \(ministralPath)")
+            staticLogger.debug("Ministral 3B filesystem path exists: \(ministralPath)")
             return true
         }
 
         // Fallback: check for TinyLlama 1.1B in bundle
         if let bundleURL = Bundle.main.url(forResource: "tinyllama-1.1b-chat-v1.0.Q4_K_M", withExtension: "gguf") {
             let exists = FileManager.default.fileExists(atPath: bundleURL.path)
-            print("[OnDeviceLLM] TinyLlama bundle URL: \(bundleURL.path), exists: \(exists)")
+            staticLogger.debug("TinyLlama bundle URL: \(bundleURL.path), exists: \(exists)")
             if exists { return true }
         }
 
         // Fallback: check filesystem path for TinyLlama (development)
         let tinyLlamaPath = "models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
         if FileManager.default.fileExists(atPath: tinyLlamaPath) {
-            print("[OnDeviceLLM] TinyLlama filesystem path exists: \(tinyLlamaPath)")
+            staticLogger.debug("TinyLlama filesystem path exists: \(tinyLlamaPath)")
             return true
         }
 
-        print("[OnDeviceLLM] No models available")
+        staticLogger.debug("No models available")
         return false
     }
 }

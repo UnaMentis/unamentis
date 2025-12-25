@@ -109,6 +109,8 @@
 		C98EF8EA4DC6D3C81607F6A3 /* StartLessonIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16503A70E42DE0BC81F08C21 /* StartLessonIntent.swift */; };
 		ADDED877DD6C660DA5B03FD5 /* TopicEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 141E1CE7FED01904DABB416D /* TopicEntity.swift */; };
 		E6CBD689E679A8881DF96C0E /* AppIntentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0F2F6FDDD57EA81615D0D41 /* AppIntentsTests.swift */; };
+		C3D4E5F678901234567890AB /* CurriculumDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012345678 /* CurriculumDownloadManager.swift */; };
+		D4E5F6789012345678901ABC /* TopicSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F67890123456789A /* TopicSelectionView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -226,6 +228,8 @@
 		16503A70E42DE0BC81F08C21 /* StartLessonIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnaMentis/Intents/StartLessonIntent.swift"; sourceTree = SOURCE_ROOT; };
 		141E1CE7FED01904DABB416D /* TopicEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnaMentis/Intents/TopicEntity.swift"; sourceTree = SOURCE_ROOT; };
 		F0F2F6FDDD57EA81615D0D41 /* AppIntentsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnaMentisTests/Unit/Intents/AppIntentsTests.swift"; sourceTree = SOURCE_ROOT; };
+		A1B2C3D4E5F6789012345678 /* CurriculumDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumDownloadManager.swift; sourceTree = "<group>"; };
+		B2C3D4E5F67890123456789A /* TopicSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicSelectionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -263,6 +267,7 @@
 			isa = PBXGroup;
 			children = (
 				CA6A16CA0F313B0BA5AF32CB /* CurriculumView.swift */,
+				B2C3D4E5F67890123456789A /* TopicSelectionView.swift */,
 			);
 			path = Curriculum;
 			sourceTree = "<group>";
@@ -595,6 +600,7 @@
 		D1B0A8909510BCEAA999FBB2 /* Curriculum */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F6789012345678 /* CurriculumDownloadManager.swift */,
 				9A39F3F414367641F29F2D0D /* CurriculumService.swift */,
 				26E3E8684EA9678069FA39B9 /* TranscriptStreamingService.swift */,
 				44E2E958EA7D3062EB87DCCC /* VisualAssetCache.swift */,
@@ -751,8 +757,10 @@
 				5FB02016D05BE3A79498AF76 /* Curriculum+CoreDataClass.swift in Sources */,
 				01ABAF0927B8FB3C82CB7555 /* CurriculumEngine.swift in Sources */,
 				445DE38CFA5CBA6AEDF7CC2C /* CurriculumModels.swift in Sources */,
+				C3D4E5F678901234567890AB /* CurriculumDownloadManager.swift in Sources */,
 				EC60C6A4D154A41740F24082 /* CurriculumService.swift in Sources */,
 				291BD2E24D18E30DC6DAEE24 /* CurriculumView.swift in Sources */,
+				D4E5F6789012345678901ABC /* TopicSelectionView.swift in Sources */,
 				0ED06879B9789F125D3AEA22 /* DebugConversationTestView.swift in Sources */,
 				27CDEC09CE80D2E32B4366D6 /* DebugConversationViewModel.swift in Sources */,
 				132E4E09251795EB48A00F47 /* DeepgramSTTService.swift in Sources */,

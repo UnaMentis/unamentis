@@ -5,6 +5,7 @@
 
 import SwiftUI
 import CoreData
+import Logging
 #if os(iOS)
 import UIKit
 #endif
@@ -330,6 +331,7 @@ class HistoryViewModel: ObservableObject {
     @Published var showExportSheet = false
 
     private let persistence = PersistenceController.shared
+    private let logger = Logger(label: "com.unamentis.ui.history")
 
     init() {
         loadFromCoreData()
@@ -375,7 +377,7 @@ class HistoryViewModel: ObservableObject {
                 )
             }
         } catch {
-            print("Failed to fetch sessions: \(error)")
+            logger.error("Failed to fetch sessions: \(error.localizedDescription)")
             sessions = []
         }
     }
@@ -420,7 +422,7 @@ class HistoryViewModel: ObservableObject {
             exportURL = fileURL
             showExportSheet = true
         } catch {
-            print("Failed to export sessions: \(error)")
+            logger.error("Failed to export sessions: \(error.localizedDescription)")
         }
     }
 
@@ -437,7 +439,7 @@ class HistoryViewModel: ObservableObject {
             try persistence.save()
             self.sessions.removeAll()
         } catch {
-            print("Failed to clear sessions: \(error)")
+            logger.error("Failed to clear sessions: \(error.localizedDescription)")
         }
     }
 }
