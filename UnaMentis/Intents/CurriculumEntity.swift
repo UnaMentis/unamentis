@@ -39,7 +39,7 @@ public struct CurriculumEntity: AppEntity {
         DisplayRepresentation(
             title: LocalizedStringResource(stringLiteral: name),
             subtitle: summary.map { LocalizedStringResource(stringLiteral: $0) },
-            image: .init(systemName: "book.fill")
+            image: DisplayRepresentation.Image(systemName: "book.fill")
         )
     }
 
