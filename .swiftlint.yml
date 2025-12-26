@@ -9,9 +9,10 @@ excluded:
   - UnaMentis/Generated
 
 # Opt-in rules that provide value but are not critical for CI
+# Note: explicit_init disabled temporarily as it requires significant codebase changes
 opt_in_rules:
   - closure_spacing
-  - explicit_init
+  # - explicit_init  # Disabled: requires .init() -> ExplicitType() changes throughout codebase
   - fatal_error_message
   - first_where
   - multiline_parameters

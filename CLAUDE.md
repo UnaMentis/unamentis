@@ -11,15 +11,15 @@ UnaMentis is an iOS voice AI tutoring app built with Swift 6.0/SwiftUI. It enabl
 ```bash
 # Build for simulator
 xcodebuild -project UnaMentis.xcodeproj -scheme UnaMentis \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
 
 # Run all tests
 xcodebuild test -project UnaMentis.xcodeproj -scheme UnaMentis \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
 
 # Run specific test class
 xcodebuild test -project UnaMentis.xcodeproj -scheme UnaMentis \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
   -only-testing:UnaMentisTests/ProgressTrackerTests
 
 # Quick tests

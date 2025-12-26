@@ -54,7 +54,7 @@ public struct TopicEntity: AppEntity {
         return DisplayRepresentation(
             title: LocalizedStringResource(stringLiteral: title),
             subtitle: subtitle.isEmpty ? nil : LocalizedStringResource(stringLiteral: subtitle),
-            image: .init(systemName: masteryIcon)
+            image: DisplayRepresentation.Image(systemName: masteryIcon)
         )
     }
 

@@ -135,7 +135,7 @@ public actor GLMASRSTTService: STTService {
         // Send start configuration message
         let startMessage = StartMessage(
             type: "start",
-            config: .init(
+            config: StartMessage.Config(
                 language: configuration.language,
                 interimResults: configuration.interimResults,
                 punctuate: configuration.punctuate
@@ -356,7 +356,7 @@ public actor GLMASRSTTService: STTService {
                 // Re-send start message
                 let startMessage = StartMessage(
                     type: "start",
-                    config: .init(
+                    config: StartMessage.Config(
                         language: configuration.language,
                         interimResults: configuration.interimResults,
                         punctuate: configuration.punctuate

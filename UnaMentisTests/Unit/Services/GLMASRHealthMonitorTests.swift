@@ -58,7 +58,7 @@ final class GLMASRHealthMonitorTests: XCTestCase {
 
     func testRecordFailure_singleFailure_staysHealthyOrDegraded() async {
         let monitor = GLMASRHealthMonitor(
-            configuration: .init(
+            configuration: GLMASRHealthMonitor.Configuration(
                 healthEndpoint: URL(string: "http://localhost:8080/health")!,
                 checkIntervalSeconds: 30,
                 unhealthyThreshold: 3,  // Need 3 failures
@@ -75,7 +75,7 @@ final class GLMASRHealthMonitorTests: XCTestCase {
 
     func testRecordFailure_thresholdExceeded_becomesUnhealthy() async {
         let monitor = GLMASRHealthMonitor(
-            configuration: .init(
+            configuration: GLMASRHealthMonitor.Configuration(
                 healthEndpoint: URL(string: "http://localhost:8080/health")!,
                 checkIntervalSeconds: 30,
                 unhealthyThreshold: 3,
@@ -94,7 +94,7 @@ final class GLMASRHealthMonitorTests: XCTestCase {
 
     func testRecordSuccess_afterUnhealthy_becomesDegraded() async {
         let monitor = GLMASRHealthMonitor(
-            configuration: .init(
+            configuration: GLMASRHealthMonitor.Configuration(
                 healthEndpoint: URL(string: "http://localhost:8080/health")!,
                 checkIntervalSeconds: 30,
                 unhealthyThreshold: 2,
@@ -115,7 +115,7 @@ final class GLMASRHealthMonitorTests: XCTestCase {
 
     func testRecordSuccess_thresholdExceeded_becomesHealthy() async {
         let monitor = GLMASRHealthMonitor(
-            configuration: .init(
+            configuration: GLMASRHealthMonitor.Configuration(
                 healthEndpoint: URL(string: "http://localhost:8080/health")!,
                 checkIntervalSeconds: 30,
                 unhealthyThreshold: 2,
@@ -137,7 +137,7 @@ final class GLMASRHealthMonitorTests: XCTestCase {
 
     func testRecordSuccess_resetsFailureCount() async {
         let monitor = GLMASRHealthMonitor(
-            configuration: .init(
+            configuration: GLMASRHealthMonitor.Configuration(
                 healthEndpoint: URL(string: "http://localhost:8080/health")!,
                 checkIntervalSeconds: 30,
                 unhealthyThreshold: 3,
@@ -162,7 +162,7 @@ final class GLMASRHealthMonitorTests: XCTestCase {
 
     func testRecordFailure_resetsSuccessCount() async {
         let monitor = GLMASRHealthMonitor(
-            configuration: .init(
+            configuration: GLMASRHealthMonitor.Configuration(
                 healthEndpoint: URL(string: "http://localhost:8080/health")!,
                 checkIntervalSeconds: 30,
                 unhealthyThreshold: 2,
@@ -213,7 +213,7 @@ final class GLMASRHealthMonitorTests: XCTestCase {
 
     func testStopMonitoring_stopsLoop() async {
         let monitor = GLMASRHealthMonitor(
-            configuration: .init(
+            configuration: GLMASRHealthMonitor.Configuration(
                 healthEndpoint: URL(string: "http://localhost:8080/health")!,
                 checkIntervalSeconds: 1,  // Very short for test
                 unhealthyThreshold: 3,
@@ -237,7 +237,7 @@ final class GLMASRHealthMonitorTests: XCTestCase {
 
     func testCheckHealth_noServer_returnsUnhealthyEventually() async {
         let monitor = GLMASRHealthMonitor(
-            configuration: .init(
+            configuration: GLMASRHealthMonitor.Configuration(
                 healthEndpoint: URL(string: "http://localhost:9999/nonexistent")!,
                 checkIntervalSeconds: 30,
                 unhealthyThreshold: 1,  // Single failure = unhealthy
