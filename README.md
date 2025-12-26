@@ -2,8 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Real-time bidirectional hands free mobile voice learning platform that uses AI on device and on a server to provide extensive learning sessions.
-These sessions can be ad-hoc of based on proven curriculum from many well known sources.**
+**Real-time bidirectional, hands free, mobile, voice learning platform that uses AI on device and on a server to provide extensive learning sessions.
+These sessions can be ad-hoc or based on proven curriculum from many well known sources.**
 
 ## Why UnaMentis?
 
