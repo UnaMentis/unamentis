@@ -516,6 +516,11 @@ async def get_course_detail(self, course_id: str) -> Optional[CourseDetail]:
         raise
 ```
 
+## Additional Documentation
+
+- **[Plugin Development Specification](PLUGIN_SPEC.md)** - Complete spec for creating compliant plugins
+- **[Example Source Plugin](examples/example_source_plugin.py)** - Full working example with comments
+
 ## References
 
 - [Pluggy Documentation](https://pluggy.readthedocs.io/)
