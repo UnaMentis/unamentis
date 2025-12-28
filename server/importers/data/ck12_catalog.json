@@ -1,0 +1,826 @@
+{
+  "metadata": {
+    "source": "ck12_flexbook",
+    "name": "CK-12 FlexBooks",
+    "description": "Free, high-quality K-12 educational content from CK-12 Foundation",
+    "last_updated": "2025-01-15",
+    "total_courses": 25,
+    "subjects": ["Mathematics", "Science", "English Language Arts", "Social Studies"],
+    "grade_levels": ["elementary", "middle-school", "high-school"],
+    "license": {
+      "type": "CC-BY-NC-3.0",
+      "name": "Creative Commons Attribution-NonCommercial 3.0 Unported",
+      "url": "https://creativecommons.org/licenses/by-nc/3.0/"
+    }
+  },
+  "courses": [
+    {
+      "id": "8th-pre-algebra",
+      "title": "CK-12 Pre-Algebra",
+      "description": "A comprehensive introduction to pre-algebra concepts including integers, fractions, decimals, ratios, proportions, and basic equations. Prepares students for Algebra 1.",
+      "subject": "Mathematics",
+      "level": "middle-school",
+      "grades": ["7", "8"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-pre-algebra-concepts/",
+      "download_url": "https://www.ck12.org/book/ck-12-pre-algebra-concepts/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Pre-Algebra-Concepts.jpg",
+      "features": ["lessons", "practice", "quizzes", "videos"],
+      "lesson_count": 96,
+      "practice_count": 48,
+      "quiz_count": 12,
+      "video_count": 24,
+      "keywords": ["pre-algebra", "math", "equations", "integers", "fractions", "8th grade"],
+      "standards": [
+        {"framework": "Common Core", "code": "8.NS", "description": "The Number System"},
+        {"framework": "Common Core", "code": "8.EE", "description": "Expressions and Equations"}
+      ],
+      "chapters": [
+        {
+          "title": "Integers",
+          "lessons": [
+            {"title": "Comparing and Ordering Integers", "has_video": true},
+            {"title": "Adding Integers", "has_video": true},
+            {"title": "Subtracting Integers", "has_video": true},
+            {"title": "Multiplying and Dividing Integers", "has_video": true}
+          ]
+        },
+        {
+          "title": "Rational Numbers",
+          "lessons": [
+            {"title": "Fractions as Decimals", "has_video": true},
+            {"title": "Adding and Subtracting Fractions", "has_video": false},
+            {"title": "Multiplying and Dividing Fractions", "has_video": false}
+          ]
+        },
+        {
+          "title": "Equations and Inequalities",
+          "lessons": [
+            {"title": "Solving One-Step Equations", "has_video": true},
+            {"title": "Solving Two-Step Equations", "has_video": true},
+            {"title": "Solving Inequalities", "has_video": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "8th-grade-math",
+      "title": "CK-12 8th Grade Math",
+      "description": "Complete 8th grade mathematics curriculum covering the number system, expressions and equations, functions, geometry, and statistics. Aligned to Common Core standards.",
+      "subject": "Mathematics",
+      "level": "middle-school",
+      "grades": ["8"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-middle-school-math-grade-8/",
+      "download_url": "https://www.ck12.org/book/ck-12-middle-school-math-grade-8/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Middle-School-Math-Grade-8.jpg",
+      "features": ["lessons", "practice", "quizzes"],
+      "lesson_count": 84,
+      "practice_count": 42,
+      "quiz_count": 10,
+      "keywords": ["8th grade math", "algebra", "geometry", "functions", "statistics", "common core"],
+      "standards": [
+        {"framework": "Common Core", "code": "8.F", "description": "Functions"},
+        {"framework": "Common Core", "code": "8.G", "description": "Geometry"},
+        {"framework": "Common Core", "code": "8.SP", "description": "Statistics and Probability"}
+      ],
+      "chapters": [
+        {
+          "title": "The Number System",
+          "lessons": [
+            {"title": "Rational and Irrational Numbers"},
+            {"title": "Square Roots and Cube Roots"},
+            {"title": "Scientific Notation"}
+          ]
+        },
+        {
+          "title": "Functions",
+          "lessons": [
+            {"title": "Understanding Functions"},
+            {"title": "Linear Functions"},
+            {"title": "Comparing Functions"}
+          ]
+        },
+        {
+          "title": "Geometry",
+          "lessons": [
+            {"title": "Transformations"},
+            {"title": "Congruence and Similarity"},
+            {"title": "The Pythagorean Theorem"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ms-physical-science",
+      "title": "CK-12 Physical Science for Middle School",
+      "description": "Explores fundamental concepts in physics and chemistry for middle school students. Topics include matter, energy, forces, motion, waves, and electricity.",
+      "subject": "Science",
+      "level": "middle-school",
+      "grades": ["6", "7", "8"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-physical-science-for-middle-school/",
+      "download_url": "https://www.ck12.org/book/ck-12-physical-science-for-middle-school/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Physical-Science-For-Middle-School.jpg",
+      "features": ["lessons", "practice", "videos", "simulations"],
+      "lesson_count": 112,
+      "practice_count": 56,
+      "video_count": 30,
+      "simulation_count": 15,
+      "quiz_count": 14,
+      "keywords": ["physical science", "physics", "chemistry", "matter", "energy", "forces", "middle school"],
+      "standards": [
+        {"framework": "NGSS", "code": "MS-PS1", "description": "Matter and Its Interactions"},
+        {"framework": "NGSS", "code": "MS-PS2", "description": "Motion and Stability: Forces and Interactions"},
+        {"framework": "NGSS", "code": "MS-PS3", "description": "Energy"},
+        {"framework": "NGSS", "code": "MS-PS4", "description": "Waves and Their Applications"}
+      ],
+      "chapters": [
+        {
+          "title": "Matter",
+          "lessons": [
+            {"title": "Properties of Matter", "has_video": true},
+            {"title": "States of Matter", "has_video": true},
+            {"title": "Changes in Matter", "has_video": true}
+          ]
+        },
+        {
+          "title": "Energy",
+          "lessons": [
+            {"title": "Forms of Energy", "has_video": true},
+            {"title": "Energy Transformations", "has_video": false},
+            {"title": "Heat and Temperature", "has_video": true}
+          ]
+        },
+        {
+          "title": "Forces and Motion",
+          "lessons": [
+            {"title": "Newton's Laws of Motion", "has_video": true},
+            {"title": "Gravity and Weight", "has_video": true},
+            {"title": "Friction and Air Resistance", "has_video": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ms-life-science",
+      "title": "CK-12 Life Science for Middle School",
+      "description": "A comprehensive exploration of living organisms, from cells to ecosystems. Covers cell biology, genetics, evolution, ecology, and human body systems.",
+      "subject": "Science",
+      "level": "middle-school",
+      "grades": ["6", "7", "8"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-life-science-for-middle-school/",
+      "download_url": "https://www.ck12.org/book/ck-12-life-science-for-middle-school/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Life-Science-For-Middle-School.jpg",
+      "features": ["lessons", "practice", "videos"],
+      "lesson_count": 98,
+      "practice_count": 49,
+      "video_count": 25,
+      "quiz_count": 12,
+      "keywords": ["life science", "biology", "cells", "genetics", "evolution", "ecology", "middle school"],
+      "standards": [
+        {"framework": "NGSS", "code": "MS-LS1", "description": "From Molecules to Organisms: Structures and Processes"},
+        {"framework": "NGSS", "code": "MS-LS2", "description": "Ecosystems: Interactions, Energy, and Dynamics"},
+        {"framework": "NGSS", "code": "MS-LS3", "description": "Heredity: Inheritance and Variation of Traits"},
+        {"framework": "NGSS", "code": "MS-LS4", "description": "Biological Evolution: Unity and Diversity"}
+      ],
+      "chapters": [
+        {
+          "title": "Cells",
+          "lessons": [
+            {"title": "Cell Structure and Function", "has_video": true},
+            {"title": "Cell Processes", "has_video": true},
+            {"title": "Cell Division", "has_video": true}
+          ]
+        },
+        {
+          "title": "Genetics",
+          "lessons": [
+            {"title": "DNA and Genes", "has_video": true},
+            {"title": "Heredity", "has_video": false},
+            {"title": "Genetic Variation", "has_video": false}
+          ]
+        },
+        {
+          "title": "Ecology",
+          "lessons": [
+            {"title": "Ecosystems", "has_video": true},
+            {"title": "Food Webs and Energy Flow", "has_video": true},
+            {"title": "Human Impact on Ecosystems", "has_video": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ms-earth-science",
+      "title": "CK-12 Earth Science for Middle School",
+      "description": "Investigates Earth's systems including geology, weather, climate, and space science. Examines Earth's history, natural resources, and environmental challenges.",
+      "subject": "Science",
+      "level": "middle-school",
+      "grades": ["6", "7", "8"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-earth-science-for-middle-school/",
+      "download_url": "https://www.ck12.org/book/ck-12-earth-science-for-middle-school/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Earth-Science-For-Middle-School.jpg",
+      "features": ["lessons", "practice", "videos", "simulations"],
+      "lesson_count": 105,
+      "practice_count": 52,
+      "video_count": 28,
+      "simulation_count": 10,
+      "quiz_count": 13,
+      "keywords": ["earth science", "geology", "weather", "climate", "space", "environment", "middle school"],
+      "standards": [
+        {"framework": "NGSS", "code": "MS-ESS1", "description": "Earth's Place in the Universe"},
+        {"framework": "NGSS", "code": "MS-ESS2", "description": "Earth's Systems"},
+        {"framework": "NGSS", "code": "MS-ESS3", "description": "Earth and Human Activity"}
+      ],
+      "chapters": [
+        {
+          "title": "Earth's Structure",
+          "lessons": [
+            {"title": "Earth's Layers", "has_video": true},
+            {"title": "Plate Tectonics", "has_video": true},
+            {"title": "Earthquakes and Volcanoes", "has_video": true}
+          ]
+        },
+        {
+          "title": "Weather and Climate",
+          "lessons": [
+            {"title": "The Atmosphere", "has_video": true},
+            {"title": "Weather Patterns", "has_video": false},
+            {"title": "Climate Change", "has_video": true}
+          ]
+        },
+        {
+          "title": "Space Science",
+          "lessons": [
+            {"title": "The Solar System", "has_video": true},
+            {"title": "Stars and Galaxies", "has_video": true},
+            {"title": "Space Exploration", "has_video": false}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "algebra-1",
+      "title": "CK-12 Algebra 1",
+      "description": "Foundational algebra course covering equations, inequalities, functions, linear relationships, polynomials, and quadratics. Essential preparation for higher math.",
+      "subject": "Mathematics",
+      "level": "high-school",
+      "grades": ["8", "9"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-algebra-i-concepts/",
+      "download_url": "https://www.ck12.org/book/ck-12-algebra-i-concepts/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Algebra-I-Concepts.jpg",
+      "features": ["lessons", "practice", "quizzes", "videos"],
+      "lesson_count": 120,
+      "practice_count": 60,
+      "quiz_count": 15,
+      "video_count": 35,
+      "keywords": ["algebra", "equations", "functions", "linear", "quadratic", "high school"],
+      "standards": [
+        {"framework": "Common Core", "code": "HSA-REI", "description": "Reasoning with Equations and Inequalities"},
+        {"framework": "Common Core", "code": "HSF-IF", "description": "Interpreting Functions"},
+        {"framework": "Common Core", "code": "HSF-BF", "description": "Building Functions"}
+      ],
+      "chapters": [
+        {
+          "title": "Equations and Inequalities",
+          "lessons": [
+            {"title": "Solving Linear Equations", "has_video": true},
+            {"title": "Solving Linear Inequalities", "has_video": true},
+            {"title": "Absolute Value Equations", "has_video": false}
+          ]
+        },
+        {
+          "title": "Linear Functions",
+          "lessons": [
+            {"title": "Graphing Linear Functions", "has_video": true},
+            {"title": "Slope and Rate of Change", "has_video": true},
+            {"title": "Systems of Linear Equations", "has_video": true}
+          ]
+        },
+        {
+          "title": "Polynomials",
+          "lessons": [
+            {"title": "Operations with Polynomials", "has_video": true},
+            {"title": "Factoring Polynomials", "has_video": true},
+            {"title": "Quadratic Equations", "has_video": true}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "geometry",
+      "title": "CK-12 Geometry",
+      "description": "Complete geometry course covering points, lines, planes, angles, triangles, polygons, circles, transformations, and proofs. Emphasizes logical reasoning.",
+      "subject": "Mathematics",
+      "level": "high-school",
+      "grades": ["9", "10"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-geometry-concepts/",
+      "download_url": "https://www.ck12.org/book/ck-12-geometry-concepts/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Geometry-Concepts.jpg",
+      "features": ["lessons", "practice", "quizzes"],
+      "lesson_count": 110,
+      "practice_count": 55,
+      "quiz_count": 14,
+      "keywords": ["geometry", "triangles", "circles", "proofs", "transformations", "high school"],
+      "standards": [
+        {"framework": "Common Core", "code": "HSG-CO", "description": "Congruence"},
+        {"framework": "Common Core", "code": "HSG-SRT", "description": "Similarity, Right Triangles, and Trigonometry"},
+        {"framework": "Common Core", "code": "HSG-C", "description": "Circles"}
+      ],
+      "chapters": [
+        {
+          "title": "Basics of Geometry",
+          "lessons": [
+            {"title": "Points, Lines, and Planes"},
+            {"title": "Angles and Their Measures"},
+            {"title": "Parallel and Perpendicular Lines"}
+          ]
+        },
+        {
+          "title": "Triangles",
+          "lessons": [
+            {"title": "Triangle Classification"},
+            {"title": "Triangle Congruence"},
+            {"title": "Triangle Similarity"}
+          ]
+        },
+        {
+          "title": "Circles",
+          "lessons": [
+            {"title": "Circle Parts and Properties"},
+            {"title": "Arcs and Chords"},
+            {"title": "Inscribed Angles"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "biology",
+      "title": "CK-12 Biology",
+      "description": "Comprehensive high school biology covering biochemistry, cell biology, genetics, evolution, ecology, and human body systems. Laboratory-oriented approach.",
+      "subject": "Science",
+      "level": "high-school",
+      "grades": ["9", "10"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-biology-concepts/",
+      "download_url": "https://www.ck12.org/book/ck-12-biology-concepts/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Biology-Concepts.jpg",
+      "features": ["lessons", "practice", "videos", "simulations"],
+      "lesson_count": 145,
+      "practice_count": 72,
+      "video_count": 40,
+      "simulation_count": 12,
+      "quiz_count": 18,
+      "keywords": ["biology", "cells", "genetics", "evolution", "ecology", "anatomy", "high school"],
+      "standards": [
+        {"framework": "NGSS", "code": "HS-LS1", "description": "From Molecules to Organisms"},
+        {"framework": "NGSS", "code": "HS-LS2", "description": "Ecosystems"},
+        {"framework": "NGSS", "code": "HS-LS3", "description": "Heredity"},
+        {"framework": "NGSS", "code": "HS-LS4", "description": "Biological Evolution"}
+      ],
+      "chapters": [
+        {
+          "title": "Biochemistry",
+          "lessons": [
+            {"title": "The Chemistry of Life", "has_video": true},
+            {"title": "Organic Molecules", "has_video": true},
+            {"title": "Enzymes", "has_video": true}
+          ]
+        },
+        {
+          "title": "Cell Biology",
+          "lessons": [
+            {"title": "Cell Structure", "has_video": true},
+            {"title": "Cellular Respiration", "has_video": true},
+            {"title": "Photosynthesis", "has_video": true}
+          ]
+        },
+        {
+          "title": "Genetics",
+          "lessons": [
+            {"title": "DNA Structure and Replication", "has_video": true},
+            {"title": "Protein Synthesis", "has_video": true},
+            {"title": "Mendelian Genetics", "has_video": true}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chemistry",
+      "title": "CK-12 Chemistry",
+      "description": "Introductory chemistry course covering atomic structure, chemical bonding, reactions, stoichiometry, thermochemistry, and solutions.",
+      "subject": "Science",
+      "level": "high-school",
+      "grades": ["10", "11"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-chemistry-concepts-intermediate/",
+      "download_url": "https://www.ck12.org/book/ck-12-chemistry-concepts-intermediate/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Chemistry-Concepts-Intermediate.jpg",
+      "features": ["lessons", "practice", "videos"],
+      "lesson_count": 130,
+      "practice_count": 65,
+      "video_count": 35,
+      "quiz_count": 16,
+      "keywords": ["chemistry", "atoms", "bonding", "reactions", "stoichiometry", "high school"],
+      "standards": [
+        {"framework": "NGSS", "code": "HS-PS1", "description": "Matter and Its Interactions"},
+        {"framework": "NGSS", "code": "HS-PS2", "description": "Motion and Stability"}
+      ],
+      "chapters": [
+        {
+          "title": "Atomic Structure",
+          "lessons": [
+            {"title": "The Atom", "has_video": true},
+            {"title": "Electron Configuration", "has_video": true},
+            {"title": "The Periodic Table", "has_video": true}
+          ]
+        },
+        {
+          "title": "Chemical Bonding",
+          "lessons": [
+            {"title": "Ionic Bonds", "has_video": true},
+            {"title": "Covalent Bonds", "has_video": true},
+            {"title": "Metallic Bonds", "has_video": false}
+          ]
+        },
+        {
+          "title": "Chemical Reactions",
+          "lessons": [
+            {"title": "Types of Reactions", "has_video": true},
+            {"title": "Balancing Equations", "has_video": true},
+            {"title": "Stoichiometry", "has_video": true}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "physics",
+      "title": "CK-12 Physics",
+      "description": "High school physics covering mechanics, waves, electricity, magnetism, and modern physics. Emphasizes problem-solving and mathematical applications.",
+      "subject": "Science",
+      "level": "high-school",
+      "grades": ["11", "12"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-physics-concepts-intermediate/",
+      "download_url": "https://www.ck12.org/book/ck-12-physics-concepts-intermediate/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Physics-Concepts-Intermediate.jpg",
+      "features": ["lessons", "practice", "videos", "simulations"],
+      "lesson_count": 125,
+      "practice_count": 62,
+      "video_count": 32,
+      "simulation_count": 18,
+      "quiz_count": 15,
+      "keywords": ["physics", "mechanics", "waves", "electricity", "magnetism", "high school"],
+      "standards": [
+        {"framework": "NGSS", "code": "HS-PS2", "description": "Motion and Stability: Forces and Interactions"},
+        {"framework": "NGSS", "code": "HS-PS3", "description": "Energy"},
+        {"framework": "NGSS", "code": "HS-PS4", "description": "Waves and Their Applications"}
+      ],
+      "chapters": [
+        {
+          "title": "Mechanics",
+          "lessons": [
+            {"title": "Motion in One Dimension", "has_video": true},
+            {"title": "Newton's Laws", "has_video": true},
+            {"title": "Work and Energy", "has_video": true}
+          ]
+        },
+        {
+          "title": "Waves",
+          "lessons": [
+            {"title": "Wave Properties", "has_video": true},
+            {"title": "Sound Waves", "has_video": true},
+            {"title": "Light and Optics", "has_video": true}
+          ]
+        },
+        {
+          "title": "Electricity and Magnetism",
+          "lessons": [
+            {"title": "Electric Charge and Force", "has_video": true},
+            {"title": "Electric Circuits", "has_video": true},
+            {"title": "Magnetism", "has_video": true}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6th-grade-math",
+      "title": "CK-12 6th Grade Math",
+      "description": "Complete 6th grade mathematics curriculum covering ratios, rates, expressions, equations, and geometry fundamentals. Common Core aligned.",
+      "subject": "Mathematics",
+      "level": "middle-school",
+      "grades": ["6"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-middle-school-math-grade-6/",
+      "download_url": "https://www.ck12.org/book/ck-12-middle-school-math-grade-6/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Middle-School-Math-Grade-6.jpg",
+      "features": ["lessons", "practice", "quizzes"],
+      "lesson_count": 78,
+      "practice_count": 39,
+      "quiz_count": 10,
+      "keywords": ["6th grade math", "ratios", "expressions", "geometry", "common core"],
+      "standards": [
+        {"framework": "Common Core", "code": "6.RP", "description": "Ratios and Proportional Relationships"},
+        {"framework": "Common Core", "code": "6.EE", "description": "Expressions and Equations"},
+        {"framework": "Common Core", "code": "6.G", "description": "Geometry"}
+      ],
+      "chapters": []
+    },
+    {
+      "id": "7th-grade-math",
+      "title": "CK-12 7th Grade Math",
+      "description": "Complete 7th grade mathematics curriculum covering proportional relationships, operations with rational numbers, and geometry. Common Core aligned.",
+      "subject": "Mathematics",
+      "level": "middle-school",
+      "grades": ["7"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-middle-school-math-grade-7/",
+      "download_url": "https://www.ck12.org/book/ck-12-middle-school-math-grade-7/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Middle-School-Math-Grade-7.jpg",
+      "features": ["lessons", "practice", "quizzes"],
+      "lesson_count": 82,
+      "practice_count": 41,
+      "quiz_count": 10,
+      "keywords": ["7th grade math", "proportions", "rational numbers", "geometry", "common core"],
+      "standards": [
+        {"framework": "Common Core", "code": "7.RP", "description": "Ratios and Proportional Relationships"},
+        {"framework": "Common Core", "code": "7.NS", "description": "The Number System"},
+        {"framework": "Common Core", "code": "7.G", "description": "Geometry"}
+      ],
+      "chapters": []
+    },
+    {
+      "id": "civics",
+      "title": "CK-12 American Government and Civics",
+      "description": "Introduction to American government and civics covering the Constitution, branches of government, civil liberties, and civic participation.",
+      "subject": "Social Studies",
+      "level": "middle-school",
+      "grades": ["7", "8"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-civics/",
+      "download_url": "https://www.ck12.org/book/ck-12-civics/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Civics.jpg",
+      "features": ["lessons", "practice"],
+      "lesson_count": 45,
+      "practice_count": 22,
+      "quiz_count": 6,
+      "keywords": ["civics", "government", "constitution", "democracy", "citizenship", "middle school"],
+      "chapters": [
+        {
+          "title": "Foundations of American Government",
+          "lessons": [
+            {"title": "Principles of Democracy"},
+            {"title": "The Constitution"},
+            {"title": "Federalism"}
+          ]
+        },
+        {
+          "title": "Branches of Government",
+          "lessons": [
+            {"title": "The Legislative Branch"},
+            {"title": "The Executive Branch"},
+            {"title": "The Judicial Branch"}
+          ]
+        },
+        {
+          "title": "Rights and Responsibilities",
+          "lessons": [
+            {"title": "The Bill of Rights"},
+            {"title": "Civil Liberties"},
+            {"title": "Civic Participation"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "us-history",
+      "title": "CK-12 United States History",
+      "description": "Comprehensive US history from colonial times to the present. Covers major events, figures, and themes in American history.",
+      "subject": "Social Studies",
+      "level": "middle-school",
+      "grades": ["7", "8"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-us-history/",
+      "download_url": "https://www.ck12.org/book/ck-12-us-history/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-US-History.jpg",
+      "features": ["lessons", "practice"],
+      "lesson_count": 85,
+      "practice_count": 42,
+      "quiz_count": 10,
+      "keywords": ["US history", "American history", "colonial", "revolution", "civil war", "middle school"],
+      "chapters": [
+        {
+          "title": "Colonial America",
+          "lessons": [
+            {"title": "European Exploration"},
+            {"title": "Colonial Settlements"},
+            {"title": "Life in the Colonies"}
+          ]
+        },
+        {
+          "title": "Revolution and New Nation",
+          "lessons": [
+            {"title": "Road to Revolution"},
+            {"title": "The American Revolution"},
+            {"title": "Creating a New Government"}
+          ]
+        },
+        {
+          "title": "Civil War and Reconstruction",
+          "lessons": [
+            {"title": "Causes of the Civil War"},
+            {"title": "The Civil War"},
+            {"title": "Reconstruction"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "world-history",
+      "title": "CK-12 World History",
+      "description": "Survey of world history from ancient civilizations to modern times. Covers major cultures, events, and developments across the globe.",
+      "subject": "Social Studies",
+      "level": "high-school",
+      "grades": ["9", "10"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-world-history/",
+      "download_url": "https://www.ck12.org/book/ck-12-world-history/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-World-History.jpg",
+      "features": ["lessons", "practice"],
+      "lesson_count": 95,
+      "practice_count": 47,
+      "quiz_count": 12,
+      "keywords": ["world history", "ancient civilizations", "medieval", "modern", "high school"],
+      "chapters": []
+    },
+    {
+      "id": "elementary-math-3",
+      "title": "CK-12 3rd Grade Math",
+      "description": "3rd grade mathematics curriculum covering multiplication, division, fractions, and measurement. Designed for elementary learners.",
+      "subject": "Mathematics",
+      "level": "elementary",
+      "grades": ["3"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-elementary-math-grade-3/",
+      "download_url": "https://www.ck12.org/book/ck-12-elementary-math-grade-3/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Elementary-Math-Grade-3.jpg",
+      "features": ["lessons", "practice"],
+      "lesson_count": 65,
+      "practice_count": 32,
+      "quiz_count": 8,
+      "keywords": ["3rd grade math", "multiplication", "division", "fractions", "elementary"],
+      "chapters": []
+    },
+    {
+      "id": "elementary-math-4",
+      "title": "CK-12 4th Grade Math",
+      "description": "4th grade mathematics curriculum covering multi-digit operations, fractions, decimals, and geometry basics.",
+      "subject": "Mathematics",
+      "level": "elementary",
+      "grades": ["4"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-elementary-math-grade-4/",
+      "download_url": "https://www.ck12.org/book/ck-12-elementary-math-grade-4/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Elementary-Math-Grade-4.jpg",
+      "features": ["lessons", "practice"],
+      "lesson_count": 70,
+      "practice_count": 35,
+      "quiz_count": 9,
+      "keywords": ["4th grade math", "multi-digit", "fractions", "decimals", "elementary"],
+      "chapters": []
+    },
+    {
+      "id": "elementary-math-5",
+      "title": "CK-12 5th Grade Math",
+      "description": "5th grade mathematics curriculum covering operations with fractions and decimals, volume, and coordinate graphing.",
+      "subject": "Mathematics",
+      "level": "elementary",
+      "grades": ["5"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-elementary-math-grade-5/",
+      "download_url": "https://www.ck12.org/book/ck-12-elementary-math-grade-5/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Elementary-Math-Grade-5.jpg",
+      "features": ["lessons", "practice"],
+      "lesson_count": 72,
+      "practice_count": 36,
+      "quiz_count": 9,
+      "keywords": ["5th grade math", "fractions", "decimals", "volume", "elementary"],
+      "chapters": []
+    },
+    {
+      "id": "algebra-2",
+      "title": "CK-12 Algebra 2",
+      "description": "Advanced algebra course covering polynomials, rational expressions, exponential and logarithmic functions, sequences, and series.",
+      "subject": "Mathematics",
+      "level": "high-school",
+      "grades": ["10", "11"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-algebra-ii-with-trigonometry-concepts/",
+      "download_url": "https://www.ck12.org/book/ck-12-algebra-ii-with-trigonometry-concepts/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Algebra-II-with-Trigonometry-Concepts.jpg",
+      "features": ["lessons", "practice", "quizzes"],
+      "lesson_count": 135,
+      "practice_count": 67,
+      "quiz_count": 17,
+      "keywords": ["algebra 2", "polynomials", "logarithms", "exponentials", "trigonometry", "high school"],
+      "chapters": []
+    },
+    {
+      "id": "precalculus",
+      "title": "CK-12 Precalculus",
+      "description": "Preparation for calculus covering advanced functions, trigonometry, analytic geometry, and limits. Essential for STEM students.",
+      "subject": "Mathematics",
+      "level": "high-school",
+      "grades": ["11", "12"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-precalculus-concepts/",
+      "download_url": "https://www.ck12.org/book/ck-12-precalculus-concepts/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Precalculus-Concepts.jpg",
+      "features": ["lessons", "practice", "quizzes"],
+      "lesson_count": 110,
+      "practice_count": 55,
+      "quiz_count": 14,
+      "keywords": ["precalculus", "trigonometry", "functions", "limits", "high school"],
+      "chapters": []
+    },
+    {
+      "id": "calculus",
+      "title": "CK-12 Calculus",
+      "description": "Introduction to calculus covering limits, derivatives, integrals, and their applications. Suitable for AP Calculus preparation.",
+      "subject": "Mathematics",
+      "level": "high-school",
+      "grades": ["11", "12"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-calculus-concepts/",
+      "download_url": "https://www.ck12.org/book/ck-12-calculus-concepts/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Calculus-Concepts.jpg",
+      "features": ["lessons", "practice", "quizzes"],
+      "lesson_count": 95,
+      "practice_count": 47,
+      "quiz_count": 12,
+      "keywords": ["calculus", "limits", "derivatives", "integrals", "AP", "high school"],
+      "chapters": []
+    },
+    {
+      "id": "statistics",
+      "title": "CK-12 Probability and Statistics",
+      "description": "Introduction to probability and statistics covering data analysis, probability, distributions, and statistical inference.",
+      "subject": "Mathematics",
+      "level": "high-school",
+      "grades": ["10", "11", "12"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-probability-and-statistics-concepts/",
+      "download_url": "https://www.ck12.org/book/ck-12-probability-and-statistics-concepts/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Probability-and-Statistics-Concepts.jpg",
+      "features": ["lessons", "practice", "quizzes"],
+      "lesson_count": 85,
+      "practice_count": 42,
+      "quiz_count": 10,
+      "keywords": ["statistics", "probability", "data analysis", "distributions", "high school"],
+      "chapters": []
+    },
+    {
+      "id": "anatomy-physiology",
+      "title": "CK-12 Human Biology",
+      "description": "Detailed study of human body systems including skeletal, muscular, nervous, cardiovascular, and digestive systems.",
+      "subject": "Science",
+      "level": "high-school",
+      "grades": ["10", "11", "12"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-human-biology/",
+      "download_url": "https://www.ck12.org/book/ck-12-human-biology/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Human-Biology.jpg",
+      "features": ["lessons", "practice", "videos"],
+      "lesson_count": 88,
+      "practice_count": 44,
+      "video_count": 22,
+      "quiz_count": 11,
+      "keywords": ["anatomy", "physiology", "human body", "body systems", "high school"],
+      "chapters": []
+    },
+    {
+      "id": "environmental-science",
+      "title": "CK-12 Environmental Science",
+      "description": "Study of environmental systems, ecology, natural resources, pollution, and sustainability. Emphasizes human impact on Earth.",
+      "subject": "Science",
+      "level": "high-school",
+      "grades": ["9", "10", "11"],
+      "authors": ["CK-12 Foundation"],
+      "url": "https://www.ck12.org/book/ck-12-environmental-science/",
+      "download_url": "https://www.ck12.org/book/ck-12-environmental-science/epub/",
+      "thumbnail_url": "https://www.ck12.org/flx/show/thumb/book/CK-12-Environmental-Science.jpg",
+      "features": ["lessons", "practice", "videos"],
+      "lesson_count": 75,
+      "practice_count": 37,
+      "video_count": 18,
+      "quiz_count": 9,
+      "keywords": ["environmental science", "ecology", "sustainability", "pollution", "high school"],
+      "chapters": []
+    }
+  ]
+}

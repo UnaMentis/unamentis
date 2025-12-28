@@ -243,7 +243,7 @@ class ExampleSourcePlugin(BaseImporterPlugin):
             ),
             base_url="https://example.com",
             logo_url="https://example.com/logo.png",
-            supported_formats=["pdf", "html", "video"],
+            features=["pdf", "html", "video"],
         )
 
     @hookimpl

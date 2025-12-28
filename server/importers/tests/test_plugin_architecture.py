@@ -79,7 +79,7 @@ def mock_source_info():
         description="A test curriculum source",
         base_url="https://example.com",
         logo_url="https://example.com/logo.png",
-        supported_formats=["pdf", "html"],
+        features=["pdf", "html"],
     )
 
 
@@ -100,7 +100,7 @@ class MockSourcePlugin(BaseImporterPlugin):
             description="A mock source for testing",
             base_url="https://mock.example.com",
             logo_url="https://mock.example.com/logo.png",
-            supported_formats=["pdf"],
+            features=["pdf"],
         )
         self._license = LicenseInfo(
             type="CC-BY-4.0",
@@ -247,7 +247,7 @@ class MockLegacyHandler(CurriculumSourceHandler):
             description="A legacy source for testing",
             base_url="https://legacy.example.com",
             logo_url="https://legacy.example.com/logo.png",
-            supported_formats=["html"],
+            features=["html"],
         )
 
     @property
