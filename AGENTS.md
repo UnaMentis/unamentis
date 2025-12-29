@@ -4,6 +4,21 @@
 
 This project is developed with **100% AI assistance**. All code, tests, documentation, and architecture decisions are made collaboratively between human direction and AI implementation.
 
+## Monorepo Structure
+
+This repository contains multiple components, each with its own AGENTS.md:
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| iOS App | `UnaMentis/` | Swift/SwiftUI voice tutoring client |
+| Server | `server/` | Backend infrastructure |
+| Management Console | `server/management/` | Python/aiohttp content admin (port 8766) |
+| Operations Console | `server/web/` | Next.js/React DevOps monitoring (port 3000) |
+| Importers | `server/importers/` | Curriculum import framework |
+| Curriculum | `curriculum/` | UMLCF format specification |
+
+See the AGENTS.md in each directory for component-specific instructions.
+
 ## Time Estimation Guidelines
 
 ### DO NOT use traditional software development timelines
