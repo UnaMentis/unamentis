@@ -19,7 +19,7 @@ All components are **protocol-based and swappable**:
 
 | Component | On-Device | Cloud | Self-Hosted |
 |-----------|-----------|-------|-------------|
-| **STT** | Apple Speech, GLM-ASR-Nano | Deepgram Nova-3, AssemblyAI, OpenAI Whisper | GLM-ASR server |
+| **STT** | Apple Speech, GLM-ASR-Nano | Deepgram Nova-3, AssemblyAI, OpenAI Whisper, Groq Whisper | GLM-ASR server |
 | **TTS** | Apple TTS | ElevenLabs Turbo v2.5, Deepgram Aura-2 | Piper TTS |
 | **LLM** | llama.cpp (experimental) | Anthropic Claude, OpenAI GPT-4o | Ollama, llama.cpp server, vLLM |
 | **VAD** | Silero (CoreML on Neural Engine) | - | - |
@@ -148,13 +148,13 @@ Curriculum
 - **Accessibility:** Required alt text, audio descriptions for all visual content
 - **Equation format:** LaTeX notation with spoken description
 
-### Importers (Designed, Implementation In Progress)
+### Importers
 
 | Source | Format | Target Audience | Status |
 |--------|--------|-----------------|--------|
-| **CK-12 FlexBooks** | EPUB, PDF, HTML | K-12 (8th grade focus) | Spec complete |
+| **CK-12 FlexBooks** | EPUB, PDF, HTML | K-12 (8th grade focus) | Complete |
 | **Fast.ai** | Jupyter notebooks | Collegiate, AI/ML | Spec complete |
-| **MIT OpenCourseWare** | ZIP packages (HTML, PDF, video) | Collegiate | Spec + implementation started |
+| **MIT OpenCourseWare** | ZIP packages (HTML, PDF, video) | Collegiate | Complete |
 | **Stanford SEE** | PDF, transcripts | Engineering | Spec complete |
 | **Raw JSON/YAML** | Native UMCF | Any | Ready |
 | **IMSCC** | IMS Common Cartridge | LMS interop | Planned |
@@ -278,10 +278,10 @@ UnaMentis/
 
 ### Service Counts
 - **LLM Providers:** 5 (OpenAI, Anthropic, Self-Hosted, On-Device, Mock)
-- **STT Providers:** 8 (AssemblyAI, Deepgram, Apple, GLM-ASR server, GLM-ASR on-device, Self-Hosted, Router, Health Monitor)
+- **STT Providers:** 9 (AssemblyAI, Deepgram, Groq, Apple, GLM-ASR server, GLM-ASR on-device, Self-Hosted, Router, Health Monitor)
 - **TTS Providers:** 5 (ElevenLabs, Deepgram, Apple, Self-Hosted, Pronunciation Processor)
 - **UI Views:** 11 major views with supporting subviews
-- **Total Swift Files:** 66+
+- **Total Swift Files:** 79+
 
 ---
 
@@ -291,27 +291,28 @@ UnaMentis/
 - All iOS services implemented (STT, TTS, LLM, VAD, Embeddings)
 - Full UI (Session, Curriculum, History, Analytics, Settings, Debug)
 - UMCF 1.0 specification with JSON Schema (1,905 lines)
-- 103+ unit tests, 16+ integration tests passing
+- 318+ test methods across 26 test files
 - Telemetry, cost tracking, thermal management
 - Self-hosted server discovery and health monitoring
 - Patch Panel LLM routing system
 - GLM-ASR implementation (server + on-device)
+- Groq STT integration (Whisper API)
 - STT Provider Router with automatic failover
 - Visual asset support design
-- Import architecture and MIT OCW importer started
+- Import architecture with MIT OCW and CK-12 importers complete
 - Operations Console (React/TypeScript)
 - Management Console (Python/aiohttp)
 - iOS Simulator MCP for AI-driven testing
 - **Siri & App Intents integration** (voice commands, deep links)
 
 ### In Progress
-- MIT OCW import pipeline implementation
 - Visual asset caching optimization
 - AI enrichment pipeline implementation
 - Source browser UI completion
+- Fast.ai and Stanford SEE importers
 
 ### Pending User Setup
-- API key configuration (OpenAI, Anthropic, Deepgram, ElevenLabs, AssemblyAI)
+- API key configuration (OpenAI, Anthropic, Deepgram, ElevenLabs, AssemblyAI, Groq)
 - Physical device testing (iPhone 15 Pro+ / 16/17 Pro Max)
 - On-device GLM-ASR model download (~2.4GB)
 - Long-session stability validation (90+ minutes)
@@ -411,13 +412,14 @@ UnaMentis/
 ### Phase 1-5: Core Implementation (Complete)
 - Voice pipeline, UI, curriculum system, telemetry
 
-### Phase 6: Curriculum Import System (In Progress)
-- MIT OCW importer
-- Source browser UI
-- AI enrichment pipeline
+### Phase 6: Curriculum Import System (Mostly Complete)
+- MIT OCW importer (complete)
+- CK-12 importer (complete)
+- Source browser UI (in progress)
+- AI enrichment pipeline (in progress)
 
 ### Phase 7: Advanced Features (Planned)
-- CK-12 and Fast.ai importers
+- Fast.ai and Stanford SEE importers
 - Knowledge graph construction
 - Interactive visual diagrams
 - Collaborative annotations

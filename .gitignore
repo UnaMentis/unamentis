@@ -83,3 +83,9 @@ documentation/website/
 # Importer downloads and output (large course files)
 server/importers/output/downloads/
 server/importers/output/curricula/
+
+# Server management runtime data (metrics, state)
+server/management/data/
+
+# Next.js build and development artifacts
+server/web/.next/
