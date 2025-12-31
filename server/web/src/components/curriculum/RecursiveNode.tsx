@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, Folder, FileText, Box, Layers, BookOpen } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder, FileText, Box, Layers, BookOpen, LucideIcon } from 'lucide-react';
 import { ContentNode } from '@/types/curriculum';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -12,21 +12,23 @@ interface RecursiveNodeProps {
     level?: number;
 }
 
-const getNodeIcon = (type: string) => {
-    switch (type) {
-        case 'curriculum': return BookOpen;
-        case 'unit': return Box;
-        case 'module': return Layers;
-        case 'topic': return Folder;
-        default: return FileText;
-    }
+const NODE_ICONS: Record<string, LucideIcon> = {
+    curriculum: BookOpen,
+    unit: Box,
+    module: Layers,
+    topic: Folder,
+};
+
+// Render the icon based on node type
+const NodeIcon: React.FC<{ type: string; size?: number; className?: string }> = ({ type, size, className }) => {
+    const IconComponent = NODE_ICONS[type] || FileText;
+    return <IconComponent size={size} className={className} />;
 };
 
 export const RecursiveNode: React.FC<RecursiveNodeProps> = ({ node, selectedId, onSelect, level = 0 }) => {
     const [isOpen, setIsOpen] = useState(true);
     const hasChildren = node.children && node.children.length > 0;
     const isSelected = selectedId === node.id.value;
-    const Icon = getNodeIcon(node.type);
 
     const handleToggle = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -60,7 +62,7 @@ export const RecursiveNode: React.FC<RecursiveNodeProps> = ({ node, selectedId, 
                     {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 </button>
 
-                <Icon size={16} className={clsx("mr-2", isSelected ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300")} />
+                <NodeIcon type={node.type} size={16} className={clsx("mr-2", isSelected ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300")} />
 
                 <span className="text-sm font-medium truncate">{node.title}</span>
             </div>

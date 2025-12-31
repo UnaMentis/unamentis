@@ -4,6 +4,22 @@ import { ContentNode, MediaItem, Segment } from '@/types/curriculum';
 import { Save, Image as ImageIcon, MessageSquare, Settings, Plus, Trash2, Mic, PlayCircle, Layers } from 'lucide-react';
 import { MediaPicker } from './MediaPicker';
 import { clsx } from 'clsx';
+import { HelpTooltip } from '@/components/ui/tooltip';
+
+// Tooltip content for editor fields
+const FIELD_HELP = {
+    title: 'The display name for this content node. Keep it concise and descriptive.',
+    type: 'The structural type of this node. Choose based on its role in the curriculum hierarchy.',
+    orderIndex: 'Controls the display order among sibling nodes. Lower numbers appear first.',
+    description: 'A summary of what this node covers. Used for navigation and search.',
+    transcript: 'Voice-optimized content broken into segments for conversational AI delivery.',
+    segmentType: 'The purpose of this segment: introduction, lecture, explanation, example, checkpoint, transition, or summary.',
+    segmentContent: 'The actual spoken content. Write conversationally as if speaking to a student.',
+    media: 'Visual assets (images, diagrams) to display during the lesson. Can be timed to specific segments.',
+    startSegment: 'The segment index when this media should first appear.',
+    endSegment: 'The segment index when this media should disappear.',
+    displayMode: 'How the media appears: persistent (stays visible), highlight (emphasized), or popup (modal).',
+};
 
 interface NodeEditorProps {
     node: ContentNode;
@@ -15,7 +31,7 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({ node, onChange, readOnly
     const [activeTab, setActiveTab] = useState<'general' | 'transcript' | 'media'>('general');
     const [showMediaPicker, setShowMediaPicker] = useState(false);
 
-    const handleFieldChange = (field: keyof ContentNode, value: any) => {
+    const handleFieldChange = <K extends keyof ContentNode>(field: K, value: ContentNode[K]) => {
         onChange({ ...node, [field]: value });
     };
 
@@ -51,7 +67,7 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({ node, onChange, readOnly
         });
     };
 
-    const updateMediaTiming = (id: string, field: 'startSegment' | 'endSegment' | 'displayMode', value: any) => {
+    const updateMediaTiming = (id: string, field: 'startSegment' | 'endSegment' | 'displayMode', value: number | string) => {
         if (!node.media?.embedded) return;
         onChange({
             ...node,
@@ -107,6 +123,7 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({ node, onChange, readOnly
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
+                        data-tour={`${tab.id}-tab`}
                         onClick={() => setActiveTab(tab.id)}
                         className={clsx(
                             "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all rounded-t-lg relative",
@@ -132,7 +149,10 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({ node, onChange, readOnly
                     <div className="space-y-6 max-w-3xl animate-in">
                         <div className="grid gap-6">
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Title</label>
+                                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                    Title
+                                    <HelpTooltip content={FIELD_HELP.title} />
+                                </label>
                                 <input
                                     type="text"
                                     value={node.title}
@@ -145,10 +165,13 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({ node, onChange, readOnly
 
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Type</label>
+                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                        Type
+                                        <HelpTooltip content={FIELD_HELP.type} />
+                                    </label>
                                     <select
                                         value={node.type}
-                                        onChange={(e) => handleFieldChange('type', e.target.value)}
+                                        onChange={(e) => handleFieldChange('type', e.target.value as ContentNode['type'])}
                                         disabled={readOnly}
                                         className="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -158,7 +181,10 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({ node, onChange, readOnly
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Order Index</label>
+                                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                        Order Index
+                                        <HelpTooltip content={FIELD_HELP.orderIndex} />
+                                    </label>
                                     <input
                                         type="number"
                                         value={node.orderIndex || 0}
@@ -170,7 +196,10 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({ node, onChange, readOnly
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Description</label>
+                                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                    Description
+                                    <HelpTooltip content={FIELD_HELP.description} />
+                                </label>
                                 <textarea
                                     value={node.description || ''}
                                     onChange={(e) => handleFieldChange('description', e.target.value)}
@@ -222,7 +251,7 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({ node, onChange, readOnly
                                                 value={seg.type}
                                                 onChange={(e) => {
                                                     const updated = [...(node.transcript?.segments || [])];
-                                                    updated[idx] = { ...updated[idx], type: e.target.value as any };
+                                                    updated[idx] = { ...updated[idx], type: e.target.value as Segment['type'] };
                                                     handleFieldChange('transcript', { ...node.transcript, segments: updated });
                                                 }}
                                                 disabled={readOnly}
@@ -248,8 +277,8 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({ node, onChange, readOnly
                                     {!readOnly && (
                                         <button
                                             onClick={() => {
-                                                const updated = node.transcript?.segments.filter(s => s.id !== seg.id);
-                                                handleFieldChange('transcript', { ...node.transcript, segments: updated });
+                                                const updated = node.transcript?.segments.filter(s => s.id !== seg.id) ?? [];
+                                                handleFieldChange('transcript', { segments: updated });
                                             }}
                                             className="text-slate-600 hover:text-red-400 p-2 transition-colors self-start"
                                         >
@@ -312,7 +341,7 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({ node, onChange, readOnly
                                             <div className="space-y-1">
                                                 <input
                                                     value={media.title || ''}
-                                                    onChange={(e) => {
+                                                    onChange={() => {
                                                         // Deep update logic would go here
                                                     }}
                                                     className="bg-transparent border-none p-0 text-white font-medium w-full focus:ring-0 placeholder:text-slate-600"

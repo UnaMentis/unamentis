@@ -27,7 +27,7 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({ onSelect, onClose }) =
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(MOCK_IMAGES);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [selectedId] = useState<string | null>(null);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -116,7 +116,7 @@ export const MediaPicker: React.FC<MediaPickerProps> = ({ onSelect, onClose }) =
                     ) : (
                         <div className="flex flex-col items-center justify-center h-64 text-slate-500">
                             <ImageIcon size={48} className="mb-4 opacity-50" />
-                            <p>No results found for "{query}"</p>
+                            <p>No results found for &quot;{query}&quot;</p>
                         </div>
                     )}
                 </div>
