@@ -207,48 +207,10 @@ jobs:
           echo "No test results found" >> $GITHUB_STEP_SUMMARY
         fi
 
-  python-tests:
-    name: Python Tests
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest pytest-asyncio pytest-aiohttp aiohttp
-
-    - name: Run Importer Tests
-      run: |
-        cd server/importers
-        python -m pytest tests/ -v --tb=short
-
-    - name: Run Management Server Tests
-      run: |
-        cd server/management
-        python -m pytest tests/ -v --tb=short
-
-    - name: Summary
-      if: always()
-      run: |
-        echo "## Python Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
-        echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Importers | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Management Server | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
-
   commit-results:
     name: Commit CI Results
     runs-on: ubuntu-latest
-    needs: [lint, unit-tests, integration-tests, python-tests]
+    needs: [lint, unit-tests, integration-tests]
     if: always() && github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-ci-log]')
 
     steps:
@@ -280,7 +242,6 @@ jobs:
         LINT_RESULT: ${{ needs.lint.result || 'skipped' }}
         UNIT_RESULT: ${{ needs.unit-tests.result || 'skipped' }}
         INTEGRATION_RESULT: ${{ needs.integration-tests.result || 'skipped' }}
-        PYTHON_RESULT: ${{ needs.python-tests.result || 'skipped' }}
       run: |
         mkdir -p ci-logs
 
@@ -303,11 +264,10 @@ jobs:
           echo "| Lint | ${LINT_RESULT} |"
           echo "| Unit Tests | ${UNIT_RESULT} |"
           echo "| Integration Tests | ${INTEGRATION_RESULT} |"
-          echo "| Python Tests | ${PYTHON_RESULT} |"
           echo ""
 
           # Check for any failures
-          if [ "${LINT_RESULT}" = "failure" ] || [ "${UNIT_RESULT}" = "failure" ] || [ "${INTEGRATION_RESULT}" = "failure" ] || [ "${PYTHON_RESULT}" = "failure" ]; then
+          if [ "${LINT_RESULT}" = "failure" ] || [ "${UNIT_RESULT}" = "failure" ] || [ "${INTEGRATION_RESULT}" = "failure" ]; then
             echo "## Action Required"
             echo ""
             echo "One or more jobs failed. [View full logs](${RUN_URL}) to investigate."

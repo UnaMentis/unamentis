@@ -295,7 +295,7 @@ final class UMCFParserTests: XCTestCase {
         let curriculum = try await parser.importToCoreData(document: document)
 
         // Then
-        let topics = curriculum.topics?.allObjects as? [Topic] ?? []
+        let topics = curriculum.topics?.array as? [Topic] ?? []
         XCTAssertEqual(topics.count, 2)
 
         let sortedTopics = topics.sorted { $0.orderIndex < $1.orderIndex }
@@ -313,7 +313,7 @@ final class UMCFParserTests: XCTestCase {
         let curriculum = try await parser.importToCoreData(document: document)
 
         // Then
-        let topics = curriculum.topics?.allObjects as? [Topic] ?? []
+        let topics = curriculum.topics?.array as? [Topic] ?? []
         let firstTopic = topics.first { $0.sourceId == "topic-001" }
         XCTAssertNotNil(firstTopic?.objectives)
         XCTAssertTrue(firstTopic?.objectives?.contains("Understand basics") ?? false)
@@ -363,7 +363,7 @@ final class UMCFParserTests: XCTestCase {
         let curriculum = try await parser.importToCoreData(document: document)
 
         // Then
-        let topics = curriculum.topics?.allObjects as? [Topic] ?? []
+        let topics = curriculum.topics?.array as? [Topic] ?? []
         XCTAssertEqual(topics.count, 1)
 
         let topic = topics.first!
@@ -371,7 +371,7 @@ final class UMCFParserTests: XCTestCase {
         XCTAssertEqual(documents.count, 1)
 
         let transcriptDoc = documents.first!
-        XCTAssertEqual(transcriptDoc.documentType, .transcript)
+        XCTAssertEqual(transcriptDoc.documentType, DocumentType.transcript)
         XCTAssertNotNil(transcriptDoc.content)
         XCTAssertTrue(transcriptDoc.content?.contains("Welcome to this lesson") ?? false)
     }
@@ -386,7 +386,7 @@ final class UMCFParserTests: XCTestCase {
         let curriculum = try await parser.importToCoreData(document: document)
 
         // Then
-        let topic = (curriculum.topics?.allObjects as? [Topic])?.first
+        let topic = (curriculum.topics?.array as? [Topic])?.first
         let transcriptDoc = (topic?.documents?.allObjects as? [Document])?.first
         let transcriptData = transcriptDoc?.decodedTranscript()
 
@@ -405,7 +405,7 @@ final class UMCFParserTests: XCTestCase {
         let curriculum = try await parser.importToCoreData(document: document)
 
         // Then
-        let topic = (curriculum.topics?.allObjects as? [Topic])?.first
+        let topic = (curriculum.topics?.array as? [Topic])?.first
         let assets = topic?.visualAssets?.allObjects as? [VisualAsset] ?? []
 
         XCTAssertEqual(assets.count, 2)
@@ -489,7 +489,7 @@ final class UMCFParserTests: XCTestCase {
         )
 
         // Then
-        let topics = curriculum.topics?.allObjects as? [Topic] ?? []
+        let topics = curriculum.topics?.array as? [Topic] ?? []
         XCTAssertEqual(topics.count, 2)
 
         let topicIds = Set(topics.compactMap { $0.sourceId })

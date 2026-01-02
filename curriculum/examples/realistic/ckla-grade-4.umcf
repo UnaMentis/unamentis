@@ -1,0 +1,83 @@
+{
+  "umcf": "1.0.0",
+  "id": {
+    "catalog": "UnaMentis",
+    "value": "ckla-grade-4"
+  },
+  "title": "Language Arts: Grade 4",
+  "description": "Personal narratives, poetry, and world literature. Medieval times, American Revolution, and the Constitution.",
+  "version": {
+    "number": "1.0.0",
+    "date": "2026-01-02"
+  },
+  "lifecycle": {
+    "status": "draft",
+    "contributors": [
+      {
+        "role": "publisher",
+        "name": "UnaMentis Importer"
+      }
+    ]
+  },
+  "metadata": {
+    "language": "en-US",
+    "keywords": [],
+    "department": ""
+  },
+  "educational": {
+    "audience": {
+      "type": "learner",
+      "educationalLevel": "collegiate"
+    }
+  },
+  "rights": {
+    "type": "CC-BY-NC-SA-3.0",
+    "name": "Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported",
+    "url": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+    "permissions": [
+      "share",
+      "adapt"
+    ],
+    "conditions": [
+      "attribution",
+      "noncommercial",
+      "sharealike"
+    ],
+    "attributionRequired": true,
+    "attributionFormat": "Content from Core Knowledge Foundation (coreknowledge.org), licensed under CC-BY-NC-SA 3.0.",
+    "holder": {
+      "name": "Core Knowledge Foundation",
+      "url": "https://www.coreknowledge.org/"
+    },
+    "restrictions": [
+      "no-commercial-use",
+      "share-alike-required"
+    ]
+  },
+  "content": [
+    {
+      "id": {
+        "value": "imported-content"
+      },
+      "title": "Imported Content",
+      "type": "module",
+      "orderIndex": 0,
+      "children": []
+    }
+  ],
+  "glossary": {
+    "terms": []
+  },
+  "_import_metadata": {
+    "source": "coreknowledge",
+    "course_id": "ckla-grade-4",
+    "imported_at": "2026-01-02T05:15:55.397810",
+    "attribution": "\"Language Arts: Grade 4\" (CKLA) by Core Knowledge Foundation, licensed under CC BY-NC-SA 3.0. Available at: coreknowledge.org",
+    "stats": {
+      "lectures": 0,
+      "assignments": 0,
+      "exams": 0,
+      "resources": 0
+    }
+  }
+}

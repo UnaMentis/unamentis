@@ -130,6 +130,8 @@ public struct SessionView: View {
                     }
                 }
                 .padding(.horizontal, 20)
+                // Add bottom padding when session active so transcript doesn't go behind controls
+                .padding(.bottom, viewModel.isSessionActive ? 140 : 0)
 
                 // Bottom control area - positioned at tab bar location when session is active
                 if viewModel.isSessionActive {

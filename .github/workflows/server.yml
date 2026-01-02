@@ -1,0 +1,134 @@
+name: Server CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/server.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/server.yml'
+  workflow_dispatch:
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  importer-tests:
+    name: Importer Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-asyncio aiohttp
+
+    - name: Run Importer Tests
+      run: |
+        cd server/importers
+        python -m pytest tests/ -v --tb=short
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Importer Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Status | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+
+  management-tests:
+    name: Management Server Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-asyncio pytest-aiohttp aiohttp
+
+    - name: Run Management Server Tests
+      run: |
+        cd server/management
+        python -m pytest tests/ -v --tb=short
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Management Server Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Status | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+
+  python-lint:
+    name: Python Lint
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff
+
+    - name: Run Ruff Linter
+      run: |
+        ruff check server/ --output-format=github || true
+      continue-on-error: true
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Python Lint Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Linting completed. Check logs for details." >> $GITHUB_STEP_SUMMARY
+
+  summary:
+    name: Server CI Summary
+    runs-on: ubuntu-latest
+    needs: [importer-tests, management-tests, python-lint]
+    if: always()
+
+    steps:
+    - name: Generate Summary
+      env:
+        IMPORTER_RESULT: ${{ needs.importer-tests.result }}
+        MANAGEMENT_RESULT: ${{ needs.management-tests.result }}
+        LINT_RESULT: ${{ needs.python-lint.result }}
+      run: |
+        echo "## Server CI Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Importer Tests | ${IMPORTER_RESULT} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Management Tests | ${MANAGEMENT_RESULT} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Python Lint | ${LINT_RESULT} |" >> $GITHUB_STEP_SUMMARY

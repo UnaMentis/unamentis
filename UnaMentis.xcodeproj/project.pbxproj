@@ -965,7 +965,6 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/UnaMentis.app/UnaMentis";
-							OTHER_SWIFT_FLAGS = "-DLLAMA_AVAILABLE";
 			};
 			name = Release;
 		};
@@ -987,7 +986,6 @@
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
-							OTHER_SWIFT_FLAGS = "-DLLAMA_AVAILABLE";
 			};
 			name = Release;
 		};
@@ -1054,7 +1052,6 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
-							OTHER_SWIFT_FLAGS = "-DLLAMA_AVAILABLE";
 			};
 			name = Debug;
 		};
@@ -1115,7 +1112,6 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
-							OTHER_SWIFT_FLAGS = "-DLLAMA_AVAILABLE";
 			};
 			name = Release;
 		};
@@ -1137,7 +1133,6 @@
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
-							OTHER_SWIFT_FLAGS = "-DLLAMA_AVAILABLE";
 			};
 			name = Debug;
 		};
@@ -1157,7 +1152,6 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/UnaMentis.app/UnaMentis";
-							OTHER_SWIFT_FLAGS = "-DLLAMA_AVAILABLE";
 			};
 			name = Debug;
 		};
