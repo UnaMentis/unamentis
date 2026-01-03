@@ -105,10 +105,17 @@ extension VisualAsset {
             return cached
         }
 
-        // If we have a local path, try to load from bundle
+        // If we have a local path, try to load from bundle or absolute path
         if let localPath = localPath {
-            let url = URL(fileURLWithPath: localPath)
-            return try? Data(contentsOf: url)
+            // First try as bundled resource (relative path from app bundle)
+            if let bundleURL = Bundle.main.resourceURL?.appendingPathComponent(localPath),
+               let data = try? Data(contentsOf: bundleURL) {
+                return data
+            }
+
+            // Then try as absolute path (for downloaded/cached files)
+            let absoluteURL = URL(fileURLWithPath: localPath)
+            return try? Data(contentsOf: absoluteURL)
         }
 
         // Otherwise, caller needs to download from remoteURL

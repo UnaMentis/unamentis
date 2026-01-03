@@ -69,10 +69,26 @@ struct VisualAssetView: View {
             }
         }
 
-        // 3. Then try local file path
+        // 3. Then try local file path (bundled or absolute)
         if let localPath = asset.localPath {
-            let url = URL(fileURLWithPath: localPath)
-            if let data = try? Data(contentsOf: url) {
+            // First try as bundled resource (relative path from app bundle)
+            if let bundleURL = Bundle.main.resourceURL?.appendingPathComponent(localPath),
+               let data = try? Data(contentsOf: bundleURL) {
+                imageData = data
+                isLoading = false
+                // Cache for future use
+                if let assetId = asset.assetId {
+                    try? await VisualAssetCache.shared.cache(assetId: assetId, data: data)
+                }
+                await MainActor.run {
+                    asset.cachedData = data
+                }
+                return
+            }
+
+            // Then try as absolute path (for downloaded/cached files)
+            let absoluteURL = URL(fileURLWithPath: localPath)
+            if let data = try? Data(contentsOf: absoluteURL) {
                 imageData = data
                 isLoading = false
                 // Cache for future use
@@ -691,10 +707,25 @@ struct InlineVisualAssetView: View {
             }
         }
 
-        // 3. Then try local file path
+        // 3. Then try local file path (bundled or absolute)
         if let localPath = asset.localPath {
-            let url = URL(fileURLWithPath: localPath)
-            if let data = try? Data(contentsOf: url) {
+            // First try as bundled resource (relative path from app bundle)
+            if let bundleURL = Bundle.main.resourceURL?.appendingPathComponent(localPath),
+               let data = try? Data(contentsOf: bundleURL) {
+                imageData = data
+                isLoading = false
+                if let assetId = asset.assetId {
+                    try? await VisualAssetCache.shared.cache(assetId: assetId, data: data)
+                }
+                await MainActor.run {
+                    asset.cachedData = data
+                }
+                return
+            }
+
+            // Then try as absolute path (for downloaded/cached files)
+            let absoluteURL = URL(fileURLWithPath: localPath)
+            if let data = try? Data(contentsOf: absoluteURL) {
                 imageData = data
                 isLoading = false
                 if let assetId = asset.assetId {

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "mobile-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@mobilenext/mobile-mcp@latest"]
+    },
+    "gradle-mcp-server": {
+      "type": "stdio",
+      "command": "java",
+      "args": ["-jar", "~/mcp-servers/gradle-mcp-server/gradle-mcp-server-all.jar"]
+    }
+  }
+}

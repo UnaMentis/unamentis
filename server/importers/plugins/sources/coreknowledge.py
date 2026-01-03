@@ -598,6 +598,37 @@ class CoreKnowledgeHandler(CurriculumSourceHandler):
         if progress_callback:
             progress_callback(90, "Saving course metadata...")
 
+        # Build lectures list for orchestrator compatibility
+        # Each unit becomes a lecture entry with lessons as content
+        lectures = []
+        for idx, unit_data in enumerate(downloaded_content):
+            unit_num = unit_data.get("unit", idx + 1)
+            unit_title = unit_data.get("title", f"Unit {unit_num}")
+            lesson_count = unit_data.get("lessons", 0)
+
+            # Create a lecture entry for the unit
+            lectures.append({
+                "id": f"unit-{unit_num}",
+                "number": unit_num,
+                "title": f"Unit {unit_num}: {unit_title}",
+                "has_video": False,
+                "has_transcript": False,
+                "text_preview": f"This unit contains {lesson_count} lessons covering {unit_title}.",
+                "lesson_count": lesson_count,
+            })
+
+            # Also create individual lesson entries within each unit
+            for lesson_num in range(1, lesson_count + 1):
+                lectures.append({
+                    "id": f"unit-{unit_num}-lesson-{lesson_num}",
+                    "number": len(lectures),
+                    "title": f"Unit {unit_num}, Lesson {lesson_num}",
+                    "has_video": False,
+                    "has_transcript": False,
+                    "text_preview": f"Lesson {lesson_num} of {unit_title}.",
+                    "parent_unit": unit_num,
+                })
+
         # Save comprehensive metadata
         metadata = {
             "source": "coreknowledge",
@@ -605,14 +636,24 @@ class CoreKnowledgeHandler(CurriculumSourceHandler):
             "title": entry.title,
             "description": entry.description,
             "authors": entry.instructors,
+            "instructors": entry.instructors,
             "subject": entry.department,
+            "department": entry.department,
             "level": entry.level,
             "grades": raw_data.get("grades", []),
             "series": raw_data.get("series", ""),
             "voice_suitability": raw_data.get("voice_suitability", "good"),
+            "keywords": entry.keywords,
             "license": COREKNOWLEDGE_LICENSE.to_dict(),
             "attribution": self.get_attribution_text(course_id, entry.title),
             "units": downloaded_content,
+            # Content structure expected by orchestrator
+            "content": {
+                "lectures": lectures,
+                "assignments": [],
+                "exams": [],
+                "resources": [],
+            },
             "download_url": f"{self.BASE_URL}/curriculum/",
         }
 
