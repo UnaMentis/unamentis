@@ -52,11 +52,14 @@ class LatencyTestOrchestrator:
     routes tests appropriately based on configuration requirements.
     """
 
-    def __init__(self):
+    def __init__(self, storage: Optional["LatencyHarnessStorage"] = None):
         self.clients: Dict[str, ConnectedClient] = {}
         self.active_runs: Dict[str, TestRun] = {}
         self.completed_runs: Dict[str, TestRun] = {}
         self.suites: Dict[str, TestSuiteDefinition] = {}
+
+        # Optional persistent storage
+        self.storage = storage
 
         # Callbacks for real-time updates
         self.on_progress: Optional[Callable[[str, int, int], None]] = None
@@ -75,7 +78,39 @@ class LatencyTestOrchestrator:
         """Start the orchestrator background tasks."""
         self._running = True
         self._heartbeat_task = asyncio.create_task(self._heartbeat_monitor())
+
+        # Load data from storage if available
+        if self.storage:
+            await self._load_from_storage()
+
         logger.info("Latency test orchestrator started")
+
+    async def _load_from_storage(self):
+        """Load suites and runs from persistent storage."""
+        if not self.storage:
+            return
+
+        try:
+            # Load suites
+            suites = await self.storage.list_suites()
+            for suite in suites:
+                self.suites[suite.id] = suite
+            logger.info(f"Loaded {len(suites)} test suites from storage")
+
+            # Load recent runs
+            runs, _ = await self.storage.list_runs(limit=100)
+            for run in runs:
+                if run.status == RunStatus.RUNNING:
+                    # Stale running run (server restarted) - mark as failed
+                    run.status = RunStatus.FAILED
+                    await self.storage.save_run(run)
+                    self.completed_runs[run.id] = run
+                else:
+                    self.completed_runs[run.id] = run
+            logger.info(f"Loaded {len(runs)} test runs from storage")
+
+        except Exception as e:
+            logger.error(f"Failed to load from storage: {e}")
 
     async def stop(self):
         """Stop the orchestrator and cleanup."""
@@ -190,9 +225,17 @@ class LatencyTestOrchestrator:
     # Test Suite Management
     # =========================================================================
 
-    def register_suite(self, suite: TestSuiteDefinition):
+    async def register_suite(self, suite: TestSuiteDefinition):
         """Register a test suite definition."""
         self.suites[suite.id] = suite
+
+        # Persist to storage
+        if self.storage:
+            try:
+                await self.storage.save_suite(suite)
+            except Exception as e:
+                logger.error(f"Failed to persist suite: {e}")
+
         logger.info(f"Registered test suite: {suite.name} ({suite.total_test_count} tests)")
 
     def get_suite(self, suite_id: str) -> Optional[TestSuiteDefinition]:
@@ -257,6 +300,13 @@ class LatencyTestOrchestrator:
         self.active_runs[run_id] = run
         client.status.is_running_test = True
 
+        # Persist to storage
+        if self.storage:
+            try:
+                await self.storage.save_run(run)
+            except Exception as e:
+                logger.error(f"Failed to persist run: {e}")
+
         logger.info(f"Started test run: {run_id} on {client.client_id}")
 
         # Execute tests in background
@@ -293,6 +343,16 @@ class LatencyTestOrchestrator:
 
                     run.results.append(result)
                     run.completed_configurations = i + 1
+
+                    # Persist result
+                    if self.storage:
+                        try:
+                            await self.storage.save_result(run.id, result)
+                            await self.storage.update_run_status(
+                                run.id, run.status, run.completed_configurations
+                            )
+                        except Exception as e:
+                            logger.error(f"Failed to persist result: {e}")
 
                     # Notify progress
                     if self.on_progress:
@@ -338,6 +398,13 @@ class LatencyTestOrchestrator:
             client.status.is_running_test = False
             client.status.current_config_id = None
 
+            # Persist final state
+            if self.storage:
+                try:
+                    await self.storage.save_run(run)
+                except Exception as e:
+                    logger.error(f"Failed to persist completed run: {e}")
+
             logger.info(f"Test run completed: {run.id} ({len(run.results)} results)")
 
             if self.on_run_complete:
@@ -348,6 +415,13 @@ class LatencyTestOrchestrator:
             run.status = RunStatus.FAILED
             run.completed_at = datetime.now()
             client.status.is_running_test = False
+
+            # Persist failed state
+            if self.storage:
+                try:
+                    await self.storage.save_run(run)
+                except Exception as persist_error:
+                    logger.error(f"Failed to persist failed run: {persist_error}")
 
     async def _execute_test_on_client(
         self,

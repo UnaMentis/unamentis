@@ -14,13 +14,14 @@ import {
   Puzzle,
   Download,
   MonitorCog,
+  Timer,
 } from 'lucide-react';
 
 // Section types
 export type SectionId = 'operations' | 'content';
 
 // Operations tabs
-export type OpsTabId = 'dashboard' | 'metrics' | 'logs' | 'clients' | 'servers' | 'models' | 'health';
+export type OpsTabId = 'dashboard' | 'health' | 'latency' | 'metrics' | 'logs' | 'clients' | 'servers' | 'models';
 
 // Content tabs
 export type ContentTabId = 'curricula' | 'sources' | 'plugins' | 'imports';
@@ -47,6 +48,7 @@ const sections: { id: SectionId; label: string; icon: typeof MonitorCog }[] = [
 const opsTabs: { id: OpsTabId; label: string; shortLabel: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard', label: 'Dashboard', shortLabel: 'Home', icon: LayoutDashboard },
   { id: 'health', label: 'System Health', shortLabel: 'Health', icon: Activity },
+  { id: 'latency', label: 'Latency Tests', shortLabel: 'Latency', icon: Timer },
   { id: 'metrics', label: 'Metrics', shortLabel: 'Metrics', icon: BarChart3 },
   { id: 'logs', label: 'Logs', shortLabel: 'Logs', icon: FileText },
   { id: 'clients', label: 'Clients', shortLabel: 'Clients', icon: Smartphone },

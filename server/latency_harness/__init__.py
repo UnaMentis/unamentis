@@ -15,11 +15,22 @@ from .models import (
     ClientCapabilities,
     ClientStatus,
     AnalysisReport,
+    PerformanceBaseline,
+    BaselineMetrics,
+    NetworkProfile,
+    RunStatus,
 )
 from .orchestrator import LatencyTestOrchestrator
 from .analyzer import ResultsAnalyzer
+from .storage import (
+    LatencyHarnessStorage,
+    FileBasedLatencyStorage,
+    PostgreSQLLatencyStorage,
+    create_latency_storage,
+)
 
 __all__ = [
+    # Models
     'TestConfiguration',
     'TestResult',
     'TestRun',
@@ -29,6 +40,16 @@ __all__ = [
     'ClientCapabilities',
     'ClientStatus',
     'AnalysisReport',
+    'PerformanceBaseline',
+    'BaselineMetrics',
+    'NetworkProfile',
+    'RunStatus',
+    # Orchestration
     'LatencyTestOrchestrator',
     'ResultsAnalyzer',
+    # Storage
+    'LatencyHarnessStorage',
+    'FileBasedLatencyStorage',
+    'PostgreSQLLatencyStorage',
+    'create_latency_storage',
 ]
