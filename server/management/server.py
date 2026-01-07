@@ -40,6 +40,9 @@ from auth import (
     TokenService, TokenConfig, RateLimiter, setup_token_service
 )
 
+# Import latency test harness system
+from latency_harness_api import register_latency_harness_routes, init_latency_harness, shutdown_latency_harness
+
 # Import diagnostic logging system
 from diagnostic_logging import diag_logger, get_diagnostic_config, set_diagnostic_config
 
@@ -3801,6 +3804,9 @@ def create_app() -> web.Application:
     else:
         logger.warning("AUTH_SECRET_KEY not set - authentication disabled")
 
+    # Latency Test Harness
+    register_latency_harness_routes(app)
+
     # Set up callback to reload curricula when import completes
     def on_import_complete(progress):
         """Called when an import job completes successfully."""
@@ -3896,7 +3902,10 @@ def create_app() -> web.Application:
         # Start metrics recording task
         asyncio.create_task(_metrics_recording_loop())
 
-        logger.info("[Startup] Resource monitoring, idle management, and metrics history started")
+        # Start latency test harness
+        await init_latency_harness()
+
+        logger.info("[Startup] Resource monitoring, idle management, metrics history, and latency harness started")
 
         # Log diagnostic logging status
         diag_logger.info("Server startup complete", context={
@@ -3915,6 +3924,7 @@ def create_app() -> web.Application:
         await resource_monitor.stop()
         await idle_manager.stop()
         await metrics_history.stop()
+        await shutdown_latency_harness()
         logger.info("[Cleanup] Background tasks stopped")
 
     app.on_startup.append(on_startup)
