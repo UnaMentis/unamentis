@@ -62,7 +62,7 @@ export interface RemoteClient {
 export interface ServerStatus {
   id: string;
   name: string;
-  type: 'ollama' | 'whisper' | 'piper' | 'unamentisGateway' | 'custom';
+  type: 'ollama' | 'whisper' | 'piper' | 'vibevoice' | 'unamentisGateway' | 'custom';
   url: string;
   port: number;
   status: 'unknown' | 'healthy' | 'degraded' | 'unhealthy';
