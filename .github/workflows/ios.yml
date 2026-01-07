@@ -161,15 +161,18 @@ jobs:
         echo "Code coverage: ${COVERAGE}%"
 
         # Check minimum coverage threshold (80%)
-        # Skip check if coverage couldn't be determined (0)
+        # Skip check if coverage couldn't be determined (0 or 0.0)
         MIN_COVERAGE=80
-        if [ "$COVERAGE" != "0" ]; then
+        # Normalize coverage to check for zero/undetermined values
+        COVERAGE_INT=$(echo "$COVERAGE" | cut -d. -f1)
+        if [ -n "$COVERAGE_INT" ] && [ "$COVERAGE_INT" -gt 0 ] 2>/dev/null; then
           if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then
             echo "::error::Code coverage ${COVERAGE}% is below minimum threshold of ${MIN_COVERAGE}%"
             exit 1
           fi
         else
-          echo "::warning::Could not determine code coverage. Skipping threshold check."
+          echo "::warning::Could not determine valid code coverage (got ${COVERAGE}%). Skipping threshold check."
+          echo "::warning::This may indicate xcresult coverage generation issues."
         fi
 
     - name: Summary
