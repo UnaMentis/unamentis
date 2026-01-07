@@ -30,6 +30,7 @@ import { ClientsPanelCompact, ClientsPanel } from './clients-panel';
 import { MetricsPanel, LatencyOverview } from './metrics-panel';
 import { ModelsPanel } from './models-panel';
 import { HealthPanel } from './health-panel';
+import { UsersPanel } from './users-panel';
 // Content section components (to be created)
 import { CurriculaPanel } from './curricula-panel';
 import { SourceBrowserPanel } from './source-browser-panel';
@@ -43,7 +44,7 @@ import { useState } from 'react';
 
 // Define valid values for URL state
 const SECTIONS = ['operations', 'content'] as const;
-const OPS_TABS = ['dashboard', 'health', 'metrics', 'logs', 'clients', 'servers', 'models'] as const;
+const OPS_TABS = ['dashboard', 'health', 'metrics', 'logs', 'clients', 'servers', 'models', 'users'] as const;
 const CONTENT_TABS = ['curricula', 'sources', 'plugins', 'imports'] as const;
 const ALL_TABS = [...OPS_TABS, ...CONTENT_TABS] as const;
 
@@ -216,6 +217,13 @@ export function Dashboard() {
           {activeTab === 'health' && (
             <div className="animate-in fade-in duration-300">
               <HealthPanel />
+            </div>
+          )}
+
+          {/* Users Tab */}
+          {activeTab === 'users' && (
+            <div className="animate-in fade-in duration-300">
+              <UsersPanel />
             </div>
           )}
 

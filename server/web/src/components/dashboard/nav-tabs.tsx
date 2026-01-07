@@ -14,13 +14,14 @@ import {
   Puzzle,
   Download,
   MonitorCog,
+  Users,
 } from 'lucide-react';
 
 // Section types
 export type SectionId = 'operations' | 'content';
 
 // Operations tabs
-export type OpsTabId = 'dashboard' | 'metrics' | 'logs' | 'clients' | 'servers' | 'models' | 'health';
+export type OpsTabId = 'dashboard' | 'metrics' | 'logs' | 'clients' | 'servers' | 'models' | 'health' | 'users';
 
 // Content tabs
 export type ContentTabId = 'curricula' | 'sources' | 'plugins' | 'imports';
@@ -52,6 +53,7 @@ const opsTabs: { id: OpsTabId; label: string; shortLabel: string; icon: typeof L
   { id: 'clients', label: 'Clients', shortLabel: 'Clients', icon: Smartphone },
   { id: 'servers', label: 'Servers', shortLabel: 'Servers', icon: Server },
   { id: 'models', label: 'Models', shortLabel: 'Models', icon: FlaskConical },
+  { id: 'users', label: 'Users', shortLabel: 'Users', icon: Users },
 ];
 
 const contentTabs: { id: ContentTabId; label: string; shortLabel: string; icon: typeof BookOpen }[] = [

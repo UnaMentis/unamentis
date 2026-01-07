@@ -101,6 +101,7 @@ export interface Message {
   content: string;
   toolCallId?: string;
   name?: string;
+  timestamp?: Date;
 }
 
 export interface LLMConfig {

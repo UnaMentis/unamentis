@@ -1,15 +1,19 @@
 /**
  * Token Manager
  *
- * In-memory token storage with automatic refresh before expiry.
+ * Token storage with automatic refresh before expiry.
  * Access tokens are stored in memory only (never localStorage) for security.
- * Refresh tokens are stored securely (httpOnly cookie or encrypted storage).
+ * Refresh tokens are persisted in localStorage to survive page navigation.
  */
 
 import type { TokenPair } from '@/types';
 
 // Refresh tokens 1 minute before expiry
 const REFRESH_BUFFER_MS = 60 * 1000;
+
+// LocalStorage keys
+const STORAGE_KEY_REFRESH = 'unamentis_refresh_token';
+const STORAGE_KEY_EXPIRES = 'unamentis_token_expires';
 
 // Singleton instance
 let instance: TokenManager | null = null;
@@ -23,7 +27,8 @@ export class TokenManager {
   private onTokenChange: ((tokens: TokenPair | null) => void) | null = null;
 
   private constructor() {
-    // Private constructor for singleton
+    // Load persisted refresh token on initialization
+    this.loadPersistedTokens();
   }
 
   static getInstance(): TokenManager {
@@ -31,6 +36,57 @@ export class TokenManager {
       instance = new TokenManager();
     }
     return instance;
+  }
+
+  /**
+   * Load persisted refresh token from localStorage.
+   * Access token is not persisted for security.
+   */
+  private loadPersistedTokens(): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const storedRefresh = localStorage.getItem(STORAGE_KEY_REFRESH);
+      const storedExpires = localStorage.getItem(STORAGE_KEY_EXPIRES);
+
+      if (storedRefresh) {
+        this.refreshToken = storedRefresh;
+        // Set a past expiry so access token will be refreshed on first use
+        this.expiresAt = storedExpires ? parseInt(storedExpires, 10) : 0;
+      }
+    } catch {
+      // localStorage not available (SSR or private mode)
+    }
+  }
+
+  /**
+   * Persist refresh token to localStorage.
+   */
+  private persistTokens(): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+      if (this.refreshToken) {
+        localStorage.setItem(STORAGE_KEY_REFRESH, this.refreshToken);
+        localStorage.setItem(STORAGE_KEY_EXPIRES, this.expiresAt.toString());
+      }
+    } catch {
+      // localStorage not available
+    }
+  }
+
+  /**
+   * Clear persisted tokens from localStorage.
+   */
+  private clearPersistedTokens(): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+      localStorage.removeItem(STORAGE_KEY_REFRESH);
+      localStorage.removeItem(STORAGE_KEY_EXPIRES);
+    } catch {
+      // localStorage not available
+    }
   }
 
   /**
@@ -56,6 +112,8 @@ export class TokenManager {
     this.refreshToken = tokens.refresh_token;
     // Calculate absolute expiry time
     this.expiresAt = Date.now() + tokens.expires_in * 1000;
+    // Persist refresh token for session recovery
+    this.persistTokens();
     this.onTokenChange?.(tokens);
   }
 
@@ -75,10 +133,10 @@ export class TokenManager {
   }
 
   /**
-   * Check if we have tokens stored.
+   * Check if we have tokens stored (including persisted refresh token).
    */
   hasTokens(): boolean {
-    return this.accessToken !== null && this.refreshToken !== null;
+    return this.refreshToken !== null;
   }
 
   /**
@@ -104,13 +162,13 @@ export class TokenManager {
    * @throws Error if refresh fails or no tokens available
    */
   async getValidToken(): Promise<string> {
-    // No tokens at all
-    if (!this.accessToken || !this.refreshToken) {
+    // No refresh token at all
+    if (!this.refreshToken) {
       throw new Error('No authentication tokens available');
     }
 
     // Token is still valid
-    if (!this.isAccessTokenExpired()) {
+    if (this.accessToken && !this.isAccessTokenExpired()) {
       return this.accessToken;
     }
 
@@ -161,6 +219,7 @@ export class TokenManager {
     this.refreshToken = null;
     this.expiresAt = 0;
     this.refreshPromise = null;
+    this.clearPersistedTokens();
     this.onTokenChange?.(null);
   }
 

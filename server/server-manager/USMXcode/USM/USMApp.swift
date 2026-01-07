@@ -48,6 +48,14 @@ class ServiceManager: ObservableObject {
     private func setupServices() {
         services = [
             Service(
+                id: "postgresql",
+                displayName: "PostgreSQL",
+                processName: "postgres",
+                port: 5432,
+                startCommand: "/opt/homebrew/bin/brew services start postgresql@17",
+                workingDirectory: nil
+            ),
+            Service(
                 id: "log-server",
                 displayName: "Log Server",
                 processName: "log_server.py",
@@ -60,7 +68,7 @@ class ServiceManager: ObservableObject {
                 displayName: "Management API",
                 processName: "server.py",
                 port: 8766,
-                startCommand: "python3 management/server.py",
+                startCommand: "AUTH_SECRET_KEY=466EB0C062CD48768B409697AFC251E9 DATABASE_URL=postgresql://ramerman@localhost/unamentis python3 management/server.py",
                 workingDirectory: serverPath
             ),
             Service(
@@ -182,12 +190,20 @@ class ServiceManager: ObservableObject {
     }
 
     func stop(_ serviceId: String) {
-        guard let index = services.firstIndex(where: { $0.id == serviceId }),
-              let pid = services[index].pid else { return }
+        guard let index = services.firstIndex(where: { $0.id == serviceId }) else { return }
 
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/bin/kill")
-        task.arguments = ["\(pid)"]
+
+        // PostgreSQL uses brew services for stop
+        if serviceId == "postgresql" {
+            task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/brew")
+            task.arguments = ["services", "stop", "postgresql@17"]
+        } else {
+            guard let pid = services[index].pid else { return }
+            task.executableURL = URL(fileURLWithPath: "/bin/kill")
+            task.arguments = ["\(pid)"]
+        }
+
         task.standardOutput = FileHandle.nullDevice
         task.standardError = FileHandle.nullDevice
 
@@ -230,6 +246,12 @@ class ServiceManager: ObservableObject {
 
     func openLogs() {
         if let url = URL(string: "http://localhost:8765") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    func openWebClient() {
+        if let url = URL(string: "http://localhost:3001") {
             NSWorkspace.shared.open(url)
         }
     }
@@ -326,13 +348,19 @@ struct PopoverContent: View {
                     Image(systemName: "globe")
                 }
                 .buttonStyle(.borderless)
-                .help("Open Dashboard")
+                .help("Open Operations Console (localhost:3000)")
+
+                Button(action: { serviceManager.openWebClient() }) {
+                    Image(systemName: "laptopcomputer")
+                }
+                .buttonStyle(.borderless)
+                .help("Open Web Client (localhost:3001)")
 
                 Button(action: { serviceManager.openLogs() }) {
                     Image(systemName: "doc.text")
                 }
                 .buttonStyle(.borderless)
-                .help("Open Logs")
+                .help("Open Logs (localhost:8765)")
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -362,6 +390,17 @@ struct ServiceRow: View {
     let nameWidth: CGFloat
     @ObservedObject var serviceManager: ServiceManager
 
+    /// Tooltip showing port info when service is running
+    private var serviceTooltip: String {
+        if service.status == .running, let port = service.port {
+            return "\(service.displayName) running on port \(port)"
+        } else if let port = service.port {
+            return "Port \(port)"
+        } else {
+            return service.displayName
+        }
+    }
+
     var body: some View {
         HStack(spacing: 8) {
             // Status indicator
@@ -373,6 +412,7 @@ struct ServiceRow: View {
             Text(service.displayName)
                 .lineLimit(1)
                 .frame(width: nameWidth, alignment: .leading)
+                .help(serviceTooltip)
 
             // CPU
             HStack(spacing: 2) {

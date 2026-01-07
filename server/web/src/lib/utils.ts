@@ -17,9 +17,10 @@ export function formatDuration(seconds: number): string {
   return `${hours}h ${mins}m`;
 }
 
-export function formatRelativeTime(timestamp: number): string {
+export function formatRelativeTime(timestamp: number | string): string {
   const now = Date.now();
-  const diff = now - timestamp;
+  const time = typeof timestamp === 'string' ? new Date(timestamp).getTime() : timestamp;
+  const diff = now - time;
 
   if (diff < 60000) return 'just now';
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;

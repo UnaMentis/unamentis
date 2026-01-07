@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8B90D1482DEDD44A00FBD189 /* USMFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 8B90D1472DEDD44A00FBD189 /* USMFeature */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,7 +63,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8B90D1482DEDD44A00FBD189 /* USMFeature in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -126,7 +124,6 @@
 			);
 			name = USM;
 			packageProductDependencies = (
-				8B90D1472DEDD44A00FBD189 /* USMFeature */,
 			);
 			productName = USM;
 			productReference = 8BC2655C2DEDD3F400F279A4 /* USM.app */;
@@ -321,13 +318,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		8B90D1472DEDD44A00FBD189 /* USMFeature */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = USMFeature;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8BC265542DEDD3F400F279A4 /* Project object */;
 }

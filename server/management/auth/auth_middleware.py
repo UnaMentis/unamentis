@@ -33,8 +33,22 @@ PUBLIC_ROUTES: Set[str] = {
 }
 
 # Routes that start with these prefixes are public
+# Note: Management console routes are public as they run on internal/trusted networks
 PUBLIC_PREFIXES: List[str] = [
     '/api/auth/oauth/',
+    '/api/admin/',          # Admin management console routes
+    '/api/stats',           # Dashboard stats
+    '/api/metrics',         # Dashboard metrics
+    '/api/logs',            # Dashboard logs
+    '/api/clients',         # Dashboard clients
+    '/api/servers',         # Dashboard servers
+    '/api/curricula',       # Curriculum management
+    '/api/system/',         # System configuration
+    '/api/import/',         # Import management
+    '/api/sources',         # Source management
+    '/api/plugins',         # Plugin management
+    '/api/models',          # Model management
+    '/ws',                  # WebSocket connections
 ]
 
 

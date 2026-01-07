@@ -1042,6 +1042,7 @@ class AuthAPI:
         )
 
         # Store refresh token
+        refresh_token_id = uuid.uuid4()
         await conn.execute(
             """
             INSERT INTO refresh_tokens (
@@ -1049,7 +1050,7 @@ class AuthAPI:
                 generation, expires_at, ip_address, user_agent
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             """,
-            uuid.UUID(refresh_data.token_id),
+            refresh_token_id,
             user_id,
             device_id,
             refresh_data.token_hash,
