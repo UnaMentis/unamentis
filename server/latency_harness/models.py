@@ -90,6 +90,15 @@ class STTTestConfig:
             "language": self.language,
         }
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "STTTestConfig":
+        return cls(
+            provider=data["provider"],
+            model=data.get("model"),
+            chunk_size_ms=data.get("chunkSizeMs"),
+            language=data.get("language", "en-US"),
+        )
+
 
 @dataclass
 class LLMTestConfig:
@@ -113,6 +122,17 @@ class LLMTestConfig:
             "topP": self.top_p,
             "stream": self.stream,
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "LLMTestConfig":
+        return cls(
+            provider=data["provider"],
+            model=data["model"],
+            max_tokens=data.get("maxTokens", 512),
+            temperature=data.get("temperature", 0.7),
+            top_p=data.get("topP"),
+            stream=data.get("stream", True),
+        )
 
 
 @dataclass
@@ -138,6 +158,19 @@ class ChatterboxConfig:
             "seed": self.seed,
         }
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ChatterboxConfig":
+        return cls(
+            exaggeration=data.get("exaggeration", 0.5),
+            cfg_weight=data.get("cfgWeight", 0.5),
+            speed=data.get("speed", 1.0),
+            enable_paralinguistic_tags=data.get("enableParalinguisticTags", False),
+            use_multilingual=data.get("useMultilingual", False),
+            language=data.get("language", "en"),
+            use_streaming=data.get("useStreaming", True),
+            seed=data.get("seed"),
+        )
+
 
 @dataclass
 class TTSTestConfig:
@@ -162,6 +195,19 @@ class TTSTestConfig:
             result["chatterboxConfig"] = self.chatterbox_config.to_dict()
         return result
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TTSTestConfig":
+        chatterbox_config = None
+        if data.get("chatterboxConfig"):
+            chatterbox_config = ChatterboxConfig.from_dict(data["chatterboxConfig"])
+        return cls(
+            provider=data["provider"],
+            voice_id=data.get("voiceId"),
+            speed=data.get("speed", 1.0),
+            use_streaming=data.get("useStreaming", True),
+            chatterbox_config=chatterbox_config,
+        )
+
 
 @dataclass
 class AudioEngineTestConfig:
@@ -177,6 +223,15 @@ class AudioEngineTestConfig:
             "vadThreshold": self.vad_threshold,
             "vadSmoothingWindow": self.vad_smoothing_window,
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "AudioEngineTestConfig":
+        return cls(
+            sample_rate=data.get("sampleRate", 24000),
+            buffer_size=data.get("bufferSize", 1024),
+            vad_threshold=data.get("vadThreshold", 0.5),
+            vad_smoothing_window=data.get("vadSmoothingWindow", 5),
+        )
 
 
 # ============================================================================
@@ -212,6 +267,19 @@ class TestConfiguration:
             "networkProfile": self.network_profile.value,
         }
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TestConfiguration":
+        return cls(
+            id=data["id"],
+            scenario_name=data["scenarioName"],
+            repetition=data["repetition"],
+            stt=STTTestConfig.from_dict(data["stt"]),
+            llm=LLMTestConfig.from_dict(data["llm"]),
+            tts=TTSTestConfig.from_dict(data["tts"]),
+            audio_engine=AudioEngineTestConfig.from_dict(data["audioEngine"]),
+            network_profile=NetworkProfile(data.get("networkProfile", "localhost")),
+        )
+
 
 # ============================================================================
 # Test Scenario
@@ -240,6 +308,20 @@ class TestScenario:
             "userUtteranceText": self.user_utterance_text,
             "expectedResponseType": self.expected_response_type.value,
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TestScenario":
+        """Deserialize from dictionary."""
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            description=data["description"],
+            scenario_type=ScenarioType(data["scenarioType"]),
+            repetitions=data.get("repetitions", 10),
+            user_utterance_audio_path=data.get("userUtteranceAudioPath"),
+            user_utterance_text=data.get("userUtteranceText"),
+            expected_response_type=ResponseType(data.get("expectedResponseType", "medium")),
+        )
 
 
 # ============================================================================
@@ -342,6 +424,38 @@ class TestResult:
             "isSuccess": self.is_success,
         }
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TestResult":
+        """Deserialize from dictionary."""
+        return cls(
+            id=data["id"],
+            config_id=data["configId"],
+            scenario_name=data["scenarioName"],
+            repetition=data["repetition"],
+            timestamp=datetime.fromisoformat(data["timestamp"]),
+            client_type=ClientType(data["clientType"]),
+            stt_latency_ms=data.get("sttLatencyMs"),
+            llm_ttfb_ms=data["llmTTFBMs"],
+            llm_completion_ms=data["llmCompletionMs"],
+            tts_ttfb_ms=data["ttsTTFBMs"],
+            tts_completion_ms=data["ttsCompletionMs"],
+            e2e_latency_ms=data["e2eLatencyMs"],
+            network_profile=NetworkProfile(data["networkProfile"]),
+            network_projections=data.get("networkProjections", {}),
+            stt_confidence=data.get("sttConfidence"),
+            tts_audio_duration_ms=data.get("ttsAudioDurationMs"),
+            llm_output_tokens=data.get("llmOutputTokens"),
+            llm_input_tokens=data.get("llmInputTokens"),
+            peak_cpu_percent=data.get("peakCPUPercent"),
+            peak_memory_mb=data.get("peakMemoryMB"),
+            thermal_state=data.get("thermalState"),
+            stt_config=data.get("sttConfig"),
+            llm_config=data.get("llmConfig"),
+            tts_config=data.get("ttsConfig"),
+            audio_config=data.get("audioConfig"),
+            errors=data.get("errors", []),
+        )
+
 
 # ============================================================================
 # Client Status
@@ -416,7 +530,34 @@ class TestRun:
             "completedConfigurations": self.completed_configurations,
             "progressPercent": self.progress_percent,
             "elapsedTimeSeconds": self.elapsed_time,
+            "results": [r.to_dict() for r in self.results],
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TestRun":
+        """Deserialize from dictionary."""
+        completed_at = None
+        if data.get("completedAt"):
+            completed_at = datetime.fromisoformat(data["completedAt"])
+
+        # Deserialize results if present
+        results = []
+        if "results" in data:
+            results = [TestResult.from_dict(r) for r in data["results"]]
+
+        return cls(
+            id=data["id"],
+            suite_name=data["suiteName"],
+            suite_id=data["suiteId"],
+            started_at=datetime.fromisoformat(data["startedAt"]),
+            client_id=data["clientId"],
+            client_type=ClientType(data["clientType"]),
+            total_configurations=data["totalConfigurations"],
+            status=RunStatus(data["status"]),
+            completed_at=completed_at,
+            completed_configurations=data.get("completedConfigurations", 0),
+            results=results,
+        )
 
 
 # ============================================================================
@@ -515,6 +656,23 @@ class ParameterSpace:
         default_factory=lambda: [AudioEngineTestConfig()]
     )
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "sttConfigs": [c.to_dict() for c in self.stt_configs],
+            "llmConfigs": [c.to_dict() for c in self.llm_configs],
+            "ttsConfigs": [c.to_dict() for c in self.tts_configs],
+            "audioConfigs": [c.to_dict() for c in self.audio_configs],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ParameterSpace":
+        return cls(
+            stt_configs=[STTTestConfig.from_dict(c) for c in data["sttConfigs"]],
+            llm_configs=[LLMTestConfig.from_dict(c) for c in data["llmConfigs"]],
+            tts_configs=[TTSTestConfig.from_dict(c) for c in data["ttsConfigs"]],
+            audio_configs=[AudioEngineTestConfig.from_dict(c) for c in data.get("audioConfigs", [{"sampleRate": 24000}])],
+        )
+
 
 @dataclass
 class TestSuiteDefinition:
@@ -564,6 +722,27 @@ class TestSuiteDefinition:
             * len(self.parameter_space.tts_configs)
             * len(self.parameter_space.audio_configs)
             * len(self.network_profiles)
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "scenarios": [s.to_dict() for s in self.scenarios],
+            "networkProfiles": [p.value for p in self.network_profiles],
+            "parameterSpace": self.parameter_space.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TestSuiteDefinition":
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            description=data["description"],
+            scenarios=[TestScenario.from_dict(s) for s in data["scenarios"]],
+            network_profiles=[NetworkProfile(p) for p in data["networkProfiles"]],
+            parameter_space=ParameterSpace.from_dict(data["parameterSpace"]),
         )
 
 
@@ -738,203 +917,3 @@ class PerformanceBaseline:
             overall_metrics=BaselineMetrics.from_dict(data["overallMetrics"])
             if data.get("overallMetrics") else None,
         )
-
-
-# ============================================================================
-# Deserialization Methods (from_dict)
-# ============================================================================
-
-# Add from_dict class methods to key models for storage deserialization
-
-@classmethod
-def _test_scenario_from_dict(cls, data: Dict[str, Any]) -> "TestScenario":
-    return cls(
-        id=data["id"],
-        name=data["name"],
-        description=data["description"],
-        scenario_type=ScenarioType(data["scenarioType"]),
-        repetitions=data.get("repetitions", 10),
-        user_utterance_audio_path=data.get("userUtteranceAudioPath"),
-        user_utterance_text=data.get("userUtteranceText"),
-        expected_response_type=ResponseType(data.get("expectedResponseType", "medium")),
-    )
-
-TestScenario.from_dict = classmethod(lambda cls, data: _test_scenario_from_dict(cls, data))
-
-
-@classmethod
-def _stt_config_from_dict(cls, data: Dict[str, Any]) -> "STTTestConfig":
-    return cls(
-        provider=data["provider"],
-        model=data.get("model"),
-        chunk_size_ms=data.get("chunkSizeMs"),
-        language=data.get("language", "en-US"),
-    )
-
-STTTestConfig.from_dict = classmethod(lambda cls, data: _stt_config_from_dict(cls, data))
-
-
-@classmethod
-def _llm_config_from_dict(cls, data: Dict[str, Any]) -> "LLMTestConfig":
-    return cls(
-        provider=data["provider"],
-        model=data["model"],
-        max_tokens=data.get("maxTokens", 512),
-        temperature=data.get("temperature", 0.7),
-        top_p=data.get("topP"),
-        stream=data.get("stream", True),
-    )
-
-LLMTestConfig.from_dict = classmethod(lambda cls, data: _llm_config_from_dict(cls, data))
-
-
-@classmethod
-def _tts_config_from_dict(cls, data: Dict[str, Any]) -> "TTSTestConfig":
-    chatterbox_data = data.get("chatterboxConfig")
-    chatterbox_config = None
-    if chatterbox_data:
-        chatterbox_config = ChatterboxConfig(
-            exaggeration=chatterbox_data.get("exaggeration", 0.5),
-            cfg_weight=chatterbox_data.get("cfgWeight", 0.5),
-            speed=chatterbox_data.get("speed", 1.0),
-            enable_paralinguistic_tags=chatterbox_data.get("enableParalinguisticTags", False),
-            use_multilingual=chatterbox_data.get("useMultilingual", False),
-            language=chatterbox_data.get("language", "en"),
-            use_streaming=chatterbox_data.get("useStreaming", True),
-            seed=chatterbox_data.get("seed"),
-        )
-
-    return cls(
-        provider=data["provider"],
-        voice_id=data.get("voiceId"),
-        speed=data.get("speed", 1.0),
-        use_streaming=data.get("useStreaming", True),
-        chatterbox_config=chatterbox_config,
-    )
-
-TTSTestConfig.from_dict = classmethod(lambda cls, data: _tts_config_from_dict(cls, data))
-
-
-@classmethod
-def _audio_config_from_dict(cls, data: Dict[str, Any]) -> "AudioEngineTestConfig":
-    return cls(
-        sample_rate=data.get("sampleRate", 24000),
-        buffer_size=data.get("bufferSize", 1024),
-        vad_threshold=data.get("vadThreshold", 0.5),
-        vad_smoothing_window=data.get("vadSmoothingWindow", 5),
-    )
-
-AudioEngineTestConfig.from_dict = classmethod(lambda cls, data: _audio_config_from_dict(cls, data))
-
-
-@classmethod
-def _parameter_space_from_dict(cls, data: Dict[str, Any]) -> "ParameterSpace":
-    return cls(
-        stt_configs=[STTTestConfig.from_dict(c) for c in data.get("sttConfigs", [])],
-        llm_configs=[LLMTestConfig.from_dict(c) for c in data.get("llmConfigs", [])],
-        tts_configs=[TTSTestConfig.from_dict(c) for c in data.get("ttsConfigs", [])],
-        audio_configs=[AudioEngineTestConfig.from_dict(c) for c in data.get("audioConfigs", [AudioEngineTestConfig().to_dict()])],
-    )
-
-ParameterSpace.from_dict = classmethod(lambda cls, data: _parameter_space_from_dict(cls, data))
-
-
-@classmethod
-def _test_suite_from_dict(cls, data: Dict[str, Any]) -> "TestSuiteDefinition":
-    return cls(
-        id=data["id"],
-        name=data["name"],
-        description=data["description"],
-        scenarios=[TestScenario.from_dict(s) for s in data.get("scenarios", [])],
-        network_profiles=[NetworkProfile(p) for p in data.get("networkProfiles", ["localhost"])],
-        parameter_space=ParameterSpace.from_dict(data.get("parameterSpace", {})),
-    )
-
-TestSuiteDefinition.from_dict = classmethod(lambda cls, data: _test_suite_from_dict(cls, data))
-
-
-def _add_to_dict_to_parameter_space():
-    """Add to_dict method to ParameterSpace."""
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "sttConfigs": [c.to_dict() for c in self.stt_configs],
-            "llmConfigs": [c.to_dict() for c in self.llm_configs],
-            "ttsConfigs": [c.to_dict() for c in self.tts_configs],
-            "audioConfigs": [c.to_dict() for c in self.audio_configs],
-        }
-    ParameterSpace.to_dict = to_dict
-
-_add_to_dict_to_parameter_space()
-
-
-def _add_to_dict_to_test_suite():
-    """Add to_dict method to TestSuiteDefinition."""
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "scenarios": [s.to_dict() for s in self.scenarios],
-            "networkProfiles": [p.value for p in self.network_profiles],
-            "parameterSpace": self.parameter_space.to_dict(),
-        }
-    TestSuiteDefinition.to_dict = to_dict
-
-_add_to_dict_to_test_suite()
-
-
-@classmethod
-def _test_result_from_dict(cls, data: Dict[str, Any]) -> "TestResult":
-    return cls(
-        id=data["id"],
-        config_id=data["configId"],
-        scenario_name=data["scenarioName"],
-        repetition=data["repetition"],
-        timestamp=datetime.fromisoformat(data["timestamp"]),
-        client_type=ClientType(data["clientType"]),
-        stt_latency_ms=data.get("sttLatencyMs"),
-        llm_ttfb_ms=data["llmTTFBMs"],
-        llm_completion_ms=data["llmCompletionMs"],
-        tts_ttfb_ms=data["ttsTTFBMs"],
-        tts_completion_ms=data["ttsCompletionMs"],
-        e2e_latency_ms=data["e2eLatencyMs"],
-        network_profile=NetworkProfile(data["networkProfile"]),
-        network_projections=data.get("networkProjections", {}),
-        stt_confidence=data.get("sttConfidence"),
-        tts_audio_duration_ms=data.get("ttsAudioDurationMs"),
-        llm_output_tokens=data.get("llmOutputTokens"),
-        llm_input_tokens=data.get("llmInputTokens"),
-        peak_cpu_percent=data.get("peakCPUPercent"),
-        peak_memory_mb=data.get("peakMemoryMB"),
-        thermal_state=data.get("thermalState"),
-        stt_config=data.get("sttConfig"),
-        llm_config=data.get("llmConfig"),
-        tts_config=data.get("ttsConfig"),
-        audio_config=data.get("audioConfig"),
-        errors=data.get("errors", []),
-    )
-
-TestResult.from_dict = classmethod(lambda cls, data: _test_result_from_dict(cls, data))
-
-
-@classmethod
-def _test_run_from_dict(cls, data: Dict[str, Any]) -> "TestRun":
-    results = []
-    if "results" in data:
-        results = [TestResult.from_dict(r) for r in data["results"]]
-
-    return cls(
-        id=data["id"],
-        suite_name=data["suiteName"],
-        suite_id=data["suiteId"],
-        started_at=datetime.fromisoformat(data["startedAt"]),
-        client_id=data["clientId"],
-        client_type=ClientType(data["clientType"]),
-        total_configurations=data["totalConfigurations"],
-        status=RunStatus(data["status"]),
-        completed_at=datetime.fromisoformat(data["completedAt"]) if data.get("completedAt") else None,
-        completed_configurations=data.get("completedConfigurations", 0),
-        results=results,
-    )
-
-TestRun.from_dict = classmethod(lambda cls, data: _test_run_from_dict(cls, data))

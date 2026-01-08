@@ -67,10 +67,13 @@ import {
   BarChart3,
   Zap,
   Download,
+  Settings,
+  LineChart,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { LatencyDashboard } from '@/components/latency-dashboard';
 
 // ============================================================================
 // Type Definitions
@@ -318,6 +321,7 @@ export function LatencyHarnessPanel() {
     runId: string;
     summary: AnalysisSummary;
   } | null>(null);
+  const [view, setView] = useState<'control' | 'analytics'>('control');
 
   // Fetch data
   const fetchData = useCallback(async () => {
@@ -397,6 +401,36 @@ export function LatencyHarnessPanel() {
 
   return (
     <div className="space-y-6">
+      {/* View Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2 p-1 bg-slate-800/50 rounded-lg">
+          <button
+            onClick={() => setView('control')}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all',
+              view === 'control'
+                ? 'bg-orange-500 text-white'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+            )}
+          >
+            <Settings className="w-4 h-4" />
+            Control
+          </button>
+          <button
+            onClick={() => setView('analytics')}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all',
+              view === 'analytics'
+                ? 'bg-orange-500 text-white'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+            )}
+          >
+            <LineChart className="w-4 h-4" />
+            Analytics
+          </button>
+        </div>
+      </div>
+
       {/* Error Alert */}
       {error && (
         <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center gap-3">
@@ -411,7 +445,13 @@ export function LatencyHarnessPanel() {
         </div>
       )}
 
-      {/* Header Stats */}
+      {/* Analytics View */}
+      {view === 'analytics' && <LatencyDashboard />}
+
+      {/* Control View */}
+      {view === 'control' && (
+        <>
+          {/* Header Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
           <div className="flex items-center gap-2 mb-2">
@@ -836,6 +876,8 @@ export function LatencyHarnessPanel() {
           )}
         </div>
       </Card>
+        </>
+      )}
     </div>
   );
 }

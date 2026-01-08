@@ -156,6 +156,16 @@ The curriculum format has its own comprehensive documentation:
 
 ---
 
+## Tools & Automation
+
+| Document | Description |
+|----------|-------------|
+| [tools/CROSS_REPO_ACCESS.md](tools/CROSS_REPO_ACCESS.md) | Cross-repository access for AI agents |
+| [tools/CODERABBIT.md](tools/CODERABBIT.md) | CodeRabbit AI code review |
+| [tools/GITHUB_WIKI.md](tools/GITHUB_WIKI.md) | GitHub Wiki setup and usage |
+
+---
+
 ## Quick Links
 
 - **New to the project?** Start with [QUICKSTART.md](QUICKSTART.md)

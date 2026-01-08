@@ -1,0 +1,34 @@
+{
+  "id": "32aae57e",
+  "name": "Test Baseline v1",
+  "description": "Testing baseline API",
+  "runId": "run_20260107_211029_e8ce4e",
+  "createdAt": "2026-01-07T21:12:39.209450",
+  "isActive": true,
+  "configMetrics": {
+    "deepgram_anthropic_claude-3-5-haiku-20241022_chatterbox": {
+      "medianE2EMs": 467.53537627070125,
+      "p99E2EMs": 626.8545250019985,
+      "minE2EMs": 312.28435185489553,
+      "maxE2EMs": 626.8545250019985,
+      "medianSTTMs": 58.68485075276583,
+      "medianLLMTTFBMs": 145.76043887681175,
+      "medianLLMCompletionMs": 234.7458591026462,
+      "medianTTSTTFBMs": 96.21592349629927,
+      "medianTTSCompletionMs": 116.31563298457581,
+      "sampleCount": 6
+    }
+  },
+  "overallMetrics": {
+    "medianE2EMs": 467.53537627070125,
+    "p99E2EMs": 626.8545250019985,
+    "minE2EMs": 312.28435185489553,
+    "maxE2EMs": 626.8545250019985,
+    "medianSTTMs": 58.68485075276583,
+    "medianLLMTTFBMs": 145.76043887681175,
+    "medianLLMCompletionMs": 234.7458591026462,
+    "medianTTSTTFBMs": 96.21592349629927,
+    "medianTTSCompletionMs": 116.31563298457581,
+    "sampleCount": 6
+  }
+}
