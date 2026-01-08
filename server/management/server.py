@@ -40,6 +40,9 @@ from auth import (
     TokenService, TokenConfig, RateLimiter, setup_token_service
 )
 
+# Import latency test harness system
+from latency_harness_api import register_latency_harness_routes, init_latency_harness, shutdown_latency_harness
+
 # Import diagnostic logging system
 from diagnostic_logging import diag_logger, get_diagnostic_config, set_diagnostic_config
 
@@ -1195,6 +1198,506 @@ async def handle_get_models(request: web.Request) -> web.Response:
     except Exception as e:
         logger.error(f"Error getting models: {e}")
         return web.json_response({"error": str(e)}, status=500)
+
+
+async def handle_load_model(request: web.Request) -> web.Response:
+    """Load a specific model into memory via Ollama API."""
+    model_id = request.match_info["model_id"]
+
+    try:
+        # Parse optional request body
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+
+        keep_alive = body.get("keep_alive", "5m")
+
+        # Extract model name from model_id (format: "server_id:model_name")
+        if ":" in model_id:
+            _, model_name = model_id.split(":", 1)
+        else:
+            model_name = model_id
+
+        # Load model by sending a minimal request with keep_alive
+        # This triggers Ollama to load the model into VRAM
+        timeout = aiohttp.ClientTimeout(total=120)  # Loading can take time
+        start_time = time.time()
+
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(
+                "http://localhost:11434/api/generate",
+                json={
+                    "model": model_name,
+                    "prompt": "",
+                    "keep_alive": keep_alive
+                }
+            ) as resp:
+                if resp.status != 200:
+                    error_text = await resp.text()
+                    return web.json_response({
+                        "status": "error",
+                        "model": model_name,
+                        "error": f"Ollama returned {resp.status}: {error_text}"
+                    }, status=resp.status)
+
+                # Consume the streaming response
+                async for _ in resp.content:
+                    pass
+
+        load_time_ms = int((time.time() - start_time) * 1000)
+
+        # Get updated VRAM usage
+        vram_bytes = 0
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+                async with session.get("http://localhost:11434/api/ps") as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        for m in data.get("models", []):
+                            if m.get("name") == model_name:
+                                vram_bytes = m.get("size_vram", 0)
+                                break
+        except Exception:
+            pass
+
+        logger.info(f"Loaded model {model_name} in {load_time_ms}ms")
+        await broadcast_message("model_loaded", {"model": model_name, "vram_bytes": vram_bytes})
+
+        return web.json_response({
+            "status": "ok",
+            "model": model_name,
+            "vram_bytes": vram_bytes,
+            "vram_gb": round(vram_bytes / (1024**3), 2),
+            "load_time_ms": load_time_ms,
+            "message": f"Model {model_name} loaded successfully"
+        })
+
+    except asyncio.TimeoutError:
+        return web.json_response({
+            "status": "error",
+            "model": model_id,
+            "error": "Timeout loading model (may still be loading in background)"
+        }, status=504)
+    except Exception as e:
+        logger.error(f"Error loading model {model_id}: {e}")
+        return web.json_response({
+            "status": "error",
+            "model": model_id,
+            "error": str(e)
+        }, status=500)
+
+
+async def handle_unload_model(request: web.Request) -> web.Response:
+    """Unload a specific model from memory."""
+    model_id = request.match_info["model_id"]
+
+    try:
+        # Extract model name from model_id (format: "server_id:model_name")
+        if ":" in model_id:
+            _, model_name = model_id.split(":", 1)
+        else:
+            model_name = model_id
+
+        # Get current VRAM usage before unload
+        vram_before = 0
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+                async with session.get("http://localhost:11434/api/ps") as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        for m in data.get("models", []):
+                            if m.get("name") == model_name:
+                                vram_before = m.get("size_vram", 0)
+                                break
+        except Exception:
+            pass
+
+        if vram_before == 0:
+            return web.json_response({
+                "status": "ok",
+                "model": model_name,
+                "message": "Model was not loaded",
+                "freed_vram_bytes": 0
+            })
+
+        # Unload by setting keep_alive to 0
+        timeout = aiohttp.ClientTimeout(total=30)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(
+                "http://localhost:11434/api/generate",
+                json={
+                    "model": model_name,
+                    "prompt": "",
+                    "keep_alive": 0
+                }
+            ) as resp:
+                if resp.status != 200:
+                    error_text = await resp.text()
+                    return web.json_response({
+                        "status": "error",
+                        "model": model_name,
+                        "error": f"Ollama returned {resp.status}: {error_text}"
+                    }, status=resp.status)
+
+                # Consume the streaming response
+                async for _ in resp.content:
+                    pass
+
+        logger.info(f"Unloaded model {model_name}, freed {vram_before / (1024**3):.2f} GB")
+        await broadcast_message("model_unloaded", {"model": model_name, "freed_vram_bytes": vram_before})
+
+        return web.json_response({
+            "status": "ok",
+            "model": model_name,
+            "freed_vram_bytes": vram_before,
+            "freed_vram_gb": round(vram_before / (1024**3), 2),
+            "message": f"Model {model_name} unloaded"
+        })
+
+    except Exception as e:
+        logger.error(f"Error unloading model {model_id}: {e}")
+        return web.json_response({
+            "status": "error",
+            "model": model_id,
+            "error": str(e)
+        }, status=500)
+
+
+async def handle_pull_model(request: web.Request) -> web.StreamResponse:
+    """Pull (download) a model from Ollama registry with SSE progress streaming."""
+    try:
+        body = await request.json()
+        model_name = body.get("model")
+
+        if not model_name:
+            return web.json_response({"error": "Model name required"}, status=400)
+
+        logger.info(f"Starting pull for model: {model_name}")
+
+        # Set up SSE response
+        response = web.StreamResponse(
+            status=200,
+            reason="OK",
+            headers={
+                "Content-Type": "text/event-stream",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            }
+        )
+        await response.prepare(request)
+
+        # Stream pull progress from Ollama
+        timeout = aiohttp.ClientTimeout(total=3600)  # 1 hour for large models
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(
+                "http://localhost:11434/api/pull",
+                json={"name": model_name, "stream": True}
+            ) as resp:
+                if resp.status != 200:
+                    error_msg = await resp.text()
+                    await response.write(
+                        f"data: {json.dumps({'status': 'error', 'error': error_msg})}\n\n".encode()
+                    )
+                    await response.write_eof()
+                    return response
+
+                async for line in resp.content:
+                    if line:
+                        try:
+                            data = json.loads(line.decode())
+                            # Forward the progress event
+                            sse_data = {
+                                "status": data.get("status", ""),
+                                "digest": data.get("digest", ""),
+                                "completed": data.get("completed", 0),
+                                "total": data.get("total", 0),
+                            }
+
+                            # Check for completion or error
+                            if "error" in data:
+                                sse_data["error"] = data["error"]
+                                sse_data["status"] = "error"
+
+                            await response.write(f"data: {json.dumps(sse_data)}\n\n".encode())
+
+                        except json.JSONDecodeError:
+                            continue
+
+        # Send completion event
+        await response.write(
+            f"data: {json.dumps({'status': 'success', 'model': model_name})}\n\n".encode()
+        )
+
+        logger.info(f"Model pull completed: {model_name}")
+        await broadcast_message("model_pulled", {"model": model_name})
+        await response.write_eof()
+        return response
+
+    except asyncio.CancelledError:
+        logger.info("Model pull cancelled by client")
+        raise
+    except Exception as e:
+        logger.error(f"Error pulling model: {e}")
+        return web.json_response({"error": str(e)}, status=500)
+
+
+async def handle_delete_model(request: web.Request) -> web.Response:
+    """Delete a model from Ollama."""
+    model_id = request.match_info["model_id"]
+
+    try:
+        # Extract model name from model_id (format: "server_id:model_name")
+        if ":" in model_id:
+            _, model_name = model_id.split(":", 1)
+        else:
+            model_name = model_id
+
+        timeout = aiohttp.ClientTimeout(total=30)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.delete(
+                "http://localhost:11434/api/delete",
+                json={"name": model_name}
+            ) as resp:
+                if resp.status == 200:
+                    logger.info(f"Deleted model: {model_name}")
+                    await broadcast_message("model_deleted", {"model": model_name})
+                    return web.json_response({
+                        "status": "ok",
+                        "model": model_name,
+                        "message": f"Model {model_name} deleted"
+                    })
+                else:
+                    error_text = await resp.text()
+                    return web.json_response({
+                        "status": "error",
+                        "model": model_name,
+                        "error": f"Ollama returned {resp.status}: {error_text}"
+                    }, status=resp.status)
+
+    except Exception as e:
+        logger.error(f"Error deleting model {model_id}: {e}")
+        return web.json_response({
+            "status": "error",
+            "model": model_id,
+            "error": str(e)
+        }, status=500)
+
+
+# Model configuration file path
+MODEL_CONFIG_PATH = Path(__file__).parent / "data" / "model_config.json"
+
+
+def load_model_config() -> dict:
+    """Load model configuration from disk."""
+    if MODEL_CONFIG_PATH.exists():
+        try:
+            with open(MODEL_CONFIG_PATH, "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            logger.warning(f"Failed to load model config: {e}")
+    # Return default config
+    return {
+        "services": {
+            "llm": {"default_model": None, "fallback_model": None},
+            "tts": {"default_provider": "vibevoice", "default_voice": "nova"},
+            "stt": {"default_model": "whisper"}
+        }
+    }
+
+
+def save_model_config(config: dict) -> None:
+    """Save model configuration to disk."""
+    MODEL_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(MODEL_CONFIG_PATH, "w") as f:
+        json.dump(config, f, indent=2)
+
+
+async def handle_get_model_config(request: web.Request) -> web.Response:
+    """Get current model configuration for all services."""
+    try:
+        config = load_model_config()
+        return web.json_response({
+            "status": "ok",
+            "config": config
+        })
+    except Exception as e:
+        logger.error(f"Error getting model config: {e}")
+        return web.json_response({
+            "status": "error",
+            "error": str(e)
+        }, status=500)
+
+
+async def handle_save_model_config(request: web.Request) -> web.Response:
+    """Save model configuration for services."""
+    try:
+        body = await request.json()
+        config = body.get("config", {})
+
+        # Validate structure
+        if "services" not in config:
+            return web.json_response({
+                "status": "error",
+                "error": "Invalid config: 'services' key required"
+            }, status=400)
+
+        # Merge with existing config to preserve unset values
+        existing = load_model_config()
+        for service, settings in config["services"].items():
+            if service in existing["services"]:
+                existing["services"][service].update(settings)
+            else:
+                existing["services"][service] = settings
+
+        save_model_config(existing)
+        logger.info(f"Model config saved: {existing}")
+
+        return web.json_response({
+            "status": "ok",
+            "config": existing,
+            "message": "Configuration saved"
+        })
+
+    except json.JSONDecodeError:
+        return web.json_response({
+            "status": "error",
+            "error": "Invalid JSON"
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error saving model config: {e}")
+        return web.json_response({
+            "status": "error",
+            "error": str(e)
+        }, status=500)
+
+
+# Model parameters configuration file path
+MODEL_PARAMS_PATH = Path(__file__).parent / "data" / "model_params.json"
+
+# Default parameter definitions with ranges
+DEFAULT_MODEL_PARAMS = {
+    "num_ctx": {"value": 4096, "min": 256, "max": 131072, "description": "Context window size"},
+    "temperature": {"value": 0.8, "min": 0.0, "max": 2.0, "step": 0.1, "description": "Sampling temperature"},
+    "top_p": {"value": 0.9, "min": 0.0, "max": 1.0, "step": 0.05, "description": "Top-p (nucleus) sampling"},
+    "top_k": {"value": 40, "min": 1, "max": 100, "description": "Top-k sampling"},
+    "repeat_penalty": {"value": 1.1, "min": 0.0, "max": 2.0, "step": 0.1, "description": "Repeat penalty"},
+    "seed": {"value": -1, "min": -1, "max": 2147483647, "description": "Random seed (-1 for random)"},
+}
+
+
+def load_model_params(model_name: str) -> dict:
+    """Load model parameters from disk."""
+    if MODEL_PARAMS_PATH.exists():
+        try:
+            with open(MODEL_PARAMS_PATH, "r") as f:
+                all_params = json.load(f)
+                return all_params.get(model_name, {})
+        except (json.JSONDecodeError, IOError) as e:
+            logger.warning(f"Failed to load model params: {e}")
+    return {}
+
+
+def save_model_params(model_name: str, params: dict) -> None:
+    """Save model parameters to disk."""
+    MODEL_PARAMS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    all_params = {}
+    if MODEL_PARAMS_PATH.exists():
+        try:
+            with open(MODEL_PARAMS_PATH, "r") as f:
+                all_params = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+    all_params[model_name] = params
+    with open(MODEL_PARAMS_PATH, "w") as f:
+        json.dump(all_params, f, indent=2)
+
+
+async def handle_get_model_parameters(request: web.Request) -> web.Response:
+    """Get parameters for a specific model with their ranges."""
+    model_id = request.match_info["model_id"]
+
+    try:
+        # Extract model name from model_id (format: "server_id:model_name")
+        if ":" in model_id:
+            _, model_name = model_id.split(":", 1)
+        else:
+            model_name = model_id
+
+        # Load saved parameters for this model
+        saved_params = load_model_params(model_name)
+
+        # Merge with defaults
+        params = {}
+        for key, default_def in DEFAULT_MODEL_PARAMS.items():
+            params[key] = {
+                **default_def,
+                "value": saved_params.get(key, default_def["value"])
+            }
+
+        return web.json_response({
+            "status": "ok",
+            "model": model_name,
+            "parameters": params
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting model parameters: {e}")
+        return web.json_response({
+            "status": "error",
+            "model": model_id,
+            "error": str(e)
+        }, status=500)
+
+
+async def handle_save_model_parameters(request: web.Request) -> web.Response:
+    """Save parameters for a specific model."""
+    model_id = request.match_info["model_id"]
+
+    try:
+        body = await request.json()
+        new_params = body.get("parameters", {})
+
+        # Extract model name from model_id
+        if ":" in model_id:
+            _, model_name = model_id.split(":", 1)
+        else:
+            model_name = model_id
+
+        # Validate parameters
+        validated_params = {}
+        for key, value in new_params.items():
+            if key in DEFAULT_MODEL_PARAMS:
+                param_def = DEFAULT_MODEL_PARAMS[key]
+                # Clamp value to valid range
+                min_val = param_def.get("min", float("-inf"))
+                max_val = param_def.get("max", float("inf"))
+                validated_params[key] = max(min_val, min(max_val, value))
+
+        # Save parameters
+        save_model_params(model_name, validated_params)
+        logger.info(f"Model parameters saved for {model_name}: {validated_params}")
+
+        return web.json_response({
+            "status": "ok",
+            "model": model_name,
+            "parameters": validated_params,
+            "message": "Parameters saved"
+        })
+
+    except json.JSONDecodeError:
+        return web.json_response({
+            "status": "error",
+            "error": "Invalid JSON"
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error saving model parameters: {e}")
+        return web.json_response({
+            "status": "error",
+            "model": model_id,
+            "error": str(e)
+        }, status=500)
 
 
 # =============================================================================
@@ -3728,6 +4231,14 @@ def create_app() -> web.Application:
 
     # Models
     app.router.add_get("/api/models", handle_get_models)
+    app.router.add_post("/api/models/{model_id}/load", handle_load_model)
+    app.router.add_post("/api/models/{model_id}/unload", handle_unload_model)
+    app.router.add_post("/api/models/pull", handle_pull_model)
+    app.router.add_delete("/api/models/{model_id}", handle_delete_model)
+    app.router.add_get("/api/models/config", handle_get_model_config)
+    app.router.add_post("/api/models/config", handle_save_model_config)
+    app.router.add_get("/api/models/{model_id}/parameters", handle_get_model_parameters)
+    app.router.add_post("/api/models/{model_id}/parameters", handle_save_model_parameters)
 
     # Managed Services
     app.router.add_get("/api/services", handle_get_services)
@@ -3800,6 +4311,9 @@ def create_app() -> web.Application:
         logger.info("Authentication system initialized (routes pending database connection)")
     else:
         logger.warning("AUTH_SECRET_KEY not set - authentication disabled")
+
+    # Latency Test Harness
+    register_latency_harness_routes(app)
 
     # Set up callback to reload curricula when import completes
     def on_import_complete(progress):
@@ -3896,7 +4410,10 @@ def create_app() -> web.Application:
         # Start metrics recording task
         asyncio.create_task(_metrics_recording_loop())
 
-        logger.info("[Startup] Resource monitoring, idle management, and metrics history started")
+        # Start latency test harness
+        await init_latency_harness()
+
+        logger.info("[Startup] Resource monitoring, idle management, metrics history, and latency harness started")
 
         # Log diagnostic logging status
         diag_logger.info("Server startup complete", context={
@@ -3915,6 +4432,7 @@ def create_app() -> web.Application:
         await resource_monitor.stop()
         await idle_manager.stop()
         await metrics_history.stop()
+        await shutdown_latency_harness()
         logger.info("[Cleanup] Background tasks stopped")
 
     app.on_startup.append(on_startup)

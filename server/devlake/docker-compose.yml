@@ -1,0 +1,130 @@
+# UnaMentis DevLake - DORA Metrics Platform
+# Apache DevLake for engineering metrics and insights
+#
+# Usage:
+#   docker compose up -d          # Start all services
+#   docker compose logs -f        # View logs
+#   docker compose down           # Stop all services
+#   docker compose down -v        # Stop and remove volumes (data loss!)
+#
+# Access:
+#   DevLake Config UI: http://localhost:4000
+#   Grafana Dashboard: http://localhost:3002 (admin/admin)
+#   DevLake API: http://localhost:8080
+#
+# SECURITY NOTE:
+#   Default credentials are used for LOCAL DEVELOPMENT ONLY.
+#   For production deployment, set these environment variables:
+#   - MYSQL_ROOT_PASSWORD: Strong password for MySQL root
+#   - MYSQL_PASSWORD: Strong password for merico user
+#   - GRAFANA_PASSWORD: Strong password for Grafana admin
+
+services:
+  # MySQL database for DevLake
+  mysql:
+    image: mysql:8.0
+    container_name: devlake-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-admin}
+      MYSQL_DATABASE: lake
+      MYSQL_USER: merico
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-merico}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_bin
+      - --skip-log-bin
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-admin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - devlake-network
+
+  # DevLake API Server
+  devlake:
+    image: apache/devlake:latest
+    container_name: devlake-server
+    environment:
+      # Database
+      DB_URL: mysql://merico:${MYSQL_PASSWORD:-merico}@mysql:3306/lake?charset=utf8mb4&parseTime=True
+
+      # Server
+      PORT: 8080
+      MODE: release
+
+      # Logging
+      LOGGING_LEVEL: info
+
+      # Plugin settings
+      ENABLE_SUBTASKS_BY_DEFAULT: "true"
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - devlake-network
+
+  # DevLake Config UI
+  config-ui:
+    image: apache/devlake-config-ui:latest
+    container_name: devlake-config-ui
+    environment:
+      DEVLAKE_ENDPOINT: http://devlake:8080
+      GRAFANA_ENDPOINT: http://grafana:3000
+      ADMIN_USER: admin
+      ADMIN_PASS: admin
+    ports:
+      - "4000:4000"
+    depends_on:
+      - devlake
+    restart: unless-stopped
+    networks:
+      - devlake-network
+
+  # Grafana for dashboards
+  grafana:
+    image: apache/devlake-dashboard:latest
+    container_name: devlake-grafana
+    environment:
+      GF_SERVER_ROOT_URL: http://localhost:3002
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      MYSQL_URL: mysql:3306
+      MYSQL_DATABASE: lake
+      MYSQL_USER: merico
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-merico}
+    ports:
+      - "3002:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./dashboards:/etc/grafana/provisioning/dashboards/custom:ro
+    restart: unless-stopped
+    networks:
+      - devlake-network
+
+volumes:
+  mysql_data:
+    name: devlake-mysql-data
+  grafana_data:
+    name: devlake-grafana-data
+
+networks:
+  devlake-network:
+    name: devlake-network
+    driver: bridge

@@ -1,0 +1,68 @@
+{
+  "version": "1.0.0",
+  "description": "Latency baselines for UnaMentis voice pipeline",
+  "last_updated": "2025-01-07",
+  "targets": {
+    "e2e_turn_latency": {
+      "description": "End-to-end turn latency (user speech to AI response start)",
+      "p50_ms": 500,
+      "p99_ms": 1000,
+      "max_ms": 2000,
+      "unit": "milliseconds"
+    },
+    "stt_latency": {
+      "description": "Speech-to-text processing time",
+      "p50_ms": 100,
+      "p99_ms": 200,
+      "max_ms": 500,
+      "unit": "milliseconds"
+    },
+    "llm_ttft": {
+      "description": "LLM time to first token",
+      "p50_ms": 200,
+      "p99_ms": 400,
+      "max_ms": 800,
+      "unit": "milliseconds"
+    },
+    "tts_latency": {
+      "description": "Text-to-speech generation time",
+      "p50_ms": 100,
+      "p99_ms": 200,
+      "max_ms": 500,
+      "unit": "milliseconds"
+    }
+  },
+  "thresholds": {
+    "regression_warning_percent": 10,
+    "regression_failure_percent": 20,
+    "improvement_notable_percent": 10
+  },
+  "current_baselines": {
+    "e2e_turn_latency": {
+      "p50_ms": null,
+      "p99_ms": null,
+      "measured_at": null,
+      "commit": null,
+      "note": "Baseline not yet established - will be set on first successful run"
+    },
+    "stt_latency": {
+      "p50_ms": null,
+      "p99_ms": null,
+      "measured_at": null,
+      "commit": null
+    },
+    "llm_ttft": {
+      "p50_ms": null,
+      "p99_ms": null,
+      "measured_at": null,
+      "commit": null
+    },
+    "tts_latency": {
+      "p50_ms": null,
+      "p99_ms": null,
+      "measured_at": null,
+      "commit": null
+    }
+  },
+  "history": []
+}

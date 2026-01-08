@@ -31,6 +31,9 @@ let package = Package(
 
         // SwiftMath for native LaTeX formula rendering
         .package(url: "https://github.com/mgriebling/SwiftMath.git", from: "3.4.0"),
+
+        // Komondor for Git hooks management (dev dependency)
+        .package(url: "https://github.com/shibapm/Komondor.git", from: "1.1.0"),
     ],
     targets: [
         // Main library target

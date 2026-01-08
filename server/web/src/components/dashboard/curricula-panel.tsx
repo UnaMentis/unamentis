@@ -113,10 +113,23 @@ export function CurriculaPanel() {
       <CurriculumStudio
         initialData={newCurriculum}
         onSave={async (data) => {
-          // TODO: POST to API
-          console.log('Creating curriculum:', data);
-          setIsCreating(false);
-          fetchCurricula();
+          const curriculumId = data.id?.value || crypto.randomUUID();
+          try {
+            const response = await fetch(`/api/curricula/${curriculumId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            });
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.error || `Failed to save curriculum: ${response.status}`);
+            }
+            setIsCreating(false);
+            fetchCurricula();
+          } catch (err) {
+            console.error('Failed to save curriculum:', err);
+            setError(err instanceof Error ? err.message : 'Failed to save curriculum');
+          }
         }}
         onBack={() => setIsCreating(false)}
       />

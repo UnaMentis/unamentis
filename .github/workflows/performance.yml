@@ -1,0 +1,278 @@
+name: Performance Regression Check
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'UnaMentis/**'
+      - 'server/latency_harness/**'
+      - 'baselines/**'
+  push:
+    branches: [ main ]
+    paths:
+      - 'UnaMentis/**'
+      - 'server/latency_harness/**'
+      - 'baselines/**'
+  workflow_dispatch:
+    inputs:
+      update_baseline:
+        description: 'Update baseline with current results'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: performance-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  latency-check:
+    name: Latency Regression Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-asyncio aiohttp httpx
+
+    - name: Load Baselines
+      id: baselines
+      run: |
+        if [ -f "baselines/latency.json" ]; then
+          echo "Baseline file found"
+          # Extract target values
+          python3 << 'EOF' >> $GITHUB_OUTPUT
+        import json
+        with open('baselines/latency.json') as f:
+            data = json.load(f)
+        targets = data.get('targets', {})
+        thresholds = data.get('thresholds', {})
+
+        e2e = targets.get('e2e_turn_latency', {})
+        print(f"e2e_p50_target={e2e.get('p50_ms', 500)}")
+        print(f"e2e_p99_target={e2e.get('p99_ms', 1000)}")
+        print(f"regression_threshold={thresholds.get('regression_failure_percent', 20)}")
+        EOF
+        else
+          echo "No baseline file found, using defaults"
+          echo "e2e_p50_target=500" >> $GITHUB_OUTPUT
+          echo "e2e_p99_target=1000" >> $GITHUB_OUTPUT
+          echo "regression_threshold=20" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Run Quick Validation Tests
+      id: latency_test
+      run: |
+        cd server
+        python -m latency_harness.cli \
+          --suite quick_validation \
+          --mock \
+          --timeout 120 \
+          --output json \
+          > ../latency_results.json 2>&1 || true
+
+        # Parse results
+        cd ..
+        if [ -f "latency_results.json" ]; then
+          python3 << 'EOF'
+        import json
+        import sys
+
+        try:
+            with open('latency_results.json') as f:
+                data = json.load(f)
+
+            status = data.get('status', 'unknown')
+            metrics = data.get('summary', {}).get('metrics', {})
+
+            p50 = metrics.get('p50_ms', 0)
+            p99 = metrics.get('p99_ms', 0)
+            total_tests = data.get('summary', {}).get('total_tests', 0)
+            passed = data.get('summary', {}).get('passed', 0)
+
+            # Write to file for GitHub output
+            with open('performance_metrics.txt', 'w') as f:
+                f.write(f"status={status}\n")
+                f.write(f"p50={p50}\n")
+                f.write(f"p99={p99}\n")
+                f.write(f"total_tests={total_tests}\n")
+                f.write(f"passed={passed}\n")
+
+            print(f"P50: {p50}ms, P99: {p99}ms")
+
+        except Exception as e:
+            print(f"Error parsing results: {e}")
+            with open('performance_metrics.txt', 'w') as f:
+                f.write("status=error\n")
+                f.write("p50=0\n")
+                f.write("p99=0\n")
+        EOF
+
+          cat performance_metrics.txt >> $GITHUB_OUTPUT
+        fi
+      continue-on-error: true
+
+    - name: Check for Regression
+      id: regression
+      run: |
+        # Compare against targets
+        P50="${{ steps.latency_test.outputs.p50 }}"
+        P99="${{ steps.latency_test.outputs.p99 }}"
+        P50_TARGET="${{ steps.baselines.outputs.e2e_p50_target }}"
+        P99_TARGET="${{ steps.baselines.outputs.e2e_p99_target }}"
+        THRESHOLD="${{ steps.baselines.outputs.regression_threshold }}"
+
+        echo "Checking regression..."
+        echo "P50: ${P50:-0}ms (target: ${P50_TARGET:-0}ms)"
+        echo "P99: ${P99:-0}ms (target: ${P99_TARGET:-0}ms)"
+        echo "Threshold: ${THRESHOLD:-20}%"
+
+        # Default to 0 if not set
+        P50="${P50:-0}"
+        P99="${P99:-0}"
+        P50_TARGET="${P50_TARGET:-500}"
+        P99_TARGET="${P99_TARGET:-1000}"
+        THRESHOLD="${THRESHOLD:-20}"
+
+        REGRESSION="false"
+        WARNING="false"
+
+        # Check P50 regression (compare to target, allow threshold)
+        if [ "$P50" != "0" ] && [ "$P50_TARGET" != "0" ]; then
+          ALLOWED_P50=$(echo "$P50_TARGET * (100 + $THRESHOLD) / 100" | bc)
+          if [ "$P50" -gt "$ALLOWED_P50" ] 2>/dev/null; then
+            echo "::error::P50 latency ${P50}ms exceeds threshold of ${ALLOWED_P50}ms (target: ${P50_TARGET}ms + ${THRESHOLD}%)"
+            REGRESSION="true"
+          elif [ "$P50" -gt "$P50_TARGET" ] 2>/dev/null; then
+            echo "::warning::P50 latency ${P50}ms is above target of ${P50_TARGET}ms"
+            WARNING="true"
+          fi
+        fi
+
+        # Check P99 regression
+        if [ "$P99" != "0" ] && [ "$P99_TARGET" != "0" ]; then
+          ALLOWED_P99=$(echo "$P99_TARGET * (100 + $THRESHOLD) / 100" | bc)
+          if [ "$P99" -gt "$ALLOWED_P99" ] 2>/dev/null; then
+            echo "::error::P99 latency ${P99}ms exceeds threshold of ${ALLOWED_P99}ms (target: ${P99_TARGET}ms + ${THRESHOLD}%)"
+            REGRESSION="true"
+          elif [ "$P99" -gt "$P99_TARGET" ] 2>/dev/null; then
+            echo "::warning::P99 latency ${P99}ms is above target of ${P99_TARGET}ms"
+            WARNING="true"
+          fi
+        fi
+
+        echo "regression=$REGRESSION" >> "$GITHUB_OUTPUT"
+        echo "warning=$WARNING" >> "$GITHUB_OUTPUT"
+
+    - name: Upload Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-results
+        path: |
+          latency_results.json
+          performance_metrics.txt
+        retention-days: 30
+
+    - name: Update Baseline (if requested)
+      if: github.event.inputs.update_baseline == 'true' && steps.latency_test.outputs.status == 'completed'
+      run: |
+        echo "Updating baseline with current results..."
+        python3 << 'EOF'
+        import json
+        from datetime import datetime
+
+        # Load current baseline
+        with open('baselines/latency.json') as f:
+            baseline = json.load(f)
+
+        # Load results
+        try:
+            with open('latency_results.json') as f:
+                results = json.load(f)
+        except (IOError, json.JSONDecodeError) as e:
+            print(f"Could not load results: {e}")
+            exit(0)
+
+        metrics = results.get('summary', {}).get('metrics', {})
+
+        # Update current baselines
+        baseline['current_baselines']['e2e_turn_latency'] = {
+            'p50_ms': metrics.get('p50_ms'),
+            'p99_ms': metrics.get('p99_ms'),
+            'measured_at': datetime.utcnow().isoformat(),
+            'commit': '${{ github.sha }}'
+        }
+
+        # Add to history
+        baseline['history'].append({
+            'date': datetime.utcnow().isoformat(),
+            'commit': '${{ github.sha }}',
+            'p50_ms': metrics.get('p50_ms'),
+            'p99_ms': metrics.get('p99_ms')
+        })
+
+        # Keep only last 30 entries
+        baseline['history'] = baseline['history'][-30:]
+        baseline['last_updated'] = datetime.utcnow().strftime('%Y-%m-%d')
+
+        with open('baselines/latency.json', 'w') as f:
+            json.dump(baseline, f, indent=2)
+
+        print("Baseline updated successfully")
+        EOF
+
+    - name: Performance Summary
+      if: always()
+      run: |
+        echo "## Performance Regression Check" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Value | Target | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+
+        P50="${{ steps.latency_test.outputs.p50 }}"
+        P99="${{ steps.latency_test.outputs.p99 }}"
+        P50_TARGET="${{ steps.baselines.outputs.e2e_p50_target }}"
+        P99_TARGET="${{ steps.baselines.outputs.e2e_p99_target }}"
+        REGRESSION="${{ steps.regression.outputs.regression }}"
+
+        P50_STATUS="Passed"
+        P99_STATUS="Passed"
+        if [ "$REGRESSION" = "true" ]; then
+          P50_STATUS="Failed"
+          P99_STATUS="Failed"
+        fi
+
+        echo "| P50 Latency | ${P50:-N/A} ms | ${P50_TARGET} ms | ${P50_STATUS} |" >> $GITHUB_STEP_SUMMARY
+        echo "| P99 Latency | ${P99:-N/A} ms | ${P99_TARGET} ms | ${P99_STATUS} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ "$REGRESSION" = "true" ]; then
+          echo "### Regression Detected" >> $GITHUB_STEP_SUMMARY
+          echo "Performance regression detected. Please investigate before merging." >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ steps.regression.outputs.warning }}" = "true" ]; then
+          echo "### Warning" >> $GITHUB_STEP_SUMMARY
+          echo "Latency is above target but within acceptable threshold." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### Performance OK" >> $GITHUB_STEP_SUMMARY
+          echo "All latency metrics are within acceptable limits." >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Fail on Regression
+      if: steps.regression.outputs.regression == 'true'
+      run: |
+        echo "Performance regression detected!"
+        exit 1

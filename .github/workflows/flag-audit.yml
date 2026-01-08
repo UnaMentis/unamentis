@@ -1,0 +1,128 @@
+name: Feature Flag Audit
+
+on:
+  schedule:
+    # Run weekly on Mondays at 9am UTC
+    - cron: '0 9 * * 1'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'UnaMentis/**/*.swift'
+      - 'server/web/**/*.ts'
+      - 'server/web/**/*.tsx'
+      - 'server/**/*.py'
+  workflow_dispatch:
+
+concurrency:
+  group: flag-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  audit:
+    name: Feature Flag Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Run Feature Flag Audit
+      id: audit
+      run: |
+        chmod +x ./scripts/feature-flag-audit.sh
+        ./scripts/feature-flag-audit.sh --check 2>&1 | tee audit-output.txt
+      continue-on-error: true
+
+    - name: Parse Audit Results
+      id: results
+      run: |
+        # Ensure audit-output.txt exists
+        touch audit-output.txt
+
+        # Count flags found (grep -c returns 1 if no match, so we handle that)
+        TOTAL_FLAGS=$(grep -c "used.*times" audit-output.txt || true)
+        TOTAL_FLAGS=${TOTAL_FLAGS:-0}
+        echo "total_flags=${TOTAL_FLAGS}" >> $GITHUB_OUTPUT
+
+        # Check for overdue flags
+        OVERDUE=$(grep -c "\[OVERDUE\]" audit-output.txt || true)
+        OVERDUE=${OVERDUE:-0}
+        echo "overdue=${OVERDUE}" >> $GITHUB_OUTPUT
+
+        # Check for flags due soon
+        DUE_SOON=$(grep -c "\[DUE SOON\]" audit-output.txt || true)
+        DUE_SOON=${DUE_SOON:-0}
+        echo "due_soon=${DUE_SOON}" >> $GITHUB_OUTPUT
+
+    - name: Generate Summary
+      run: |
+        echo "## Feature Flag Audit Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Total Flags Found | ${{ steps.results.outputs.total_flags }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Overdue Flags | ${{ steps.results.outputs.overdue }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Flags Due Soon | ${{ steps.results.outputs.due_soon }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ steps.results.outputs.overdue }}" != "0" ]; then
+          echo "### Action Required" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "There are **${{ steps.results.outputs.overdue }}** overdue feature flags that need attention." >> $GITHUB_STEP_SUMMARY
+          echo "Please review and either:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Remove the flag from the codebase" >> $GITHUB_STEP_SUMMARY
+          echo "2. Extend the target removal date with justification" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        if [ "${{ steps.results.outputs.due_soon }}" != "0" ]; then
+          echo "### Upcoming Deadlines" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**${{ steps.results.outputs.due_soon }}** flags are due for removal within 14 days." >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Upload Audit Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: feature-flag-audit
+        path: audit-output.txt
+        retention-days: 30
+
+    - name: Comment on PR (if applicable)
+      if: github.event_name == 'pull_request' && (steps.results.outputs.overdue != '0' || steps.results.outputs.due_soon != '0')
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const overdue = parseInt('${{ steps.results.outputs.overdue }}') || 0;
+          const dueSoon = parseInt('${{ steps.results.outputs.due_soon }}') || 0;
+
+          let body = '## Feature Flag Audit\n\n';
+
+          if (overdue > 0) {
+            body += `**Warning:** This PR contains code using ${overdue} overdue feature flag(s).\n`;
+            body += 'Consider removing these flags or extending their target dates.\n\n';
+          }
+
+          if (dueSoon > 0) {
+            body += `**Note:** ${dueSoon} flag(s) are due for removal within 14 days.\n`;
+          }
+
+          body += '\nSee the workflow summary for details.';
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
+
+    - name: Fail on Overdue Flags (Scheduled Run Only)
+      if: github.event_name == 'schedule' && steps.results.outputs.overdue != '0'
+      run: |
+        echo "::error::${{ steps.results.outputs.overdue }} overdue feature flags detected"
+        exit 1

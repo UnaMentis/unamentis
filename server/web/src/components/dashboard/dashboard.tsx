@@ -36,6 +36,7 @@ import { CurriculaPanel } from './curricula-panel';
 import { SourceBrowserPanel } from './source-browser-panel';
 import { PluginsPanel } from './plugins-panel';
 import { ImportJobsPanel } from './import-jobs-panel';
+import { LatencyHarnessPanel } from './latency-harness-panel';
 import type { DashboardStats } from '@/types';
 import { getStats } from '@/lib/api-client';
 import { formatDuration } from '@/lib/utils';
@@ -47,6 +48,7 @@ const SECTIONS = ['operations', 'content'] as const;
 const OPS_TABS = [
   'dashboard',
   'health',
+  'latency',
   'metrics',
   'logs',
   'clients',
@@ -229,6 +231,13 @@ export function Dashboard() {
           {activeTab === 'health' && (
             <div className="animate-in fade-in duration-300">
               <HealthPanel />
+            </div>
+          )}
+
+          {/* Latency Test Harness Tab */}
+          {activeTab === 'latency' && (
+            <div className="animate-in fade-in duration-300">
+              <LatencyHarnessPanel />
             </div>
           )}
 

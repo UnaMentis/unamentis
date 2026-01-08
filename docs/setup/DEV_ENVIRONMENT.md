@@ -209,7 +209,34 @@ cd ../..
 # No separate install needed - uses system Python
 ```
 
-### 5.4 Verify Setup
+### 5.4 Install Git Hooks (Recommended)
+
+Git hooks automatically run quality checks before commits and pushes. This prevents broken code from being committed.
+
+```bash
+# Install pre-commit and pre-push hooks
+./scripts/install-hooks.sh
+```
+
+This installs:
+- **Pre-commit hook**: Runs SwiftLint, SwiftFormat, Ruff (Python), ESLint (JS/TS) on staged files
+- **Pre-push hook**: Runs quick tests before pushing
+
+**Optional tools for hooks** (install as needed):
+```bash
+# Swift linting and formatting (recommended)
+brew install swiftlint swiftformat
+
+# Python linting (for server work)
+pip install ruff
+
+# Secrets detection (optional but recommended)
+brew install gitleaks
+```
+
+The hooks will skip checks for tools that aren't installed, but will run what's available.
+
+### 5.5 Verify Setup
 
 ```bash
 # Run the setup script
@@ -381,6 +408,7 @@ sudo killall -9 com.apple.CoreSimulator.CoreSimulatorService
 
 | Command | Purpose |
 |---------|---------|
+| `./scripts/install-hooks.sh` | Install git pre-commit hooks |
 | `./scripts/lint.sh` | Run SwiftLint |
 | `./scripts/format.sh` | Run SwiftFormat |
 | `./scripts/test-quick.sh` | Run unit tests |

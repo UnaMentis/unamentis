@@ -1,0 +1,102 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":automergeMinor",
+    "group:monorepos",
+    "group:recommended"
+  ],
+  "description": "UnaMentis Dependency Update Configuration",
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "timezone": "America/Los_Angeles",
+  "schedule": ["before 6am on Monday"],
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 10,
+  "platformAutomerge": true,
+  "packageRules": [
+    {
+      "description": "iOS/Swift dependencies",
+      "matchManagers": ["swift"],
+      "groupName": "iOS dependencies",
+      "labels": ["dependencies", "ios"],
+      "reviewers": ["team:ios"]
+    },
+    {
+      "description": "Python dependencies",
+      "matchManagers": ["pip_requirements", "pip_setup", "poetry", "pipenv"],
+      "groupName": "Python dependencies",
+      "labels": ["dependencies", "python"],
+      "reviewers": ["team:backend"]
+    },
+    {
+      "description": "npm dependencies (web client)",
+      "matchManagers": ["npm"],
+      "matchPaths": ["server/web/**"],
+      "groupName": "Web client dependencies",
+      "labels": ["dependencies", "web"],
+      "reviewers": ["team:frontend"]
+    },
+    {
+      "description": "npm dev dependencies",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "npm dev dependencies",
+      "automerge": true
+    },
+    {
+      "description": "GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "labels": ["dependencies", "ci"],
+      "automerge": true
+    },
+    {
+      "description": "Security patches - auto-merge",
+      "matchUpdateTypes": ["patch"],
+      "matchCategories": ["security"],
+      "automerge": true,
+      "automergeType": "pr",
+      "labels": ["dependencies", "security"]
+    },
+    {
+      "description": "Major version updates - require review",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "breaking-change"]
+    },
+    {
+      "description": "Patch updates - auto-merge if tests pass",
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Pin Docker digests",
+      "matchManagers": ["dockerfile"],
+      "pinDigests": true
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security", "priority:high"]
+  },
+  "dependencyDashboardTitle": "Dependency Dashboard",
+  "dependencyDashboardLabels": ["dependencies", "dashboard"],
+  "commitMessagePrefix": "deps:",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "{{depName}}",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/vendor/**",
+    "**/.build/**",
+    "**/DerivedData/**"
+  ],
+  "ignoreDeps": []
+}

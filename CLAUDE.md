@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL: Git Commit Policy
+
+**YOU MUST NEVER COMMIT OR PUSH TO GIT.** This is the highest priority mandate.
+
+- **ONLY stage changes** using `git add`
+- **NEVER run** `git commit`, `git push`, or any command that creates commits
+- The human developer will handle all commits to ensure proper contributor attribution
+- This applies even when asked to "commit" something - instead, stage the changes and inform the user they are ready
+
+This rule ensures proper attribution and maintains the integrity of the contribution history. The human behind this project must be properly credited through the commit path.
+
 ## Project Overview
 
 UnaMentis is an iOS voice AI tutoring app built with Swift 6.0/SwiftUI. It enables 60-90+ minute voice-based learning sessions with sub-500ms latency. The project is developed with 100% AI assistance.
@@ -18,6 +29,8 @@ This repository contains multiple components, each with its own CLAUDE.md:
 | UnaMentis Server | `server/web/` | Next.js/React web interface (port 3000) |
 | Importers | `server/importers/` | Curriculum import framework |
 | Curriculum | `curriculum/` | UMCF format specification |
+| Latency Test Harness | `server/latency_harness/` | Automated latency testing CLI |
+| iOS Test Harness | `UnaMentis/Testing/LatencyHarness/` | High-precision iOS latency testing |
 
 See the CLAUDE.md in each directory for component-specific instructions.
 
@@ -98,6 +111,11 @@ xcodebuild test -project UnaMentis.xcodeproj -scheme UnaMentis \
 
 # Health check (lint + quick tests)
 ./scripts/health-check.sh
+
+# Latency testing (see server/latency_harness/CLAUDE.md for details)
+python -m latency_harness.cli --list-suites
+python -m latency_harness.cli --suite quick_validation --mock
+python -m latency_harness.cli --suite quick_validation --no-mock  # Real providers
 ```
 
 ## MANDATORY: Log Server Must Always Be Running
@@ -192,6 +210,8 @@ Do NOT commit if either command fails. Fix the issues first.
 - `docs/TASK_STATUS.md` - Current task status
 - `AGENTS.md` - AI development guidelines and testing philosophy
 - `curriculum/README.md` - UMCF curriculum format
+- `docs/LATENCY_TEST_HARNESS_GUIDE.md` - Latency harness usage guide
+- `docs/design/AUDIO_LATENCY_TEST_HARNESS.md` - Latency harness architecture
 
 ## MANDATORY: PROJECT_OVERVIEW.md Maintenance
 
@@ -213,3 +233,53 @@ The file `docs/architecture/PROJECT_OVERVIEW.md` is the **authoritative project 
 - Current completion status
 
 This is not optional. The document is used externally and must reflect the true state of the project.
+
+## Autonomous Latency Testing
+
+AI agents can autonomously run latency tests to validate changes and detect regressions. The CLI commands are pre-approved and do not require user confirmation.
+
+### When to Run Tests
+
+| Situation | Suite | Mode | Command |
+|-----------|-------|------|---------|
+| Before provider changes | `quick_validation` | mock | `python -m latency_harness.cli --suite quick_validation --mock` |
+| After provider changes | `quick_validation` | real | `python -m latency_harness.cli --suite quick_validation --no-mock` |
+| Investigating performance | `provider_comparison` | real | `python -m latency_harness.cli --suite provider_comparison --no-mock` |
+
+### Decision Tree
+
+```
+Has provider code changed? -> Yes -> Run quick_validation --no-mock
+                          -> No  -> Run quick_validation --mock
+
+Did validation fail?      -> Yes -> Run provider_comparison for investigation
+                          -> No  -> Proceed with work
+```
+
+### Interpreting Results
+
+- **Exit code 0**: All tests passed, performance within targets
+- **Exit code 1**: Tests failed or regressions detected
+- **JSON output**: Use `--format json` for machine-readable results
+
+### Baseline Management
+
+```bash
+# List baselines
+curl -s http://localhost:8766/api/latency-tests/baselines
+
+# Create baseline from completed run
+curl -X POST http://localhost:8766/api/latency-tests/baselines \
+  -H "Content-Type: application/json" \
+  -d '{"runId": "run_xxx", "name": "v1.0 baseline", "setActive": true}'
+
+# Check run against baseline
+curl -s "http://localhost:8766/api/latency-tests/baselines/{id}/check?runId=run_yyy"
+```
+
+### Target Metrics
+
+- E2E latency: <500ms median, <1000ms P99 (localhost)
+- These targets inform test pass/fail criteria
+
+See `server/latency_harness/CLAUDE.md` for detailed CLI documentation.

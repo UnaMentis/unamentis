@@ -62,7 +62,7 @@ export interface RemoteClient {
 export interface ServerStatus {
   id: string;
   name: string;
-  type: 'ollama' | 'whisper' | 'piper' | 'unamentisGateway' | 'custom';
+  type: 'ollama' | 'whisper' | 'piper' | 'vibevoice' | 'unamentisGateway' | 'custom';
   url: string;
   port: number;
   status: 'unknown' | 'healthy' | 'degraded' | 'unhealthy';
@@ -79,10 +79,119 @@ export interface ModelInfo {
   type: 'llm' | 'stt' | 'tts';
   server_id: string;
   server_name: string;
-  status: 'available' | 'loading' | 'unavailable';
+  status: 'available' | 'loaded' | 'loading' | 'unavailable';
   size_bytes?: number;
+  size_gb?: number;
   parameters?: string;
   quantization?: string;
+  family?: string;
+  vram_bytes?: number;
+  vram_gb?: number;
+}
+
+// Model Management Types
+export interface ModelLoadRequest {
+  keep_alive?: string;
+}
+
+export interface ModelLoadResponse {
+  status: 'ok' | 'error';
+  model: string;
+  vram_bytes?: number;
+  vram_gb?: number;
+  load_time_ms?: number;
+  message: string;
+  error?: string;
+}
+
+export interface ModelUnloadResponse {
+  status: 'ok' | 'error';
+  model: string;
+  freed_vram_bytes?: number;
+  freed_vram_gb?: number;
+  message: string;
+  error?: string;
+}
+
+export interface ModelPullProgress {
+  status: string;
+  digest?: string;
+  completed: number;
+  total: number;
+  model?: string;
+  error?: string;
+}
+
+export interface ModelDeleteResponse {
+  status: 'ok' | 'error';
+  model: string;
+  message?: string;
+  error?: string;
+}
+
+// Model Configuration Types
+export interface ServiceModelConfig {
+  llm: {
+    default_model: string | null;
+    fallback_model: string | null;
+  };
+  tts: {
+    default_provider: 'vibevoice' | 'piper';
+    default_voice: string;
+  };
+  stt: {
+    default_model: string;
+  };
+}
+
+export interface ModelConfig {
+  services: ServiceModelConfig;
+}
+
+export interface ModelConfigResponse {
+  status: 'ok' | 'error';
+  config: ModelConfig;
+  error?: string;
+}
+
+export interface SaveModelConfigResponse {
+  status: 'ok' | 'error';
+  config: ModelConfig;
+  message?: string;
+  error?: string;
+}
+
+// Model Parameters Types
+export interface ModelParameterDef {
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  description: string;
+}
+
+export interface ModelParameters {
+  num_ctx: ModelParameterDef;
+  temperature: ModelParameterDef;
+  top_p: ModelParameterDef;
+  top_k: ModelParameterDef;
+  repeat_penalty: ModelParameterDef;
+  seed: ModelParameterDef;
+}
+
+export interface ModelParametersResponse {
+  status: 'ok' | 'error';
+  model: string;
+  parameters: ModelParameters;
+  error?: string;
+}
+
+export interface SaveModelParametersResponse {
+  status: 'ok' | 'error';
+  model: string;
+  parameters: Record<string, number>;
+  message?: string;
+  error?: string;
 }
 
 export interface DashboardStats {

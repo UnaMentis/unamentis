@@ -1,0 +1,36 @@
+{
+  "$schema": "./flag_metadata.schema.json",
+  "version": 1,
+  "last_updated": "2025-01-07",
+  "flags": {
+    "_example_flag": {
+      "owner": "github_username",
+      "description": "Example flag - do not use in production",
+      "category": "release",
+      "created_at": "2025-01-07",
+      "target_removal_date": "2025-02-07",
+      "is_permanent": false,
+      "jira_ticket": null,
+      "platforms": ["ios", "web"],
+      "notes": "This is an example entry showing the expected format"
+    }
+  },
+  "categories": {
+    "release": {
+      "description": "Feature rollout flags (short-lived, < 30 days)",
+      "max_age_days": 30
+    },
+    "experiment": {
+      "description": "A/B test flags (medium-lived, < 60 days)",
+      "max_age_days": 60
+    },
+    "ops": {
+      "description": "Operational toggles (can be long-lived)",
+      "max_age_days": null
+    },
+    "permission": {
+      "description": "User permission flags (permanent)",
+      "max_age_days": null
+    }
+  }
+}

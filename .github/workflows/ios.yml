@@ -18,6 +18,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write  # Needed for commit-results job to push CI logs
+
 jobs:
   lint:
     name: Lint
@@ -110,6 +113,71 @@ jobs:
         path: UnitTestResults.xcresult
         retention-days: 7
 
+    - name: Extract and Check Coverage
+      id: coverage
+      run: |
+        # Extract coverage percentage from xcresult
+        COVERAGE=$(xcrun xccov view --report --json UnitTestResults.xcresult 2>/dev/null | \
+          python3 -c "
+        import json, sys
+        try:
+            data = json.load(sys.stdin)
+            targets = data.get('targets', [])
+
+            # Try to find UnaMentis target (check various patterns)
+            for target in targets:
+                name = target.get('name', '')
+                # Match UnaMentis, UnaMentis.app, or UnaMentisTests
+                if 'UnaMentis' in name and 'Tests' not in name:
+                    coverage = target.get('lineCoverage', 0)
+                    print(f'{coverage * 100:.1f}')
+                    sys.exit(0)
+
+            # If no specific target found, try to get average across all app targets
+            app_coverages = []
+            for target in targets:
+                name = target.get('name', '')
+                # Skip test targets and system frameworks
+                if 'Tests' in name or name.startswith('_'):
+                    continue
+                cov = target.get('lineCoverage', 0)
+                if cov > 0:
+                    app_coverages.append(cov)
+
+            if app_coverages:
+                avg = sum(app_coverages) / len(app_coverages)
+                print(f'{avg * 100:.1f}')
+                sys.exit(0)
+
+            # Last resort: print target names for debugging
+            print('0', file=sys.stderr)
+            print(f'Available targets: {[t.get(\"name\") for t in targets]}', file=sys.stderr)
+            print('0')
+        except Exception as e:
+            print(f'Error: {e}', file=sys.stderr)
+            print('0')
+        " || echo "0")
+
+        # Handle empty coverage
+        COVERAGE=${COVERAGE:-0}
+        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+        echo "Code coverage: ${COVERAGE}%"
+
+        # Check minimum coverage threshold (80%)
+        # Skip check if coverage couldn't be determined (0 or 0.0)
+        MIN_COVERAGE=80
+        # Normalize coverage to check for zero/undetermined values
+        COVERAGE_INT=$(echo "$COVERAGE" | cut -d. -f1)
+        if [ -n "$COVERAGE_INT" ] && [ "$COVERAGE_INT" -gt 0 ] 2>/dev/null; then
+          if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then
+            echo "::error::Code coverage ${COVERAGE}% is below minimum threshold of ${MIN_COVERAGE}%"
+            exit 1
+          fi
+        else
+          echo "::warning::Could not determine valid code coverage (got ${COVERAGE}%). Skipping threshold check."
+          echo "::warning::This may indicate xcresult coverage generation issues."
+        fi
+
     - name: Summary
       if: always()
       run: |
@@ -129,6 +197,7 @@ jobs:
             print(f'|--------|-------|')
             print(f'| Tests Run | {tests} |')
             print(f'| Failures | {failures} |')
+            print(f'| Coverage | ${{ steps.coverage.outputs.coverage }}% |')
             print(f'| Status | {\"Passed\" if failures == \"0\" or failures == 0 else \"Failed\"} |')
         except:
             print('Could not parse test results')

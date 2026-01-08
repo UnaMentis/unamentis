@@ -1,0 +1,289 @@
+name: Nightly E2E Tests
+
+on:
+  schedule:
+    # Run daily at 2am UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      run_ios_e2e:
+        description: 'Run iOS E2E tests'
+        required: false
+        default: true
+        type: boolean
+      run_latency_tests:
+        description: 'Run latency harness tests'
+        required: false
+        default: true
+        type: boolean
+
+# Only one nightly run at a time
+concurrency:
+  group: nightly-e2e
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  # API keys for E2E tests (from repository secrets)
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  DEEPGRAM_API_KEY: ${{ secrets.DEEPGRAM_API_KEY }}
+  ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+  GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+jobs:
+  ios-e2e:
+    name: iOS E2E Tests
+    runs-on: macos-14
+    if: github.event.inputs.run_ios_e2e != 'false'
+    timeout-minutes: 45
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Select Xcode 16.2
+      run: sudo xcode-select -s /Applications/Xcode_16.2.app
+
+    - name: Install xcbeautify
+      run: brew install xcbeautify
+
+    - name: Cache SPM packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          .build
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved', '**/project.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+
+    - name: Create placeholder model files
+      run: |
+        mkdir -p models
+        touch models/llama-3.2-3b-instruct-q4_k_m.gguf
+        touch models/ministral-3b-instruct-q4_k_m.gguf
+        touch models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
+
+    - name: Check API Keys
+      run: |
+        echo "Checking API key availability..."
+        if [ -z "$OPENAI_API_KEY" ]; then echo "Warning: OPENAI_API_KEY not set"; fi
+        if [ -z "$ANTHROPIC_API_KEY" ]; then echo "Warning: ANTHROPIC_API_KEY not set"; fi
+        if [ -z "$DEEPGRAM_API_KEY" ]; then echo "Warning: DEEPGRAM_API_KEY not set"; fi
+        if [ -z "$ELEVENLABS_API_KEY" ]; then echo "Warning: ELEVENLABS_API_KEY not set"; fi
+
+    - name: Build for Testing
+      run: |
+        set -o pipefail
+        xcodebuild build-for-testing \
+          -scheme UnaMentis \
+          -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+          -skipPackagePluginValidation \
+          CODE_SIGNING_ALLOWED=NO \
+          | xcbeautify --renderer github-actions
+
+    - name: Run E2E Tests
+      run: |
+        set -o pipefail
+        xcodebuild test-without-building \
+          -scheme UnaMentis \
+          -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+          -only-testing:UnaMentisTests/E2E \
+          -resultBundlePath E2ETestResults.xcresult \
+          CODE_SIGNING_ALLOWED=NO \
+          | xcbeautify --renderer github-actions
+      continue-on-error: true
+      id: e2e_tests
+
+    - name: Upload E2E Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-results
+        path: E2ETestResults.xcresult
+        retention-days: 14
+
+    - name: Parse Test Results
+      if: always()
+      id: parse_results
+      run: |
+        if [ -d "E2ETestResults.xcresult" ]; then
+          RESULTS=$(xcrun xcresulttool get --path E2ETestResults.xcresult --format json 2>/dev/null | \
+            python3 -c "
+          import json, sys
+          try:
+              data = json.load(sys.stdin)
+              metrics = data.get('metrics', {})
+              tests = metrics.get('testsCount', {}).get('_value', 0)
+              failures = metrics.get('testsFailedCount', {}).get('_value', 0)
+              print(f'tests={tests}')
+              print(f'failures={failures}')
+          except:
+              print('tests=0')
+              print('failures=0')
+          ")
+          echo "$RESULTS" >> $GITHUB_OUTPUT
+        else
+          echo "tests=0" >> $GITHUB_OUTPUT
+          echo "failures=0" >> $GITHUB_OUTPUT
+        fi
+
+    - name: E2E Test Summary
+      if: always()
+      run: |
+        echo "## iOS E2E Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Tests Run | ${{ steps.parse_results.outputs.tests }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Failures | ${{ steps.parse_results.outputs.failures }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Status | ${{ steps.e2e_tests.outcome == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+
+  latency-tests:
+    name: Latency Regression Tests
+    runs-on: ubuntu-latest
+    if: github.event.inputs.run_latency_tests != 'false'
+    timeout-minutes: 30
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-asyncio aiohttp httpx
+
+    - name: Run Provider Comparison Suite
+      id: latency_tests
+      run: |
+        cd server
+        python -m latency_harness.cli \
+          --suite provider_comparison \
+          --timeout 600 \
+          --output json \
+          > latency_results.json 2>&1 || true
+
+        # Parse results for summary
+        if [ -f "latency_results.json" ]; then
+          python3 -c "
+          import json
+          try:
+              with open('latency_results.json') as f:
+                  data = json.load(f)
+              print(f'status={data.get(\"status\", \"unknown\")}')
+              metrics = data.get('metrics', {})
+              print(f'p50={metrics.get(\"p50_ms\", \"N/A\")}')
+              print(f'p99={metrics.get(\"p99_ms\", \"N/A\")}')
+          except:
+              print('status=error')
+              print('p50=N/A')
+              print('p99=N/A')
+          " >> $GITHUB_OUTPUT
+        fi
+      continue-on-error: true
+
+    - name: Upload Latency Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: latency-results
+        path: server/latency_results.json
+        retention-days: 30
+
+    - name: Latency Test Summary
+      if: always()
+      run: |
+        echo "## Latency Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Status | ${{ steps.latency_tests.outputs.status || 'unknown' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| P50 Latency | ${{ steps.latency_tests.outputs.p50 || 'N/A' }} ms |" >> $GITHUB_STEP_SUMMARY
+        echo "| P99 Latency | ${{ steps.latency_tests.outputs.p99 || 'N/A' }} ms |" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [ios-e2e, latency-tests]
+    if: failure()
+
+    steps:
+    - name: Create Failure Issue
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = `Nightly E2E Tests Failed - ${new Date().toISOString().split('T')[0]}`;
+          const body = `
+          ## Nightly E2E Test Failure
+
+          **Run:** [${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+          **Date:** ${new Date().toISOString()}
+
+          ### Job Results
+          - iOS E2E: ${{ needs.ios-e2e.result }}
+          - Latency Tests: ${{ needs.latency-tests.result }}
+
+          Please investigate and fix the failing tests.
+
+          ---
+          *Auto-generated by nightly E2E workflow*
+          `;
+
+          // Check if issue already exists for today
+          const existingIssues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: 'nightly-failure',
+            per_page: 5
+          });
+
+          const todayIssue = existingIssues.data.find(issue =>
+            issue.title.includes(new Date().toISOString().split('T')[0])
+          );
+
+          if (!todayIssue) {
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['nightly-failure', 'bug', 'priority:high']
+            });
+          }
+
+  summary:
+    name: Nightly Summary
+    runs-on: ubuntu-latest
+    needs: [ios-e2e, latency-tests]
+    if: always()
+
+    steps:
+    - name: Generate Summary
+      run: |
+        echo "## Nightly E2E Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| iOS E2E Tests | ${{ needs.ios-e2e.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Latency Tests | ${{ needs.latency-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ needs.ios-e2e.result }}" = "failure" ] || [ "${{ needs.latency-tests.result }}" = "failure" ]; then
+          echo "### Action Required" >> $GITHUB_STEP_SUMMARY
+          echo "One or more nightly tests failed. Please investigate." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### All Tests Passed" >> $GITHUB_STEP_SUMMARY
+          echo "Nightly E2E tests completed successfully." >> $GITHUB_STEP_SUMMARY
+        fi

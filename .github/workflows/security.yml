@@ -1,0 +1,167 @@
+name: Security Scanning
+
+# NOTE: CodeQL analysis is handled by GitHub's default setup (see repository settings)
+# This workflow handles additional security scans: secrets detection and dependency auditing
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly security audit on Sundays at 3am UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  secrets-scan:
+    name: Secrets Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for scanning
+
+    - name: Install Gitleaks
+      run: |
+        wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.18.1/gitleaks_8.18.1_linux_x64.tar.gz
+        tar -xzf gitleaks_8.18.1_linux_x64.tar.gz
+        chmod +x gitleaks
+
+    - name: Run Gitleaks
+      id: gitleaks
+      run: |
+        ./gitleaks detect --source . --verbose --redact --report-format sarif --report-path gitleaks-report.sarif || true
+        ./gitleaks detect --source . --verbose --redact --exit-code 1 2>&1 | tee gitleaks-output.txt || echo "exit_code=$?" >> $GITHUB_OUTPUT
+      continue-on-error: true
+
+    - name: Upload Gitleaks Report
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: gitleaks-report.sarif
+        category: secrets
+      continue-on-error: true
+
+    - name: Check for Secrets
+      if: steps.gitleaks.outputs.exit_code != '0' && steps.gitleaks.outputs.exit_code != ''
+      run: |
+        echo "::error::Potential secrets detected in repository. Review gitleaks output."
+        cat gitleaks-output.txt || true
+        exit 1
+
+  dependency-audit:
+    name: Dependency Vulnerability Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Audit Python Dependencies
+      run: |
+        echo "## Python Dependency Audit" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        pip install pip-audit
+
+        # Audit each requirements file
+        for req in $(find server -name "requirements*.txt" 2>/dev/null); do
+          echo "Auditing: $req"
+          pip-audit -r "$req" --format markdown >> $GITHUB_STEP_SUMMARY 2>&1 || true
+        done
+
+        # If no requirements files, note it
+        if [ -z "$(find server -name 'requirements*.txt' 2>/dev/null)" ]; then
+          echo "No requirements.txt files found to audit" >> $GITHUB_STEP_SUMMARY
+        fi
+      continue-on-error: true
+
+    - name: Audit npm Dependencies
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## npm Dependency Audit" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ -d "server/web" ] && [ -f "server/web/package.json" ]; then
+          cd server/web
+          npm ci --ignore-scripts || npm install --ignore-scripts
+          npm audit --json > audit.json 2>&1 || true
+
+          # Parse audit results
+          python3 -c "
+          import json
+          try:
+              with open('audit.json') as f:
+                  data = json.load(f)
+              vulns = data.get('vulnerabilities', {})
+              if vulns:
+                  print('| Package | Severity | Title |')
+                  print('|---------|----------|-------|')
+                  for pkg, info in list(vulns.items())[:20]:
+                      severity = info.get('severity', 'unknown')
+                      via = info.get('via', [{}])
+                      title = via[0].get('title', 'Unknown') if isinstance(via[0], dict) else str(via[0])
+                      print(f'| {pkg} | {severity} | {title[:50]} |')
+              else:
+                  print('No vulnerabilities found')
+          except Exception as e:
+              print(f'Error parsing audit: {e}')
+          " >> $GITHUB_STEP_SUMMARY
+        else
+          echo "No package.json found in server/web" >> $GITHUB_STEP_SUMMARY
+        fi
+      continue-on-error: true
+
+  summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [secrets-scan, dependency-audit]
+    if: always()
+
+    steps:
+    - name: Generate Summary
+      run: |
+        echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Secrets Detection | ${{ needs.secrets-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Dependency Audit | ${{ needs.dependency-audit.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "*Note: CodeQL analysis is handled by GitHub's default setup*" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        # Check for any failures
+        if [ "${{ needs.secrets-scan.result }}" = "failure" ]; then
+          echo "### Action Required" >> $GITHUB_STEP_SUMMARY
+          echo "Security issues detected. Please review the findings above." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### Security Checks Passed" >> $GITHUB_STEP_SUMMARY
+          echo "All security scans completed successfully." >> $GITHUB_STEP_SUMMARY
+        fi

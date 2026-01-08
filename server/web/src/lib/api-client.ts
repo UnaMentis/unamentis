@@ -15,6 +15,11 @@ import type {
   HourlyMetrics,
   DailyMetrics,
   MetricsHistorySummary,
+  ModelLoadRequest,
+  ModelLoadResponse,
+  ModelUnloadResponse,
+  ModelPullProgress,
+  ModelDeleteResponse,
 } from '@/types';
 import {
   mockLogs,
@@ -202,6 +207,46 @@ export async function getServers(): Promise<ServersResponse> {
       unhealthy: servers.filter((s) => s.status === 'unhealthy').length,
     };
   });
+}
+
+export interface AddServerRequest {
+  name: string;
+  type: 'ollama' | 'whisper' | 'piper' | 'vibevoice' | 'custom';
+  url: string;
+  port: number;
+}
+
+export async function addServer(
+  server: AddServerRequest
+): Promise<{ status: string; server: ServersResponse['servers'][0] }> {
+  if (USE_MOCK) {
+    return {
+      status: 'ok',
+      server: {
+        id: `mock-${Date.now()}`,
+        name: server.name,
+        type: server.type,
+        url: `${server.url}:${server.port}`,
+        port: server.port,
+        status: 'healthy',
+        last_check: Date.now(),
+        response_time_ms: 50,
+        models: [],
+      },
+    };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/servers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(server),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return response.json();
 }
 
 export async function getModels(): Promise<ModelsResponse> {
@@ -448,6 +493,241 @@ export async function unloadAllModels(): Promise<{
   });
 
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+
+export async function loadModel(
+  modelId: string,
+  options?: ModelLoadRequest
+): Promise<ModelLoadResponse> {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    return {
+      status: 'ok',
+      model: modelId,
+      vram_bytes: 4 * 1024 ** 3,
+      vram_gb: 4,
+      load_time_ms: 1000,
+      message: 'Model loaded (mock)',
+    };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}/load`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options || {}),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function unloadModel(modelId: string): Promise<ModelUnloadResponse> {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return {
+      status: 'ok',
+      model: modelId,
+      freed_vram_bytes: 4 * 1024 ** 3,
+      freed_vram_gb: 4,
+      message: 'Model unloaded (mock)',
+    };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}/unload`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function pullModel(
+  modelName: string,
+  onProgress?: (progress: ModelPullProgress) => void,
+  signal?: AbortSignal
+): Promise<void> {
+  if (USE_MOCK) {
+    // Simulate pull progress
+    const stages = ['pulling manifest', 'downloading', 'verifying sha256', 'success'];
+    for (let i = 0; i <= 100; i += 5) {
+      if (signal?.aborted) throw new Error('Pull cancelled');
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const stage = i < 10 ? stages[0] : i < 90 ? stages[1] : i < 98 ? stages[2] : stages[3];
+      onProgress?.({
+        status: stage,
+        completed: i * 1024 * 1024 * 40, // Simulate ~4GB download
+        total: 4 * 1024 * 1024 * 1024,
+      });
+    }
+    return;
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/models/pull`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: modelName }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+
+  // Read SSE stream
+  const reader = response.body?.getReader();
+  const decoder = new TextDecoder();
+
+  if (!reader) throw new Error('No response body');
+
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const data = JSON.parse(line.slice(6)) as ModelPullProgress;
+          onProgress?.(data);
+
+          if (data.status === 'error') {
+            throw new Error(data.error || 'Pull failed');
+          }
+        } catch (e) {
+          if (e instanceof SyntaxError) continue;
+          throw e;
+        }
+      }
+    }
+  }
+}
+
+export async function deleteModel(modelId: string): Promise<ModelDeleteResponse> {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return {
+      status: 'ok',
+      model: modelId,
+      message: 'Model deleted (mock)',
+    };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+import type {
+  ModelConfig,
+  ModelConfigResponse,
+  SaveModelConfigResponse,
+  ModelParameters,
+  ModelParametersResponse,
+  SaveModelParametersResponse,
+} from '@/types';
+
+const mockModelConfig: ModelConfig = {
+  services: {
+    llm: { default_model: null, fallback_model: null },
+    tts: { default_provider: 'vibevoice', default_voice: 'nova' },
+    stt: { default_model: 'whisper' },
+  },
+};
+
+export async function getModelConfig(): Promise<ModelConfigResponse> {
+  if (USE_MOCK) {
+    return { status: 'ok', config: mockModelConfig };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/models/config`);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function saveModelConfig(config: ModelConfig): Promise<SaveModelConfigResponse> {
+  if (USE_MOCK) {
+    return { status: 'ok', config, message: 'Configuration saved (mock)' };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/models/config`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ config }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+const mockModelParameters: ModelParameters = {
+  num_ctx: { value: 4096, min: 256, max: 131072, description: 'Context window size' },
+  temperature: { value: 0.8, min: 0.0, max: 2.0, step: 0.1, description: 'Sampling temperature' },
+  top_p: { value: 0.9, min: 0.0, max: 1.0, step: 0.05, description: 'Top-p (nucleus) sampling' },
+  top_k: { value: 40, min: 1, max: 100, description: 'Top-k sampling' },
+  repeat_penalty: { value: 1.1, min: 0.0, max: 2.0, step: 0.1, description: 'Repeat penalty' },
+  seed: { value: -1, min: -1, max: 2147483647, description: 'Random seed (-1 for random)' },
+};
+
+export async function getModelParameters(modelId: string): Promise<ModelParametersResponse> {
+  if (USE_MOCK) {
+    return { status: 'ok', model: modelId, parameters: mockModelParameters };
+  }
+
+  const response = await fetch(
+    `${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}/parameters`
+  );
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function saveModelParameters(
+  modelId: string,
+  parameters: Record<string, number>
+): Promise<SaveModelParametersResponse> {
+  if (USE_MOCK) {
+    return { status: 'ok', model: modelId, parameters, message: 'Parameters saved (mock)' };
+  }
+
+  const response = await fetch(
+    `${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}/parameters`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parameters }),
+    }
+  );
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
   return response.json();
 }
 

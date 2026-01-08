@@ -143,6 +143,33 @@ See [docs/TASK_STATUS.md](docs/TASK_STATUS.md) for detailed task tracking.
 ./scripts/health-check.sh
 ```
 
+### Latency Testing
+
+UnaMentis includes a comprehensive latency test harness for validating performance targets (<500ms E2E latency):
+
+```bash
+# List available test suites
+python -m latency_harness.cli --list-suites
+
+# Quick validation (uses mocks, fast)
+python -m latency_harness.cli --suite quick_validation --mock
+
+# Real provider testing
+python -m latency_harness.cli --suite quick_validation --no-mock
+
+# Full provider comparison (~30 min)
+python -m latency_harness.cli --suite provider_comparison --no-mock
+```
+
+Features:
+- High-precision timing (nanosecond on iOS via `mach_absolute_time`)
+- Network projections (localhost, WiFi, cellular)
+- Baseline comparison for regression detection
+- Web dashboard at Operations Console → Latency Tests
+- REST API for programmatic access
+
+See [docs/LATENCY_TEST_HARNESS_GUIDE.md](docs/LATENCY_TEST_HARNESS_GUIDE.md) for complete documentation.
+
 ## Architecture
 
 ```
@@ -161,7 +188,8 @@ UnaMentis/
 server/
 ├── management/     # Management API (port 8766)
 ├── web/            # Operations Console (port 3000)
-└── web-client/     # Web Client (voice tutoring for browsers)
+├── web-client/     # Web Client (voice tutoring for browsers)
+└── latency_harness/ # Latency testing CLI and orchestrator
 ```
 
 ## Web Interfaces

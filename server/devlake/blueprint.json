@@ -1,0 +1,72 @@
+{
+  "$schema": "https://devlake.apache.org/docs/Configuration/blueprint",
+  "name": "UnaMentis GitHub Integration",
+  "description": "Blueprint for collecting DORA metrics from the UnaMentis GitHub repository",
+  "mode": "NORMAL",
+  "enable": true,
+  "cronConfig": "0 0 * * *",
+  "isManual": false,
+  "skipOnFail": true,
+  "settings": {
+    "version": "2.0.0",
+    "timeAfter": null,
+    "connections": [
+      {
+        "plugin": "github",
+        "connectionId": 1,
+        "scopes": [
+          {
+            "scopeId": "unamentis",
+            "scopeName": "UnaMentis Repository",
+            "entities": [
+              "CODE",
+              "TICKET",
+              "CODEREVIEW",
+              "CROSS",
+              "CICD"
+            ],
+            "transformationRules": {
+              "deploymentPattern": "^deploy|release",
+              "productionPattern": "^main$|^master$",
+              "refdiff": {
+                "tagsOrder": "reverse semver",
+                "tagsPattern": "v\\d+\\.\\d+\\.\\d+"
+              },
+              "prType": "type/(.*)$",
+              "prComponent": "component/(.*)$",
+              "prBodyClosePattern": "(?mi)(fix|close|resolve|fixes|closes|resolves|fixed|closed|resolved)[\\s]*.*(((and target_link_keywords)?[\\s,bindly]*)(#\\d+|https:\\/\\/github.com\\/%s\\/(issues|pull)\\/\\d+))+",
+              "issueSeverity": "severity/(.*)$",
+              "issuePriority": "^(highest|high|medium|low|lowest)$",
+              "issueComponent": "component/(.*)$",
+              "issueTypeBug": "^(bug|defect|error)$",
+              "issueTypeIncident": "^(incident|outage)$",
+              "issueTypeRequirement": "^(feat|feature|enhancement|story)$"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "labels": ["unamentis", "dora-metrics"],
+
+  "_documentation": {
+    "setup_steps": [
+      "1. Open DevLake Config UI at http://localhost:4000",
+      "2. Add GitHub connection with personal access token",
+      "3. Select the UnaMentis repository",
+      "4. Configure transformation rules per this blueprint",
+      "5. Create and run the blueprint"
+    ],
+    "required_permissions": [
+      "repo (Full control of private repositories)",
+      "read:org (Read org and team membership)",
+      "read:user (Read user profile data)"
+    ],
+    "metrics_collected": {
+      "deployment_frequency": "How often code is deployed to production",
+      "lead_time_for_changes": "Time from commit to production deployment",
+      "change_failure_rate": "Percentage of deployments causing failures",
+      "mean_time_to_recovery": "Time to recover from production incidents"
+    }
+  }
+}

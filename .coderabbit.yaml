@@ -1,0 +1,103 @@
+# CodeRabbit Configuration
+# AI-powered code review for UnaMentis
+# https://docs.coderabbit.ai/guides/configure-coderabbit
+#
+# Free Pro features for open source projects!
+
+language: en-US
+
+# Review settings
+reviews:
+  # Enable automatic reviews on all PRs
+  auto_review:
+    enabled: true
+    # Review drafts too (catch issues early)
+    drafts: true
+    # Base branch for comparison
+    base_branches:
+      - main
+      - rea/main-dev
+
+  # Review profile - assertive catches more issues
+  profile: assertive
+
+  # Request changes on high-severity issues
+  request_changes_workflow: true
+
+  # Generate sequence diagrams for complex changes
+  sequence_diagrams: true
+
+  # Collapse walkthrough for large PRs (keeps summary readable)
+  collapse_walkthrough: true
+
+  # High-level summary for quick understanding
+  high_level_summary: true
+
+  # Poem in review (fun team morale, disable if too silly)
+  poem: false
+
+  # Path-based review instructions
+  path_instructions:
+    # iOS Swift code
+    - path: "**/*.swift"
+      instructions: |
+        Review for Swift 6.0 concurrency safety. Check for:
+        - Actor isolation violations
+        - Sendable conformance issues
+        - Data races in async code
+        - Memory leaks and retain cycles
+        - Force unwrapping (prefer guard/if-let)
+        - Performance in hot paths (voice pipeline is latency-critical)
+        Follow the iOS Style Guide in docs/ios/IOS_STYLE_GUIDE.md
+
+    # Python server code
+    - path: "server/**/*.py"
+      instructions: |
+        Review for async Python best practices. Check for:
+        - Proper async/await usage
+        - Exception handling in async contexts
+        - Type hints (we use strict typing)
+        - Security issues (injection, auth bypass)
+        - API endpoint input validation
+
+    # TypeScript/React code
+    - path: "server/web/**/*.{ts,tsx}"
+      instructions: |
+        Review for React/Next.js best practices. Check for:
+        - Hook dependencies and memoization
+        - Server vs client component boundaries
+        - TypeScript strict mode compliance
+        - Accessibility (a11y) issues
+        - Performance (unnecessary re-renders)
+
+    # CI/CD workflows
+    - path: ".github/workflows/**/*.yml"
+      instructions: |
+        Review for GitHub Actions security and best practices:
+        - Pinned action versions (no @latest)
+        - Minimal permissions (principle of least privilege)
+        - Secrets handling
+        - Caching efficiency
+        - Job dependencies and parallelization
+
+    # Configuration files
+    - path: "**/*.{json,yaml,yml}"
+      instructions: |
+        Check for:
+        - Valid syntax
+        - Security (no hardcoded secrets)
+        - Consistent formatting
+
+# Chat settings for interactive reviews
+chat:
+  # Enable chat in PR comments
+  auto_reply: true
+
+# Knowledge base - learns from your codebase
+knowledge_base:
+  # Learn from merged PRs
+  learnings:
+    scope: auto
+
+# Early access features
+early_access: true

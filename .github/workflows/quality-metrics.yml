@@ -1,0 +1,232 @@
+name: Quality Metrics Collection
+
+on:
+  schedule:
+    # Run daily at 6am UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["iOS CI", "Server CI", "Web Client CI"]
+    types: [completed]
+
+concurrency:
+  group: quality-metrics
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  collect-metrics:
+    name: Collect Quality Metrics
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Collect Workflow Metrics
+      id: workflow_metrics
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Get workflow runs from the last 30 days
+        END_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        START_DATE=$(date -u -d '30 days ago' +%Y-%m-%dT%H:%M:%SZ)
+
+        echo "Collecting metrics from $START_DATE to $END_DATE"
+
+        # Collect iOS CI metrics
+        ios_runs=$(gh api repos/${{ github.repository }}/actions/workflows/ios.yml/runs \
+          --jq "[.workflow_runs[] | select(.created_at >= \"$START_DATE\")] | length")
+        ios_success=$(gh api repos/${{ github.repository }}/actions/workflows/ios.yml/runs \
+          --jq "[.workflow_runs[] | select(.created_at >= \"$START_DATE\" and .conclusion == \"success\")] | length")
+
+        # Calculate success rate
+        if [ "$ios_runs" -gt 0 ]; then
+          ios_rate=$(echo "scale=1; $ios_success * 100 / $ios_runs" | bc)
+        else
+          ios_rate="0"
+        fi
+
+        echo "ios_runs=$ios_runs" >> $GITHUB_OUTPUT
+        echo "ios_success=$ios_success" >> $GITHUB_OUTPUT
+        echo "ios_rate=$ios_rate" >> $GITHUB_OUTPUT
+
+        # Collect Server CI metrics
+        server_runs=$(gh api repos/${{ github.repository }}/actions/workflows/server.yml/runs \
+          --jq "[.workflow_runs[] | select(.created_at >= \"$START_DATE\")] | length" 2>/dev/null || echo "0")
+        server_success=$(gh api repos/${{ github.repository }}/actions/workflows/server.yml/runs \
+          --jq "[.workflow_runs[] | select(.created_at >= \"$START_DATE\" and .conclusion == \"success\")] | length" 2>/dev/null || echo "0")
+
+        if [ "$server_runs" -gt 0 ]; then
+          server_rate=$(echo "scale=1; $server_success * 100 / $server_runs" | bc)
+        else
+          server_rate="0"
+        fi
+
+        echo "server_runs=$server_runs" >> $GITHUB_OUTPUT
+        echo "server_success=$server_success" >> $GITHUB_OUTPUT
+        echo "server_rate=$server_rate" >> $GITHUB_OUTPUT
+
+        # Collect Web CI metrics
+        web_runs=$(gh api repos/${{ github.repository }}/actions/workflows/web-client.yml/runs \
+          --jq "[.workflow_runs[] | select(.created_at >= \"$START_DATE\")] | length" 2>/dev/null || echo "0")
+        web_success=$(gh api repos/${{ github.repository }}/actions/workflows/web-client.yml/runs \
+          --jq "[.workflow_runs[] | select(.created_at >= \"$START_DATE\" and .conclusion == \"success\")] | length" 2>/dev/null || echo "0")
+
+        if [ "$web_runs" -gt 0 ]; then
+          web_rate=$(echo "scale=1; $web_success * 100 / $web_runs" | bc)
+        else
+          web_rate="0"
+        fi
+
+        echo "web_runs=$web_runs" >> $GITHUB_OUTPUT
+        echo "web_success=$web_success" >> $GITHUB_OUTPUT
+        echo "web_rate=$web_rate" >> $GITHUB_OUTPUT
+
+    - name: Collect PR Metrics
+      id: pr_metrics
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Get merged PRs in the last 30 days
+        prs_merged=$(gh pr list --repo ${{ github.repository }} \
+          --state merged \
+          --search "merged:>=$(date -u -d '30 days ago' +%Y-%m-%d)" \
+          --json number --jq 'length')
+
+        echo "prs_merged=$prs_merged" >> $GITHUB_OUTPUT
+
+        # Calculate average PR size (additions + deletions)
+        avg_size=$(gh pr list --repo ${{ github.repository }} \
+          --state merged \
+          --search "merged:>=$(date -u -d '30 days ago' +%Y-%m-%d)" \
+          --json additions,deletions \
+          --jq 'if length > 0 then ([.[] | .additions + .deletions] | add / length | floor) else 0 end')
+
+        echo "avg_pr_size=$avg_size" >> $GITHUB_OUTPUT
+
+    - name: Collect Issue Metrics
+      id: issue_metrics
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Open bugs
+        open_bugs=$(gh issue list --repo ${{ github.repository }} \
+          --state open \
+          --label bug \
+          --json number --jq 'length')
+
+        echo "open_bugs=$open_bugs" >> $GITHUB_OUTPUT
+
+        # Closed bugs in last 30 days
+        closed_bugs=$(gh issue list --repo ${{ github.repository }} \
+          --state closed \
+          --label bug \
+          --search "closed:>=$(date -u -d '30 days ago' +%Y-%m-%d)" \
+          --json number --jq 'length')
+
+        echo "closed_bugs=$closed_bugs" >> $GITHUB_OUTPUT
+
+    - name: Generate Metrics Report
+      run: |
+        mkdir -p metrics
+
+        cat > metrics/latest.json << 'EOF'
+        {
+          "timestamp": "${{ github.event.head_commit.timestamp || github.event.workflow_run.created_at }}",
+          "collected_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "period_days": 30,
+          "ci": {
+            "ios": {
+              "total_runs": ${{ steps.workflow_metrics.outputs.ios_runs }},
+              "successful_runs": ${{ steps.workflow_metrics.outputs.ios_success }},
+              "success_rate": ${{ steps.workflow_metrics.outputs.ios_rate }}
+            },
+            "server": {
+              "total_runs": ${{ steps.workflow_metrics.outputs.server_runs }},
+              "successful_runs": ${{ steps.workflow_metrics.outputs.server_success }},
+              "success_rate": ${{ steps.workflow_metrics.outputs.server_rate }}
+            },
+            "web": {
+              "total_runs": ${{ steps.workflow_metrics.outputs.web_runs }},
+              "successful_runs": ${{ steps.workflow_metrics.outputs.web_success }},
+              "success_rate": ${{ steps.workflow_metrics.outputs.web_rate }}
+            }
+          },
+          "pull_requests": {
+            "merged_count": ${{ steps.pr_metrics.outputs.prs_merged }},
+            "average_size_lines": ${{ steps.pr_metrics.outputs.avg_pr_size }}
+          },
+          "issues": {
+            "open_bugs": ${{ steps.issue_metrics.outputs.open_bugs }},
+            "closed_bugs_30d": ${{ steps.issue_metrics.outputs.closed_bugs }}
+          }
+        }
+        EOF
+
+        # Pretty print
+        python3 -c "import json; print(json.dumps(json.load(open('metrics/latest.json')), indent=2))" > metrics/latest_formatted.json
+        mv metrics/latest_formatted.json metrics/latest.json
+
+        cat metrics/latest.json
+
+    - name: Generate Summary
+      run: |
+        echo "## Quality Metrics Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Period:** Last 30 days" >> $GITHUB_STEP_SUMMARY
+        echo "**Generated:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "### CI/CD Success Rates" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Workflow | Runs | Success | Rate |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|------|---------|------|" >> $GITHUB_STEP_SUMMARY
+        echo "| iOS CI | ${{ steps.workflow_metrics.outputs.ios_runs }} | ${{ steps.workflow_metrics.outputs.ios_success }} | ${{ steps.workflow_metrics.outputs.ios_rate }}% |" >> $GITHUB_STEP_SUMMARY
+        echo "| Server CI | ${{ steps.workflow_metrics.outputs.server_runs }} | ${{ steps.workflow_metrics.outputs.server_success }} | ${{ steps.workflow_metrics.outputs.server_rate }}% |" >> $GITHUB_STEP_SUMMARY
+        echo "| Web CI | ${{ steps.workflow_metrics.outputs.web_runs }} | ${{ steps.workflow_metrics.outputs.web_success }} | ${{ steps.workflow_metrics.outputs.web_rate }}% |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "### Code Activity" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| PRs Merged | ${{ steps.pr_metrics.outputs.prs_merged }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Avg PR Size | ${{ steps.pr_metrics.outputs.avg_pr_size }} lines |" >> $GITHUB_STEP_SUMMARY
+        echo "| Open Bugs | ${{ steps.issue_metrics.outputs.open_bugs }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Bugs Closed | ${{ steps.issue_metrics.outputs.closed_bugs }} |" >> $GITHUB_STEP_SUMMARY
+
+    - name: Upload Metrics Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: quality-metrics
+        path: metrics/
+        retention-days: 90
+
+    - name: Check Quality Thresholds
+      run: |
+        # Define thresholds
+        MIN_CI_SUCCESS_RATE=80
+
+        ios_rate=${{ steps.workflow_metrics.outputs.ios_rate }}
+
+        if [ "$(echo "$ios_rate < $MIN_CI_SUCCESS_RATE" | bc -l)" -eq 1 ]; then
+          echo "::warning::iOS CI success rate ($ios_rate%) is below threshold ($MIN_CI_SUCCESS_RATE%)"
+        fi
+
+        # Check for high bug count
+        open_bugs=${{ steps.issue_metrics.outputs.open_bugs }}
+        if [ "$open_bugs" -gt 20 ]; then
+          echo "::warning::High number of open bugs ($open_bugs)"
+        fi

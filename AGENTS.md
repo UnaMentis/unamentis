@@ -1,5 +1,16 @@
 # AI Development Guidelines for UnaMentis
 
+## CRITICAL: Git Commit Policy
+
+**AI AGENTS MUST NEVER COMMIT OR PUSH TO GIT.** This is the highest priority mandate.
+
+- **ONLY stage changes** using `git add`
+- **NEVER run** `git commit`, `git push`, or any command that creates commits
+- The human developer will handle all commits to ensure proper contributor attribution
+- This applies even when asked to "commit" something - instead, stage the changes and inform the user they are ready
+
+This rule ensures proper attribution and maintains the integrity of the contribution history. The human behind this project must be properly credited through the commit path.
+
 ## Development Model
 
 This project is developed with **100% AI assistance**. All code, tests, documentation, and architecture decisions are made collaboratively between human direction and AI implementation.
@@ -16,6 +27,7 @@ This repository contains multiple components, each with its own AGENTS.md:
 | Operations Console | `server/web/` | Next.js/React DevOps monitoring (port 3000) |
 | Importers | `server/importers/` | Curriculum import framework |
 | Curriculum | `curriculum/` | UMCF format specification |
+| Latency Harness | `server/latency_harness/` | Automated latency testing CLI |
 
 See the AGENTS.md in each directory for component-specific instructions.
 
@@ -484,6 +496,30 @@ actor FaithfulMockLLM: LLMService {
 }
 ```
 
+### Latency Test Harness Exception
+
+The latency test harness has a **mock mode** that is acceptable despite our "real over mock" philosophy:
+
+```bash
+python -m latency_harness.cli --suite quick_validation --mock
+```
+
+**Mock mode is acceptable because:**
+- It validates test infrastructure and timing code paths without requiring live providers
+- Real provider tests cost money and time
+- CI/CD needs fast, reliable validation that doesn't depend on external services
+- Mock mode can still detect timing measurement bugs, network projection errors, and analysis logic issues
+
+**When to use each mode:**
+
+| Situation | Mode | Rationale |
+|-----------|------|-----------|
+| CI/CD pipeline | `--mock` | Fast, free, deterministic |
+| Pre-change baseline | `--no-mock` | Establishes real performance |
+| Post-change validation | `--no-mock` | Detects actual regressions |
+| Infrastructure debugging | `--mock` | Isolates harness issues |
+| Cost optimization | `--no-mock` | Needs real provider latencies |
+
 ### Current Mock Inventory
 
 **Valid mocks (external paid APIs):**
@@ -582,3 +618,96 @@ This includes:
 - Example IDs: `test-import-validation`, `claude-test-assessment-flow`
 
 This makes orphaned test data easy to identify and clean up if cleanup was missed.
+
+---
+
+## Latency Test Harness Usage
+
+AI agents should use the latency test harness proactively when working on performance-sensitive code. The CLI commands are pre-approved and do not require user confirmation.
+
+### When to Run Latency Tests
+
+Run latency tests when modifying:
+- STT, TTS, or LLM service implementations
+- Audio pipeline or streaming code
+- Network request handling or retry logic
+- Session manager or turn-taking logic
+- Any code that could affect E2E latency
+
+### Autonomous Workflow
+
+```
+1. BEFORE making provider changes:
+   python -m latency_harness.cli --suite quick_validation --mock
+   (Verifies harness is working)
+
+2. AFTER making provider changes:
+   python -m latency_harness.cli --suite quick_validation --no-mock
+   (Tests with real providers)
+
+3. IF tests fail or show regressions:
+   python -m latency_harness.cli --suite provider_comparison --no-mock
+   (Full analysis to identify bottleneck)
+```
+
+### Decision Tree
+
+```
+Working on provider code?
+├── Yes → Run quick_validation --no-mock after changes
+│         ├── Pass → Continue work
+│         └── Fail → Run provider_comparison to investigate
+└── No  → Run quick_validation --mock (optional smoke test)
+```
+
+### Interpreting Results
+
+**Exit codes:**
+- `0`: All tests passed, performance within targets
+- `1`: Tests failed or regressions detected
+
+**Key metrics to check:**
+- `overall_median_e2e_ms` should be <500ms
+- `overall_p99_e2e_ms` should be <1000ms
+- `regressions` array should be empty
+
+### CLI Reference
+
+```bash
+# List available suites
+python -m latency_harness.cli --list-suites
+
+# Quick validation (fast, uses mocks)
+python -m latency_harness.cli --suite quick_validation --mock
+
+# Quick validation (real providers)
+python -m latency_harness.cli --suite quick_validation --no-mock
+
+# Full comparison (takes ~30 min)
+python -m latency_harness.cli --suite provider_comparison --no-mock
+
+# JSON output for parsing
+python -m latency_harness.cli --suite quick_validation --format json
+
+# Check against baseline
+python -m latency_harness.cli --suite quick_validation --baseline-check
+```
+
+### Baseline Management
+
+Create and maintain baselines to detect regressions:
+
+```bash
+# List baselines
+curl -s http://localhost:8766/api/latency-tests/baselines
+
+# Create baseline from completed run
+curl -X POST http://localhost:8766/api/latency-tests/baselines \
+  -H "Content-Type: application/json" \
+  -d '{"runId": "run_xxx", "name": "v1.0 baseline", "setActive": true}'
+
+# Check run against baseline
+curl -s "http://localhost:8766/api/latency-tests/baselines/{id}/check?runId=run_yyy"
+```
+
+See `server/latency_harness/CLAUDE.md` and `docs/LATENCY_TEST_HARNESS_GUIDE.md` for complete documentation.

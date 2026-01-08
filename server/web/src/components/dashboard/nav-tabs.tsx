@@ -15,6 +15,7 @@ import {
   Download,
   MonitorCog,
   Users,
+  Timer,
 } from 'lucide-react';
 
 // Section types
@@ -23,12 +24,13 @@ export type SectionId = 'operations' | 'content';
 // Operations tabs
 export type OpsTabId =
   | 'dashboard'
+  | 'health'
+  | 'latency'
   | 'metrics'
   | 'logs'
   | 'clients'
   | 'servers'
   | 'models'
-  | 'health'
   | 'users';
 
 // Content tabs
@@ -57,6 +59,7 @@ const opsTabs: { id: OpsTabId; label: string; shortLabel: string; icon: typeof L
   [
     { id: 'dashboard', label: 'Dashboard', shortLabel: 'Home', icon: LayoutDashboard },
     { id: 'health', label: 'System Health', shortLabel: 'Health', icon: Activity },
+    { id: 'latency', label: 'Latency Tests', shortLabel: 'Latency', icon: Timer },
     { id: 'metrics', label: 'Metrics', shortLabel: 'Metrics', icon: BarChart3 },
     { id: 'logs', label: 'Logs', shortLabel: 'Logs', icon: FileText },
     { id: 'clients', label: 'Clients', shortLabel: 'Clients', icon: Smartphone },

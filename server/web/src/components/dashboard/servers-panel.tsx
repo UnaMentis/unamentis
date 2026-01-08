@@ -1,18 +1,181 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Server, RefreshCw, Plus, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
+import { Server, RefreshCw, Plus, Wifi, WifiOff, AlertTriangle, X, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StatCard } from '@/components/ui/stat-card';
 import type { ServerStatus } from '@/types';
-import { getServers } from '@/lib/api-client';
+import { getServers, addServer, AddServerRequest } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
+
+// Add Server Modal Component
+function AddServerModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [formData, setFormData] = useState<AddServerRequest>({
+    name: '',
+    type: 'ollama',
+    url: 'http://localhost',
+    port: 11434,
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const serverTypes: { value: AddServerRequest['type']; label: string; defaultPort: number }[] = [
+    { value: 'ollama', label: 'Ollama (LLM)', defaultPort: 11434 },
+    { value: 'whisper', label: 'Whisper (STT)', defaultPort: 11401 },
+    { value: 'piper', label: 'Piper (TTS)', defaultPort: 11402 },
+    { value: 'vibevoice', label: 'VibeVoice (TTS)', defaultPort: 8880 },
+    { value: 'custom', label: 'Custom', defaultPort: 8080 },
+  ];
+
+  const handleTypeChange = (type: AddServerRequest['type']) => {
+    const serverType = serverTypes.find((t) => t.value === type);
+    setFormData((prev) => ({
+      ...prev,
+      type,
+      port: serverType?.defaultPort || prev.port,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      setError('Server name is required');
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await addServer(formData);
+      onSuccess();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add server');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 w-full max-w-md shadow-xl">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
+            <Server className="w-5 h-5 text-indigo-400" />
+            Add Server
+          </h2>
+          <button
+            onClick={onClose}
+            disabled={submitting}
+            className="text-slate-400 hover:text-slate-200 disabled:opacity-50"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm text-slate-400 mb-2">Server Name</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="e.g., Local Ollama"
+              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-slate-400 mb-2">Server Type</label>
+            <select
+              value={formData.type}
+              onChange={(e) => handleTypeChange(e.target.value as AddServerRequest['type'])}
+              className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-indigo-500"
+            >
+              {serverTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-slate-400 mb-2">URL</label>
+              <input
+                type="text"
+                value={formData.url}
+                onChange={(e) => setFormData((prev) => ({ ...prev, url: e.target.value }))}
+                placeholder="http://localhost"
+                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-400 mb-2">Port</label>
+              <input
+                type="number"
+                value={formData.port}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, port: parseInt(e.target.value) || 0 }))
+                }
+                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={submitting}
+              className="flex-1 px-4 py-2 text-sm font-medium rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-700/50 transition-all disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting || !formData.name.trim()}
+              className={cn(
+                'flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2',
+                submitting || !formData.name.trim()
+                  ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                  : 'bg-indigo-500 hover:bg-indigo-400 text-white'
+              )}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Add Server
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 export function ServersPanel() {
   const [servers, setServers] = useState<ServerStatus[]>([]);
   const [stats, setStats] = useState({ healthy: 0, degraded: 0, unhealthy: 0 });
   const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const fetchServers = async () => {
     try {
@@ -58,12 +221,20 @@ export function ServersPanel() {
             <RefreshCw className="w-4 h-4" />
             Refresh
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white transition-all">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white transition-all"
+          >
             <Plus className="w-4 h-4" />
             Add Server
           </button>
         </div>
       </div>
+
+      {/* Add Server Modal */}
+      {showAddModal && (
+        <AddServerModal onClose={() => setShowAddModal(false)} onSuccess={() => fetchServers()} />
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">

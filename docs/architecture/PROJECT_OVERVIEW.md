@@ -70,6 +70,7 @@ unamentis/
 | Operations Console | `server/web/` | Next.js 16.1, React 19 | System/content management (port 3000) |
 | Importers | `server/importers/` | Python | Plugin-based curriculum import |
 | Curriculum | `curriculum/` | UMCF JSON | Format specification |
+| Latency Harness | `server/latency_harness/` | Python | Automated latency testing |
 
 ---
 
@@ -440,6 +441,67 @@ The framework uses **filesystem-based plugin discovery** with explicit enable/di
 
 ---
 
+## Testing Infrastructure
+
+### Latency Test Harness
+
+Systematic latency testing framework for validating performance against project targets (<500ms median, <1000ms P99).
+
+#### Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Server CLI | `server/latency_harness/` | Test orchestration, analysis, storage |
+| iOS Harness | `UnaMentis/Testing/LatencyHarness/` | High-precision iOS test execution |
+| Web Dashboard | Operations Console → Latency Tests | Real-time monitoring |
+| REST API | Management API (port 8766) | Programmatic access |
+
+#### Built-in Test Suites
+
+| Suite | Tests | Duration | Use Case |
+|-------|-------|----------|----------|
+| `quick_validation` | 3 | ~2 min | CI/CD, quick checks |
+| `provider_comparison` | 450 | ~30 min | Full provider analysis |
+
+#### CLI Commands
+
+```bash
+# List available suites
+python -m latency_harness.cli --list-suites
+
+# Run quick validation (mock mode for fast checks)
+python -m latency_harness.cli --suite quick_validation --mock
+
+# Run with real providers
+python -m latency_harness.cli --suite quick_validation --no-mock
+
+# JSON output for automation
+python -m latency_harness.cli --suite quick_validation --format json
+```
+
+#### API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/latency-tests/suites` | GET | List test suites |
+| `/api/latency-tests/runs` | POST | Start test run |
+| `/api/latency-tests/runs/{id}` | GET | Get run status |
+| `/api/latency-tests/runs/{id}/analysis` | GET | Get analysis report |
+| `/api/latency-tests/baselines` | GET/POST | Manage performance baselines |
+| `/api/latency-tests/baselines/{id}/check` | GET | Check run against baseline |
+
+#### Key Features
+
+- **High-Precision Timing:** iOS uses `mach_absolute_time()` for nanosecond precision
+- **Observer Effect Mitigation:** Fire-and-forget result reporting, no blocking during measurements
+- **Network Projections:** Automatic latency projections for localhost, WiFi, cellular
+- **Regression Detection:** Baseline comparison with severity levels (minor/moderate/severe)
+- **Resource Monitoring:** CPU, memory, thermal state tracking during tests
+
+See `server/latency_harness/CLAUDE.md` and `docs/LATENCY_TEST_HARNESS_GUIDE.md` for details.
+
+---
+
 ## Current Status
 
 ### Complete
@@ -465,6 +527,7 @@ The framework uses **filesystem-based plugin discovery** with explicit enable/di
 - Siri & App Intents integration (voice commands, deep links)
 - Graceful degradation architecture
 - Plugin-based importer framework
+- Latency test harness (CLI, REST API, iOS harness, Web dashboard)
 
 ### In Progress
 - Android client (separate repository)
