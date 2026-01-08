@@ -18,6 +18,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write  # Needed for commit-results job to push CI logs
+
 jobs:
   lint:
     name: Lint

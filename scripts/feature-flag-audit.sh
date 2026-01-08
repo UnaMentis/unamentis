@@ -156,13 +156,13 @@ check_flag_metadata() {
 
     # Parse metadata and check for issues
     if command -v python3 &> /dev/null; then
-        python3 << 'PYTHON_SCRIPT'
+        python3 <<PYTHON_SCRIPT
 import json
 import sys
 from datetime import datetime, timedelta
 
-MAX_AGE = int('$MAX_FLAG_AGE_DAYS')
-WARNING_AGE = int('$WARNING_AGE_DAYS')
+MAX_AGE = int('${MAX_FLAG_AGE_DAYS}')
+WARNING_AGE = int('${WARNING_AGE_DAYS}')
 
 try:
     with open('server/feature-flags/flag_metadata.json') as f:

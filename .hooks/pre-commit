@@ -36,7 +36,7 @@ if [ -n "$SWIFT_FILES" ]; then
     if command -v swiftlint &> /dev/null; then
         echo "Running SwiftLint..."
         # Lint only staged Swift files
-        echo "$SWIFT_FILES" | xargs swiftlint lint --quiet --strict 2>/dev/null || {
+        echo "$SWIFT_FILES" | xargs swiftlint lint --quiet --strict || {
             echo -e "${RED}SwiftLint found violations. Please fix them before committing.${NC}"
             FAILED=1
         }
@@ -47,7 +47,7 @@ if [ -n "$SWIFT_FILES" ]; then
     # Check if SwiftFormat is available (check mode only)
     if command -v swiftformat &> /dev/null; then
         echo "Running SwiftFormat check..."
-        echo "$SWIFT_FILES" | xargs swiftformat --lint 2>/dev/null || {
+        echo "$SWIFT_FILES" | xargs swiftformat --lint || {
             echo -e "${RED}SwiftFormat found formatting issues. Run 'swiftformat .' to fix.${NC}"
             FAILED=1
         }
@@ -65,13 +65,13 @@ if [ -n "$PYTHON_FILES" ]; then
     # Check if ruff is available
     if command -v ruff &> /dev/null; then
         echo "Running Ruff..."
-        echo "$PYTHON_FILES" | xargs ruff check --quiet 2>/dev/null || {
+        echo "$PYTHON_FILES" | xargs ruff check --quiet || {
             echo -e "${RED}Ruff found violations. Please fix them before committing.${NC}"
             FAILED=1
         }
 
         echo "Running Ruff format check..."
-        echo "$PYTHON_FILES" | xargs ruff format --check --quiet 2>/dev/null || {
+        echo "$PYTHON_FILES" | xargs ruff format --check --quiet || {
             echo -e "${RED}Ruff found formatting issues. Run 'ruff format .' to fix.${NC}"
             FAILED=1
         }
@@ -98,13 +98,13 @@ if [ -n "$WEB_JS_TS_FILES" ]; then
             echo "Running ESLint..."
             # Get relative paths for the web directory
             WEB_RELATIVE_FILES=$(echo "$WEB_JS_TS_FILES" | sed 's|^server/web/||')
-            echo "$WEB_RELATIVE_FILES" | xargs npx eslint --quiet 2>/dev/null || {
+            echo "$WEB_RELATIVE_FILES" | xargs npx eslint --quiet || {
                 echo -e "${RED}ESLint found violations. Please fix them before committing.${NC}"
                 FAILED=1
             }
 
             echo "Running Prettier check..."
-            echo "$WEB_RELATIVE_FILES" | xargs npx prettier --check 2>/dev/null || {
+            echo "$WEB_RELATIVE_FILES" | xargs npx prettier --check || {
                 echo -e "${RED}Prettier found formatting issues. Run 'npm run format' to fix.${NC}"
                 FAILED=1
             }
@@ -119,7 +119,7 @@ fi
 # =============================================================================
 if command -v gitleaks &> /dev/null; then
     echo -e "\n${YELLOW}Checking for secrets...${NC}"
-    gitleaks detect --staged --no-banner --quiet 2>/dev/null || {
+    gitleaks detect --staged --no-banner --quiet || {
         echo -e "${RED}Gitleaks found potential secrets. Please remove them before committing.${NC}"
         FAILED=1
     }
