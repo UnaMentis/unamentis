@@ -512,14 +512,11 @@ export async function loadModel(
     };
   }
 
-  const response = await fetch(
-    `${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}/load`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(options || {}),
-    }
-  );
+  const response = await fetch(`${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}/load`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options || {}),
+  });
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
@@ -540,12 +537,9 @@ export async function unloadModel(modelId: string): Promise<ModelUnloadResponse>
     };
   }
 
-  const response = await fetch(
-    `${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}/unload`,
-    {
-      method: 'POST',
-    }
-  );
+  const response = await fetch(`${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}/unload`, {
+    method: 'POST',
+  });
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
@@ -630,10 +624,103 @@ export async function deleteModel(modelId: string): Promise<ModelDeleteResponse>
     };
   }
 
+  const response = await fetch(`${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+import type {
+  ModelConfig,
+  ModelConfigResponse,
+  SaveModelConfigResponse,
+  ModelParameters,
+  ModelParametersResponse,
+  SaveModelParametersResponse,
+} from '@/types';
+
+const mockModelConfig: ModelConfig = {
+  services: {
+    llm: { default_model: null, fallback_model: null },
+    tts: { default_provider: 'vibevoice', default_voice: 'nova' },
+    stt: { default_model: 'whisper' },
+  },
+};
+
+export async function getModelConfig(): Promise<ModelConfigResponse> {
+  if (USE_MOCK) {
+    return { status: 'ok', config: mockModelConfig };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/models/config`);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function saveModelConfig(config: ModelConfig): Promise<SaveModelConfigResponse> {
+  if (USE_MOCK) {
+    return { status: 'ok', config, message: 'Configuration saved (mock)' };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/models/config`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ config }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+const mockModelParameters: ModelParameters = {
+  num_ctx: { value: 4096, min: 256, max: 131072, description: 'Context window size' },
+  temperature: { value: 0.8, min: 0.0, max: 2.0, step: 0.1, description: 'Sampling temperature' },
+  top_p: { value: 0.9, min: 0.0, max: 1.0, step: 0.05, description: 'Top-p (nucleus) sampling' },
+  top_k: { value: 40, min: 1, max: 100, description: 'Top-k sampling' },
+  repeat_penalty: { value: 1.1, min: 0.0, max: 2.0, step: 0.1, description: 'Repeat penalty' },
+  seed: { value: -1, min: -1, max: 2147483647, description: 'Random seed (-1 for random)' },
+};
+
+export async function getModelParameters(modelId: string): Promise<ModelParametersResponse> {
+  if (USE_MOCK) {
+    return { status: 'ok', model: modelId, parameters: mockModelParameters };
+  }
+
   const response = await fetch(
-    `${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}`,
+    `${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}/parameters`
+  );
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function saveModelParameters(
+  modelId: string,
+  parameters: Record<string, number>
+): Promise<SaveModelParametersResponse> {
+  if (USE_MOCK) {
+    return { status: 'ok', model: modelId, parameters, message: 'Parameters saved (mock)' };
+  }
+
+  const response = await fetch(
+    `${BACKEND_URL}/api/models/${encodeURIComponent(modelId)}/parameters`,
     {
-      method: 'DELETE',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parameters }),
     }
   );
 

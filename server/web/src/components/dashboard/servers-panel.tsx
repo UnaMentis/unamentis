@@ -1,16 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Server,
-  RefreshCw,
-  Plus,
-  Wifi,
-  WifiOff,
-  AlertTriangle,
-  X,
-  Loader2,
-} from 'lucide-react';
+import { Server, RefreshCw, Plus, Wifi, WifiOff, AlertTriangle, X, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StatCard } from '@/components/ui/stat-card';
@@ -19,13 +10,7 @@ import { getServers, addServer, AddServerRequest } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 
 // Add Server Modal Component
-function AddServerModal({
-  onClose,
-  onSuccess,
-}: {
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
+function AddServerModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [formData, setFormData] = useState<AddServerRequest>({
     name: '',
     type: 'ollama',
