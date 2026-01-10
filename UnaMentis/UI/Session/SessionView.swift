@@ -1694,21 +1694,10 @@ class SessionViewModel: ObservableObject {
                 ttsService = AppleTTSService()
             }
         case .chatterbox:
-            // Use ChatterboxTTSService with full configuration
+            // Use ChatterboxTTSService with full configuration loaded from UserDefaults
             if selfHostedEnabled && !serverIP.isEmpty {
-                let config = ChatterboxConfig(
-                    exaggeration: Float(UserDefaults.standard.double(forKey: "chatterbox_exaggeration")),
-                    cfgWeight: Float(UserDefaults.standard.double(forKey: "chatterbox_cfg_weight")),
-                    speed: Float(UserDefaults.standard.double(forKey: "chatterbox_speed")),
-                    enableParalinguisticTags: UserDefaults.standard.bool(forKey: "chatterbox_paralinguistic_tags"),
-                    useMultilingual: UserDefaults.standard.bool(forKey: "chatterbox_use_multilingual"),
-                    language: UserDefaults.standard.string(forKey: "chatterbox_language") ?? "en",
-                    useStreaming: UserDefaults.standard.bool(forKey: "chatterbox_streaming"),
-                    seed: UserDefaults.standard.bool(forKey: "chatterbox_use_fixed_seed") ?
-                          UserDefaults.standard.integer(forKey: "chatterbox_seed") : nil,
-                    referenceAudioPath: nil
-                )
-                logger.info("Using Chatterbox TTS at \(serverIP):8004 with exaggeration=\(config.exaggeration)")
+                let config = ChatterboxConfig.fromUserDefaults()
+                logger.info("Using Chatterbox TTS at \(serverIP):8004 with exaggeration=\(config.exaggeration), cfg=\(config.cfgWeight), speed=\(config.speed)")
                 ttsService = ChatterboxTTSService.chatterbox(host: serverIP, config: config)
             } else {
                 logger.warning("Chatterbox TTS selected but no server IP configured - falling back to Apple TTS")
@@ -2319,17 +2308,9 @@ class SessionViewModel: ObservableObject {
             }
         case .chatterbox:
             if selfHostedEnabled && !serverIP.isEmpty {
-                let config = ChatterboxConfig(
-                    exaggeration: Float(UserDefaults.standard.double(forKey: "chatterbox_exaggeration")),
-                    cfgWeight: Float(UserDefaults.standard.double(forKey: "chatterbox_cfg_weight")),
-                    speed: Float(UserDefaults.standard.double(forKey: "chatterbox_speed")),
-                    enableParalinguisticTags: UserDefaults.standard.bool(forKey: "chatterbox_paralinguistic_tags"),
-                    useMultilingual: UserDefaults.standard.bool(forKey: "chatterbox_use_multilingual"),
-                    language: UserDefaults.standard.string(forKey: "chatterbox_language") ?? "en",
-                    useStreaming: UserDefaults.standard.bool(forKey: "chatterbox_streaming"),
-                    seed: nil,
-                    referenceAudioPath: nil
-                )
+                // Use same config as main TTS but without seed for barge-in
+                var config = ChatterboxConfig.fromUserDefaults()
+                config.seed = nil  // Barge-in doesn't need reproducibility
                 bargeInTTSService = ChatterboxTTSService.chatterbox(host: serverIP, config: config)
             } else {
                 bargeInTTSService = AppleTTSService()
