@@ -24,17 +24,19 @@ Configures MCP (Model Context Protocol) session defaults for iOS simulator and X
 
 ### iOS App (default)
 ```
-Project: /Users/ramerman/dev/unamentis/UnaMentis.xcodeproj
+Project: $PROJECT_ROOT/UnaMentis.xcodeproj
 Scheme: UnaMentis
 Simulator: iPhone 17 Pro
 ```
 
 ### Server Manager (USM)
 ```
-Workspace: /Users/ramerman/dev/unamentis/server/server-manager/USMXcode/USM.xcworkspace
+Workspace: $PROJECT_ROOT/server/server-manager/USMXcode/USM.xcworkspace
 Scheme: USM
 Simulator: iPhone 17 Pro
 ```
+
+Where `$PROJECT_ROOT` is the absolute path to the unamentis repository on this machine (the current working directory).
 
 ## Workflow
 
@@ -43,7 +45,7 @@ Simulator: iPhone 17 Pro
 For iOS app:
 ```
 mcp__XcodeBuildMCP__session-set-defaults({
-  projectPath: "/Users/ramerman/dev/unamentis/UnaMentis.xcodeproj",
+  projectPath: "$PROJECT_ROOT/UnaMentis.xcodeproj",
   scheme: "UnaMentis",
   simulatorName: "iPhone 17 Pro"
 })
@@ -52,11 +54,13 @@ mcp__XcodeBuildMCP__session-set-defaults({
 For USM:
 ```
 mcp__XcodeBuildMCP__session-set-defaults({
-  workspacePath: "/Users/ramerman/dev/unamentis/server/server-manager/USMXcode/USM.xcworkspace",
+  workspacePath: "$PROJECT_ROOT/server/server-manager/USMXcode/USM.xcworkspace",
   scheme: "USM",
   simulatorName: "iPhone 17 Pro"
 })
 ```
+
+**Note:** Replace `$PROJECT_ROOT` with the actual absolute path to the unamentis directory (use `pwd` in the project root to get this).
 
 ### 2. Verify Configuration
 
@@ -113,7 +117,7 @@ Configuration complete. Ready to build USM.
 User: /mcp-setup show
 Claude: Current MCP session defaults:
 
-Project: /Users/ramerman/dev/unamentis/UnaMentis.xcodeproj
+Project: $PROJECT_ROOT/UnaMentis.xcodeproj
 Scheme: UnaMentis
 Simulator: iPhone 17 Pro (ID: 12345678-1234-1234-1234-123456789ABC)
 Configuration: Debug

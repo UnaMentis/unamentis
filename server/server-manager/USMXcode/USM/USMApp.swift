@@ -286,12 +286,56 @@ class ServiceManager: ObservableObject {
     private var timer: Timer?
     private var apiServer: APIServer?
 
-    private let serverPath = "/Users/ramerman/dev/unamentis/server"
+    private let projectRoot: String
+    private let serverPath: String
 
     init() {
+        // Detect project root dynamically
+        self.projectRoot = ServiceManager.detectProjectRoot()
+        self.serverPath = "\(projectRoot)/server"
         setupServices()
         startMonitoring()
         startAPIServer()
+    }
+
+    /// Detects the UnaMentis project root directory
+    /// Priority: 1) UNAMENTIS_ROOT env var, 2) Walk up from current dir, 3) Common dev locations
+    private static func detectProjectRoot() -> String {
+        // 1. Check environment variable
+        if let envRoot = ProcessInfo.processInfo.environment["UNAMENTIS_ROOT"] {
+            if FileManager.default.fileExists(atPath: "\(envRoot)/UnaMentis.xcodeproj") {
+                return envRoot
+            }
+        }
+
+        // 2. Try to find project root by walking up from current directory
+        var currentPath = FileManager.default.currentDirectoryPath
+        for _ in 0..<10 {
+            if FileManager.default.fileExists(atPath: "\(currentPath)/UnaMentis.xcodeproj") {
+                return currentPath
+            }
+            currentPath = (currentPath as NSString).deletingLastPathComponent
+            if currentPath == "/" { break }
+        }
+
+        // 3. Check common development locations
+        let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        let commonPaths = [
+            "\(homeDir)/dev/unamentis",
+            "\(homeDir)/Developer/unamentis",
+            "\(homeDir)/Projects/unamentis",
+            "\(homeDir)/Code/unamentis"
+        ]
+
+        for path in commonPaths {
+            if FileManager.default.fileExists(atPath: "\(path)/UnaMentis.xcodeproj") {
+                return path
+            }
+        }
+
+        // 4. Last resort: use home directory based path (will show error if not found)
+        print("Warning: Could not detect UnaMentis project root. Set UNAMENTIS_ROOT environment variable.")
+        return "\(homeDir)/dev/unamentis"
     }
 
     private func startAPIServer() {
@@ -315,7 +359,7 @@ class ServiceManager: ObservableObject {
                 processName: "log_server.py",
                 port: 8765,
                 startCommand: "python3 scripts/log_server.py",
-                workingDirectory: "/Users/ramerman/dev/unamentis"
+                workingDirectory: projectRoot
             ),
             Service(
                 id: "management-api",

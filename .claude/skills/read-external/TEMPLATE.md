@@ -10,19 +10,21 @@ Edit `.claude/settings.json` and add the repository path to `additionalDirectori
 {
   "permissions": {
     "additionalDirectories": [
-      "/Users/ramerman/dev/existing-repo",
-      "/Users/ramerman/dev/NEW_REPO_HERE"
+      "/path/to/existing-repo",
+      "/path/to/NEW_REPO_HERE"
     ]
   }
 }
 ```
+
+Use absolute paths (e.g., `$HOME/dev/my-repo` expanded to `/Users/yourname/dev/my-repo`).
 
 ## Step 2: Document in SKILL.md
 
 Add a row to the "Available External Repos" table in `SKILL.md`:
 
 ```markdown
-| new-repo | /Users/ramerman/dev/new-repo | What this repo contains |
+| new-repo | What this repo contains |
 ```
 
 ## Step 3: Test
@@ -30,7 +32,7 @@ Add a row to the "Available External Repos" table in `SKILL.md`:
 Restart Claude Code (or start a new session), then verify access:
 
 ```
-"Read the README.md from /Users/ramerman/dev/new-repo/"
+"Read the README.md from /path/to/new-repo/"
 ```
 
 ## Step 4: Optionally Add to Other Repo
