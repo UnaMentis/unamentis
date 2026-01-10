@@ -5,6 +5,7 @@
 
 import SwiftUI
 import Combine
+import AVFoundation
 
 /// ViewModel for Chatterbox TTS settings
 ///
@@ -98,6 +99,9 @@ final class ChatterboxSettingsViewModel: ObservableObject {
 
     /// Test sample text
     var testText: String = "Hello! This is a test of the Chatterbox text-to-speech system."
+
+    /// Audio player for test playback
+    private var audioPlayer: AVAudioPlayer?
 
     // MARK: - Computed Properties
 
@@ -262,10 +266,14 @@ final class ChatterboxSettingsViewModel: ObservableObject {
 
     // MARK: - Test Synthesis
 
-    /// Run a test synthesis
+    /// Run a test synthesis and play the audio
     func testSynthesis() async {
         isTesting = true
         testResult = nil
+
+        // Stop any existing playback
+        audioPlayer?.stop()
+        audioPlayer = nil
 
         let serverIP = UserDefaults.standard.string(forKey: "selfHostedServerIP") ?? "localhost"
         let service = ChatterboxTTSService.chatterbox(
@@ -277,22 +285,92 @@ final class ChatterboxSettingsViewModel: ObservableObject {
             let startTime = Date()
             let stream = try await service.synthesize(text: testText)
 
-            var totalBytes = 0
+            var audioData = Data()
             var chunkCount = 0
 
+            // Collect all audio chunks
             for await chunk in stream {
-                totalBytes += chunk.audioData.count
+                audioData.append(chunk.audioData)
                 chunkCount += 1
             }
 
             let elapsed = Date().timeIntervalSince(startTime)
-            testResult = "Success: \(totalBytes) bytes in \(chunkCount) chunks, \(String(format: "%.2f", elapsed))s"
+
+            guard !audioData.isEmpty else {
+                testResult = "Error: No audio data received"
+                isTesting = false
+                return
+            }
+
+            // Play the audio
+            do {
+                // Configure audio session for playback
+                let session = AVAudioSession.sharedInstance()
+                try session.setCategory(.playback, mode: .default)
+                try session.setActive(true)
+
+                // Check if it's WAV format (starts with RIFF header)
+                let isWav = audioData.count > 4 &&
+                    audioData[0] == 0x52 && // R
+                    audioData[1] == 0x49 && // I
+                    audioData[2] == 0x46 && // F
+                    audioData[3] == 0x46    // F
+
+                if isWav {
+                    // WAV data can be played directly
+                    audioPlayer = try AVAudioPlayer(data: audioData)
+                } else {
+                    // Raw PCM data - wrap in WAV header
+                    let wavData = createWavData(from: audioData, sampleRate: 24000, channels: 1, bitsPerSample: 16)
+                    audioPlayer = try AVAudioPlayer(data: wavData)
+                }
+
+                audioPlayer?.prepareToPlay()
+                audioPlayer?.play()
+
+                testResult = "Playing: \(audioData.count) bytes, \(chunkCount) chunks, \(String(format: "%.2f", elapsed))s"
+
+            } catch {
+                testResult = "Playback error: \(error.localizedDescription)"
+            }
 
         } catch {
             testResult = "Error: \(error.localizedDescription)"
         }
 
         isTesting = false
+    }
+
+    /// Create WAV file data from raw PCM samples
+    private func createWavData(from pcmData: Data, sampleRate: Int, channels: Int, bitsPerSample: Int) -> Data {
+        var wavData = Data()
+
+        let byteRate = sampleRate * channels * bitsPerSample / 8
+        let blockAlign = channels * bitsPerSample / 8
+        let dataSize = pcmData.count
+        let chunkSize = 36 + dataSize
+
+        // RIFF header
+        wavData.append(contentsOf: "RIFF".utf8)
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt32(chunkSize).littleEndian) { Array($0) })
+        wavData.append(contentsOf: "WAVE".utf8)
+
+        // fmt subchunk
+        wavData.append(contentsOf: "fmt ".utf8)
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt32(16).littleEndian) { Array($0) })  // Subchunk1Size (16 for PCM)
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt16(1).littleEndian) { Array($0) })   // AudioFormat (1 = PCM)
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt16(channels).littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt32(sampleRate).littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt32(byteRate).littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt16(blockAlign).littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt16(bitsPerSample).littleEndian) { Array($0) })
+
+        // data subchunk
+        wavData.append(contentsOf: "data".utf8)
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt32(dataSize).littleEndian) { Array($0) })
+        wavData.append(pcmData)
+
+        return wavData
     }
 
     // MARK: - Reset

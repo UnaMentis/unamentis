@@ -300,6 +300,71 @@ public enum ChatterboxLanguage: String, Codable, CaseIterable, Sendable {
     }
 }
 
+// MARK: - UserDefaults Keys
+
+/// UserDefaults keys for Chatterbox settings
+extension ChatterboxConfig {
+
+    private enum UserDefaultsKey {
+        static let exaggeration = "chatterbox_exaggeration"
+        static let cfgWeight = "chatterbox_cfg_weight"
+        static let speed = "chatterbox_speed"
+        static let paralinguisticTags = "chatterbox_paralinguistic_tags"
+        static let useMultilingual = "chatterbox_use_multilingual"
+        static let language = "chatterbox_language"
+        static let streaming = "chatterbox_streaming"
+        static let useFixedSeed = "chatterbox_use_fixed_seed"
+        static let seed = "chatterbox_seed"
+    }
+
+    /// Load configuration from UserDefaults with proper default values
+    ///
+    /// This method safely reads from UserDefaults, using the correct defaults
+    /// when values haven't been explicitly set.
+    public static func fromUserDefaults() -> ChatterboxConfig {
+        let defaults = UserDefaults.standard
+
+        // For numeric values, check if the key exists to use proper defaults
+        let exaggeration: Float = defaults.object(forKey: UserDefaultsKey.exaggeration) != nil
+            ? Float(defaults.double(forKey: UserDefaultsKey.exaggeration))
+            : 0.5
+
+        let cfgWeight: Float = defaults.object(forKey: UserDefaultsKey.cfgWeight) != nil
+            ? Float(defaults.double(forKey: UserDefaultsKey.cfgWeight))
+            : 0.5
+
+        let speed: Float = defaults.object(forKey: UserDefaultsKey.speed) != nil
+            ? Float(defaults.double(forKey: UserDefaultsKey.speed))
+            : 1.0
+
+        // Bool defaults to false if not set, which matches some but not all settings
+        let enableParalinguisticTags = defaults.bool(forKey: UserDefaultsKey.paralinguisticTags)
+        let useMultilingual = defaults.bool(forKey: UserDefaultsKey.useMultilingual)
+
+        let language = defaults.string(forKey: UserDefaultsKey.language) ?? "en"
+
+        // Streaming defaults to true, but UserDefaults.bool returns false if not set
+        let useStreaming: Bool = defaults.object(forKey: UserDefaultsKey.streaming) != nil
+            ? defaults.bool(forKey: UserDefaultsKey.streaming)
+            : true
+
+        let useFixedSeed = defaults.bool(forKey: UserDefaultsKey.useFixedSeed)
+        let seed = useFixedSeed ? defaults.integer(forKey: UserDefaultsKey.seed) : nil
+
+        return ChatterboxConfig(
+            exaggeration: exaggeration,
+            cfgWeight: cfgWeight,
+            speed: speed,
+            enableParalinguisticTags: enableParalinguisticTags,
+            useMultilingual: useMultilingual,
+            language: language,
+            useStreaming: useStreaming,
+            seed: seed,
+            referenceAudioPath: nil
+        )
+    }
+}
+
 // MARK: - Paralinguistic Tags
 
 /// Supported paralinguistic tags in Chatterbox
