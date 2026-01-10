@@ -1,0 +1,473 @@
+{
+  "umcf": "1.0.0",
+  "id": {
+    "catalog": "UUID",
+    "value": "color-theory-101"
+  },
+  "title": "Introduction to Color Theory",
+  "description": "A visual introduction to the fundamentals of color theory, including the color wheel, color relationships, and how colors interact.",
+  "version": {
+    "number": "1.0.0",
+    "date": "2025-01-10T00:00:00Z"
+  },
+  "lifecycle": {
+    "status": "published",
+    "created": "2025-01-10T00:00:00Z",
+    "contributors": [
+      {
+        "name": "UnaMentis Team",
+        "role": "author"
+      }
+    ]
+  },
+  "metadata": {
+    "language": "en",
+    "keywords": ["color", "art", "design", "visual", "creativity"],
+    "subject": ["Art", "Design", "Visual Arts"]
+  },
+  "educational": {
+    "difficulty": "beginner",
+    "typicalAgeRange": "10-18",
+    "typicalLearningTime": "PT45M",
+    "context": ["school", "self-study"]
+  },
+  "content": [
+    {
+      "id": { "value": "topic-color-wheel" },
+      "title": "The Color Wheel",
+      "type": "topic",
+      "orderIndex": 0,
+      "description": "Understanding the color wheel and how primary, secondary, and tertiary colors relate to each other.",
+      "learningObjectives": [
+        {
+          "id": { "value": "lo-1" },
+          "statement": "Identify the three primary colors and explain why they are called primary",
+          "bloomsLevel": "understand"
+        },
+        {
+          "id": { "value": "lo-2" },
+          "statement": "Create secondary colors by mixing primary colors",
+          "bloomsLevel": "apply"
+        }
+      ],
+      "transcript": {
+        "segments": [
+          {
+            "id": "seg-1",
+            "type": "introduction",
+            "content": "Welcome to our exploration of color theory! Today we're going to learn about one of the most important tools in any artist's toolkit: the color wheel.",
+            "speakingNotes": {
+              "pace": "moderate",
+              "emotionalTone": "enthusiastic"
+            }
+          },
+          {
+            "id": "seg-2",
+            "type": "explanation",
+            "content": "The color wheel is a circular diagram that shows the relationships between colors. It was first developed by Sir Isaac Newton in 1666 when he discovered that white light, when passed through a prism, separates into a spectrum of colors.",
+            "speakingNotes": {
+              "pace": "slow",
+              "emotionalTone": "informative"
+            },
+            "checkpoint": {
+              "type": "comprehension",
+              "question": "Who first developed the concept of the color wheel?"
+            }
+          },
+          {
+            "id": "seg-3",
+            "type": "explanation",
+            "content": "At the heart of the color wheel are the three primary colors: red, yellow, and blue. These are called primary colors because they cannot be created by mixing other colors together. They are the foundation from which all other colors are made.",
+            "speakingNotes": {
+              "pace": "moderate",
+              "emotionalTone": "explanatory",
+              "emphasis": ["primary colors", "red", "yellow", "blue"]
+            }
+          },
+          {
+            "id": "seg-4",
+            "type": "explanation",
+            "content": "When you mix two primary colors together, you get secondary colors. Red and yellow make orange. Yellow and blue make green. Blue and red make purple, which is also called violet. These three secondary colors sit between the primary colors on the wheel.",
+            "speakingNotes": {
+              "pace": "slow",
+              "emotionalTone": "instructional"
+            },
+            "checkpoint": {
+              "type": "comprehension",
+              "question": "What secondary color do you get when you mix red and yellow?"
+            }
+          },
+          {
+            "id": "seg-5",
+            "type": "summary",
+            "content": "So remember: the color wheel starts with three primary colors that cannot be mixed from other colors, and these combine to create three secondary colors. This gives us six fundamental colors that form the basis of all color relationships.",
+            "speakingNotes": {
+              "pace": "moderate",
+              "emotionalTone": "concluding",
+              "pauseAfter": "PT3S"
+            }
+          }
+        ],
+        "totalDuration": "PT8M"
+      },
+      "media": {
+        "embedded": [
+          {
+            "id": "color-wheel-diagram",
+            "type": "diagram",
+            "title": "The Color Wheel",
+            "alt": "A circular diagram showing the twelve colors of the color wheel, with primary colors (red, yellow, blue) evenly spaced and secondary colors (orange, green, purple) between them",
+            "caption": "The standard 12-color wheel showing primary and secondary colors",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/BYR_color_wheel.svg/800px-BYR_color_wheel.svg.png",
+            "mimeType": "image/png",
+            "segmentTiming": {
+              "startSegment": 1,
+              "endSegment": 5,
+              "displayMode": "persistent"
+            },
+            "audioDescription": "A colorful wheel divided into twelve sections. Starting from the top and going clockwise: yellow, yellow-orange, orange, red-orange, red, red-violet, violet, blue-violet, blue, blue-green, green, and yellow-green."
+          },
+          {
+            "id": "primary-colors",
+            "type": "image",
+            "title": "Primary Colors",
+            "alt": "Three circles showing the primary colors: red, yellow, and blue",
+            "caption": "The three primary colors form the foundation of all other colors",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/AdditiveColor.svg/200px-AdditiveColor.svg.png",
+            "mimeType": "image/png",
+            "segmentTiming": {
+              "startSegment": 2,
+              "endSegment": 3,
+              "displayMode": "highlight"
+            }
+          }
+        ],
+        "reference": [
+          {
+            "id": "newton-prism",
+            "type": "image",
+            "title": "Newton's Prism Experiment",
+            "alt": "Historical diagram showing Isaac Newton's prism experiment separating white light into spectrum colors",
+            "description": "Newton's original experiment that led to the development of color theory",
+            "keywords": ["newton", "prism", "light", "spectrum", "history"]
+          }
+        ]
+      },
+      "assessments": [
+        {
+          "id": { "value": "quiz-1" },
+          "type": "multiple-choice",
+          "question": "Which of the following is NOT a primary color?",
+          "options": [
+            { "id": "a", "text": "Red", "isCorrect": false },
+            { "id": "b", "text": "Green", "isCorrect": true },
+            { "id": "c", "text": "Blue", "isCorrect": false },
+            { "id": "d", "text": "Yellow", "isCorrect": false }
+          ],
+          "correctAnswer": "b",
+          "feedback": {
+            "correct": "That's right! Green is a secondary color, made by mixing yellow and blue.",
+            "incorrect": "Not quite. Remember, the primary colors are red, yellow, and blue. Green is a secondary color."
+          }
+        },
+        {
+          "id": { "value": "quiz-2" },
+          "type": "multiple-choice",
+          "question": "What two primary colors do you mix to make purple?",
+          "options": [
+            { "id": "a", "text": "Red and Yellow", "isCorrect": false },
+            { "id": "b", "text": "Yellow and Blue", "isCorrect": false },
+            { "id": "c", "text": "Red and Blue", "isCorrect": true },
+            { "id": "d", "text": "All three primary colors", "isCorrect": false }
+          ],
+          "correctAnswer": "c",
+          "feedback": {
+            "correct": "Excellent! Red and blue combine to create purple (violet).",
+            "incorrect": "Think about it again. Purple is created by mixing red and blue."
+          }
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": { "value": "misconception-1" },
+          "trigger": ["green is primary", "primary green"],
+          "misconception": "Student thinks green is a primary color",
+          "correction": "Green is actually a secondary color. In traditional color theory (paint/pigments), green is made by mixing yellow and blue.",
+          "explanation": "This confusion often comes from RGB screens where red, green, and blue are the primary colors of light. But in traditional art and paint mixing, the primary colors are red, yellow, and blue."
+        }
+      ],
+      "tutoringConfig": {
+        "contentDepth": "intermediate",
+        "interactionMode": "guided",
+        "checkpointFrequency": "per_concept"
+      }
+    },
+    {
+      "id": { "value": "topic-color-harmony" },
+      "title": "Color Harmony",
+      "type": "topic",
+      "orderIndex": 1,
+      "description": "Learn how colors work together to create visually pleasing combinations using complementary, analogous, and triadic color schemes.",
+      "learningObjectives": [
+        {
+          "id": { "value": "lo-3" },
+          "statement": "Identify complementary colors on the color wheel",
+          "bloomsLevel": "understand"
+        },
+        {
+          "id": { "value": "lo-4" },
+          "statement": "Apply color harmony principles to create a pleasing color palette",
+          "bloomsLevel": "apply"
+        }
+      ],
+      "transcript": {
+        "segments": [
+          {
+            "id": "seg-h1",
+            "type": "introduction",
+            "content": "Now that you understand the color wheel, let's explore how colors work together. This is called color harmony, and it's the secret to creating artwork and designs that feel balanced and beautiful.",
+            "speakingNotes": {
+              "pace": "moderate",
+              "emotionalTone": "engaging"
+            }
+          },
+          {
+            "id": "seg-h2",
+            "type": "explanation",
+            "content": "Complementary colors are colors that sit directly opposite each other on the color wheel. Red and green are complementary. Blue and orange are complementary. Yellow and purple are complementary. When placed next to each other, complementary colors create strong contrast and make each other appear more vibrant.",
+            "speakingNotes": {
+              "pace": "slow",
+              "emotionalTone": "informative",
+              "emphasis": ["opposite", "complementary", "vibrant"]
+            }
+          },
+          {
+            "id": "seg-h3",
+            "type": "explanation",
+            "content": "Analogous colors are colors that sit next to each other on the color wheel, like blue, blue-green, and green. These colors naturally look good together because they share similar qualities. Analogous color schemes feel calm and harmonious.",
+            "speakingNotes": {
+              "pace": "moderate",
+              "emotionalTone": "calm"
+            },
+            "checkpoint": {
+              "type": "comprehension",
+              "question": "What type of color scheme uses colors that are next to each other on the wheel?"
+            }
+          },
+          {
+            "id": "seg-h4",
+            "type": "explanation",
+            "content": "A triadic color scheme uses three colors that are evenly spaced around the color wheel, forming a triangle. The primary colors, red, yellow, and blue, form one triadic scheme. Another example is orange, green, and purple. Triadic schemes are vibrant and balanced.",
+            "speakingNotes": {
+              "pace": "moderate",
+              "emotionalTone": "explanatory"
+            }
+          },
+          {
+            "id": "seg-h5",
+            "type": "summary",
+            "content": "Understanding color harmony helps you make intentional choices in your artwork. Complementary colors create excitement, analogous colors create calm, and triadic colors create balance with variety. Experiment with these schemes to see what effects you can create!",
+            "speakingNotes": {
+              "pace": "moderate",
+              "emotionalTone": "encouraging",
+              "pauseAfter": "PT2S"
+            }
+          }
+        ],
+        "totalDuration": "PT7M"
+      },
+      "media": {
+        "embedded": [
+          {
+            "id": "complementary-diagram",
+            "type": "diagram",
+            "title": "Complementary Colors",
+            "alt": "Color wheel with lines connecting opposite colors: red to green, blue to orange, yellow to purple",
+            "caption": "Complementary colors sit opposite each other on the wheel",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Color_star-en_%28tertiary%29.svg/220px-Color_star-en_%28tertiary%29.svg.png",
+            "mimeType": "image/png",
+            "segmentTiming": {
+              "startSegment": 1,
+              "endSegment": 2,
+              "displayMode": "persistent"
+            }
+          }
+        ]
+      },
+      "assessments": [
+        {
+          "id": { "value": "quiz-h1" },
+          "type": "multiple-choice",
+          "question": "What is the complementary color of blue?",
+          "options": [
+            { "id": "a", "text": "Red", "isCorrect": false },
+            { "id": "b", "text": "Yellow", "isCorrect": false },
+            { "id": "c", "text": "Orange", "isCorrect": true },
+            { "id": "d", "text": "Green", "isCorrect": false }
+          ],
+          "correctAnswer": "c",
+          "feedback": {
+            "correct": "Correct! Orange sits directly opposite blue on the color wheel.",
+            "incorrect": "Look at the color wheel. The complementary color sits directly opposite. Blue's complement is orange."
+          }
+        }
+      ],
+      "tutoringConfig": {
+        "contentDepth": "intermediate",
+        "interactionMode": "guided",
+        "checkpointFrequency": "per_concept"
+      }
+    },
+    {
+      "id": { "value": "topic-warm-cool" },
+      "title": "Warm and Cool Colors",
+      "type": "topic",
+      "orderIndex": 2,
+      "description": "Discover how colors can convey temperature and mood through the concepts of warm and cool colors.",
+      "learningObjectives": [
+        {
+          "id": { "value": "lo-5" },
+          "statement": "Categorize colors as warm or cool based on their position on the color wheel",
+          "bloomsLevel": "understand"
+        },
+        {
+          "id": { "value": "lo-6" },
+          "statement": "Explain how warm and cool colors affect the mood of artwork",
+          "bloomsLevel": "analyze"
+        }
+      ],
+      "transcript": {
+        "segments": [
+          {
+            "id": "seg-wc1",
+            "type": "introduction",
+            "content": "Colors can make us feel things. Some colors feel energetic and exciting, while others feel calm and peaceful. This is because colors have what we call temperature, and we divide them into warm colors and cool colors.",
+            "speakingNotes": {
+              "pace": "moderate",
+              "emotionalTone": "intriguing"
+            }
+          },
+          {
+            "id": "seg-wc2",
+            "type": "explanation",
+            "content": "Warm colors include red, orange, and yellow, along with variations like red-orange and yellow-orange. These colors remind us of fire, sunshine, and warmth. They tend to feel energetic, exciting, and can seem to advance toward the viewer.",
+            "speakingNotes": {
+              "pace": "moderate",
+              "emotionalTone": "warm",
+              "emphasis": ["fire", "sunshine", "energetic"]
+            }
+          },
+          {
+            "id": "seg-wc3",
+            "type": "explanation",
+            "content": "Cool colors include blue, green, and purple, along with their variations. These colors remind us of water, sky, and nature. They tend to feel calm, peaceful, and can seem to recede into the background.",
+            "speakingNotes": {
+              "pace": "moderate",
+              "emotionalTone": "calm",
+              "emphasis": ["water", "sky", "peaceful"]
+            },
+            "checkpoint": {
+              "type": "comprehension",
+              "question": "Would you describe purple as a warm or cool color?"
+            }
+          },
+          {
+            "id": "seg-wc4",
+            "type": "explanation",
+            "content": "Artists use warm and cool colors intentionally to create mood. A painting dominated by warm oranges and reds might feel passionate or intense. A painting with mostly blues and greens might feel serene or melancholy. The balance between warm and cool colors helps tell a story.",
+            "speakingNotes": {
+              "pace": "slow",
+              "emotionalTone": "thoughtful"
+            }
+          },
+          {
+            "id": "seg-wc5",
+            "type": "summary",
+            "content": "Remember, warm colors are on one half of the color wheel and cool colors are on the other. By choosing warm or cool colors, you can control how your artwork makes people feel. This is one of the most powerful tools in an artist's palette!",
+            "speakingNotes": {
+              "pace": "moderate",
+              "emotionalTone": "empowering",
+              "pauseAfter": "PT3S"
+            }
+          }
+        ],
+        "totalDuration": "PT6M"
+      },
+      "media": {
+        "embedded": [
+          {
+            "id": "warm-cool-wheel",
+            "type": "diagram",
+            "title": "Warm and Cool Colors on the Wheel",
+            "alt": "Color wheel divided in half, with warm colors (red, orange, yellow) on one side and cool colors (blue, green, purple) on the other",
+            "caption": "The color wheel naturally divides into warm and cool halves",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Warm_and_cool_colors.svg/400px-Warm_and_cool_colors.svg.png",
+            "mimeType": "image/png",
+            "segmentTiming": {
+              "startSegment": 0,
+              "endSegment": 5,
+              "displayMode": "persistent"
+            }
+          }
+        ]
+      },
+      "assessments": [
+        {
+          "id": { "value": "quiz-wc1" },
+          "type": "multiple-choice",
+          "question": "Which group contains only warm colors?",
+          "options": [
+            { "id": "a", "text": "Blue, Green, Purple", "isCorrect": false },
+            { "id": "b", "text": "Red, Orange, Yellow", "isCorrect": true },
+            { "id": "c", "text": "Red, Blue, Green", "isCorrect": false },
+            { "id": "d", "text": "Orange, Green, Purple", "isCorrect": false }
+          ],
+          "correctAnswer": "b",
+          "feedback": {
+            "correct": "Exactly! Red, orange, and yellow are the warm colors that remind us of fire and sunshine.",
+            "incorrect": "Think about colors that remind you of fire and heat. Those are the warm colors: red, orange, and yellow."
+          }
+        }
+      ],
+      "tutoringConfig": {
+        "contentDepth": "intermediate",
+        "interactionMode": "guided",
+        "checkpointFrequency": "per_concept"
+      }
+    }
+  ],
+  "glossary": {
+    "terms": [
+      {
+        "term": "Primary Colors",
+        "definition": "The three colors (red, yellow, blue) that cannot be created by mixing other colors and form the basis for all other colors.",
+        "spokenDefinition": "Primary colors are red, yellow, and blue. They cannot be made by mixing other colors together."
+      },
+      {
+        "term": "Secondary Colors",
+        "definition": "Colors created by mixing two primary colors: orange (red + yellow), green (yellow + blue), and purple (red + blue).",
+        "spokenDefinition": "Secondary colors are orange, green, and purple. They are made by mixing two primary colors."
+      },
+      {
+        "term": "Complementary Colors",
+        "definition": "Colors that sit directly opposite each other on the color wheel and create strong contrast when placed together.",
+        "spokenDefinition": "Complementary colors are opposite on the color wheel. Examples include red and green, or blue and orange."
+      },
+      {
+        "term": "Color Harmony",
+        "definition": "The theory of combining colors in ways that are aesthetically pleasing and create visual balance.",
+        "spokenDefinition": "Color harmony is about choosing colors that look good together and create balance in art."
+      },
+      {
+        "term": "Warm Colors",
+        "definition": "Colors associated with heat and energy (red, orange, yellow), which appear to advance toward the viewer.",
+        "spokenDefinition": "Warm colors are red, orange, and yellow. They remind us of fire and feel energetic."
+      },
+      {
+        "term": "Cool Colors",
+        "definition": "Colors associated with calm and nature (blue, green, purple), which appear to recede from the viewer.",
+        "spokenDefinition": "Cool colors are blue, green, and purple. They remind us of water and sky, and feel peaceful."
+      }
+    ]
+  }
+}

@@ -124,6 +124,7 @@
 		AFF84A9517C894E0C8AD9193 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0387614469D6DF78A0062D42 /* LiveKit */; };
 		B06E80BFD972E04BBA559DA2 /* AssemblyAISTTService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87913509FC05E96BC80DEBA1 /* AssemblyAISTTService.swift */; };
 		B0DD2ADC603D9E1B6985C93D /* ChatterboxSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750D842A16A10157F9616983 /* ChatterboxSettingsView.swift */; };
+		536D7F516E22698CF992EF98 /* VoiceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6980C7ED7DD6ADD46D7A06C /* VoiceSettingsView.swift */; };
 		B193857C269BA7BCA353A047 /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = B3195CBE8007BE6BE8922D3B /* Collections */; };
 		B224F96BAECF61527E6D45A6 /* ProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B7ECAB95118EC51A54847D3 /* ProviderTests.swift */; };
 		B3C0F0B5E1EAE2ECEF9C0C51 /* SileroVADService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C24598EE63264CB30C0A780D /* SileroVADService.swift */; };
@@ -300,6 +301,7 @@
 		72EB2154EA1B5410AAFC763C /* ref-museum-virtual-tours.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "ref-museum-virtual-tours.jpg"; sourceTree = "<group>"; };
 		74E0D7BCB5A6EA44B4A655E2 /* FormulaRendererView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormulaRendererView.swift; sourceTree = "<group>"; };
 		750D842A16A10157F9616983 /* ChatterboxSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatterboxSettingsView.swift; sourceTree = "<group>"; };
+		D6980C7ED7DD6ADD46D7A06C /* VoiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettingsView.swift; sourceTree = "<group>"; };
 		763D987FBD0652F4B464871F /* SessionControlComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionControlComponents.swift; sourceTree = "<group>"; };
 		7740943D1A030000E4F25555 /* TTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSService.swift; sourceTree = "<group>"; };
 		77FDAE9921DF5C4D8646FB7C /* SessionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManagerTests.swift; sourceTree = "<group>"; };
@@ -879,6 +881,7 @@
 			children = (
 				41DA9B38260E744403DA38A8 /* APIProviderDetailView.swift */,
 				750D842A16A10157F9616983 /* ChatterboxSettingsView.swift */,
+				D6980C7ED7DD6ADD46D7A06C /* VoiceSettingsView.swift */,
 				C554997FECA551705A42264E /* ChatterboxSettingsViewModel.swift */,
 				BEFD16827DB21DF4C6196187 /* HelpView.swift */,
 				60AD25072A06649A8319CA61 /* ServerSettingsView.swift */,
@@ -1200,6 +1203,7 @@
 				61B4471D2655473793DC5702 /* BufferModels.swift in Sources */,
 				E543A1C92C979283DA2D81B3 /* ChatterboxConfig.swift in Sources */,
 				B0DD2ADC603D9E1B6985C93D /* ChatterboxSettingsView.swift in Sources */,
+				536D7F516E22698CF992EF98 /* VoiceSettingsView.swift in Sources */,
 				C1742421F88171C3F46D4DCD /* ChatterboxSettingsViewModel.swift in Sources */,
 				253518C61D123D8F0885A43C /* ChatterboxTTSService.swift in Sources */,
 				E35EC03F98434EFAA2CF1321 /* ConfidenceMonitor.swift in Sources */,

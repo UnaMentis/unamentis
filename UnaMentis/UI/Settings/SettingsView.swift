@@ -46,59 +46,29 @@ public struct SettingsView: View {
                     Text("Tap a provider to see details, pricing, and configure your API key.")
                 }
 
-                // Audio Settings Section
+                // Voice Settings Section
                 Section {
-                    Picker("Sample Rate", selection: $viewModel.sampleRate) {
-                        Text("16 kHz").tag(16000.0)
-                        Text("24 kHz").tag(24000.0)
-                        Text("48 kHz").tag(48000.0)
-                    }
-                    .accessibilityHint("Audio quality setting. Higher rates sound better but use more data.")
-
-                    Toggle("Voice Processing", isOn: $viewModel.enableVoiceProcessing)
-                        .accessibilityHint("Enhances voice clarity using Apple's audio processing")
-
-                    Toggle("Echo Cancellation", isOn: $viewModel.enableEchoCancellation)
-                        .accessibilityHint("Prevents the microphone from picking up the AI's voice through speakers")
-
-                    Toggle("Noise Suppression", isOn: $viewModel.enableNoiseSuppression)
-                        .accessibilityHint("Filters background noise like fans or traffic")
-                } header: {
-                    HStack {
-                        Text("Audio")
-                        Spacer()
-                        InfoButton(title: "Audio Settings", content: HelpContent.Settings.sampleRate)
-                    }
-                }
-
-                // VAD Settings Section
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
+                    NavigationLink {
+                        VoiceSettingsView()
+                    } label: {
                         HStack {
-                            Text("Detection Threshold: \(viewModel.vadThreshold, specifier: "%.2f")")
-                            InfoButton(title: "Detection Threshold", content: HelpContent.Settings.vadThreshold)
+                            Label("Voice & AI Settings", systemImage: "waveform.circle")
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(viewModel.ttsProvider.displayName)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(viewModel.llmProvider.displayName)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                        Slider(value: $viewModel.vadThreshold, in: 0.3...0.9)
-                            .accessibilityLabel("Voice detection threshold")
-                            .accessibilityValue(String(format: "%.2f", viewModel.vadThreshold))
-                            .accessibilityHint("Lower values detect quieter speech but may pick up noise")
                     }
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Interruption Threshold: \(viewModel.bargeInThreshold, specifier: "%.2f")")
-                            InfoButton(title: "Interruption Threshold", content: HelpContent.Settings.interruptionThreshold)
-                        }
-                        Slider(value: $viewModel.bargeInThreshold, in: 0.5...0.95)
-                            .accessibilityLabel("Interruption threshold")
-                            .accessibilityValue(String(format: "%.2f", viewModel.bargeInThreshold))
-                            .accessibilityHint("How loud you need to speak to interrupt the AI")
-                    }
-
-                    Toggle("Enable Interruptions", isOn: $viewModel.enableBargeIn)
-                        .accessibilityHint("When enabled, speaking while the AI talks will pause it to listen")
+                    .accessibilityHint("Configure voice recognition, AI model, and speech synthesis")
                 } header: {
-                    Text("Voice Detection")
+                    Text("Voice")
+                } footer: {
+                    Text("Audio, speech recognition, language model, and voice output settings.")
                 }
 
                 // Self-Hosted Server Section
@@ -171,203 +141,6 @@ public struct SettingsView: View {
                         Text("This IP will be used for LLM, TTS, and optionally logging.")
                     } else {
                         Text("Enable to use your Mac as an AI server for zero-cost inference.")
-                    }
-                }
-
-                // STT Settings Section
-                Section("Speech Recognition") {
-                    Picker("Provider", selection: $viewModel.sttProvider) {
-                        Text("GLM-ASR (On-Device)").tag(STTProvider.glmASROnDevice)
-                        Text("Groq Whisper (Free)").tag(STTProvider.groqWhisper)
-                        Text("Deepgram Nova-3").tag(STTProvider.deepgramNova3)
-                        Text("AssemblyAI").tag(STTProvider.assemblyAI)
-                        Text("Apple Speech").tag(STTProvider.appleSpeech)
-                    }
-
-                    if !viewModel.sttProvider.requiresNetwork {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text("Works offline")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
-                // LLM Settings Section
-                Section {
-                    Picker("Provider", selection: $viewModel.llmProvider) {
-                        Text("On-Device (llama.cpp)").tag(LLMProvider.localMLX)
-                        Text("Anthropic Claude").tag(LLMProvider.anthropic)
-                        Text("OpenAI").tag(LLMProvider.openAI)
-                        Text("Self-Hosted").tag(LLMProvider.selfHosted)
-                    }
-                    .accessibilityHint("Choose where AI processing happens")
-
-                    if viewModel.llmProvider != .localMLX {
-                        Picker("Model", selection: $viewModel.llmModel) {
-                            ForEach(viewModel.availableModels, id: \.self) { model in
-                                Text(model).tag(model)
-                            }
-                        }
-                        .accessibilityHint("Larger models are smarter but slower and more expensive")
-                    }
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Temperature: \(viewModel.temperature, specifier: "%.1f")")
-                            InfoButton(title: "Temperature", content: HelpContent.Settings.temperature)
-                        }
-                        Slider(value: $viewModel.temperature, in: 0...1)
-                            .accessibilityLabel("Temperature")
-                            .accessibilityValue(String(format: "%.1f", viewModel.temperature))
-                            .accessibilityHint("Controls response creativity. Lower for factual, higher for creative.")
-                    }
-
-                    HStack {
-                        Stepper("Max Tokens: \(viewModel.maxTokens)", value: $viewModel.maxTokens, in: 256...4096, step: 256)
-                            .accessibilityHint("Maximum response length. One token is roughly 4 characters.")
-                        InfoButton(title: "Max Tokens", content: HelpContent.Settings.maxTokens)
-                    }
-
-                    if !viewModel.llmProvider.requiresNetwork {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text("Works offline - Free")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } header: {
-                    HStack {
-                        Text("Language Model")
-                        Spacer()
-                        InfoButton(title: "Language Model", content: HelpContent.Settings.llmProvider)
-                    }
-                }
-
-                // TTS Settings Section
-                Section {
-                    Picker("Provider", selection: $viewModel.ttsProvider) {
-                        Text("Apple TTS (On-Device)").tag(TTSProvider.appleTTS)
-                        if viewModel.selfHostedEnabled {
-                            Text("Piper (22kHz)").tag(TTSProvider.selfHosted)
-                            Text("VibeVoice (24kHz)").tag(TTSProvider.vibeVoice)
-                            Text("Chatterbox (24kHz)").tag(TTSProvider.chatterbox)
-                        }
-                        Text("ElevenLabs").tag(TTSProvider.elevenLabsFlash)
-                        Text("Deepgram Aura").tag(TTSProvider.deepgramAura2)
-                    }
-                    .accessibilityHint("Choose the voice synthesis provider")
-
-                    // Voice picker for self-hosted TTS providers (not Chatterbox, which has its own settings)
-                    if viewModel.ttsProvider == .selfHosted || viewModel.ttsProvider == .vibeVoice {
-                        Picker("Voice", selection: $viewModel.ttsVoice) {
-                            // Use discovered voices if available, otherwise show default OpenAI-compatible voices
-                            let voices = viewModel.discoveredVoices.isEmpty ? viewModel.defaultTTSVoices : viewModel.discoveredVoices
-                            ForEach(voices, id: \.self) { voice in
-                                Text(viewModel.voiceDisplayName(voice)).tag(voice)
-                            }
-                        }
-                        .accessibilityHint("Select the AI tutor's voice")
-                    }
-
-                    // Chatterbox-specific settings
-                    if viewModel.ttsProvider == .chatterbox {
-                        NavigationLink {
-                            ChatterboxSettingsView()
-                        } label: {
-                            HStack {
-                                Label("Chatterbox Settings", systemImage: "slider.horizontal.3")
-                                Spacer()
-                                Text(viewModel.chatterboxPresetName)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        // Quick emotion slider for convenience
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text("Emotion Level")
-                                Spacer()
-                                Text(String(format: "%.1f", viewModel.chatterboxExaggeration))
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(.secondary)
-                            }
-                            Slider(value: $viewModel.chatterboxExaggeration, in: 0.0...1.5, step: 0.1)
-                                .accessibilityLabel("Emotion level")
-                                .accessibilityHint("Adjust voice expressiveness from monotone to dramatic")
-                        }
-                    }
-
-                    // Show TTS provider info
-                    if viewModel.ttsProvider == .selfHosted || viewModel.ttsProvider == .vibeVoice || viewModel.ttsProvider == .chatterbox {
-                        HStack {
-                            Text("Port")
-                            Spacer()
-                            Text("\(viewModel.ttsProvider.defaultPort)")
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                        }
-                        HStack {
-                            Text("Sample Rate")
-                            Spacer()
-                            Text("\(Int(viewModel.ttsProvider.sampleRate)) Hz")
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Speaking Rate: \(viewModel.speakingRate, specifier: "%.1f")x")
-                            InfoButton(title: "Speaking Rate", content: HelpContent.Settings.speakingRate)
-                        }
-                        Slider(value: $viewModel.speakingRate, in: 0.5...2.0)
-                            .accessibilityLabel("Speaking rate")
-                            .accessibilityValue(String(format: "%.1f times speed", viewModel.speakingRate))
-                            .accessibilityHint("Adjust how fast the AI speaks")
-                    }
-
-                    if !viewModel.ttsProvider.requiresAPIKey {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text(viewModel.ttsProvider == .selfHosted ? "Uses Piper server - Free" :
-                                 viewModel.ttsProvider == .vibeVoice ? "Uses VibeVoice server - Free" :
-                                 viewModel.ttsProvider == .chatterbox ? "Uses Chatterbox server - Free" :
-                                 "Works offline - Free")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } header: {
-                    HStack {
-                        Text("Voice")
-                        Spacer()
-                        InfoButton(title: "Voice Settings", content: HelpContent.Settings.ttsProvider)
-                    }
-                }
-
-                // Presets Section
-                Section("Presets") {
-                    Button("Balanced (Default)") {
-                        viewModel.applyPreset(.balanced)
-                    }
-                    Button("Low Latency") {
-                        viewModel.applyPreset(.lowLatency)
-                    }
-                    Button("High Quality") {
-                        viewModel.applyPreset(.highQuality)
-                    }
-                    Button("Cost Optimized") {
-                        viewModel.applyPreset(.costOptimized)
-                    }
-                    Button("Self-Hosted (Free)") {
-                        viewModel.applyPreset(.selfHosted)
                     }
                 }
 
