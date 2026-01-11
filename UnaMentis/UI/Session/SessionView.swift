@@ -666,22 +666,22 @@ struct CurriculumPlaybackControls: View {
     var nextTopicTitle: String?
 
     /// Callback when pause/resume is toggled
-    let onPauseResume: @Sendable () -> Void
+    let onPauseResume: @MainActor () -> Void
 
     /// Callback when stop action completes
-    let onStop: @Sendable () -> Void
+    let onStop: @MainActor () -> Void
 
     /// Callback when go-back button is tapped
-    var onGoBack: (@Sendable () -> Void)?
+    var onGoBack: (@MainActor () -> Void)?
 
     /// Callback when replay button is tapped
-    var onReplay: (@Sendable () -> Void)?
+    var onReplay: (@MainActor () -> Void)?
 
     /// Callback when next topic button is tapped
-    var onNextTopic: (@Sendable () -> Void)?
+    var onNextTopic: (@MainActor () -> Void)?
 
     /// Optional callback when mute changes
-    var onMuteChanged: (@Sendable (Bool) -> Void)?
+    var onMuteChanged: (@MainActor (Bool) -> Void)?
 
     var body: some View {
         CurriculumControlBar(

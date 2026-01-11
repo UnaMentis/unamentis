@@ -484,22 +484,22 @@ public struct CurriculumControlBar: View {
     let nextTopicTitle: String?
 
     /// Callback when stop action completes
-    let onStop: @Sendable () -> Void
+    let onStop: @MainActor () -> Void
 
     /// Callback when go-back button is tapped
-    let onGoBack: @Sendable () -> Void
+    let onGoBack: @MainActor () -> Void
 
     /// Callback when replay button is tapped
-    let onReplay: @Sendable () -> Void
+    let onReplay: @MainActor () -> Void
 
     /// Callback when next topic button is tapped
-    let onNextTopic: @Sendable () -> Void
+    let onNextTopic: @MainActor () -> Void
 
     /// Callback when pause state changes
-    var onPauseChanged: (@Sendable (Bool) -> Void)?
+    var onPauseChanged: (@MainActor (Bool) -> Void)?
 
     /// Callback when mute state changes
-    var onMuteChanged: (@Sendable (Bool) -> Void)?
+    var onMuteChanged: (@MainActor (Bool) -> Void)?
 
     public init(
         isPaused: Binding<Bool>,
@@ -507,12 +507,12 @@ public struct CurriculumControlBar: View {
         currentSegmentIndex: Int,
         hasNextTopic: Bool,
         nextTopicTitle: String? = nil,
-        onStop: @escaping @Sendable () -> Void,
-        onGoBack: @escaping @Sendable () -> Void,
-        onReplay: @escaping @Sendable () -> Void,
-        onNextTopic: @escaping @Sendable () -> Void,
-        onPauseChanged: (@Sendable (Bool) -> Void)? = nil,
-        onMuteChanged: (@Sendable (Bool) -> Void)? = nil
+        onStop: @escaping @MainActor () -> Void,
+        onGoBack: @escaping @MainActor () -> Void,
+        onReplay: @escaping @MainActor () -> Void,
+        onNextTopic: @escaping @MainActor () -> Void,
+        onPauseChanged: (@MainActor (Bool) -> Void)? = nil,
+        onMuteChanged: (@MainActor (Bool) -> Void)? = nil
     ) {
         self._isPaused = isPaused
         self._isMuted = isMuted
