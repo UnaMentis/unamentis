@@ -29,6 +29,9 @@ The TDD contains:
 ## Phase 1: Cleanup (MUST DO FIRST)
 
 ### 1.1 Kill All Running Processes
+
+> **Note:** This is the ONE exception where `pkill` is allowed. The Server Manager app cannot restart itself via its own API. For all other services, use `/service restart <service-name>`.
+
 ```bash
 pkill -f "USM.app" 2>/dev/null
 pkill -f "MenuDemo" 2>/dev/null

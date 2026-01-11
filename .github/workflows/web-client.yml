@@ -123,6 +123,26 @@ jobs:
       - name: Run tests with coverage
         run: pnpm test:coverage
 
+      - name: Check coverage threshold
+        id: coverage-check
+        run: |
+          MIN_COVERAGE=70
+          if [ -f coverage/coverage-summary.json ]; then
+            COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct // 0')
+            echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+
+            # Check if coverage is a valid number and below threshold
+            if [ "$COVERAGE" != "N/A" ] && [ "$COVERAGE" != "null" ]; then
+              COVERAGE_INT=$(echo "$COVERAGE" | cut -d. -f1)
+              if [ "$COVERAGE_INT" -lt "$MIN_COVERAGE" ]; then
+                echo "::error::Code coverage ${COVERAGE}% is below minimum threshold of ${MIN_COVERAGE}%"
+                exit 1
+              fi
+            fi
+          else
+            echo "::warning::Coverage file not found"
+          fi
+
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
         if: always()
@@ -140,6 +160,7 @@ jobs:
           echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Status | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage Threshold | 70% |" >> $GITHUB_STEP_SUMMARY
           if [ -f coverage/coverage-summary.json ]; then
             COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct // "N/A"')
             echo "| Line Coverage | ${COVERAGE}% |" >> $GITHUB_STEP_SUMMARY

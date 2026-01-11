@@ -300,17 +300,248 @@ public actor LatencyTestCoordinator {
             throw TestCoordinatorError.notConfigured
         }
 
-        // For now, use text input as fallback (audio file loading not implemented)
-        // In production, this would load audio from scenario.userUtteranceAudioPath
-        // and stream through STT
-
-        if let fallbackText = scenario.userUtteranceText {
-            // Use text input as fallback
-            logger.warning("Audio input not implemented, using text fallback")
-            try await executeTextInputScenario(scenario, llmService: llmService, ttsService: ttsService)
-        } else {
-            throw TestCoordinatorError.scenarioNotSupported("Audio input requires audio file or text fallback")
+        // Try to load audio file, fall back to text if not available
+        guard let audioPath = scenario.userUtteranceAudioPath else {
+            // No audio path provided, check for text fallback
+            if let fallbackText = scenario.userUtteranceText {
+                logger.info("No audio path provided, using text fallback")
+                try await executeTextInputScenario(scenario, llmService: llmService, ttsService: ttsService)
+                return
+            } else {
+                throw TestCoordinatorError.scenarioNotSupported("Audio input requires audio file or text fallback")
+            }
         }
+
+        // Load and stream audio through STT
+        let transcribedText = try await transcribeAudioFile(
+            at: audioPath,
+            using: sttService
+        )
+
+        guard !transcribedText.isEmpty else {
+            throw TestCoordinatorError.testExecutionFailed("STT returned empty transcription")
+        }
+
+        // Continue with LLM and TTS phases (same as text input)
+        try await executeLLMAndTTSPhases(
+            userText: transcribedText,
+            llmService: llmService,
+            ttsService: ttsService
+        )
+    }
+
+    /// Load audio file and stream through STT service
+    private func transcribeAudioFile(
+        at path: String,
+        using sttService: any STTService
+    ) async throws -> String {
+        let fileURL = URL(fileURLWithPath: path)
+
+        // Verify file exists
+        guard FileManager.default.fileExists(atPath: path) else {
+            throw TestCoordinatorError.testExecutionFailed("Audio file not found: \(path)")
+        }
+
+        // Load audio file
+        let audioFile: AVAudioFile
+        do {
+            audioFile = try AVAudioFile(forReading: fileURL)
+        } catch {
+            throw TestCoordinatorError.testExecutionFailed("Failed to load audio file: \(error.localizedDescription)")
+        }
+
+        // Get source format
+        let sourceFormat = audioFile.processingFormat
+        let frameCount = AVAudioFrameCount(audioFile.length)
+
+        logger.info("Loading audio file: \(path)")
+        logger.info("Format: \(sourceFormat.sampleRate)Hz, \(sourceFormat.channelCount) channels, \(frameCount) frames")
+
+        // Create target format for STT (16kHz mono PCM float)
+        guard let targetFormat = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 16000,
+            channels: 1,
+            interleaved: false
+        ) else {
+            throw TestCoordinatorError.testExecutionFailed("Failed to create target audio format")
+        }
+
+        // Read entire file into buffer
+        guard let sourceBuffer = AVAudioPCMBuffer(pcmFormat: sourceFormat, frameCapacity: frameCount) else {
+            throw TestCoordinatorError.testExecutionFailed("Failed to create source audio buffer")
+        }
+
+        do {
+            try audioFile.read(into: sourceBuffer)
+        } catch {
+            throw TestCoordinatorError.testExecutionFailed("Failed to read audio file: \(error.localizedDescription)")
+        }
+
+        // Convert to target format if needed
+        let sttBuffer: AVAudioPCMBuffer
+        if sourceFormat.sampleRate == targetFormat.sampleRate &&
+           sourceFormat.channelCount == targetFormat.channelCount {
+            sttBuffer = sourceBuffer
+        } else {
+            guard let converter = AVAudioConverter(from: sourceFormat, to: targetFormat) else {
+                throw TestCoordinatorError.testExecutionFailed("Failed to create audio converter")
+            }
+
+            // Calculate output frame count based on sample rate ratio
+            let ratio = targetFormat.sampleRate / sourceFormat.sampleRate
+            let outputFrameCount = AVAudioFrameCount(Double(frameCount) * ratio)
+
+            guard let convertedBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: outputFrameCount) else {
+                throw TestCoordinatorError.testExecutionFailed("Failed to create converted audio buffer")
+            }
+
+            var error: NSError?
+            let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
+                outStatus.pointee = .haveData
+                return sourceBuffer
+            }
+
+            let status = converter.convert(to: convertedBuffer, error: &error, withInputFrom: inputBlock)
+            if status == .error, let error = error {
+                throw TestCoordinatorError.testExecutionFailed("Audio conversion failed: \(error.localizedDescription)")
+            }
+
+            sttBuffer = convertedBuffer
+        }
+
+        // Phase: STT - stream audio and collect transcription
+        let sttPhase = TestPhaseTimer()
+
+        // Start streaming with STT service
+        let resultStream = try await sttService.startStreaming(audioFormat: targetFormat)
+
+        // Send audio in chunks (simulate real-time streaming)
+        let chunkSize = AVAudioFrameCount(1600) // 100ms at 16kHz
+        var offset: AVAudioFramePosition = 0
+        let totalFrames = AVAudioFramePosition(sttBuffer.frameLength)
+
+        while offset < totalFrames {
+            let remainingFrames = AVAudioFrameCount(totalFrames - offset)
+            let framesToSend = min(chunkSize, remainingFrames)
+
+            // Create chunk buffer
+            guard let chunkBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: framesToSend) else {
+                break
+            }
+
+            // Copy frames to chunk
+            if let sourceData = sttBuffer.floatChannelData?[0],
+               let destData = chunkBuffer.floatChannelData?[0] {
+                memcpy(destData, sourceData.advanced(by: Int(offset)), Int(framesToSend) * MemoryLayout<Float>.size)
+                chunkBuffer.frameLength = framesToSend
+            }
+
+            try await sttService.sendAudio(chunkBuffer)
+            offset += AVAudioFramePosition(framesToSend)
+
+            // Small delay to simulate real-time audio (optional, can be removed for faster tests)
+            // try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        }
+
+        // Signal end of audio
+        try await sttService.stopStreaming()
+
+        // Collect final transcription
+        var finalTranscript = ""
+        var sttConfidence: Float = 0
+
+        for await result in resultStream {
+            if result.isFinal {
+                finalTranscript = result.transcript
+                sttConfidence = result.confidence
+                break
+            }
+        }
+
+        // Record STT metrics
+        await metricsCollector.recordSTTLatency(sttPhase.elapsedMs)
+        await metricsCollector.recordSTTConfidence(sttConfidence)
+
+        logger.info("STT completed: \"\(finalTranscript.prefix(50))...\" (latency: \(String(format: "%.1f", sttPhase.elapsedMs))ms)")
+
+        return finalTranscript
+    }
+
+    /// Execute LLM and TTS phases (shared between audio and text input scenarios)
+    private func executeLLMAndTTSPhases(
+        userText: String,
+        llmService: any LLMService,
+        ttsService: any TTSService
+    ) async throws {
+        // Build messages
+        let messages = [
+            LLMMessage(role: .system, content: "You are a helpful tutor. Be concise."),
+            LLMMessage(role: .user, content: userText)
+        ]
+
+        // Phase: LLM
+        let llmPhase = TestPhaseTimer()
+        var firstTokenReceived = false
+        var fullResponse = ""
+        var outputTokenCount = 0
+
+        guard let config = currentConfig else {
+            throw TestCoordinatorError.notConfigured
+        }
+
+        let stream = try await llmService.streamCompletion(
+            messages: messages,
+            config: config.llm.toLLMConfig()
+        )
+
+        for await token in stream {
+            if !firstTokenReceived {
+                firstTokenReceived = true
+                await metricsCollector.recordLLMTTFB(llmPhase.elapsedMs)
+            }
+            fullResponse += token.content
+            if let count = token.tokenCount {
+                outputTokenCount = count
+            }
+        }
+
+        await metricsCollector.recordLLMCompletion(llmPhase.elapsedMs)
+        await metricsCollector.recordLLMTokenCounts(
+            input: messages.reduce(0) { $0 + $1.content.count / 4 },
+            output: outputTokenCount
+        )
+
+        // Phase: TTS
+        let ttsPhase = TestPhaseTimer()
+        var firstAudioReceived = false
+        var totalAudioDurationMs: Double = 0
+
+        let audioStream = try await ttsService.synthesize(text: fullResponse)
+
+        for await chunk in audioStream {
+            if !firstAudioReceived {
+                firstAudioReceived = true
+                await metricsCollector.recordTTSTTFB(ttsPhase.elapsedMs)
+            }
+
+            // Estimate audio duration from chunk size and format
+            if case .pcmFloat32(let sampleRate, _) = chunk.format {
+                let samples = chunk.audioData.count / 4
+                let durationMs = Double(samples) / sampleRate * 1000.0
+                totalAudioDurationMs += durationMs
+            } else if case .pcmInt16(let sampleRate, _) = chunk.format {
+                let samples = chunk.audioData.count / 2
+                let durationMs = Double(samples) / sampleRate * 1000.0
+                totalAudioDurationMs += durationMs
+            }
+        }
+
+        await metricsCollector.recordTTSCompletion(ttsPhase.elapsedMs)
+        await metricsCollector.recordTTSAudioDuration(totalAudioDurationMs)
+
+        // Record E2E
+        await metricsCollector.recordE2ELatencyFromTestStart()
     }
 
     /// Execute TTS-only scenario (benchmark TTS in isolation)

@@ -225,4 +225,4 @@ For managed DORA metrics with zero maintenance:
 
 - [Apache DevLake Docs](https://devlake.apache.org/docs/Overview/Introduction)
 - [DORA Metrics Guide](https://dora.dev/)
-- [QUALITY_INFRASTRUCTURE_PLAN.md](../../docs/QUALITY_INFRASTRUCTURE_PLAN.md)
+- [QUALITY_INFRASTRUCTURE_PLAN.md](../../docs/quality/QUALITY_INFRASTRUCTURE_PLAN.md)

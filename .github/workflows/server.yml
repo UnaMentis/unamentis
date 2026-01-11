@@ -38,12 +38,23 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-asyncio aiohttp beautifulsoup4 pluggy
+        pip install pytest pytest-asyncio pytest-cov aiohttp beautifulsoup4 pluggy
 
-    - name: Run Importer Tests
+    - name: Run Importer Tests with Coverage
       run: |
         cd server/importers
-        python -m pytest tests/ -v --tb=short
+        # Note: Coverage threshold is 45% as many source plugins are stubs/WIP
+        # TODO: Increase threshold as more tests are added
+        python -m pytest tests/ -v --tb=short --cov=. --cov-report=xml --cov-report=term-missing --cov-fail-under=45
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      if: always()
+      with:
+        directory: server/importers
+        flags: importer
+        fail_ci_if_error: false
+      continue-on-error: true
 
     - name: Summary
       if: always()
@@ -53,6 +64,7 @@ jobs:
         echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
         echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
         echo "| Status | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Coverage Threshold | 45% |" >> $GITHUB_STEP_SUMMARY
 
   management-tests:
     name: Management Server Tests
@@ -70,12 +82,21 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-asyncio pytest-aiohttp aiohttp bcrypt PyJWT
+        pip install pytest pytest-asyncio pytest-aiohttp pytest-cov aiohttp bcrypt PyJWT aiofiles
 
-    - name: Run Management Server Tests
+    - name: Run Management Server Tests with Coverage
       run: |
         cd server/management
-        python -m pytest tests/ -v --tb=short
+        python -m pytest tests/ -v --tb=short --cov=. --cov-report=xml --cov-report=term-missing --cov-fail-under=70
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      if: always()
+      with:
+        directory: server/management
+        flags: management
+        fail_ci_if_error: false
+      continue-on-error: true
 
     - name: Summary
       if: always()
@@ -85,6 +106,7 @@ jobs:
         echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
         echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
         echo "| Status | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Coverage Threshold | 70% |" >> $GITHUB_STEP_SUMMARY
 
   latency-harness-tests:
     name: Latency Harness Tests

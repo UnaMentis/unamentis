@@ -28,6 +28,9 @@ from metrics_history import metrics_history, MetricsHistory
 # Import curriculum importer system
 from import_api import register_import_routes, init_import_system, set_import_complete_callback
 
+# Import curriculum reprocessing system
+from reprocess_api import register_reprocess_routes, init_reprocess_system
+
 # Import plugin management system
 from plugin_api import register_plugin_routes
 
@@ -45,6 +48,28 @@ from latency_harness_api import register_latency_harness_routes, init_latency_ha
 
 # Import diagnostic logging system
 from diagnostic_logging import diag_logger, get_diagnostic_config, set_diagnostic_config
+
+# Import FOV context management API
+from fov_context_api import setup_fov_context_routes
+
+# Import TTS cache system
+from tts_cache import TTSCache, TTSResourcePool, CurriculumPrefetcher
+from tts_api import register_tts_routes
+
+# Import session-cache integration
+from session_cache_integration import SessionCacheIntegration
+
+# Import deployment API
+from deployment_api import register_deployment_routes, ScheduledDeploymentManager
+
+# Import audio WebSocket handler
+from audio_ws import AudioWebSocketHandler, register_audio_websocket
+
+# Import session management (for UserSession, UserVoiceConfig)
+from fov_context import SessionManager, UserVoiceConfig
+
+# Import model context windows for dynamic parameter limits
+from fov_context.models import MODEL_CONTEXT_WINDOWS
 
 # Add aiohttp for async HTTP server with WebSocket support
 try:
@@ -1100,6 +1125,10 @@ async def handle_get_models(request: web.Request) -> web.Response:
         total_size_bytes = 0
         total_loaded_vram = 0
 
+        # First, check health of all servers to update their status and models list
+        tasks = [check_server_health(s) for s in state.servers.values()]
+        await asyncio.gather(*tasks, return_exceptions=True)
+
         # Get Ollama model details
         ollama_info = await get_ollama_model_details()
 
@@ -1116,6 +1145,9 @@ async def handle_get_models(request: web.Request) -> web.Response:
                         if is_loaded:
                             total_loaded_vram += loaded_info.get("size_vram", 0)
 
+                        # Get context window from MODEL_CONTEXT_WINDOWS
+                        context_window = MODEL_CONTEXT_WINDOWS.get(model_name, 32_000)
+
                         models.append({
                             "id": f"{srv.id}:{model_name}",
                             "name": model_name,
@@ -1128,6 +1160,8 @@ async def handle_get_models(request: web.Request) -> web.Response:
                             "parameter_size": details.get("parameter_size", ""),
                             "quantization": details.get("quantization", ""),
                             "family": details.get("family", ""),
+                            "context_window": context_window,
+                            "context_window_formatted": f"{context_window // 1000}K" if context_window >= 1000 else str(context_window),
                             "vram_bytes": loaded_info.get("size_vram", 0) if is_loaded else 0,
                             "vram_gb": loaded_info.get("size_vram_gb", 0) if is_loaded else 0
                         })
@@ -1628,18 +1662,30 @@ async def handle_get_model_parameters(request: web.Request) -> web.Response:
         # Load saved parameters for this model
         saved_params = load_model_params(model_name)
 
-        # Merge with defaults
+        # Get model's actual context window from MODEL_CONTEXT_WINDOWS
+        model_context_window = MODEL_CONTEXT_WINDOWS.get(model_name, 32_000)
+
+        # Merge with defaults, adjusting num_ctx max based on model capability
         params = {}
         for key, default_def in DEFAULT_MODEL_PARAMS.items():
-            params[key] = {
+            param = {
                 **default_def,
                 "value": saved_params.get(key, default_def["value"])
             }
+            # Override num_ctx max with model's actual context window
+            if key == "num_ctx":
+                param["max"] = model_context_window
+                param["model_max_context"] = model_context_window
+            params[key] = param
 
         return web.json_response({
             "status": "ok",
             "model": model_name,
-            "parameters": params
+            "parameters": params,
+            "model_info": {
+                "context_window": model_context_window,
+                "context_window_formatted": f"{model_context_window // 1000}K" if model_context_window >= 1000 else str(model_context_window)
+            }
         })
 
     except Exception as e:
@@ -1698,6 +1744,65 @@ async def handle_save_model_parameters(request: web.Request) -> web.Response:
             "model": model_id,
             "error": str(e)
         }, status=500)
+
+
+async def handle_get_model_capabilities(request: web.Request) -> web.Response:
+    """Get all known model capabilities including context windows."""
+    try:
+        # Build capabilities for all known models
+        capabilities = []
+        for model_name, context_window in MODEL_CONTEXT_WINDOWS.items():
+            # Determine model tier based on context window
+            if context_window >= 100_000:
+                tier = "cloud"
+            elif context_window >= 32_000:
+                tier = "mid_range"
+            elif context_window >= 8_000:
+                tier = "on_device"
+            else:
+                tier = "tiny"
+
+            # Determine provider from model name
+            if model_name.startswith("claude"):
+                provider = "anthropic"
+            elif model_name.startswith("gpt"):
+                provider = "openai"
+            elif model_name.startswith("mlx-"):
+                provider = "mlx"
+            else:
+                provider = "ollama"
+
+            capabilities.append({
+                "model": model_name,
+                "context_window": context_window,
+                "context_window_formatted": f"{context_window // 1000}K" if context_window >= 1000 else str(context_window),
+                "tier": tier,
+                "provider": provider
+            })
+
+        # Sort by context window descending
+        capabilities.sort(key=lambda x: x["context_window"], reverse=True)
+
+        return web.json_response({
+            "status": "ok",
+            "capabilities": capabilities,
+            "total": len(capabilities),
+            "by_tier": {
+                "cloud": sum(1 for c in capabilities if c["tier"] == "cloud"),
+                "mid_range": sum(1 for c in capabilities if c["tier"] == "mid_range"),
+                "on_device": sum(1 for c in capabilities if c["tier"] == "on_device"),
+                "tiny": sum(1 for c in capabilities if c["tier"] == "tiny")
+            },
+            "by_provider": {
+                "anthropic": sum(1 for c in capabilities if c["provider"] == "anthropic"),
+                "openai": sum(1 for c in capabilities if c["provider"] == "openai"),
+                "ollama": sum(1 for c in capabilities if c["provider"] == "ollama"),
+                "mlx": sum(1 for c in capabilities if c["provider"] == "mlx")
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error getting model capabilities: {e}")
+        return web.json_response({"error": str(e)}, status=500)
 
 
 # =============================================================================
@@ -4237,6 +4342,7 @@ def create_app() -> web.Application:
     app.router.add_delete("/api/models/{model_id}", handle_delete_model)
     app.router.add_get("/api/models/config", handle_get_model_config)
     app.router.add_post("/api/models/config", handle_save_model_config)
+    app.router.add_get("/api/models/capabilities", handle_get_model_capabilities)
     app.router.add_get("/api/models/{model_id}/parameters", handle_get_model_parameters)
     app.router.add_post("/api/models/{model_id}/parameters", handle_save_model_parameters)
 
@@ -4278,8 +4384,14 @@ def create_app() -> web.Application:
     # Curriculum Import System (Source Browser)
     register_import_routes(app)
 
+    # Curriculum Reprocessing System
+    register_reprocess_routes(app)
+
     # Media Generation System (Diagrams, Formulas, Maps)
     register_media_routes(app)
+
+    # TTS Cache System
+    register_tts_routes(app)
 
     # Authentication System
     # Note: Auth requires a database pool. For now, we set up the routes but
@@ -4314,6 +4426,9 @@ def create_app() -> web.Application:
 
     # Latency Test Harness
     register_latency_harness_routes(app)
+
+    # FOV Context Management System
+    setup_fov_context_routes(app)
 
     # Set up callback to reload curricula when import completes
     def on_import_complete(progress):
@@ -4387,6 +4502,62 @@ def create_app() -> web.Application:
         await detect_existing_processes()
         state._load_curricula()  # Load all UMCF curricula on startup
 
+        # Initialize TTS cache
+        cache_dir = Path(__file__).parent / "data" / "tts_cache"
+        tts_cache = TTSCache(cache_dir)
+        await tts_cache.initialize()
+        app["tts_cache"] = tts_cache
+
+        # Initialize TTS resource pool (priority-based generation)
+        resource_pool = TTSResourcePool(
+            max_concurrent_live=7,      # Live users get 7 concurrent slots
+            max_concurrent_background=3  # Background pre-generation gets 3
+        )
+        app["tts_resource_pool"] = resource_pool
+
+        # Initialize TTS prefetcher with resource pool
+        prefetcher = CurriculumPrefetcher(tts_cache, resource_pool)
+        app["tts_prefetcher"] = prefetcher
+
+        # Initialize session manager (handles both FOV and user sessions)
+        session_manager = SessionManager()
+        app["session_manager"] = session_manager
+
+        # Initialize session-cache integration bridge
+        session_cache = SessionCacheIntegration(tts_cache, resource_pool, prefetcher)
+        app["session_cache"] = session_cache
+
+        # Initialize scheduled deployment manager
+        deployment_manager = ScheduledDeploymentManager(tts_cache, resource_pool)
+
+        # Set up segment loader for deployment manager
+        async def load_curriculum_segments(curriculum_id: str) -> list:
+            """Load all segments from a curriculum."""
+            curriculum = state.curriculum_raw.get(curriculum_id)
+            if not curriculum:
+                return []
+            segments = []
+            content = curriculum.get("content", [])
+            if content and content[0].get("children"):
+                for topic in content[0]["children"]:
+                    transcript = topic.get("transcript", {})
+                    for seg in transcript.get("segments", []):
+                        if seg.get("content"):
+                            segments.append(seg["content"])
+            return segments
+
+        deployment_manager.set_segment_loader(load_curriculum_segments)
+        app["deployment_manager"] = deployment_manager
+
+        # Initialize audio WebSocket handler
+        audio_ws_handler = AudioWebSocketHandler(session_manager, session_cache)
+        register_audio_websocket(app, audio_ws_handler)
+
+        # Register deployment API routes
+        register_deployment_routes(app)
+
+        logger.info("[Startup] TTS cache, resource pool, session management, and deployment API initialized")
+
         # Initialize database connection for auth
         database_url = os.environ.get("DATABASE_URL")
         if database_url and "token_service" in app:
@@ -4428,6 +4599,21 @@ def create_app() -> web.Application:
         if "db_pool" in app:
             await app["db_pool"].close()
             logger.info("[Cleanup] Database pool closed")
+
+        # Cleanup inactive user sessions
+        if "session_manager" in app:
+            removed = app["session_manager"].cleanup_inactive_user_sessions(max_inactive_minutes=0)
+            logger.info(f"[Cleanup] Removed {removed} user sessions")
+
+        # Cleanup old deployments
+        if "deployment_manager" in app:
+            removed = app["deployment_manager"].cleanup_old_deployments(max_age_days=0)
+            logger.info(f"[Cleanup] Removed {removed} old deployments")
+
+        # Shutdown TTS cache
+        if "tts_cache" in app:
+            await app["tts_cache"].shutdown()
+            logger.info("[Cleanup] TTS cache saved")
 
         await resource_monitor.stop()
         await idle_manager.stop()

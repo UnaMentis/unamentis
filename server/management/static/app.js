@@ -3835,8 +3835,222 @@ function renderCK12Courses() {
 }
 
 async function viewCK12CourseDetail(courseId) {
-    showToast('CK-12 course details coming soon', 'info');
-    // TODO: Implement detailed view similar to MIT OCW
+    try {
+        showToast('Loading course details...', 'info');
+        const response = await fetchAPI(`/import/sources/ck12_flexbook/courses/${courseId}`);
+        const course = response.course;
+
+        // Display course detail in the courses list area
+        const container = document.getElementById('ck12-courses-list');
+        container.innerHTML = `
+            <div class="mb-4">
+                <button class="btn-secondary text-sm" onclick="renderCK12Courses()">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to FlexBooks
+                </button>
+            </div>
+            <div class="rounded-lg bg-dark-800/50 border border-dark-700/50 overflow-hidden">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-dark-700/50 bg-dark-800/30">
+                    <h3 class="font-semibold text-dark-100">${escapeHtml(course.title)}</h3>
+                    <span class="px-2 py-0.5 text-xs rounded bg-accent-success/20 text-accent-success">${escapeHtml(course.level || 'K-12')}</span>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="text-sm font-medium text-dark-400 mb-1">Subject</h4>
+                            <p class="text-dark-200">${escapeHtml(course.department || course.subject || 'N/A')}</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-dark-400 mb-1">Grade Level</h4>
+                            <p class="text-dark-200">${escapeHtml(course.semester || course.gradeLevel || 'N/A')}</p>
+                        </div>
+                    </div>
+
+                    ${course.instructors?.length ? `
+                    <div>
+                        <h4 class="text-sm font-medium text-dark-400 mb-1">Authors</h4>
+                        <p class="text-dark-200">${course.instructors.map(i => escapeHtml(i)).join(', ')}</p>
+                    </div>
+                    ` : ''}
+
+                    <div>
+                        <h4 class="text-sm font-medium text-dark-400 mb-1">Description</h4>
+                        <p class="text-dark-200">${escapeHtml(course.description || 'No description available')}</p>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sm font-medium text-dark-400 mb-2">Available Content</h4>
+                        <div class="flex flex-wrap gap-2">
+                            ${(course.features || []).map(f => `
+                                <span class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${f.available ? 'bg-accent-success/10 text-accent-success border border-accent-success/20' : 'bg-dark-800/50 text-dark-500 border border-dark-700/50'}">
+                                    ${getFeatureIcon(f.type)}
+                                    ${escapeHtml(f.type.replace('_', ' '))}
+                                    ${f.count ? `<span class="text-xs opacity-75">(${f.count})</span>` : ''}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    ${course.keywords?.length ? `
+                    <div>
+                        <h4 class="text-sm font-medium text-dark-400 mb-2">Keywords</h4>
+                        <div class="flex flex-wrap gap-1">
+                            ${course.keywords.map(k => `<span class="px-2 py-0.5 text-xs rounded-full bg-dark-700/50 text-dark-400">${escapeHtml(k)}</span>`).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <div class="border-t border-dark-700/50 pt-4">
+                        <h4 class="text-sm font-medium text-dark-400 mb-2">License</h4>
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="px-2 py-1 rounded bg-accent-info/10 text-accent-info border border-accent-info/20">${escapeHtml(course.license?.name || 'CC-BY-NC 3.0')}</span>
+                            <span class="text-dark-400">by CK-12 Foundation</span>
+                        </div>
+                    </div>
+
+                    <!-- Lesson Selection -->
+                    ${course.lectures?.length ? `
+                    <div class="border-t border-dark-700/50 pt-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-medium text-dark-400">Select Lessons to Import</h4>
+                            <div class="flex items-center gap-2">
+                                <span id="ck12-lesson-selection-count" class="text-xs text-dark-500">0 of ${course.lectures.length} selected</span>
+                                <button class="text-xs text-accent-primary hover:text-accent-primary/80" onclick="selectAllCK12Lessons(true)">Select All</button>
+                                <span class="text-dark-600">|</span>
+                                <button class="text-xs text-dark-400 hover:text-dark-300" onclick="selectAllCK12Lessons(false)">Clear</button>
+                            </div>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto rounded-lg border border-dark-700/50 bg-dark-900/50">
+                            <div class="divide-y divide-dark-700/30">
+                                ${course.lectures.map((lec, idx) => `
+                                    <label class="flex items-center gap-3 px-3 py-2 hover:bg-dark-800/50 cursor-pointer transition-colors">
+                                        <input type="checkbox" class="ck12-lesson-checkbox rounded border-dark-600 bg-dark-800 text-accent-primary focus:ring-accent-primary"
+                                               data-lesson-id="${escapeHtml(lec.id)}"
+                                               data-lesson-num="${lec.number}"
+                                               onchange="updateCK12LessonSelectionCount()">
+                                        <span class="flex-1 flex items-center gap-2">
+                                            <span class="text-xs text-dark-500 w-6">${lec.number}.</span>
+                                            <span class="text-sm text-dark-200">${escapeHtml(lec.title)}</span>
+                                        </span>
+                                        <span class="flex items-center gap-1 text-dark-500">
+                                            ${lec.hasVideo ? '<span title="Video available" class="text-accent-info">🎥</span>' : ''}
+                                            ${lec.hasTranscript ? '<span title="Transcript available" class="text-accent-success">📝</span>' : ''}
+                                            ${lec.hasNotes ? '<span title="Notes available" class="text-accent-warning">📄</span>' : ''}
+                                        </span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <p class="text-xs text-dark-500 mt-2">💡 Tip: Start with 1-2 lessons to evaluate the content before importing the full FlexBook.</p>
+                    </div>
+                    ` : ''}
+
+                    <div class="border-t border-dark-700/50 pt-4">
+                        <h4 class="text-sm font-medium text-dark-400 mb-2">AI Enrichment Options</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="ck12-import-opt-objectives" checked class="rounded border-dark-600 bg-dark-800 text-accent-primary focus:ring-accent-primary">
+                                <span class="text-sm text-dark-300">Generate learning objectives</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="ck12-import-opt-checkpoints" checked class="rounded border-dark-600 bg-dark-800 text-accent-primary focus:ring-accent-primary">
+                                <span class="text-sm text-dark-300">Generate knowledge checkpoints</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="ck12-import-opt-spoken" class="rounded border-dark-600 bg-dark-800 text-accent-primary focus:ring-accent-primary">
+                                <span class="text-sm text-dark-300">Generate spoken text from notes</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-2">
+                        <button class="btn-primary flex-1" onclick="importCK12Course('${escapeHtml(course.id)}')">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                            </svg>
+                            Import Selected
+                        </button>
+                        <a href="${course.downloadUrl || 'https://www.ck12.org'}" target="_blank" rel="noopener" class="btn-secondary">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            View on CK-12
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (e) {
+        console.error('Failed to load CK-12 course details:', e);
+        showToast('Failed to load course details: ' + e.message, 'error');
+    }
+}
+
+function selectAllCK12Lessons(select) {
+    document.querySelectorAll('.ck12-lesson-checkbox').forEach(cb => {
+        cb.checked = select;
+    });
+    updateCK12LessonSelectionCount();
+}
+
+function updateCK12LessonSelectionCount() {
+    const checkboxes = document.querySelectorAll('.ck12-lesson-checkbox');
+    const checked = document.querySelectorAll('.ck12-lesson-checkbox:checked');
+    const countEl = document.getElementById('ck12-lesson-selection-count');
+    if (countEl) {
+        countEl.textContent = `${checked.length} of ${checkboxes.length} selected`;
+    }
+}
+
+async function importCK12Course(courseId) {
+    try {
+        // Get selected lessons
+        const selectedLessons = [];
+        document.querySelectorAll('.ck12-lesson-checkbox:checked').forEach(cb => {
+            selectedLessons.push({
+                id: cb.dataset.lessonId,
+                number: parseInt(cb.dataset.lessonNum)
+            });
+        });
+
+        if (selectedLessons.length === 0) {
+            showToast('Please select at least one lesson to import', 'warning');
+            return;
+        }
+
+        // Get enrichment options
+        const options = {
+            generateObjectives: document.getElementById('ck12-import-opt-objectives')?.checked ?? true,
+            generateCheckpoints: document.getElementById('ck12-import-opt-checkpoints')?.checked ?? true,
+            generateSpokenText: document.getElementById('ck12-import-opt-spoken')?.checked ?? false,
+        };
+
+        showToast(`Importing ${selectedLessons.length} lesson(s)...`, 'info');
+
+        const response = await fetchAPI('/import/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sourceId: 'ck12_flexbook',
+                courseId: courseId,
+                selectedLectures: selectedLessons.map(l => l.id),
+                enrichmentOptions: options
+            })
+        });
+
+        showToast('Import started! Check the Import Jobs panel for progress.', 'success');
+
+        // Track the new import job and update UI
+        trackImportJob(response.jobId);
+
+        // Go back to course list and refresh curricula
+        renderCK12Courses();
+        await refreshCurricula();
+    } catch (e) {
+        showToast('Failed to import course: ' + e.message, 'error');
+    }
 }
 
 // ============================================================================

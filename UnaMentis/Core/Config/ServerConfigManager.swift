@@ -897,6 +897,311 @@ public struct ServerCapabilities: Sendable {
     }
 }
 
+// MARK: - Management API Model Info
+
+/// Model information from the Management API
+public struct ManagementModelInfo: Sendable, Identifiable {
+    public let id: String
+    public let name: String
+    public let type: String  // "llm", "stt", "tts"
+    public let serverID: String
+    public let serverName: String
+    public let status: String  // "available", "loaded", "loading"
+    public let sizeGB: Double?
+    public let parameterSize: String?
+    public let quantization: String?
+    public let family: String?
+    public let contextWindow: Int?
+    public let contextWindowFormatted: String?
+    public let vramGB: Double?
+
+    public init(
+        id: String,
+        name: String,
+        type: String,
+        serverID: String,
+        serverName: String,
+        status: String,
+        sizeGB: Double? = nil,
+        parameterSize: String? = nil,
+        quantization: String? = nil,
+        family: String? = nil,
+        contextWindow: Int? = nil,
+        contextWindowFormatted: String? = nil,
+        vramGB: Double? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.serverID = serverID
+        self.serverName = serverName
+        self.status = status
+        self.sizeGB = sizeGB
+        self.parameterSize = parameterSize
+        self.quantization = quantization
+        self.family = family
+        self.contextWindow = contextWindow
+        self.contextWindowFormatted = contextWindowFormatted
+        self.vramGB = vramGB
+    }
+}
+
+/// Model parameter definition from the Management API
+public struct ModelParameterDef: Sendable {
+    public let value: Double
+    public let min: Double
+    public let max: Double
+    public let step: Double?
+    public let description: String
+    public let modelMaxContext: Int?
+}
+
+/// Model parameters response from the Management API
+public struct ModelParametersResponse: Sendable {
+    public let model: String
+    public let parameters: [String: ModelParameterDef]
+    public let contextWindow: Int?
+    public let contextWindowFormatted: String?
+}
+
+// MARK: - Management API Extensions
+
+extension ServerConfigManager {
+
+    /// Discover models from the Management API
+    /// - Parameter host: The host IP address (Management API is on port 8766)
+    /// - Returns: Array of ManagementModelInfo
+    public func discoverManagementModels(host: String) async -> [ManagementModelInfo] {
+        guard !host.isEmpty else { return [] }
+
+        let urlString = "http://\(host):8766/api/models"
+        guard let url = URL(string: urlString) else { return [] }
+
+        do {
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 10
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return []
+            }
+
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let modelsArray = json["models"] as? [[String: Any]] else {
+                return []
+            }
+
+            var models: [ManagementModelInfo] = []
+            for modelDict in modelsArray {
+                guard let id = modelDict["id"] as? String,
+                      let name = modelDict["name"] as? String,
+                      let type = modelDict["type"] as? String,
+                      let serverID = modelDict["server_id"] as? String,
+                      let serverName = modelDict["server_name"] as? String,
+                      let status = modelDict["status"] as? String else {
+                    continue
+                }
+
+                let model = ManagementModelInfo(
+                    id: id,
+                    name: name,
+                    type: type,
+                    serverID: serverID,
+                    serverName: serverName,
+                    status: status,
+                    sizeGB: modelDict["size_gb"] as? Double,
+                    parameterSize: modelDict["parameter_size"] as? String,
+                    quantization: modelDict["quantization"] as? String,
+                    family: modelDict["family"] as? String,
+                    contextWindow: modelDict["context_window"] as? Int,
+                    contextWindowFormatted: modelDict["context_window_formatted"] as? String,
+                    vramGB: modelDict["vram_gb"] as? Double
+                )
+                models.append(model)
+            }
+
+            return models
+        } catch {
+            print("ServerConfigManager: Failed to discover management models: \(error)")
+            return []
+        }
+    }
+
+    /// Get model parameters from the Management API
+    /// - Parameters:
+    ///   - host: The host IP address
+    ///   - modelID: The model ID (e.g., "ollama:ministral-3:14b")
+    /// - Returns: ModelParametersResponse or nil
+    public func getModelParameters(host: String, modelID: String) async -> ModelParametersResponse? {
+        guard !host.isEmpty else { return nil }
+
+        let urlString = "http://\(host):8766/api/models/\(modelID)/parameters"
+        guard let url = URL(string: urlString) else { return nil }
+
+        do {
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 10
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return nil
+            }
+
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let status = json["status"] as? String,
+                  status == "ok",
+                  let modelName = json["model"] as? String,
+                  let paramsDict = json["parameters"] as? [String: [String: Any]] else {
+                return nil
+            }
+
+            var parameters: [String: ModelParameterDef] = [:]
+            for (key, paramDict) in paramsDict {
+                guard let value = paramDict["value"] as? Double,
+                      let min = paramDict["min"] as? Double,
+                      let max = paramDict["max"] as? Double,
+                      let description = paramDict["description"] as? String else {
+                    continue
+                }
+
+                parameters[key] = ModelParameterDef(
+                    value: value,
+                    min: min,
+                    max: max,
+                    step: paramDict["step"] as? Double,
+                    description: description,
+                    modelMaxContext: paramDict["model_max_context"] as? Int
+                )
+            }
+
+            // Extract model_info if present
+            let modelInfo = json["model_info"] as? [String: Any]
+
+            return ModelParametersResponse(
+                model: modelName,
+                parameters: parameters,
+                contextWindow: modelInfo?["context_window"] as? Int,
+                contextWindowFormatted: modelInfo?["context_window_formatted"] as? String
+            )
+        } catch {
+            print("ServerConfigManager: Failed to get model parameters: \(error)")
+            return nil
+        }
+    }
+
+    /// Save model parameters via the Management API
+    /// - Parameters:
+    ///   - host: The host IP address
+    ///   - modelID: The model ID
+    ///   - parameters: Dictionary of parameter name to value
+    /// - Returns: True if successful
+    public func saveModelParameters(host: String, modelID: String, parameters: [String: Double]) async -> Bool {
+        guard !host.isEmpty else { return false }
+
+        let urlString = "http://\(host):8766/api/models/\(modelID)/parameters"
+        guard let url = URL(string: urlString) else { return false }
+
+        do {
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.timeoutInterval = 10
+
+            let body: [String: Any] = ["parameters": parameters]
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return false
+            }
+
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let status = json["status"] as? String,
+                  status == "ok" else {
+                return false
+            }
+
+            return true
+        } catch {
+            print("ServerConfigManager: Failed to save model parameters: \(error)")
+            return false
+        }
+    }
+
+    /// Get the model configuration from the Management API
+    /// - Parameter host: The host IP address
+    /// - Returns: Dictionary with config or nil
+    public func getModelConfig(host: String) async -> [String: Any]? {
+        guard !host.isEmpty else { return nil }
+
+        let urlString = "http://\(host):8766/api/models/config"
+        guard let url = URL(string: urlString) else { return nil }
+
+        do {
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 10
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return nil
+            }
+
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let config = json["config"] as? [String: Any] else {
+                return nil
+            }
+
+            return config
+        } catch {
+            print("ServerConfigManager: Failed to get model config: \(error)")
+            return nil
+        }
+    }
+
+    /// Save model configuration via the Management API
+    /// - Parameters:
+    ///   - host: The host IP address
+    ///   - config: Configuration dictionary
+    /// - Returns: True if successful
+    public func saveModelConfig(host: String, config: [String: Any]) async -> Bool {
+        guard !host.isEmpty else { return false }
+
+        let urlString = "http://\(host):8766/api/models/config"
+        guard let url = URL(string: urlString) else { return false }
+
+        do {
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.timeoutInterval = 10
+            request.httpBody = try JSONSerialization.data(withJSONObject: config)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return false
+            }
+
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let status = json["status"] as? String,
+                  status == "ok" else {
+                return false
+            }
+
+            return true
+        } catch {
+            print("ServerConfigManager: Failed to save model config: \(error)")
+            return false
+        }
+    }
+}
+
 // MARK: - Server Config Manager Delegate
 
 /// Protocol for receiving server status updates

@@ -1,0 +1,56 @@
+{
+  "id": "quick_validation",
+  "name": "Quick Validation",
+  "description": "Fast sanity check for CI/CD pipelines",
+  "scenarios": [
+    {
+      "id": "short_response",
+      "name": "Short Response",
+      "description": "Brief Q&A exchange",
+      "scenarioType": "text_input",
+      "repetitions": 3,
+      "userUtteranceAudioPath": null,
+      "userUtteranceText": "What is the capital of France?",
+      "expectedResponseType": "short"
+    }
+  ],
+  "networkProfiles": [
+    "localhost"
+  ],
+  "parameterSpace": {
+    "sttConfigs": [
+      {
+        "provider": "deepgram",
+        "model": null,
+        "chunkSizeMs": null,
+        "language": "en-US"
+      }
+    ],
+    "llmConfigs": [
+      {
+        "provider": "anthropic",
+        "model": "claude-3-5-haiku-20241022",
+        "maxTokens": 512,
+        "temperature": 0.7,
+        "topP": null,
+        "stream": true
+      }
+    ],
+    "ttsConfigs": [
+      {
+        "provider": "chatterbox",
+        "voiceId": null,
+        "speed": 1.0,
+        "useStreaming": true
+      }
+    ],
+    "audioConfigs": [
+      {
+        "sampleRate": 24000,
+        "bufferSize": 1024,
+        "vadThreshold": 0.5,
+        "vadSmoothingWindow": 5
+      }
+    ]
+  }
+}

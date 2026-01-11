@@ -377,5 +377,5 @@ For production:
 ## Related Documentation
 
 - [server/feature-flags/README.md](../server/feature-flags/README.md) - Infrastructure setup
-- [QUALITY_INFRASTRUCTURE_PLAN.md](QUALITY_INFRASTRUCTURE_PLAN.md) - Overall quality strategy
+- [QUALITY_INFRASTRUCTURE_PLAN.md](quality/QUALITY_INFRASTRUCTURE_PLAN.md) - Overall quality strategy
 - [Unleash Documentation](https://docs.getunleash.io/) - Official Unleash docs

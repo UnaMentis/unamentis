@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useQueryState, parseAsString, parseAsBoolean } from 'nuqs';
-import { BookOpen, Search, Archive, Trash2, RefreshCw, Eye, Plus } from 'lucide-react';
+import { BookOpen, Search, Archive, Trash2, RefreshCw, Eye, Plus, SearchCheck, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CurriculumDetailPanel } from './curriculum-detail-panel';
-import type { CurriculumSummary, CurriculaResponse } from '@/types';
+import type { CurriculumSummary, CurriculaResponse, CurriculumAnalysis, ReprocessConfig } from '@/types';
 import { CurriculumStudio } from '@/components/curriculum/CurriculumEditor';
 import { Curriculum } from '@/types/curriculum';
 import { useMainScrollRestoration } from '@/hooks/useScrollRestoration';
+import { CurriculumAnalysisModal } from './curriculum-analysis-modal';
 
 // API functions for curricula
 async function getCurricula(params?: {
@@ -51,6 +52,27 @@ async function deleteCurriculum(id: string): Promise<void> {
   }
 }
 
+async function analyzeCurriculum(id: string): Promise<CurriculumAnalysis> {
+  const response = await fetch(`/api/reprocess/analyze/${id}`, { method: 'POST' });
+  if (!response.ok) {
+    throw new Error('Failed to analyze curriculum');
+  }
+  const data = await response.json();
+  return data.analysis;
+}
+
+async function startReprocess(config: ReprocessConfig): Promise<void> {
+  const response = await fetch('/api/reprocess/jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to start reprocessing');
+  }
+}
+
 export function CurriculaPanel() {
   const [curricula, setCurricula] = useState<CurriculumSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +90,14 @@ export function CurriculaPanel() {
   );
 
   const [isCreating, setIsCreating] = useState(false);
+
+  // Analysis modal state
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<{
+    curriculumId: string;
+    curriculumName: string;
+    analysis: CurriculumAnalysis;
+  } | null>(null);
 
   // Scroll restoration for the curricula panel (saves/restores main scroll position)
   useMainScrollRestoration('curricula-panel');
@@ -174,6 +204,28 @@ export function CurriculaPanel() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete');
     }
+  };
+
+  const handleAnalyze = async (curriculum: CurriculumSummary) => {
+    setAnalyzingId(curriculum.id);
+    setError(null);
+    try {
+      const analysis = await analyzeCurriculum(curriculum.id);
+      setAnalysisResult({
+        curriculumId: curriculum.id,
+        curriculumName: curriculum.title,
+        analysis,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to analyze');
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
+
+  const handleStartReprocess = async (config: ReprocessConfig) => {
+    await startReprocess(config);
+    setAnalysisResult(null);
   };
 
   return (
@@ -306,16 +358,34 @@ export function CurriculaPanel() {
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedCurriculumId(curriculum.id);
-                    }}
-                    className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors"
-                  >
-                    <Eye className="w-4 h-4" />
-                    View
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCurriculumId(curriculum.id);
+                      }}
+                      className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAnalyze(curriculum);
+                      }}
+                      disabled={analyzingId === curriculum.id}
+                      className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-indigo-400 transition-colors disabled:opacity-50"
+                      title="Analyze for issues"
+                    >
+                      {analyzingId === curriculum.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <SearchCheck className="w-4 h-4" />
+                      )}
+                      Analyze
+                    </button>
+                  </div>
 
                   <div className="flex items-center gap-2">
                     <button
@@ -344,6 +414,17 @@ export function CurriculaPanel() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Analysis Modal */}
+      {analysisResult && (
+        <CurriculumAnalysisModal
+          curriculumId={analysisResult.curriculumId}
+          curriculumName={analysisResult.curriculumName}
+          analysis={analysisResult.analysis}
+          onClose={() => setAnalysisResult(null)}
+          onStartReprocess={handleStartReprocess}
+        />
       )}
     </div>
   );

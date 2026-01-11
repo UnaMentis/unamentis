@@ -7,4 +7,5 @@ export { ClientsPanel, ClientsPanelCompact } from './clients-panel';
 export { MetricsPanel, LatencyOverview } from './metrics-panel';
 export { ModelsPanel } from './models-panel';
 export { UsersPanel } from './users-panel';
+export { FOVContextPanel, FOVContextPanelCompact } from './fov-context-panel';
 // Note: SourceBrowserPanel is in the Management Console at port 8766, not here

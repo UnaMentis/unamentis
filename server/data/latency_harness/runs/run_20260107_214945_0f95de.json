@@ -1,0 +1,322 @@
+{
+  "id": "run_20260107_214945_0f95de",
+  "suiteName": "Quick Validation",
+  "suiteId": "quick_validation",
+  "startedAt": "2026-01-07T21:49:45.065650",
+  "completedAt": "2026-01-07T21:49:45.065874",
+  "clientId": "cli_mock_client",
+  "clientType": "ios_simulator",
+  "status": "completed",
+  "totalConfigurations": 3,
+  "completedConfigurations": 3,
+  "progressPercent": 100.0,
+  "elapsedTimeSeconds": 0.000224,
+  "results": [
+    {
+      "id": "dbae669d-01a3-4962-8cd8-45534a892038",
+      "configId": "deepgram_anthropic_claude-3-5-haiku-20241022_chatterbox",
+      "scenarioName": "Short Response",
+      "repetition": 1,
+      "timestamp": "2026-01-07T21:49:45.065845",
+      "clientType": "ios_simulator",
+      "sttLatencyMs": 41.79761686624972,
+      "llmTTFBMs": 247.33513730152617,
+      "llmCompletionMs": 353.9528772662894,
+      "ttsTTFBMs": 65.70992307288259,
+      "ttsCompletionMs": 192.23188607848758,
+      "e2eLatencyMs": 600.6226785042845,
+      "networkProfile": "localhost",
+      "networkProjections": {},
+      "sttConfidence": null,
+      "ttsAudioDurationMs": null,
+      "llmOutputTokens": null,
+      "llmInputTokens": null,
+      "peakCPUPercent": null,
+      "peakMemoryMB": null,
+      "thermalState": null,
+      "sttConfig": {
+        "provider": "deepgram",
+        "model": null,
+        "chunkSizeMs": null,
+        "language": "en-US"
+      },
+      "llmConfig": {
+        "provider": "anthropic",
+        "model": "claude-3-5-haiku-20241022",
+        "maxTokens": 512,
+        "temperature": 0.7,
+        "topP": null,
+        "stream": true
+      },
+      "ttsConfig": {
+        "provider": "chatterbox",
+        "voiceId": null,
+        "speed": 1.0,
+        "useStreaming": true
+      },
+      "audioConfig": {
+        "sampleRate": 24000,
+        "bufferSize": 1024,
+        "vadThreshold": 0.5,
+        "vadSmoothingWindow": 5
+      },
+      "errors": [],
+      "isSuccess": true
+    },
+    {
+      "id": "4a9fc32a-f50a-48a9-a49f-e32500acf02c",
+      "configId": "deepgram_anthropic_claude-3-5-haiku-20241022_chatterbox",
+      "scenarioName": "Short Response",
+      "repetition": 2,
+      "timestamp": "2026-01-07T21:49:45.065859",
+      "clientType": "ios_simulator",
+      "sttLatencyMs": 44.57778486944147,
+      "llmTTFBMs": 200.35326138527645,
+      "llmCompletionMs": 267.43864315765745,
+      "ttsTTFBMs": 72.86122579223118,
+      "ttsCompletionMs": 104.98381542622765,
+      "e2eLatencyMs": 592.5480356346604,
+      "networkProfile": "localhost",
+      "networkProjections": {},
+      "sttConfidence": null,
+      "ttsAudioDurationMs": null,
+      "llmOutputTokens": null,
+      "llmInputTokens": null,
+      "peakCPUPercent": null,
+      "peakMemoryMB": null,
+      "thermalState": null,
+      "sttConfig": {
+        "provider": "deepgram",
+        "model": null,
+        "chunkSizeMs": null,
+        "language": "en-US"
+      },
+      "llmConfig": {
+        "provider": "anthropic",
+        "model": "claude-3-5-haiku-20241022",
+        "maxTokens": 512,
+        "temperature": 0.7,
+        "topP": null,
+        "stream": true
+      },
+      "ttsConfig": {
+        "provider": "chatterbox",
+        "voiceId": null,
+        "speed": 1.0,
+        "useStreaming": true
+      },
+      "audioConfig": {
+        "sampleRate": 24000,
+        "bufferSize": 1024,
+        "vadThreshold": 0.5,
+        "vadSmoothingWindow": 5
+      },
+      "errors": [],
+      "isSuccess": true
+    },
+    {
+      "id": "67bd42cd-8301-4a12-9bd4-cda9bf4d0a46",
+      "configId": "deepgram_anthropic_claude-3-5-haiku-20241022_chatterbox",
+      "scenarioName": "Short Response",
+      "repetition": 3,
+      "timestamp": "2026-01-07T21:49:45.065869",
+      "clientType": "ios_simulator",
+      "sttLatencyMs": 40.772577256642286,
+      "llmTTFBMs": 210.43954595700396,
+      "llmCompletionMs": 270.836783608764,
+      "ttsTTFBMs": 84.60360327926733,
+      "ttsCompletionMs": 179.43640522913776,
+      "e2eLatencyMs": 515.6892488104899,
+      "networkProfile": "localhost",
+      "networkProjections": {},
+      "sttConfidence": null,
+      "ttsAudioDurationMs": null,
+      "llmOutputTokens": null,
+      "llmInputTokens": null,
+      "peakCPUPercent": null,
+      "peakMemoryMB": null,
+      "thermalState": null,
+      "sttConfig": {
+        "provider": "deepgram",
+        "model": null,
+        "chunkSizeMs": null,
+        "language": "en-US"
+      },
+      "llmConfig": {
+        "provider": "anthropic",
+        "model": "claude-3-5-haiku-20241022",
+        "maxTokens": 512,
+        "temperature": 0.7,
+        "topP": null,
+        "stream": true
+      },
+      "ttsConfig": {
+        "provider": "chatterbox",
+        "voiceId": null,
+        "speed": 1.0,
+        "useStreaming": true
+      },
+      "audioConfig": {
+        "sampleRate": 24000,
+        "bufferSize": 1024,
+        "vadThreshold": 0.5,
+        "vadSmoothingWindow": 5
+      },
+      "errors": [],
+      "isSuccess": true
+    },
+    {
+      "id": "dbae669d-01a3-4962-8cd8-45534a892038",
+      "configId": "deepgram_anthropic_claude-3-5-haiku-20241022_chatterbox",
+      "scenarioName": "Short Response",
+      "repetition": 1,
+      "timestamp": "2026-01-07T21:49:45.065845",
+      "clientType": "ios_simulator",
+      "sttLatencyMs": 41.79761686624972,
+      "llmTTFBMs": 247.33513730152617,
+      "llmCompletionMs": 353.9528772662894,
+      "ttsTTFBMs": 65.70992307288259,
+      "ttsCompletionMs": 192.23188607848758,
+      "e2eLatencyMs": 600.6226785042845,
+      "networkProfile": "localhost",
+      "networkProjections": {},
+      "sttConfidence": null,
+      "ttsAudioDurationMs": null,
+      "llmOutputTokens": null,
+      "llmInputTokens": null,
+      "peakCPUPercent": null,
+      "peakMemoryMB": null,
+      "thermalState": null,
+      "sttConfig": {
+        "provider": "deepgram",
+        "model": null,
+        "chunkSizeMs": null,
+        "language": "en-US"
+      },
+      "llmConfig": {
+        "provider": "anthropic",
+        "model": "claude-3-5-haiku-20241022",
+        "maxTokens": 512,
+        "temperature": 0.7,
+        "topP": null,
+        "stream": true
+      },
+      "ttsConfig": {
+        "provider": "chatterbox",
+        "voiceId": null,
+        "speed": 1.0,
+        "useStreaming": true
+      },
+      "audioConfig": {
+        "sampleRate": 24000,
+        "bufferSize": 1024,
+        "vadThreshold": 0.5,
+        "vadSmoothingWindow": 5
+      },
+      "errors": [],
+      "isSuccess": true
+    },
+    {
+      "id": "4a9fc32a-f50a-48a9-a49f-e32500acf02c",
+      "configId": "deepgram_anthropic_claude-3-5-haiku-20241022_chatterbox",
+      "scenarioName": "Short Response",
+      "repetition": 2,
+      "timestamp": "2026-01-07T21:49:45.065859",
+      "clientType": "ios_simulator",
+      "sttLatencyMs": 44.57778486944147,
+      "llmTTFBMs": 200.35326138527645,
+      "llmCompletionMs": 267.43864315765745,
+      "ttsTTFBMs": 72.86122579223118,
+      "ttsCompletionMs": 104.98381542622765,
+      "e2eLatencyMs": 592.5480356346604,
+      "networkProfile": "localhost",
+      "networkProjections": {},
+      "sttConfidence": null,
+      "ttsAudioDurationMs": null,
+      "llmOutputTokens": null,
+      "llmInputTokens": null,
+      "peakCPUPercent": null,
+      "peakMemoryMB": null,
+      "thermalState": null,
+      "sttConfig": {
+        "provider": "deepgram",
+        "model": null,
+        "chunkSizeMs": null,
+        "language": "en-US"
+      },
+      "llmConfig": {
+        "provider": "anthropic",
+        "model": "claude-3-5-haiku-20241022",
+        "maxTokens": 512,
+        "temperature": 0.7,
+        "topP": null,
+        "stream": true
+      },
+      "ttsConfig": {
+        "provider": "chatterbox",
+        "voiceId": null,
+        "speed": 1.0,
+        "useStreaming": true
+      },
+      "audioConfig": {
+        "sampleRate": 24000,
+        "bufferSize": 1024,
+        "vadThreshold": 0.5,
+        "vadSmoothingWindow": 5
+      },
+      "errors": [],
+      "isSuccess": true
+    },
+    {
+      "id": "67bd42cd-8301-4a12-9bd4-cda9bf4d0a46",
+      "configId": "deepgram_anthropic_claude-3-5-haiku-20241022_chatterbox",
+      "scenarioName": "Short Response",
+      "repetition": 3,
+      "timestamp": "2026-01-07T21:49:45.065869",
+      "clientType": "ios_simulator",
+      "sttLatencyMs": 40.772577256642286,
+      "llmTTFBMs": 210.43954595700396,
+      "llmCompletionMs": 270.836783608764,
+      "ttsTTFBMs": 84.60360327926733,
+      "ttsCompletionMs": 179.43640522913776,
+      "e2eLatencyMs": 515.6892488104899,
+      "networkProfile": "localhost",
+      "networkProjections": {},
+      "sttConfidence": null,
+      "ttsAudioDurationMs": null,
+      "llmOutputTokens": null,
+      "llmInputTokens": null,
+      "peakCPUPercent": null,
+      "peakMemoryMB": null,
+      "thermalState": null,
+      "sttConfig": {
+        "provider": "deepgram",
+        "model": null,
+        "chunkSizeMs": null,
+        "language": "en-US"
+      },
+      "llmConfig": {
+        "provider": "anthropic",
+        "model": "claude-3-5-haiku-20241022",
+        "maxTokens": 512,
+        "temperature": 0.7,
+        "topP": null,
+        "stream": true
+      },
+      "ttsConfig": {
+        "provider": "chatterbox",
+        "voiceId": null,
+        "speed": 1.0,
+        "useStreaming": true
+      },
+      "audioConfig": {
+        "sampleRate": 24000,
+        "bufferSize": 1024,
+        "vadThreshold": 0.5,
+        "vadSmoothingWindow": 5
+      },
+      "errors": [],
+      "isSuccess": true
+    }
+  ]
+}

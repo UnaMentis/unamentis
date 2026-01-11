@@ -10,6 +10,10 @@ A next-generation web management dashboard for monitoring and configuring UnaMen
 - **Remote Clients** - Monitor connected iOS devices
 - **Server Management** - Health checks for Ollama, Whisper, Piper, etc.
 - **Model Discovery** - View available LLM, STT, and TTS models
+- **TTS Caching** - Global audio cache with cross-user sharing
+- **Session Management** - Per-user state with voice config and playback tracking
+- **Audio Streaming** - Real-time WebSocket audio coordination
+- **Scheduled Deployments** - Pre-generate curriculum audio before deployment
 
 ## Quick Start
 
@@ -71,6 +75,8 @@ lt --port 8766
 
 ## API Endpoints
 
+### Core Endpoints
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/` | GET | Dashboard UI |
@@ -88,6 +94,137 @@ lt --port 8766
 | `/api/servers` | POST | Add a server |
 | `/api/servers/{id}` | DELETE | Remove a server |
 | `/api/models` | GET | List available models |
+
+### TTS Caching Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/tts` | POST | Generate TTS audio (cache-first) |
+| `/api/tts/cache` | GET | Check cache for audio |
+| `/api/tts/cache` | PUT | Add audio to cache (testing) |
+| `/api/tts/cache/stats` | GET | Cache statistics |
+| `/api/tts/cache/coverage` | POST | Check cache coverage for segments |
+| `/api/tts/prefetch` | POST | Prefetch upcoming segments |
+
+### Scheduled Deployment Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/deployments` | GET | List all deployments |
+| `/api/deployments` | POST | Schedule new deployment |
+| `/api/deployments/{id}` | GET | Get deployment status |
+| `/api/deployments/{id}` | DELETE | Cancel deployment |
+| `/api/deployments/{id}/start` | POST | Manually start generation |
+| `/api/deployments/{id}/pause` | POST | Pause generation |
+| `/api/deployments/{id}/resume` | POST | Resume generation |
+| `/api/deployments/{id}/cache` | GET | Check cache coverage |
+
+### Audio WebSocket
+
+| Endpoint | Protocol | Description |
+|----------|----------|-------------|
+| `/ws/audio` | WebSocket | Real-time audio streaming |
+
+Connect with `?session_id=xxx` or `?user_id=xxx`. See Audio WebSocket Protocol below.
+
+## TTS Caching Architecture
+
+The TTS caching system provides cross-user audio sharing with priority-based generation.
+
+### Key Components
+
+- **TTSCache** - Global audio cache with user-agnostic keys
+- **TTSResourcePool** - Priority-based generation with concurrency limits
+- **SessionCacheIntegration** - Bridge between user sessions and global cache
+- **ScheduledDeploymentManager** - Pre-generation for scheduled deployments
+
+### Cache Key Design
+
+Cache keys are user-agnostic: `hash(text + voice_id + provider + speed)`. Same text with same voice config produces the same cache entry for ALL users.
+
+```
+User A (voice=nova) requests "Welcome to the lesson":
+  1. Cache MISS → Generate → Store → Return
+
+User B (voice=nova) requests same segment:
+  1. Cache HIT → Return immediately (0ms TTS latency)
+```
+
+### Priority Levels
+
+| Priority | Value | Semaphore | Use Case |
+|----------|-------|-----------|----------|
+| LIVE | 10 | 7 concurrent | User actively waiting |
+| PREFETCH | 5 | 3 concurrent | Near-future segments |
+| SCHEDULED | 1 | 3 concurrent | Background pre-generation |
+
+## Audio WebSocket Protocol
+
+Connect to `/ws/audio?session_id=xxx` or `/ws/audio?user_id=xxx`.
+
+### Client → Server Messages
+
+**Request Audio:**
+```json
+{
+    "type": "request_audio",
+    "segment_index": 0,
+    "curriculum_id": "...",
+    "topic_id": "..."
+}
+```
+
+**Sync (Heartbeat):**
+```json
+{
+    "type": "sync",
+    "segment_index": 5,
+    "offset_ms": 1500,
+    "is_playing": true
+}
+```
+
+**Barge-in (Interruption):**
+```json
+{
+    "type": "barge_in",
+    "segment_index": 5,
+    "offset_ms": 1500,
+    "utterance": "wait, what does that mean?"
+}
+```
+
+**Voice Config Update:**
+```json
+{
+    "type": "voice_config",
+    "voice_id": "nova",
+    "tts_provider": "vibevoice",
+    "speed": 1.0
+}
+```
+
+### Server → Client Messages
+
+**Audio Response:**
+```json
+{
+    "type": "audio",
+    "segment_index": 0,
+    "audio_base64": "...",
+    "duration_seconds": 2.5,
+    "cache_hit": true,
+    "total_segments": 50
+}
+```
+
+**Error:**
+```json
+{
+    "type": "error",
+    "error": "No segments found for curriculum/topic"
+}
+```
 
 ## iOS Integration
 
@@ -177,14 +314,34 @@ When sending logs/metrics, include these headers:
 │  │  • Clients (dict)                               │   │
 │  │  • Servers (dict)                               │   │
 │  └──────────────────────────────────────────────────┘   │
+│                                                         │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │              TTS Caching System                   │   │
+│  │  ┌─────────────┐  ┌─────────────────────────┐   │   │
+│  │  │  TTSCache   │  │  TTSResourcePool        │   │   │
+│  │  │  (Global)   │  │  LIVE: 7 concurrent     │   │   │
+│  │  │             │  │  BACKGROUND: 3 concurrent│   │   │
+│  │  └─────────────┘  └─────────────────────────┘   │   │
+│  │  ┌─────────────────────┐  ┌─────────────────┐   │   │
+│  │  │SessionCacheIntegr.  │  │DeploymentManager│   │   │
+│  │  │(User→Cache Bridge)  │  │(Pre-generation) │   │   │
+│  │  └─────────────────────┘  └─────────────────┘   │   │
+│  └──────────────────────────────────────────────────┘   │
+│                                                         │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │              Session Management                   │   │
+│  │  UserSession: voice_config, playback_state       │   │
+│  │  Cross-device resume via server-side state       │   │
+│  └──────────────────────────────────────────────────┘   │
 └─────────────────────┬───────────────────────────────────┘
-                      │ HTTP
+                      │ HTTP/WebSocket
                       ▼
 ┌─────────────────────────────────────────────────────────┐
 │                   iOS Clients                           │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
 │  │  iPhone 1   │  │  iPhone 2   │  │  Simulator  │    │
 │  └─────────────┘  └─────────────┘  └─────────────┘    │
+│  Cross-user cache sharing: same voice = same audio     │
 └─────────────────────────────────────────────────────────┘
                       │ HTTP
                       ▼
@@ -194,6 +351,10 @@ When sending logs/metrics, include these headers:
 │  │   Ollama    │  │   Whisper   │  │    Piper    │    │
 │  │   (LLM)     │  │   (STT)     │  │   (TTS)     │    │
 │  └─────────────┘  └─────────────┘  └─────────────┘    │
+│  ┌─────────────┐  ┌─────────────┐                      │
+│  │ Chatterbox  │  │  VibeVoice  │                      │
+│  │   (TTS)     │  │   (TTS)     │                      │
+│  └─────────────┘  └─────────────┘                      │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -211,3 +372,30 @@ To modify the UI, edit:
 
 To modify the API, edit:
 - `server.py` - Backend Python server
+- `tts_api.py` - TTS generation and caching endpoints
+- `deployment_api.py` - Scheduled deployment endpoints
+- `audio_ws.py` - Audio WebSocket handler
+- `session_cache_integration.py` - Session-cache bridge
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `tts_cache/cache.py` | Global TTS cache with disk persistence |
+| `tts_cache/resource_pool.py` | Priority-based TTS generation |
+| `tts_cache/prefetcher.py` | Background segment prefetching |
+| `fov_context/session.py` | UserSession, PlaybackState, UserVoiceConfig |
+| `session_cache_integration.py` | Bridge between sessions and cache |
+| `deployment_api.py` | Scheduled pre-generation manager |
+| `audio_ws.py` | Real-time audio WebSocket |
+
+### Running Tests
+
+```bash
+# Run all management server tests
+cd server/management
+python -m pytest tests/ tts_cache/tests/ -v
+
+# Run specific test file
+python -m pytest tests/test_session_integration.py -v
+```

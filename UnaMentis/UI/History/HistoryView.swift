@@ -219,16 +219,18 @@ struct SessionRowView: View {
 
 struct SessionDetailView: View {
     let session: SessionSummary
-    
+    @State private var exportURL: URL?
+    @State private var showShareSheet = false
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
                 // Session info
                 SessionInfoCard(session: session)
-                
+
                 // Transcript
                 TranscriptCard(entries: session.transcriptPreview)
-                
+
                 // Metrics
                 MetricsCard(latency: session.avgLatency, cost: session.totalCost)
             }
@@ -240,14 +242,98 @@ struct SessionDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
-                    Button("Export Transcript") { }
-                    Button("Share") { }
+                    Button {
+                        exportTranscript()
+                    } label: {
+                        Label("Export Transcript", systemImage: "doc.text")
+                    }
+                    Button {
+                        shareSession()
+                    } label: {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
             }
         }
+        .sheet(isPresented: $showShareSheet) {
+            if let url = exportURL {
+                ShareSheet(items: [url])
+            }
+        }
         #endif
+    }
+
+    private func exportTranscript() {
+        let transcriptText = session.transcriptPreview.map { entry in
+            "\(entry.isUser ? "You" : "AI"): \(entry.content)"
+        }.joined(separator: "\n\n")
+
+        let content = """
+        Session: \(session.topicName ?? "General Conversation")
+        Date: \(formatDate(session.startTime))
+        Duration: \(formatDuration(session.duration))
+        Turns: \(session.turnCount)
+        Cost: \(formatCost(session.totalCost))
+
+        ---
+
+        \(transcriptText)
+        """
+
+        // Write to temp file
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileName = "session_\(session.id.uuidString.prefix(8))_transcript.txt"
+        let fileURL = tempDir.appendingPathComponent(fileName)
+
+        do {
+            try content.write(to: fileURL, atomically: true, encoding: .utf8)
+            exportURL = fileURL
+            showShareSheet = true
+        } catch {
+            print("Failed to export transcript: \(error)")
+        }
+    }
+
+    private func shareSession() {
+        // Create shareable content
+        let content = """
+        Learning Session Summary
+        Topic: \(session.topicName ?? "General Conversation")
+        Duration: \(formatDuration(session.duration))
+        Date: \(formatDate(session.startTime))
+        Turns: \(session.turnCount)
+        """
+
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileName = "session_summary.txt"
+        let fileURL = tempDir.appendingPathComponent(fileName)
+
+        do {
+            try content.write(to: fileURL, atomically: true, encoding: .utf8)
+            exportURL = fileURL
+            showShareSheet = true
+        } catch {
+            print("Failed to share session: \(error)")
+        }
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        let minutes = Int(seconds) / 60
+        let secs = Int(seconds) % 60
+        return String(format: "%d:%02d", minutes, secs)
+    }
+
+    private func formatCost(_ cost: Decimal) -> String {
+        String(format: "$%.3f", NSDecimalNumber(decimal: cost).doubleValue)
     }
 }
 

@@ -48,6 +48,31 @@ jobs:
         echo "| SwiftLint | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| SwiftFormat | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
 
+  hook-audit:
+    name: Hook Bypass Detection
+    runs-on: macos-14
+    # Only run on push events (not PRs from forks which won't have hooks)
+    if: github.event_name == 'push'
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 15  # Need commit history for bypass detection
+
+    - name: Install linting tools
+      run: brew install swiftlint
+
+    - name: Detect Hook Bypasses
+      run: ./scripts/hook-audit.sh --detect
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Hook Bypass Detection" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Checked recent commits for potential hook bypasses." >> $GITHUB_STEP_SUMMARY
+        echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
   unit-tests:
     name: Unit Tests
     runs-on: macos-14
@@ -94,16 +119,18 @@ jobs:
           | xcbeautify --renderer github-actions
 
     - name: Run Unit Tests
+      id: coverage
       run: |
-        set -o pipefail
-        xcodebuild test \
-          -scheme UnaMentis \
-          -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
-          -only-testing:UnaMentisTests/Unit \
-          -enableCodeCoverage YES \
-          -resultBundlePath UnitTestResults.xcresult \
-          CODE_SIGNING_ALLOWED=NO \
-          | xcbeautify --renderer github-actions
+        # Use unified test runner script for CI/local parity
+        CI=true \
+        TEST_TYPE=unit \
+        SIMULATOR="iPhone 16 Pro" \
+        ENABLE_COVERAGE=true \
+        ENFORCE_COVERAGE=true \
+        COVERAGE_THRESHOLD=80 \
+        RESULT_BUNDLE_PATH=UnitTestResults.xcresult \
+        XCBEAUTIFY_RENDERER=github-actions \
+        ./scripts/test-ci.sh
 
     - name: Upload Unit Test Results
       uses: actions/upload-artifact@v4
@@ -112,71 +139,6 @@ jobs:
         name: unit-test-results
         path: UnitTestResults.xcresult
         retention-days: 7
-
-    - name: Extract and Check Coverage
-      id: coverage
-      run: |
-        # Extract coverage percentage from xcresult
-        COVERAGE=$(xcrun xccov view --report --json UnitTestResults.xcresult 2>/dev/null | \
-          python3 -c "
-        import json, sys
-        try:
-            data = json.load(sys.stdin)
-            targets = data.get('targets', [])
-
-            # Try to find UnaMentis target (check various patterns)
-            for target in targets:
-                name = target.get('name', '')
-                # Match UnaMentis, UnaMentis.app, or UnaMentisTests
-                if 'UnaMentis' in name and 'Tests' not in name:
-                    coverage = target.get('lineCoverage', 0)
-                    print(f'{coverage * 100:.1f}')
-                    sys.exit(0)
-
-            # If no specific target found, try to get average across all app targets
-            app_coverages = []
-            for target in targets:
-                name = target.get('name', '')
-                # Skip test targets and system frameworks
-                if 'Tests' in name or name.startswith('_'):
-                    continue
-                cov = target.get('lineCoverage', 0)
-                if cov > 0:
-                    app_coverages.append(cov)
-
-            if app_coverages:
-                avg = sum(app_coverages) / len(app_coverages)
-                print(f'{avg * 100:.1f}')
-                sys.exit(0)
-
-            # Last resort: print target names for debugging
-            print('0', file=sys.stderr)
-            print(f'Available targets: {[t.get(\"name\") for t in targets]}', file=sys.stderr)
-            print('0')
-        except Exception as e:
-            print(f'Error: {e}', file=sys.stderr)
-            print('0')
-        " || echo "0")
-
-        # Handle empty coverage
-        COVERAGE=${COVERAGE:-0}
-        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
-        echo "Code coverage: ${COVERAGE}%"
-
-        # Check minimum coverage threshold (80%)
-        # Skip check if coverage couldn't be determined (0 or 0.0)
-        MIN_COVERAGE=80
-        # Normalize coverage to check for zero/undetermined values
-        COVERAGE_INT=$(echo "$COVERAGE" | cut -d. -f1)
-        if [ -n "$COVERAGE_INT" ] && [ "$COVERAGE_INT" -gt 0 ] 2>/dev/null; then
-          if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then
-            echo "::error::Code coverage ${COVERAGE}% is below minimum threshold of ${MIN_COVERAGE}%"
-            exit 1
-          fi
-        else
-          echo "::warning::Could not determine valid code coverage (got ${COVERAGE}%). Skipping threshold check."
-          echo "::warning::This may indicate xcresult coverage generation issues."
-        fi
 
     - name: Summary
       if: always()
@@ -251,14 +213,15 @@ jobs:
 
     - name: Run Integration Tests
       run: |
-        set -o pipefail
-        xcodebuild test \
-          -scheme UnaMentis \
-          -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
-          -only-testing:UnaMentisTests/Integration \
-          -resultBundlePath IntegrationTestResults.xcresult \
-          CODE_SIGNING_ALLOWED=NO \
-          | xcbeautify --renderer github-actions
+        # Use unified test runner script for CI/local parity
+        CI=true \
+        TEST_TYPE=integration \
+        SIMULATOR="iPhone 16 Pro" \
+        ENABLE_COVERAGE=false \
+        ENFORCE_COVERAGE=false \
+        RESULT_BUNDLE_PATH=IntegrationTestResults.xcresult \
+        XCBEAUTIFY_RENDERER=github-actions \
+        ./scripts/test-ci.sh
 
     - name: Upload Integration Test Results
       uses: actions/upload-artifact@v4
@@ -297,7 +260,7 @@ jobs:
   commit-results:
     name: Commit CI Results
     runs-on: ubuntu-latest
-    needs: [lint, unit-tests, integration-tests]
+    needs: [lint, hook-audit, unit-tests, integration-tests]
     if: always() && github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-ci-log]')
 
     steps:
@@ -327,6 +290,7 @@ jobs:
         ACTOR: ${{ github.actor }}
         REPO: ${{ github.repository }}
         LINT_RESULT: ${{ needs.lint.result || 'skipped' }}
+        HOOK_AUDIT_RESULT: ${{ needs.hook-audit.result || 'skipped' }}
         UNIT_RESULT: ${{ needs.unit-tests.result || 'skipped' }}
         INTEGRATION_RESULT: ${{ needs.integration-tests.result || 'skipped' }}
       run: |
@@ -349,12 +313,13 @@ jobs:
           echo "| Job | Status |"
           echo "|-----|--------|"
           echo "| Lint | ${LINT_RESULT} |"
+          echo "| Hook Audit | ${HOOK_AUDIT_RESULT} |"
           echo "| Unit Tests | ${UNIT_RESULT} |"
           echo "| Integration Tests | ${INTEGRATION_RESULT} |"
           echo ""
 
           # Check for any failures
-          if [ "${LINT_RESULT}" = "failure" ] || [ "${UNIT_RESULT}" = "failure" ] || [ "${INTEGRATION_RESULT}" = "failure" ]; then
+          if [ "${LINT_RESULT}" = "failure" ] || [ "${HOOK_AUDIT_RESULT}" = "failure" ] || [ "${UNIT_RESULT}" = "failure" ] || [ "${INTEGRATION_RESULT}" = "failure" ]; then
             echo "## Action Required"
             echo ""
             echo "One or more jobs failed. [View full logs](${RUN_URL}) to investigate."

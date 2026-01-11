@@ -1,0 +1,814 @@
+{
+  "umcf": "1.0.0",
+  "id": {
+    "catalog": "UnaMentis",
+    "value": "6-863j-natural-language-and-computer-representation-spring-2003"
+  },
+  "title": "Natural Language and the Computer Representation of Knowledge",
+  "description": "Laboratory-oriented course on the theory and practice of building computer systems for human language processing, with emphasis on linguistic, cognitive, and engineering foundations.",
+  "version": {
+    "number": "1.0.0",
+    "date": "2026-01-11"
+  },
+  "lifecycle": {
+    "status": "draft",
+    "contributors": [
+      {
+        "role": "publisher",
+        "name": "UnaMentis Importer"
+      },
+      {
+        "role": "instructor",
+        "name": "Robert Berwick"
+      }
+    ]
+  },
+  "metadata": {
+    "language": "en-US",
+    "keywords": [],
+    "department": "Electrical Engineering and Computer Science"
+  },
+  "educational": {
+    "audience": {
+      "type": "learner",
+      "educationalLevel": "collegiate"
+    }
+  },
+  "rights": {
+    "type": "CC-BY-NC-SA-4.0",
+    "name": "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International",
+    "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    "permissions": [
+      "share",
+      "adapt"
+    ],
+    "conditions": [
+      "attribution",
+      "noncommercial",
+      "sharealike"
+    ],
+    "attributionRequired": true,
+    "attributionFormat": "Content from MIT OpenCourseWare (ocw.mit.edu), licensed under CC-BY-NC-SA 4.0.",
+    "holder": {
+      "name": "Massachusetts Institute of Technology",
+      "url": "https://ocw.mit.edu/"
+    },
+    "restrictions": []
+  },
+  "content": [
+    {
+      "id": {
+        "value": "lectures"
+      },
+      "title": "Lectures",
+      "type": "module",
+      "orderIndex": 0,
+      "children": [
+        {
+          "id": {
+            "value": "lecture-1"
+          },
+          "title": "Introduction, Organization, Laboratories, Course Overview: Introduction to NLP, Main Issues, fsa\u2019s(PDF)",
+          "type": "topic",
+          "orderIndex": 0,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-2"
+          },
+          "title": "Linguistics: Phonology and Morphology I, 2-level morphology, Kimmo(PDF - 1.6 MB)",
+          "type": "topic",
+          "orderIndex": 1,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-3"
+          },
+          "title": "Linguistics: Phonology and Morphology II(PDF)",
+          "type": "topic",
+          "orderIndex": 2,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-4"
+          },
+          "title": "HMM Tagging, Statistical TransformationRule-Based Tagging, Precision, Recall, Accuracy(PDF - 3.5 MB)",
+          "type": "topic",
+          "orderIndex": 3,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-5"
+          },
+          "title": "Part of Speech Tagging: The Brill Tagger(PDF - 1.8 MB)",
+          "type": "topic",
+          "orderIndex": 4,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-6"
+          },
+          "title": "Introduction to Parsing, Linguistics: Syntax & Parsing(PDF - 1.9 MB)",
+          "type": "topic",
+          "orderIndex": 5,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-7"
+          },
+          "title": "Shift-Reduce Parsers in Detail, Earley\u2019s Algorithm and Chart Parsing(PDF - 2.8 MB)",
+          "type": "topic",
+          "orderIndex": 6,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-8"
+          },
+          "title": "Context-Free Parsing and Beyond: Efficiency Issues, Feature-Based Parsing, NL System Design(PDF - 2.5 MB)",
+          "type": "topic",
+          "orderIndex": 7,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-9"
+          },
+          "title": "Shift-Reduce Parsers in Detail, Earley\u2019s Algorithm and Chart Parsing (PDF)",
+          "type": "topic",
+          "orderIndex": 8,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-10"
+          },
+          "title": "Parsing with an Integrated Lexicon - The Question of Syntactic Features(PDF)",
+          "type": "topic",
+          "orderIndex": 9,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-11"
+          },
+          "title": "Semantic Interpretation I: Compositionality(PDF)",
+          "type": "topic",
+          "orderIndex": 10,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-12"
+          },
+          "title": "Semantic Interpretation II: Compositionality and Quantifiers(PDF - 2.8 MB)",
+          "type": "topic",
+          "orderIndex": 11,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-13"
+          },
+          "title": "Semantics III: Lexical Semantics(PDF)",
+          "type": "topic",
+          "orderIndex": 12,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-14"
+          },
+          "title": "Semantics IV: Lexical Semantics(PDF)",
+          "type": "topic",
+          "orderIndex": 13,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-15"
+          },
+          "title": "Semantics V: Constraint-Based Systems",
+          "type": "topic",
+          "orderIndex": 14,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-16"
+          },
+          "title": "Semantics V: Constraint-Based Systems(PDF - 1.6 MB)",
+          "type": "topic",
+          "orderIndex": 15,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-17"
+          },
+          "title": "Machine Translation I(PDF - 1.4 MB)",
+          "type": "topic",
+          "orderIndex": 16,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-18"
+          },
+          "title": "Machine Translation II",
+          "type": "topic",
+          "orderIndex": 17,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-19"
+          },
+          "title": "Machine Translation III(PDF - 1.5 MB)",
+          "type": "topic",
+          "orderIndex": 18,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-20"
+          },
+          "title": "Machine Translation IV(PDF)",
+          "type": "topic",
+          "orderIndex": 19,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-21"
+          },
+          "title": "Language Learning I(PDF)",
+          "type": "topic",
+          "orderIndex": 20,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-22"
+          },
+          "title": "Language Learning II(PDF)",
+          "type": "topic",
+          "orderIndex": 21,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-23"
+          },
+          "title": "Computational Models of Language Change, I",
+          "type": "topic",
+          "orderIndex": 22,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        },
+        {
+          "id": {
+            "value": "lecture-24"
+          },
+          "title": "Computational Models of Language Change and the Origins of Language",
+          "type": "topic",
+          "orderIndex": 23,
+          "content": {
+            "text": "",
+            "hasVideo": false,
+            "hasTranscript": false
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "value": "resources"
+      },
+      "title": "Additional Resources",
+      "type": "module",
+      "orderIndex": 3,
+      "children": [
+        {
+          "id": {
+            "value": "resource-1"
+          },
+          "title": "dd8b0c68ab93aaaf7a7acec40f89956c_laboratory2_03",
+          "type": "resource",
+          "orderIndex": 0,
+          "content": {
+            "sourceFile": "static_resources/dd8b0c68ab93aaaf7a7acec40f89956c_laboratory2_03.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-2"
+          },
+          "title": "9fe61f87a3e36f081752d6c05a94ce79_lecture1303a",
+          "type": "resource",
+          "orderIndex": 1,
+          "content": {
+            "sourceFile": "static_resources/9fe61f87a3e36f081752d6c05a94ce79_lecture1303a.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-3"
+          },
+          "title": "9806d4d98960cf88cbb6b99cb17d3197_docnew",
+          "type": "resource",
+          "orderIndex": 2,
+          "content": {
+            "sourceFile": "static_resources/9806d4d98960cf88cbb6b99cb17d3197_docnew.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-4"
+          },
+          "title": "53fd409787f433f1a014a1ad40fe50ff_lecture4bw_03",
+          "type": "resource",
+          "orderIndex": 3,
+          "content": {
+            "sourceFile": "static_resources/53fd409787f433f1a014a1ad40fe50ff_lecture4bw_03.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-5"
+          },
+          "title": "c2e01b66ee78c2f4180e6f8e4d5afd78_lecture17bw_03",
+          "type": "resource",
+          "orderIndex": 4,
+          "content": {
+            "sourceFile": "static_resources/c2e01b66ee78c2f4180e6f8e4d5afd78_lecture17bw_03.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-6"
+          },
+          "title": "bbb3691e86296451b2627bed3143f040_lecture2203",
+          "type": "resource",
+          "orderIndex": 5,
+          "content": {
+            "sourceFile": "static_resources/bbb3691e86296451b2627bed3143f040_lecture2203.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-7"
+          },
+          "title": "0e41bee27b2b85282a9421e591f4bdc4_kimmolex",
+          "type": "resource",
+          "orderIndex": 6,
+          "content": {
+            "sourceFile": "static_resources/0e41bee27b2b85282a9421e591f4bdc4_kimmolex.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-8"
+          },
+          "title": "ea542f3f2d36047c32da2266e3cf4410_lecture303",
+          "type": "resource",
+          "orderIndex": 7,
+          "content": {
+            "sourceFile": "static_resources/ea542f3f2d36047c32da2266e3cf4410_lecture303.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-9"
+          },
+          "title": "c03f2a1867fece05c1c9153f5704642d_lecture203",
+          "type": "resource",
+          "orderIndex": 8,
+          "content": {
+            "sourceFile": "static_resources/c03f2a1867fece05c1c9153f5704642d_lecture203.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-10"
+          },
+          "title": "d2206f82425260a390f3eba5d5c22c40_lecture603",
+          "type": "resource",
+          "orderIndex": 9,
+          "content": {
+            "sourceFile": "static_resources/d2206f82425260a390f3eba5d5c22c40_lecture603.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-11"
+          },
+          "title": "ca559726619323c5d38e9eafff30eac3_lecture2103a",
+          "type": "resource",
+          "orderIndex": 10,
+          "content": {
+            "sourceFile": "static_resources/ca559726619323c5d38e9eafff30eac3_lecture2103a.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-12"
+          },
+          "title": "2dc375ef5340a31cff8348cdfd6b4a55_notes3",
+          "type": "resource",
+          "orderIndex": 11,
+          "content": {
+            "sourceFile": "static_resources/2dc375ef5340a31cff8348cdfd6b4a55_notes3.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-13"
+          },
+          "title": "3b5cff81c1dc314bdaaccd8115e2bc70_notes1",
+          "type": "resource",
+          "orderIndex": 12,
+          "content": {
+            "sourceFile": "static_resources/3b5cff81c1dc314bdaaccd8115e2bc70_notes1.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-14"
+          },
+          "title": "8c8918edbf1f160e00704271572e86ee_lecture8bw_03",
+          "type": "resource",
+          "orderIndex": 13,
+          "content": {
+            "sourceFile": "static_resources/8c8918edbf1f160e00704271572e86ee_lecture8bw_03.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-15"
+          },
+          "title": "c0ef4dd1f715f5575064e24de3413909_lecture503",
+          "type": "resource",
+          "orderIndex": 14,
+          "content": {
+            "sourceFile": "static_resources/c0ef4dd1f715f5575064e24de3413909_lecture503.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-16"
+          },
+          "title": "5f6ecb2bff65c5f86b60b73493b2d356_taggers",
+          "type": "resource",
+          "orderIndex": 15,
+          "content": {
+            "sourceFile": "static_resources/5f6ecb2bff65c5f86b60b73493b2d356_taggers.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-17"
+          },
+          "title": "9ea73f273fb32d8a0b6ee002cce626fb_lecture1",
+          "type": "resource",
+          "orderIndex": 16,
+          "content": {
+            "sourceFile": "static_resources/9ea73f273fb32d8a0b6ee002cce626fb_lecture1.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-18"
+          },
+          "title": "c6140f48ea5eda2c2259af5e05828564_lab1b_2003",
+          "type": "resource",
+          "orderIndex": 17,
+          "content": {
+            "sourceFile": "static_resources/c6140f48ea5eda2c2259af5e05828564_lab1b_2003.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-19"
+          },
+          "title": "84ac0855d75fea5acad2afe730cc6c90_lecture10bw03",
+          "type": "resource",
+          "orderIndex": 18,
+          "content": {
+            "sourceFile": "static_resources/84ac0855d75fea5acad2afe730cc6c90_lecture10bw03.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-20"
+          },
+          "title": "a46f1ff387ccb7404c390fccaa1a5f77_lecture1103",
+          "type": "resource",
+          "orderIndex": 19,
+          "content": {
+            "sourceFile": "static_resources/a46f1ff387ccb7404c390fccaa1a5f77_lecture1103.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-21"
+          },
+          "title": "f7aaa4a95fc80d6296b28b0089d0b427_lecture12bw_03",
+          "type": "resource",
+          "orderIndex": 20,
+          "content": {
+            "sourceFile": "static_resources/f7aaa4a95fc80d6296b28b0089d0b427_lecture12bw_03.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-22"
+          },
+          "title": "169150cf1023769d42ccc43fdde0a3cc_grammarofenglish",
+          "type": "resource",
+          "orderIndex": 21,
+          "content": {
+            "sourceFile": "static_resources/169150cf1023769d42ccc43fdde0a3cc_grammarofenglish.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-23"
+          },
+          "title": "6ad96b72dd085923176112e82960ba8f_kimmolex",
+          "type": "resource",
+          "orderIndex": 22,
+          "content": {
+            "sourceFile": "static_resources/6ad96b72dd085923176112e82960ba8f_kimmolex.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-24"
+          },
+          "title": "53dba4c7481e4306c8163df9c493f184_lab4",
+          "type": "resource",
+          "orderIndex": 23,
+          "content": {
+            "sourceFile": "static_resources/53dba4c7481e4306c8163df9c493f184_lab4.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-25"
+          },
+          "title": "362b50abcc8897507a97fd53488357ca_lab2",
+          "type": "resource",
+          "orderIndex": 24,
+          "content": {
+            "sourceFile": "static_resources/362b50abcc8897507a97fd53488357ca_lab2.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-26"
+          },
+          "title": "69c72446ed3b57eb6bacab730649fe99_brill",
+          "type": "resource",
+          "orderIndex": 25,
+          "content": {
+            "sourceFile": "static_resources/69c72446ed3b57eb6bacab730649fe99_brill.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-27"
+          },
+          "title": "c674bf1792abe07fd84ee7d09ccb48ed_notes2",
+          "type": "resource",
+          "orderIndex": 26,
+          "content": {
+            "sourceFile": "static_resources/c674bf1792abe07fd84ee7d09ccb48ed_notes2.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-28"
+          },
+          "title": "fa2775492e40e078d139d6087ab5c2d7_lecture903",
+          "type": "resource",
+          "orderIndex": 27,
+          "content": {
+            "sourceFile": "static_resources/fa2775492e40e078d139d6087ab5c2d7_lecture903.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-29"
+          },
+          "title": "515391d011338213efde817771d21bc2_lecture19bw_03",
+          "type": "resource",
+          "orderIndex": 28,
+          "content": {
+            "sourceFile": "static_resources/515391d011338213efde817771d21bc2_lecture19bw_03.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-30"
+          },
+          "title": "f33135520f7f58ab57a7a6c7279c366e_lecture7bw_03",
+          "type": "resource",
+          "orderIndex": 29,
+          "content": {
+            "sourceFile": "static_resources/f33135520f7f58ab57a7a6c7279c366e_lecture7bw_03.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-31"
+          },
+          "title": "20c08c6b52614f6bc8ebbb0d7d7a457e_lecture16bw_03",
+          "type": "resource",
+          "orderIndex": 30,
+          "content": {
+            "sourceFile": "static_resources/20c08c6b52614f6bc8ebbb0d7d7a457e_lecture16bw_03.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-32"
+          },
+          "title": "9eb8b84a33938490f29b537a8d513350_notes4",
+          "type": "resource",
+          "orderIndex": 31,
+          "content": {
+            "sourceFile": "static_resources/9eb8b84a33938490f29b537a8d513350_notes4.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-33"
+          },
+          "title": "d2b7788a756caaf1bedb39ee736e93db_kimmoaut",
+          "type": "resource",
+          "orderIndex": 32,
+          "content": {
+            "sourceFile": "static_resources/d2b7788a756caaf1bedb39ee736e93db_kimmoaut.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-34"
+          },
+          "title": "4d0a8a09ca105817a3ad19f67c344403_lecture1403updated3",
+          "type": "resource",
+          "orderIndex": 33,
+          "content": {
+            "sourceFile": "static_resources/4d0a8a09ca105817a3ad19f67c344403_lecture1403updated3.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-35"
+          },
+          "title": "779abf5e5d72f70fde20753130d1b6e3_lab3",
+          "type": "resource",
+          "orderIndex": 34,
+          "content": {
+            "sourceFile": "static_resources/779abf5e5d72f70fde20753130d1b6e3_lab3.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-36"
+          },
+          "title": "2d2d1332a605d0d07b38fe8ee4880548_lecture2003",
+          "type": "resource",
+          "orderIndex": 35,
+          "content": {
+            "sourceFile": "static_resources/2d2d1332a605d0d07b38fe8ee4880548_lecture2003.pdf"
+          }
+        },
+        {
+          "id": {
+            "value": "resource-37"
+          },
+          "title": "3b5209a3b36781cd63141c0ecee795df_lab1a_03",
+          "type": "resource",
+          "orderIndex": 36,
+          "content": {
+            "sourceFile": "static_resources/3b5209a3b36781cd63141c0ecee795df_lab1a_03.pdf"
+          }
+        }
+      ]
+    }
+  ],
+  "glossary": {
+    "terms": []
+  },
+  "_import_metadata": {
+    "source": "mit_ocw",
+    "course_id": "6-863j-natural-language-and-computer-representation-spring-2003",
+    "imported_at": "2026-01-11T19:14:18.275840",
+    "attribution": "This content is derived from MIT OpenCourseWare (ocw.mit.edu). Original course: \"Natural Language and the Computer Representation of Knowledge\" (Course Number: 6). Licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC-BY-NC-SA 4.0). Copyright Massachusetts Institute of Technology.",
+    "stats": {
+      "lectures": 24,
+      "assignments": 0,
+      "exams": 0,
+      "resources": 37
+    }
+  }
+}

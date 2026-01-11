@@ -73,10 +73,35 @@ final class ChatterboxSettingsViewModel: ObservableObject {
     /// Seed value (only used when useFixedSeed is true)
     @AppStorage("chatterbox_seed") var seed: Int = 42
 
-    // MARK: - Voice Cloning (DEFERRED)
+    // MARK: - Voice Cloning
 
-    /// Reference audio path (deferred feature)
+    /// Whether voice cloning is enabled
+    @AppStorage("chatterbox_voice_cloning_enabled") var voiceCloningEnabled: Bool = false
+
+    /// Reference audio path for voice cloning
     @AppStorage("chatterbox_reference_audio") var referenceAudioPath: String = ""
+
+    /// Show audio file picker sheet
+    @Published var showAudioPicker: Bool = false
+
+    /// Show audio recorder sheet
+    @Published var showAudioRecorder: Bool = false
+
+    /// Whether reference audio is configured
+    var hasReferenceAudio: Bool {
+        !referenceAudioPath.isEmpty && FileManager.default.fileExists(atPath: referenceAudioPath)
+    }
+
+    /// File name of reference audio
+    var referenceAudioFileName: String {
+        guard !referenceAudioPath.isEmpty else { return "" }
+        return URL(fileURLWithPath: referenceAudioPath).lastPathComponent
+    }
+
+    /// Clear reference audio
+    func clearReferenceAudio() {
+        referenceAudioPath = ""
+    }
 
     // MARK: - Server Connection
 

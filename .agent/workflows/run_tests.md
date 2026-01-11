@@ -4,10 +4,15 @@ description: Run UnaMentis unit tests with turbo mode
 
 # Run Tests (Turbo)
 
-This workflow runs the unit tests for the UnaMentis project associated with the Curriculum feature.
+This workflow runs the unit tests for the UnaMentis project.
 
-// turbo-all
-Run the tests using xcodebuild:
+**Preferred:** Use the unified test runner for CI parity:
 ```bash
-xcodebuild clean test -scheme UnaMentis -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:UnaMentisTests/CurriculumEngineTests -only-testing:UnaMentisTests/DocumentProcessorTests -only-testing:UnaMentisTests/ProgressTrackerTests
+./scripts/test-quick.sh          # Unit tests only (fast)
+./scripts/test-all.sh            # All tests + 80% coverage enforcement
+```
+
+For specific tests, use xcodebuild directly:
+```bash
+xcodebuild test -scheme UnaMentis -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -only-testing:UnaMentisTests/CurriculumEngineTests
 ```

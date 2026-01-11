@@ -83,8 +83,11 @@ export interface ModelInfo {
   size_bytes?: number;
   size_gb?: number;
   parameters?: string;
+  parameter_size?: string;
   quantization?: string;
   family?: string;
+  context_window?: number;
+  context_window_formatted?: string;
   vram_bytes?: number;
   vram_gb?: number;
 }
@@ -1199,5 +1202,356 @@ export interface MediaCapabilities {
 export interface MediaCapabilitiesResponse {
   success: boolean;
   capabilities: MediaCapabilities;
+  error?: string;
+}
+
+// =============================================================================
+// FOV Context Management Types
+// =============================================================================
+
+/** FOV model tier for adaptive token budgets */
+export type FOVModelTier = 'CLOUD' | 'MID_RANGE' | 'ON_DEVICE' | 'TINY';
+
+/** FOV session state */
+export type FOVSessionState = 'created' | 'active' | 'paused' | 'ended';
+
+/** FOV session summary for list views */
+export interface FOVSessionSummary {
+  session_id: string;
+  curriculum_id: string;
+  state: FOVSessionState;
+  created_at: string;
+  turn_count: number;
+  barge_in_count: number;
+}
+
+/** FOV token usage for a buffer */
+export interface FOVTokenUsage {
+  budget: number;
+  estimated_used: number;
+  percentage: number;
+}
+
+/** FOV learner signals */
+export interface FOVLearnerSignals {
+  clarifications: number;
+  repetitions: number;
+  confusions: number;
+}
+
+/** FOV buffer state for debug view */
+export interface FOVBufferState {
+  immediate: {
+    current_segment: string | null;
+    barge_in: string | null;
+    turn_count: number;
+    max_turns: number;
+  };
+  working: {
+    topic_id: string | null;
+    topic_title: string | null;
+    glossary_count: number;
+    misconception_count: number;
+  };
+  episodic: {
+    topic_summary_count: number;
+    questions_count: number;
+    learner_signals: FOVLearnerSignals;
+  };
+  semantic: {
+    curriculum_id: string | null;
+    current_topic_index: number;
+    total_topics: number;
+    has_outline: boolean;
+  };
+}
+
+/** FOV budget configuration */
+export interface FOVBudgetConfig {
+  tier: FOVModelTier;
+  immediate_budget: number;
+  working_budget: number;
+  episodic_budget: number;
+  semantic_budget: number;
+  total_budget: number;
+  max_conversation_turns: number;
+}
+
+/** FOV confidence history entry */
+export interface FOVConfidenceEntry {
+  timestamp: string;
+  score: number;
+  uncertainty: number;
+}
+
+/** FOV barge-in history entry */
+export interface FOVBargeInEntry {
+  timestamp: string;
+  utterance: string;
+  topic_id?: string;
+}
+
+/** FOV session debug information */
+export interface FOVSessionDebug {
+  session_id: string;
+  state: FOVSessionState;
+  curriculum_id: string;
+  turn_count: number;
+  barge_in_count: number;
+  model_tier: FOVModelTier;
+  buffers: FOVBufferState;
+  token_usage: {
+    immediate: FOVTokenUsage;
+    working: FOVTokenUsage;
+    episodic: FOVTokenUsage;
+    semantic: FOVTokenUsage;
+  };
+  total_context_tokens: number;
+  confidence_history: FOVConfidenceEntry[];
+  barge_in_history: FOVBargeInEntry[];
+  budget_config: FOVBudgetConfig;
+}
+
+/** FOV health status */
+export interface FOVHealthStatus {
+  status: 'healthy' | 'unavailable' | 'error';
+  sessions: {
+    total: number;
+    active: number;
+    paused: number;
+  };
+  version?: string;
+  features?: {
+    confidence_monitoring: boolean;
+    context_expansion: boolean;
+    adaptive_budgets: boolean;
+    model_tiers: FOVModelTier[];
+  };
+  error?: string;
+}
+
+/** FOV sessions list response */
+export interface FOVSessionsResponse {
+  sessions: FOVSessionSummary[];
+  error?: string;
+}
+
+/** FOV context build response */
+export interface FOVContextBuildResponse {
+  system_message: string;
+  immediate: string;
+  working: string;
+  episodic: string;
+  semantic: string;
+  total_tokens: number;
+}
+
+/** FOV confidence analysis result */
+export interface FOVConfidenceAnalysis {
+  confidence_score: number;
+  uncertainty_score: number;
+  hedging_score: number;
+  deflection_score: number;
+  knowledge_gap_score: number;
+  vague_language_score: number;
+  detected_markers: string[];
+  trend: 'improving' | 'stable' | 'declining';
+  expansion?: {
+    should_expand: boolean;
+    priority: 'low' | 'medium' | 'high' | 'critical';
+    scope: 'narrow' | 'broad' | 'comprehensive';
+    reason: string;
+  };
+}
+
+// =============================================================================
+// Curriculum Reprocessing Types
+// =============================================================================
+
+/** Severity levels for analysis issues */
+export type IssueSeverity = 'critical' | 'warning' | 'info';
+
+/** Types of issues that can be detected */
+export type IssueType =
+  | 'broken_image'
+  | 'placeholder_image'
+  | 'oversized_segment'
+  | 'undersized_segment'
+  | 'missing_objectives'
+  | 'missing_checkpoints'
+  | 'missing_alternatives'
+  | 'missing_time_estimate'
+  | 'missing_metadata'
+  | 'invalid_bloom_level';
+
+/** A detected issue in the curriculum */
+export interface AnalysisIssue {
+  id: string;
+  issueType: IssueType;
+  severity: IssueSeverity;
+  location: string;
+  nodeId?: string;
+  description: string;
+  suggestedFix: string;
+  autoFixable: boolean;
+  details: Record<string, unknown>;
+}
+
+/** Summary statistics for an analysis */
+export interface AnalysisStats {
+  totalIssues: number;
+  criticalCount: number;
+  warningCount: number;
+  infoCount: number;
+  autoFixableCount: number;
+  issuesByType: Record<string, number>;
+}
+
+/** Full analysis result for a curriculum */
+export interface CurriculumAnalysis {
+  curriculumId: string;
+  curriculumTitle: string;
+  analyzedAt: string;
+  analysisDurationMs: number;
+  issues: AnalysisIssue[];
+  stats: AnalysisStats;
+}
+
+/** Reprocessing job status */
+export type ReprocessStatus =
+  | 'queued'
+  | 'loading'
+  | 'analyzing'
+  | 'fixing_images'
+  | 'rechunking'
+  | 'generating_objectives'
+  | 'adding_checkpoints'
+  | 'adding_alternatives'
+  | 'fixing_metadata'
+  | 'validating'
+  | 'storing'
+  | 'complete'
+  | 'failed'
+  | 'cancelled';
+
+/** Configuration for a reprocessing job */
+export interface ReprocessConfig {
+  curriculumId: string;
+  fixImages: boolean;
+  rechunkSegments: boolean;
+  generateObjectives: boolean;
+  addCheckpoints: boolean;
+  addAlternatives: boolean;
+  fixMetadata: boolean;
+  llmModel: string;
+  llmTemperature: number;
+  imageSearchEnabled: boolean;
+  generatePlaceholders: boolean;
+  dryRun: boolean;
+  issueTypes?: IssueType[];
+  nodeIds?: string[];
+}
+
+/** Progress information for a single stage */
+export interface ReprocessStage {
+  id: string;
+  name: string;
+  status: 'pending' | 'in_progress' | 'complete' | 'skipped' | 'failed';
+  progress: number;
+  startedAt?: string;
+  completedAt?: string;
+  itemsTotal: number;
+  itemsProcessed: number;
+  error?: string;
+}
+
+/** Final result of a reprocessing job */
+export interface ReprocessResult {
+  success: boolean;
+  fixesApplied: string[];
+  issuesFixed: number;
+  issuesRemaining: number;
+  durationMs: number;
+  outputPath?: string;
+  error?: string;
+}
+
+/** Full progress information for a reprocessing job */
+export interface ReprocessProgress {
+  id: string;
+  config: ReprocessConfig;
+  status: ReprocessStatus;
+  overallProgress: number;
+  currentStage: string;
+  currentActivity: string;
+  stages: ReprocessStage[];
+  analysis?: CurriculumAnalysis;
+  fixesApplied: string[];
+  startedAt?: string;
+  result?: ReprocessResult;
+  error?: string;
+}
+
+/** Job summary for list views */
+export interface ReprocessJobSummary {
+  id: string;
+  curriculumId: string;
+  status: ReprocessStatus;
+  overallProgress: number;
+  currentStage: string;
+  startedAt?: string;
+  fixesApplied: number;
+}
+
+/** Proposed change for preview */
+export interface ProposedChange {
+  location: string;
+  changeType: string;
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+  description: string;
+}
+
+/** Preview of what reprocessing would do */
+export interface ReprocessPreview {
+  curriculumId: string;
+  proposedChanges: ProposedChange[];
+  summary: Record<string, number>;
+}
+
+/** API response for analysis */
+export interface AnalysisResponse {
+  success: boolean;
+  analysis?: CurriculumAnalysis;
+  message?: string;
+  error?: string;
+}
+
+/** API response for starting a job */
+export interface StartReprocessResponse {
+  success: boolean;
+  jobId?: string;
+  status?: ReprocessStatus;
+  error?: string;
+}
+
+/** API response for job progress */
+export interface ReprocessProgressResponse {
+  success: boolean;
+  progress?: ReprocessProgress;
+  error?: string;
+}
+
+/** API response for jobs list */
+export interface ReprocessJobsResponse {
+  success: boolean;
+  jobs: ReprocessJobSummary[];
+  error?: string;
+}
+
+/** API response for preview */
+export interface ReprocessPreviewResponse {
+  success: boolean;
+  preview?: ReprocessPreview;
   error?: string;
 }

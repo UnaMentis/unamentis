@@ -143,12 +143,91 @@ If servers show as disconnected, restart your Claude Code session.
 |--------|-------------|
 | **XcodeBuildMCP** | Build, test, clean, install apps, capture logs, device management |
 | **ios-simulator** | Screenshots, UI taps, swipes, typing, accessibility info |
+| **slack** | Post messages, read channels, reply to threads, add reactions |
+| **trello** | Create/update cards, add comments, manage boards and lists |
+
+### 3.4 Slack & Trello MCP Setup (Team Communication)
+
+These MCP servers enable Claude to post to Slack channels and manage Trello cards. Credentials are securely managed via GitHub Actions and age encryption.
+
+#### Prerequisites
+
+```bash
+# Install age encryption tool
+brew install age jq
+
+# Verify gh CLI is authenticated
+gh auth status
+```
+
+#### Generate Encryption Keypair (One-time per machine)
+
+```bash
+mkdir -p ~/.config/unamentis
+age-keygen -o ~/.config/unamentis/age-key.txt
+chmod 600 ~/.config/unamentis/age-key.txt
+```
+
+**Important:** Back up this key securely. Without it, you cannot decrypt credentials.
+
+#### Fetch Credentials
+
+The project includes scripts that fetch encrypted credentials from the private `sirfifer/unamentis-learning` repository:
+
+```bash
+# First-time or refresh credentials
+./scripts/refresh-mcp-creds.sh
+
+# Verify credentials are cached
+cat ~/.cache/unamentis/creds.json | jq 'keys'
+# Should show: ["slack_bot_token", "slack_team_id", "trello_api_key", "trello_token"]
+```
+
+#### Verify Slack & Trello MCP Servers
+
+```bash
+claude mcp list
+
+# Expected output should include:
+# slack: ./scripts/mcp-slack.sh - ✓ Connected
+# trello: ./scripts/mcp-trello.sh - ✓ Connected
+```
+
+If servers show as disconnected, restart your Claude Code session.
+
+### 3.5 The /comms Skill
+
+The `/comms` skill enables natural language communication with Slack and Trello without requiring exact channel names or board IDs.
+
+#### Usage
+
+```
+/comms post to android: feature complete
+/comms create card on server list: fix API bug
+/comms add comment to card: resolved
+```
+
+#### Key Behaviors
+
+- **Fuzzy Matching**: "android" resolves to tech-android channel or Android list
+- **Smart Defaults**: Tech topics default to tech-general channel and Tech Work board
+- **Trello Comments**: Automatically prefixed with "From Claude Code:" for attribution
+
+#### Skill Files Location
+
+The skill files are in `.claude/skills/comms/`:
+- `SKILL.md` - Instructions and examples
+- `RESOURCES.md` - Channel/board ID mappings
+
+See the full reference in [MCP_SETUP.md](../explorations/MCP_SETUP.md).
 
 ---
 
 ## 4. iOS Simulator Setup
 
 ### 4.1 Create Required Simulators
+
+The project uses **iPhone 16 Pro** as the default simulator to match CI. The test runner will automatically fall back to available simulators if needed.
 
 ```bash
 # List available runtimes
@@ -157,15 +236,15 @@ xcrun simctl list runtimes
 # List existing devices
 xcrun simctl list devices
 
-# Create iPhone 17 Pro simulator (if not exists)
-xcrun simctl create "iPhone 17 Pro" "iPhone 17 Pro" iOS18.0
+# Create iPhone 16 Pro simulator (if not exists)
+xcrun simctl create "iPhone 16 Pro" "iPhone 16 Pro" iOS18.0
 ```
 
 ### 4.2 Boot Simulator
 
 ```bash
 # Boot the simulator
-xcrun simctl boot "iPhone 17 Pro"
+xcrun simctl boot "iPhone 16 Pro"
 
 # Open Simulator app
 open -a Simulator
@@ -266,9 +345,9 @@ open http://localhost:8765/
 ### 6.2 Build and Run iOS App
 
 ```bash
-# Build for simulator
+# Build for simulator (iPhone 16 Pro for CI parity)
 xcodebuild -project UnaMentis.xcodeproj -scheme UnaMentis \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
 
 # Install on simulator
 xcrun simctl install booted \
@@ -370,14 +449,14 @@ rm -rf ~/Library/Developer/Xcode/DerivedData/UnaMentis-*
 # Clean and rebuild
 xcodebuild clean -project UnaMentis.xcodeproj -scheme UnaMentis
 xcodebuild -project UnaMentis.xcodeproj -scheme UnaMentis \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
 ```
 
 ### Simulator Issues
 
 ```bash
 # Reset simulator
-xcrun simctl erase "iPhone 17 Pro"
+xcrun simctl erase "iPhone 16 Pro"
 
 # Restart CoreSimulatorService
 sudo killall -9 com.apple.CoreSimulator.CoreSimulatorService
@@ -409,18 +488,25 @@ sudo killall -9 com.apple.CoreSimulator.CoreSimulatorService
 | Command | Purpose |
 |---------|---------|
 | `./scripts/install-hooks.sh` | Install git pre-commit hooks |
+| `./scripts/hook-audit.sh` | Audit for hook bypasses (`--no-verify`) |
 | `./scripts/lint.sh` | Run SwiftLint |
 | `./scripts/format.sh` | Run SwiftFormat |
-| `./scripts/test-quick.sh` | Run unit tests |
-| `./scripts/test-all.sh` | Run all tests |
+| `./scripts/test-quick.sh` | Run unit tests (fast, no coverage) |
+| `./scripts/test-all.sh` | Run all tests + 80% coverage enforcement |
+| `./scripts/test-integration.sh` | Run integration tests only |
+| `./scripts/test-ci.sh` | Unified test runner (CI parity) |
 | `./scripts/health-check.sh` | Lint + quick tests |
+| `./scripts/refresh-mcp-creds.sh` | Refresh Slack/Trello credentials |
 | `claude mcp list` | Check MCP server status |
 
 ---
 
 ## 11. Additional Resources
 
-- [CLAUDE.md](../CLAUDE.md) - Claude Code instructions
-- [AGENTS.md](../AGENTS.md) - AI development guidelines
-- [IOS_STYLE_GUIDE.md](IOS_STYLE_GUIDE.md) - Swift/SwiftUI coding standards
-- [UnaMentis_TDD.md](UnaMentis_TDD.md) - Technical design document
+- [CLAUDE.md](../../CLAUDE.md) - Claude Code instructions
+- [AGENTS.md](../../AGENTS.md) - AI development guidelines
+- [IOS_STYLE_GUIDE.md](../ios/IOS_STYLE_GUIDE.md) - Swift/SwiftUI coding standards
+- [UnaMentis_TDD.md](../architecture/UnaMentis_TDD.md) - Technical design document
+- [MCP_SETUP.md](../explorations/MCP_SETUP.md) - Slack/Trello MCP setup (detailed reference)
+- [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) - Quality infrastructure and testing
+- [CHAOS_ENGINEERING_RUNBOOK.md](../testing/CHAOS_ENGINEERING_RUNBOOK.md) - Voice pipeline resilience testing

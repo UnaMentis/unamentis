@@ -1,5 +1,6 @@
 // UnaMentis - Self-Hosted STT Service
 // OpenAI-compatible Speech-to-Text service for self-hosted Whisper servers
+// Supports both HTTP batch transcription and WebSocket streaming
 //
 // Part of Services/STT
 
@@ -10,10 +11,16 @@ import AVFoundation
 /// Self-hosted STT service compatible with OpenAI Whisper API format
 ///
 /// Works with:
-/// - whisper.cpp server
-/// - faster-whisper server
+/// - whisper.cpp server (WebSocket streaming at /ws)
+/// - faster-whisper server (WebSocket at /ws/transcribe)
 /// - UnaMentis gateway STT endpoint
 /// - Any OpenAI-compatible transcription API
+///
+/// Streaming Protocol:
+/// - Connect via WebSocket
+/// - Send audio chunks as binary data
+/// - Receive JSON transcription results
+/// - Close connection to finalize
 public actor SelfHostedSTTService: STTService {
 
     // MARK: - Properties
@@ -25,11 +32,22 @@ public actor SelfHostedSTTService: STTService {
     private let modelHint: String?
 
     /// Performance metrics
-    public private(set) var metrics: STTMetrics = STTMetrics(
-        averageLatency: 0.3,
-        wordErrorRate: 0.05
+    public private(set) var metrics = STTMetrics(
+        medianLatency: 0.3,
+        p99Latency: 0.6,
+        wordEmissionRate: 0
     )
 
+    /// Cost per hour (self-hosted = $0, only compute costs)
+    public var costPerHour: Decimal { Decimal(0) }
+
+    /// Whether currently streaming
+    public private(set) var isStreaming: Bool = false
+
+    // WebSocket state
+    private var webSocketTask: URLSessionWebSocketTask?
+    private var streamContinuation: AsyncStream<STTResult>.Continuation?
+    private var streamStartTime: Date?
     private var latencyValues: [TimeInterval] = []
 
     // MARK: - Initialization
@@ -188,15 +206,241 @@ public actor SelfHostedSTTService: STTService {
         )
     }
 
-    // MARK: - Streaming Transcription
+    // MARK: - STTService Protocol (Streaming)
 
-    /// Start streaming transcription (for servers that support it)
+    /// Start streaming transcription via WebSocket
+    public func startStreaming(audioFormat: sending AVAudioFormat) async throws -> AsyncStream<STTResult> {
+        guard !isStreaming else { throw STTError.alreadyStreaming }
+
+        logger.info("Starting WebSocket stream with format: \(audioFormat.sampleRate)Hz")
+
+        // Build WebSocket URL
+        // Common endpoints: /ws, /ws/transcribe, /v1/audio/transcriptions/stream
+        let wsURL = buildWebSocketURL(audioFormat: audioFormat)
+
+        var request = URLRequest(url: wsURL)
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        let session = URLSession(configuration: .default)
+        webSocketTask = session.webSocketTask(with: request)
+
+        webSocketTask?.resume()
+        isStreaming = true
+        streamStartTime = Date()
+
+        return AsyncStream { continuation in
+            self.streamContinuation = continuation
+
+            // Start listening for messages
+            Task {
+                await self.listenForMessages()
+            }
+
+            // Handle stream termination
+            continuation.onTermination = { @Sendable _ in
+                Task { [weak self] in
+                    try? await self?.stopStreaming()
+                }
+            }
+        }
+    }
+
+    /// Send audio data for transcription
+    public func sendAudio(_ buffer: sending AVAudioPCMBuffer) async throws {
+        guard isStreaming, let ws = webSocketTask else {
+            throw STTError.notStreaming
+        }
+
+        // Convert to PCM Int16 data (common format for Whisper servers)
+        guard let data = buffer.toPCMInt16Data() else {
+            throw STTError.invalidAudioFormat
+        }
+
+        let message = URLSessionWebSocketTask.Message.data(data)
+        try await ws.send(message)
+    }
+
+    /// Stop streaming and finalize transcription
+    public func stopStreaming() async throws {
+        guard isStreaming else { return }
+
+        logger.info("Stopping WebSocket stream")
+
+        // Send end-of-stream signal (empty data or close frame)
+        if let ws = webSocketTask {
+            // Some servers expect an empty data frame to signal end
+            try? await ws.send(.data(Data()))
+
+            // Close WebSocket connection
+            ws.cancel(with: .normalClosure, reason: nil)
+        }
+
+        webSocketTask = nil
+        streamContinuation?.finish()
+        streamContinuation = nil
+        isStreaming = false
+    }
+
+    /// Cancel streaming without finalizing
+    public func cancelStreaming() async {
+        webSocketTask?.cancel()
+        webSocketTask = nil
+        streamContinuation?.finish()
+        streamContinuation = nil
+        isStreaming = false
+    }
+
+    // MARK: - WebSocket Message Handling
+
+    private func listenForMessages() async {
+        guard let ws = webSocketTask else { return }
+
+        do {
+            let message = try await ws.receive()
+
+            if isStreaming {
+                switch message {
+                case .string(let text):
+                    await handleMessage(text)
+                case .data(let data):
+                    if let text = String(data: data, encoding: .utf8) {
+                        await handleMessage(text)
+                    }
+                @unknown default:
+                    break
+                }
+
+                // Continue listening (recursive call)
+                await listenForMessages()
+            }
+        } catch {
+            // Connection closed or error
+            if isStreaming {
+                logger.warning("WebSocket receive failed: \(error.localizedDescription)")
+                await cancelStreaming()
+            }
+        }
+    }
+
+    private func handleMessage(_ jsonString: String) async {
+        guard let data = jsonString.data(using: .utf8) else { return }
+
+        // Calculate latency from stream start
+        let latency: TimeInterval
+        if let start = streamStartTime {
+            latency = Date().timeIntervalSince(start)
+            latencyValues.append(latency)
+            updateMetrics()
+        } else {
+            latency = 0
+        }
+
+        do {
+            // Try to parse as generic Whisper response
+            // Different servers have different formats, so we try multiple
+            if let result = try parseWhisperResponse(data, latency: latency) {
+                streamContinuation?.yield(result)
+            }
+        } catch {
+            logger.warning("Failed to parse streaming response: \(error.localizedDescription)")
+        }
+    }
+
+    /// Parse various Whisper server response formats
+    private func parseWhisperResponse(_ data: Data, latency: TimeInterval) throws -> STTResult? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+
+        // Format 1: OpenAI-style { "text": "...", "is_final": true }
+        if let text = json["text"] as? String {
+            let isFinal = json["is_final"] as? Bool ?? json["isFinal"] as? Bool ?? true
+            return STTResult(
+                transcript: text,
+                isFinal: isFinal,
+                isEndOfUtterance: isFinal,
+                confidence: Float(json["confidence"] as? Double ?? 0.9),
+                timestamp: Date().timeIntervalSince1970,
+                latency: latency,
+                wordTimestamps: nil
+            )
+        }
+
+        // Format 2: whisper.cpp streaming { "result": { "text": "..." } }
+        if let result = json["result"] as? [String: Any],
+           let text = result["text"] as? String {
+            let isFinal = json["is_final"] as? Bool ?? true
+            return STTResult(
+                transcript: text,
+                isFinal: isFinal,
+                isEndOfUtterance: isFinal,
+                confidence: 0.9,
+                timestamp: Date().timeIntervalSince1970,
+                latency: latency,
+                wordTimestamps: nil
+            )
+        }
+
+        // Format 3: faster-whisper { "transcript": "...", "partial": false }
+        if let text = json["transcript"] as? String {
+            let isPartial = json["partial"] as? Bool ?? false
+            return STTResult(
+                transcript: text,
+                isFinal: !isPartial,
+                isEndOfUtterance: !isPartial,
+                confidence: Float(json["confidence"] as? Double ?? 0.9),
+                timestamp: Date().timeIntervalSince1970,
+                latency: latency,
+                wordTimestamps: nil
+            )
+        }
+
+        return nil
+    }
+
+    /// Build WebSocket URL with query parameters
+    private func buildWebSocketURL(audioFormat: AVAudioFormat) -> URL {
+        // Convert HTTP URL to WebSocket URL
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+
+        // Change scheme to WebSocket
+        if components.scheme == "http" {
+            components.scheme = "ws"
+        } else if components.scheme == "https" {
+            components.scheme = "wss"
+        }
+
+        // Add streaming path if not present
+        if components.path.isEmpty || components.path == "/" {
+            components.path = "/ws"
+        } else if !components.path.contains("ws") {
+            components.path += "/ws"
+        }
+
+        // Add query parameters for audio configuration
+        var queryItems = components.queryItems ?? []
+        queryItems.append(URLQueryItem(name: "language", value: language))
+        queryItems.append(URLQueryItem(name: "encoding", value: "linear16"))
+        queryItems.append(URLQueryItem(name: "sample_rate", value: String(Int(audioFormat.sampleRate))))
+        queryItems.append(URLQueryItem(name: "channels", value: String(audioFormat.channelCount)))
+
+        if let model = modelHint {
+            queryItems.append(URLQueryItem(name: "model", value: model))
+        }
+
+        components.queryItems = queryItems
+
+        return components.url!
+    }
+
+    // MARK: - Legacy Streaming (Deprecated)
+
+    /// Start streaming transcription (legacy method, use startStreaming instead)
+    @available(*, deprecated, message: "Use startStreaming(audioFormat:) instead")
     public func startStreamingTranscription() async throws -> AsyncStream<TranscriptionResult> {
-        // Note: Many self-hosted Whisper servers don't support true streaming
-        // This is a placeholder for servers that do support WebSocket streaming
-
-        logger.warning("Streaming transcription not implemented for HTTP-based STT service")
-        throw STTError.connectionFailed("Streaming not supported")
+        throw STTError.connectionFailed("Use startStreaming(audioFormat:) for WebSocket streaming")
     }
 
     // MARK: - Health Check

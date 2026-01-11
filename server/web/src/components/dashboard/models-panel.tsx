@@ -445,10 +445,10 @@ export function ModelsPanel() {
                       <span className="text-slate-400">Server</span>
                       <span className="text-slate-200">{model.server_name}</span>
                     </div>
-                    {model.parameters && (
+                    {(model.parameter_size || model.parameters) && (
                       <div className="flex justify-between">
                         <span className="text-slate-400">Params</span>
-                        <span className="text-slate-200">{model.parameters}</span>
+                        <span className="text-slate-200">{model.parameter_size || model.parameters}</span>
                       </div>
                     )}
                     {model.quantization && (
@@ -456,6 +456,14 @@ export function ModelsPanel() {
                         <span className="text-slate-400">Quant</span>
                         <span className="text-slate-200 font-mono text-xs">
                           {model.quantization}
+                        </span>
+                      </div>
+                    )}
+                    {model.context_window_formatted && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Context</span>
+                        <span className="text-indigo-400 font-medium">
+                          {model.context_window_formatted}
                         </span>
                       </div>
                     )}

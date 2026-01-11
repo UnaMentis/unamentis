@@ -10,17 +10,21 @@ This skill provides constrained read-only access to external repositories config
 
 ## Available External Repos
 
-| Repo | Path | Purpose |
-|------|------|---------|
-| *(add repos here)* | /Users/ramerman/dev/REPO | Description |
+External repositories are configured in `.claude/settings.json` under `additionalDirectories`. Check that file for the current list of available repos and their absolute paths.
+
+| Repo | Purpose |
+|------|---------|
+| *unamentis-android* | Android Client for UnaMentis |
 
 ## Usage
 
-Access is always active via `additionalDirectories` in settings.json. When you need external context:
+Access is always active via `additionalDirectories` in settings.json. When you need external context, use the absolute path from the settings:
 
-1. **Find files**: Use `Glob` with path `/Users/ramerman/dev/REPO/**/*.swift`
-2. **Search content**: Use `Grep` with pattern in `/Users/ramerman/dev/REPO/`
-3. **Read files**: Use `Read` with absolute path `/Users/ramerman/dev/REPO/file.swift`
+1. **Find files**: Use `Glob` with the repo's absolute path (e.g., `{repo_path}/**/*.kt`)
+2. **Search content**: Use `Grep` with pattern in the repo's absolute path
+3. **Read files**: Use `Read` with absolute path from settings
+
+Check `.claude/settings.json` for the exact paths configured on this machine.
 
 ## Constraints
 

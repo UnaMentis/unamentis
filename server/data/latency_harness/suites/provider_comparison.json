@@ -1,0 +1,108 @@
+{
+  "id": "provider_comparison",
+  "name": "Provider Comparison",
+  "description": "Compare all available providers",
+  "scenarios": [
+    {
+      "id": "short_response",
+      "name": "Short Response",
+      "description": "Brief Q&A exchange",
+      "scenarioType": "text_input",
+      "repetitions": 10,
+      "userUtteranceAudioPath": null,
+      "userUtteranceText": "What is photosynthesis?",
+      "expectedResponseType": "short"
+    },
+    {
+      "id": "medium_response",
+      "name": "Medium Response",
+      "description": "Moderate explanation",
+      "scenarioType": "text_input",
+      "repetitions": 5,
+      "userUtteranceAudioPath": null,
+      "userUtteranceText": "Explain how the human heart works.",
+      "expectedResponseType": "medium"
+    }
+  ],
+  "networkProfiles": [
+    "localhost",
+    "wifi",
+    "cellular_us"
+  ],
+  "parameterSpace": {
+    "sttConfigs": [
+      {
+        "provider": "deepgram",
+        "model": null,
+        "chunkSizeMs": null,
+        "language": "en-US"
+      },
+      {
+        "provider": "assemblyai",
+        "model": null,
+        "chunkSizeMs": null,
+        "language": "en-US"
+      },
+      {
+        "provider": "apple",
+        "model": null,
+        "chunkSizeMs": null,
+        "language": "en-US"
+      }
+    ],
+    "llmConfigs": [
+      {
+        "provider": "anthropic",
+        "model": "claude-3-5-haiku-20241022",
+        "maxTokens": 512,
+        "temperature": 0.7,
+        "topP": null,
+        "stream": true
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "maxTokens": 512,
+        "temperature": 0.7,
+        "topP": null,
+        "stream": true
+      },
+      {
+        "provider": "selfhosted",
+        "model": "qwen2.5:7b",
+        "maxTokens": 512,
+        "temperature": 0.7,
+        "topP": null,
+        "stream": true
+      }
+    ],
+    "ttsConfigs": [
+      {
+        "provider": "chatterbox",
+        "voiceId": null,
+        "speed": 1.0,
+        "useStreaming": true
+      },
+      {
+        "provider": "vibevoice",
+        "voiceId": null,
+        "speed": 1.0,
+        "useStreaming": true
+      },
+      {
+        "provider": "apple",
+        "voiceId": null,
+        "speed": 1.0,
+        "useStreaming": true
+      }
+    ],
+    "audioConfigs": [
+      {
+        "sampleRate": 24000,
+        "bufferSize": 1024,
+        "vadThreshold": 0.5,
+        "vadSmoothingWindow": 5
+      }
+    ]
+  }
+}

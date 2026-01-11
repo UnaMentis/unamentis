@@ -49,8 +49,8 @@ DEFAULT_LIMITS: Dict[str, RateLimitConfig] = {
     # Default for authenticated API calls
     'default': RateLimitConfig(requests=1000, window_seconds=60, burst=100),
 
-    # Stricter default for unauthenticated calls
-    'unauthenticated': RateLimitConfig(requests=100, window_seconds=60, burst=20),
+    # Default for unauthenticated calls (relaxed for development)
+    'unauthenticated': RateLimitConfig(requests=500, window_seconds=60, burst=100),
 }
 
 

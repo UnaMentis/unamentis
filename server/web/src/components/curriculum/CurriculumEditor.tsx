@@ -4,7 +4,7 @@ import { NodeEditor } from './NodeEditor';
 import { StudioTour, STUDIO_TOUR_STEPS } from './StudioTour';
 import { StudioHelp } from './StudioHelp';
 import { Curriculum, ContentNode } from '@/types/curriculum';
-import { Search, Menu, Command, Settings, ArrowLeft, HelpCircle, Sparkles } from 'lucide-react';
+import { Search, Menu, Command, Settings, ArrowLeft, HelpCircle, Sparkles, Save, Loader2, Check } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 
 const TOUR_STORAGE_KEY = 'curriculum-studio-tour-completed';
@@ -18,6 +18,7 @@ interface CurriculumStudioProps {
 
 export const CurriculumStudio: React.FC<CurriculumStudioProps> = ({
   initialData,
+  onSave,
   onBack,
   readOnly = false,
 }) => {
@@ -27,6 +28,8 @@ export const CurriculumStudio: React.FC<CurriculumStudioProps> = ({
     initialData.content[0]?.id.value || null
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Help system state
   const [showTour, setShowTour] = useState(false);
@@ -84,7 +87,25 @@ export const CurriculumStudio: React.FC<CurriculumStudioProps> = ({
       const newContent = updateNode(prev.content, updatedNode);
       return { ...prev, content: newContent };
     });
+    setHasUnsavedChanges(true);
+    setSaveStatus('idle');
   };
+
+  const handleSave = useCallback(async () => {
+    if (!onSave || isReadOnly) return;
+
+    setSaveStatus('saving');
+    try {
+      await onSave(curriculum);
+      setSaveStatus('saved');
+      setHasUnsavedChanges(false);
+      // Reset to idle after showing success
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (error) {
+      setSaveStatus('error');
+      console.error('Failed to save curriculum:', error);
+    }
+  }, [curriculum, onSave, isReadOnly]);
 
   const selectedNode = selectedNodeId ? findNode(curriculum.content, selectedNodeId) : null;
 
@@ -132,6 +153,41 @@ export const CurriculumStudio: React.FC<CurriculumStudioProps> = ({
                 v{curriculum.version.number} • {isReadOnly ? 'Locked' : 'Editing'}
               </p>
             </div>
+            {/* Save Button */}
+            {!isReadOnly && onSave && (
+              <Tooltip
+                content={
+                  saveStatus === 'error'
+                    ? 'Save failed - click to retry'
+                    : hasUnsavedChanges
+                      ? 'Save changes'
+                      : 'All changes saved'
+                }
+                side="bottom"
+              >
+                <button
+                  onClick={handleSave}
+                  disabled={saveStatus === 'saving' || (!hasUnsavedChanges && saveStatus !== 'error')}
+                  className={`p-2 rounded-lg transition-colors ${
+                    saveStatus === 'error'
+                      ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10'
+                      : saveStatus === 'saved'
+                        ? 'text-emerald-400'
+                        : hasUnsavedChanges
+                          ? 'text-orange-400 hover:text-orange-300 hover:bg-orange-500/10'
+                          : 'text-slate-500'
+                  }`}
+                >
+                  {saveStatus === 'saving' ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : saveStatus === 'saved' ? (
+                    <Check size={18} />
+                  ) : (
+                    <Save size={18} />
+                  )}
+                </button>
+              </Tooltip>
+            )}
             <Tooltip content="Open documentation and help" side="bottom">
               <button
                 data-tour="help-button"
@@ -205,7 +261,13 @@ export const CurriculumStudio: React.FC<CurriculumStudioProps> = ({
                   {isReadOnly ? 'Read Only Mode' : 'Studio Mode'}
                 </div>
                 <div className="text-xs text-slate-500">
-                  {isReadOnly ? 'External content - changes disabled' : 'Auto-saving enabled'}
+                  {isReadOnly
+                    ? 'External content - changes disabled'
+                    : saveStatus === 'error'
+                      ? 'Save failed - click save to retry'
+                      : hasUnsavedChanges
+                        ? 'Unsaved changes'
+                        : 'All changes saved'}
                 </div>
               </div>
               <Tooltip content="Take a guided tour of the editor" side="top">

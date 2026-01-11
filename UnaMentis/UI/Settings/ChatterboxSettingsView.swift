@@ -42,6 +42,9 @@ struct ChatterboxSettingsView: View {
             // Performance
             performanceSection
 
+            // Voice Cloning
+            voiceCloningSection
+
             // Advanced
             advancedSection
 
@@ -315,6 +318,83 @@ struct ChatterboxSettingsView: View {
             Text("Performance")
         } footer: {
             Text("Streaming mode delivers audio progressively for lower perceived latency. Non-streaming returns complete audio in one response.")
+        }
+    }
+
+    // MARK: - Voice Cloning Section
+
+    private var voiceCloningSection: some View {
+        Section {
+            // Voice cloning toggle
+            Toggle("Enable Voice Cloning", isOn: $viewModel.voiceCloningEnabled)
+
+            if viewModel.voiceCloningEnabled {
+                // Current reference audio status
+                if viewModel.hasReferenceAudio {
+                    HStack {
+                        Image(systemName: "waveform.circle.fill")
+                            .foregroundStyle(.green)
+                        VStack(alignment: .leading) {
+                            Text("Reference Audio Loaded")
+                                .font(.subheadline)
+                            Text(viewModel.referenceAudioFileName)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button(role: .destructive) {
+                            viewModel.clearReferenceAudio()
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.red.opacity(0.7))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } else {
+                    HStack {
+                        Image(systemName: "waveform.circle")
+                            .foregroundStyle(.secondary)
+                        Text("No reference audio selected")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // Select audio file button
+                Button {
+                    viewModel.showAudioPicker = true
+                } label: {
+                    Label("Select Audio File", systemImage: "folder")
+                }
+
+                // Record audio button
+                Button {
+                    viewModel.showAudioRecorder = true
+                } label: {
+                    Label("Record Reference Audio", systemImage: "mic.circle")
+                }
+
+                // Duration requirement note
+                if !viewModel.hasReferenceAudio {
+                    Text("Requires 5+ seconds of clear speech for best results")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text("Voice Cloning")
+        } footer: {
+            if viewModel.voiceCloningEnabled {
+                Text("Zero-shot voice cloning uses a reference audio sample to match the voice style. For best results, use clear speech without background noise.")
+            } else {
+                Text("Enable to use a custom voice based on a reference audio sample.")
+            }
+        }
+        .sheet(isPresented: $viewModel.showAudioPicker) {
+            AudioFilePickerView(selectedPath: $viewModel.referenceAudioPath)
+        }
+        .sheet(isPresented: $viewModel.showAudioRecorder) {
+            AudioRecorderView(outputPath: $viewModel.referenceAudioPath)
         }
     }
 

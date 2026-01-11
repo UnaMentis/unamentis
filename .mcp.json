@@ -26,6 +26,12 @@
         "@anthropic/apple-docs-mcp"
       ],
       "env": {}
+    },
+    "slack": {
+      "command": "./scripts/mcp-slack.sh"
+    },
+    "trello": {
+      "command": "./scripts/mcp-trello.sh"
     }
   }
 }

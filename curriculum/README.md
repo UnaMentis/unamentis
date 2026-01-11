@@ -271,7 +271,38 @@ UMCF Document
 |------|-------------|
 | [spec/umcf-schema.json](spec/umcf-schema.json) | JSON Schema (Draft 2020-12) |
 | [spec/UMCF_SPECIFICATION.md](spec/UMCF_SPECIFICATION.md) | Human-readable specification |
+| [spec/UMCF_FILE_FORMAT.md](spec/UMCF_FILE_FORMAT.md) | File format specification (.umcf/.umcfz) |
 | [spec/STANDARDS_TRACEABILITY.md](spec/STANDARDS_TRACEABILITY.md) | Field-by-field standards mapping |
+
+---
+
+## File Formats
+
+UMCF supports two file formats for storage and interchange:
+
+| Extension | Format | Use Case |
+|-----------|--------|----------|
+| `.umcf` | Raw JSON | Development, version control, editing |
+| `.umcfz` | Compressed | Distribution, sharing, offline use with bundled assets |
+
+### Raw Format (.umcf)
+
+Plain JSON files following the UMCF schema. Human-readable and Git-friendly.
+
+```json
+{
+  "umcf": "1.0.0",
+  "id": { "value": "my-curriculum-001" },
+  "title": "Introduction to Machine Learning",
+  "content": [...]
+}
+```
+
+### Compressed Format (.umcfz)
+
+Gzip-compressed archives that can include bundled image assets. Ideal for sharing curricula with embedded media.
+
+See [spec/UMCF_FILE_FORMAT.md](spec/UMCF_FILE_FORMAT.md) for full details.
 
 ---
 

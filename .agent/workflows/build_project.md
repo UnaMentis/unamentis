@@ -6,8 +6,12 @@ description: Build the UnaMentis project (compilation check)
 
 This workflow builds the UnaMentis project to verify compilation.
 
-// turbo-all
-1.  Build the project using xcodebuild:
-    ```bash
-    xcodebuild build -scheme UnaMentis -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
-    ```
+Build using xcodebuild (iPhone 16 Pro for CI parity):
+```bash
+xcodebuild build -scheme UnaMentis -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+```
+
+Or use MCP:
+```
+mcp__XcodeBuildMCP__build_sim()
+```
