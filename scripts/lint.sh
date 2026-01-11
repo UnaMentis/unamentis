@@ -1,5 +1,9 @@
 #!/bin/bash
 set -e
 echo "Running SwiftLint..."
-swiftlint lint --strict
-echo "Code passes linting"
+if command -v swiftlint &> /dev/null; then
+    swiftlint lint --strict
+    echo "Code passes linting"
+else
+    echo "SwiftLint not installed, skipping lint check"
+fi

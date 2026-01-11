@@ -1,0 +1,587 @@
+{
+  "$schema": "../../spec/umcf-schema.json",
+  "id": "kb-science-physics-2024",
+  "version": "1.0.0",
+  "nodeType": "module",
+  "title": "Knowledge Bowl: Physics",
+  "description": "Comprehensive physics preparation for Knowledge Bowl competition covering mechanics, thermodynamics, electromagnetism, waves, and modern physics.",
+  "spokenText": "Welcome to Knowledge Bowl Physics preparation. This module covers the essential physics concepts you'll encounter in competition, from classical mechanics to modern physics.",
+  "metadata": {
+    "author": "UnaMentis Curriculum Team",
+    "createdAt": "2024-01-15T00:00:00Z",
+    "updatedAt": "2024-01-15T00:00:00Z",
+    "license": "CC BY-NC-SA 4.0",
+    "language": "en-US"
+  },
+  "extensions": {
+    "knowledgeBowl": {
+      "competitionYear": "2024-2025",
+      "questionSource": "custom",
+      "difficultyTier": "varsity",
+      "domain": "science",
+      "category": "physics",
+      "questionWeight": 0.05,
+      "yearlyUpdate": false
+    }
+  },
+  "learningObjectives": [
+    {
+      "id": "lo-physics-001",
+      "statement": "Recall and apply Newton's three laws of motion",
+      "bloomLevel": "apply"
+    },
+    {
+      "id": "lo-physics-002",
+      "statement": "Calculate work, energy, and power in mechanical systems",
+      "bloomLevel": "apply"
+    },
+    {
+      "id": "lo-physics-003",
+      "statement": "Identify key physicists and their contributions",
+      "bloomLevel": "remember"
+    },
+    {
+      "id": "lo-physics-004",
+      "statement": "Explain wave phenomena including interference and diffraction",
+      "bloomLevel": "understand"
+    }
+  ],
+  "children": [
+    {
+      "id": "kb-physics-mechanics",
+      "nodeType": "topic",
+      "title": "Classical Mechanics",
+      "description": "Newton's laws, motion, forces, energy, and momentum",
+      "spokenText": "Classical mechanics forms the foundation of physics competition questions. Master Newton's laws and energy concepts.",
+      "extensions": {
+        "knowledgeBowl": {
+          "competitionYear": "2024-2025",
+          "domain": "science",
+          "category": "physics",
+          "questionWeight": 0.02,
+          "speedTarget": 4.0
+        }
+      },
+      "children": [
+        {
+          "id": "kb-physics-newton-laws",
+          "nodeType": "segment",
+          "title": "Newton's Laws of Motion",
+          "description": "The three fundamental laws governing motion and forces",
+          "content": "Newton's three laws describe how objects move. The First Law (inertia) states objects maintain their state unless acted upon. The Second Law relates force, mass, and acceleration (F=ma). The Third Law describes action-reaction pairs.",
+          "spokenText": "Let's cover Newton's three laws, which are among the most commonly tested physics concepts in Knowledge Bowl.",
+          "extensions": {
+            "knowledgeBowl": {
+              "competitionYear": "2024-2025",
+              "domain": "science",
+              "category": "physics",
+              "difficultyTier": "varsity",
+              "speedTarget": 3.5,
+              "buzzable": true,
+              "buzzPoints": [
+                "When you hear 'inertia' or 'object at rest', buzz for First Law",
+                "F=ma uniquely identifies Second Law",
+                "Action-reaction or equal and opposite signals Third Law"
+              ]
+            }
+          },
+          "keyTerms": [
+            {
+              "term": "Inertia",
+              "definition": "The tendency of an object to resist changes in its state of motion",
+              "spokenDefinition": "Inertia is an object's resistance to changes in motion"
+            },
+            {
+              "term": "Net Force",
+              "definition": "The vector sum of all forces acting on an object",
+              "spokenDefinition": "Net force is the total of all forces combined"
+            }
+          ],
+          "retrievalConfig": {
+            "keyConceptForRetrieval": true,
+            "difficulty": "medium",
+            "retrievalPrompts": [
+              "What is Newton's First Law also called?",
+              "What equation represents Newton's Second Law?",
+              "If you push a wall, what does Newton's Third Law say happens?"
+            ],
+            "spacingAlgorithm": "sm2",
+            "initialInterval": "P1D",
+            "maxInterval": "P21D"
+          },
+          "assessments": [
+            {
+              "id": "assess-newton-tossup-001",
+              "type": "choice",
+              "questionType": "toss_up",
+              "stem": "This law of motion, sometimes called the law of inertia, states that an object at rest will stay at rest unless acted upon by an unbalanced force.",
+              "options": [
+                { "id": "a", "text": "Newton's First Law", "correct": true },
+                { "id": "b", "text": "Newton's Second Law" },
+                { "id": "c", "text": "Newton's Third Law" },
+                { "id": "d", "text": "Law of Conservation of Momentum" }
+              ],
+              "feedback": {
+                "correct": "Correct! Newton's First Law is also known as the Law of Inertia.",
+                "incorrect": "The Law of Inertia is Newton's First Law, describing objects' tendency to maintain their state of motion."
+              },
+              "extensions": {
+                "knowledgeBowl": {
+                  "timeLimit": 10,
+                  "points": 10,
+                  "difficultyTier": "varsity",
+                  "buzzTrigger": "law of inertia"
+                }
+              }
+            },
+            {
+              "id": "assess-newton-tossup-002",
+              "type": "choice",
+              "questionType": "toss_up",
+              "stem": "According to this law, force equals mass times acceleration, expressed as F equals m a.",
+              "options": [
+                { "id": "a", "text": "Newton's First Law" },
+                { "id": "b", "text": "Newton's Second Law", "correct": true },
+                { "id": "c", "text": "Newton's Third Law" },
+                { "id": "d", "text": "Hooke's Law" }
+              ],
+              "feedback": {
+                "correct": "Correct! F=ma is Newton's Second Law of Motion.",
+                "incorrect": "F=ma is the mathematical expression of Newton's Second Law."
+              },
+              "extensions": {
+                "knowledgeBowl": {
+                  "timeLimit": 8,
+                  "points": 10,
+                  "difficultyTier": "jv",
+                  "buzzTrigger": "F equals m a"
+                }
+              }
+            },
+            {
+              "id": "assess-newton-pyramid-001",
+              "type": "pyramid",
+              "stem": "Identify this physicist.",
+              "extensions": {
+                "knowledgeBowl": {
+                  "pyramidClues": [
+                    {
+                      "text": "This scientist allegedly witnessed an apple falling, inspiring thoughts about gravity.",
+                      "revealPoints": 30,
+                      "difficulty": "hard"
+                    },
+                    {
+                      "text": "He invented calculus independently of Leibniz and served as Warden of the Royal Mint.",
+                      "revealPoints": 20,
+                      "difficulty": "medium"
+                    },
+                    {
+                      "text": "His work 'Principia Mathematica' established the laws of motion and universal gravitation.",
+                      "revealPoints": 10,
+                      "difficulty": "easy"
+                    },
+                    {
+                      "text": "This English physicist has three laws of motion named after him.",
+                      "revealPoints": 5,
+                      "difficulty": "giveaway"
+                    }
+                  ],
+                  "answer": "Isaac Newton",
+                  "alternateAnswers": ["Newton", "Sir Isaac Newton"]
+                }
+              }
+            },
+            {
+              "id": "assess-newton-bonus-001",
+              "type": "bonus",
+              "stem": "Answer these questions about Newton's Laws.",
+              "extensions": {
+                "knowledgeBowl": {
+                  "leadIn": "For 10 points each, answer these questions about Newton's Laws of Motion.",
+                  "parts": [
+                    {
+                      "prompt": "Newton's First Law is also known by what two-word term referring to an object's resistance to change in motion?",
+                      "answer": "Law of Inertia",
+                      "alternateAnswers": ["Inertia Law"],
+                      "points": 10
+                    },
+                    {
+                      "prompt": "In Newton's Second Law, F equals m times a. What does the 'a' represent?",
+                      "answer": "Acceleration",
+                      "points": 10
+                    },
+                    {
+                      "prompt": "Newton's Third Law states that for every action there is an equal and opposite what?",
+                      "answer": "Reaction",
+                      "alternateAnswers": ["Reaction force"],
+                      "points": 10
+                    }
+                  ],
+                  "totalPoints": 30,
+                  "conferenceTime": 5
+                }
+              }
+            }
+          ],
+          "misconceptions": [
+            {
+              "description": "Student believes heavier objects fall faster",
+              "triggerPhrases": ["heavier falls faster", "mass affects falling speed"],
+              "correction": "In a vacuum, all objects fall at the same rate regardless of mass. Air resistance affects falling speed in real-world conditions.",
+              "remediationPath": {
+                "reviewTopics": ["free-fall", "air-resistance"]
+              }
+            },
+            {
+              "description": "Student confuses mass and weight",
+              "triggerPhrases": ["mass is weight", "weight is mass"],
+              "correction": "Mass is the amount of matter (kg), while weight is the gravitational force on that mass (N). Weight = mass × gravity.",
+              "remediationPath": {
+                "reviewTopics": ["mass-vs-weight", "gravitational-force"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "kb-physics-energy",
+          "nodeType": "segment",
+          "title": "Energy and Work",
+          "description": "Kinetic energy, potential energy, work-energy theorem, and conservation of energy",
+          "content": "Energy exists in many forms. Kinetic energy (KE = 1/2 mv²) is energy of motion. Potential energy is stored energy. The work-energy theorem states that work equals change in kinetic energy. Energy is conserved in isolated systems.",
+          "spokenText": "Energy concepts appear frequently in competition. Know the formulas for kinetic and potential energy.",
+          "extensions": {
+            "knowledgeBowl": {
+              "competitionYear": "2024-2025",
+              "domain": "science",
+              "category": "physics",
+              "difficultyTier": "varsity",
+              "speedTarget": 4.0,
+              "buzzable": true,
+              "buzzPoints": [
+                "One-half m v squared uniquely identifies kinetic energy",
+                "m g h identifies gravitational potential energy",
+                "Energy cannot be created or destroyed signals conservation law"
+              ]
+            }
+          },
+          "keyTerms": [
+            {
+              "term": "Kinetic Energy",
+              "definition": "Energy of motion, calculated as KE = (1/2)mv²",
+              "spokenDefinition": "Kinetic energy equals one-half times mass times velocity squared"
+            },
+            {
+              "term": "Potential Energy",
+              "definition": "Stored energy due to position or configuration",
+              "spokenDefinition": "Potential energy is energy stored due to an object's position"
+            },
+            {
+              "term": "Work",
+              "definition": "Transfer of energy when a force moves an object, W = Fd cos(θ)",
+              "spokenDefinition": "Work equals force times displacement times the cosine of the angle between them"
+            }
+          ],
+          "assessments": [
+            {
+              "id": "assess-energy-tossup-001",
+              "type": "choice",
+              "questionType": "toss_up",
+              "stem": "This type of energy, calculated as one-half times mass times velocity squared, describes the energy an object has due to its motion.",
+              "options": [
+                { "id": "a", "text": "Potential energy" },
+                { "id": "b", "text": "Kinetic energy", "correct": true },
+                { "id": "c", "text": "Thermal energy" },
+                { "id": "d", "text": "Chemical energy" }
+              ],
+              "feedback": {
+                "correct": "Correct! Kinetic energy = (1/2)mv² is the energy of motion.",
+                "incorrect": "KE = (1/2)mv² is the formula for kinetic energy, the energy of motion."
+              },
+              "extensions": {
+                "knowledgeBowl": {
+                  "timeLimit": 8,
+                  "points": 10,
+                  "difficultyTier": "jv",
+                  "buzzTrigger": "one-half times mass times velocity squared"
+                }
+              }
+            },
+            {
+              "id": "assess-energy-lightning-001",
+              "type": "lightning",
+              "extensions": {
+                "knowledgeBowl": {
+                  "category": "Energy Formulas",
+                  "timeLimit": 60,
+                  "questions": [
+                    { "prompt": "Kinetic energy formula", "answer": "one-half m v squared" },
+                    { "prompt": "Gravitational potential energy formula", "answer": "m g h" },
+                    { "prompt": "Work formula with force and displacement", "answer": "F d" },
+                    { "prompt": "Power formula with work and time", "answer": "W over t" },
+                    { "prompt": "Elastic potential energy formula", "answer": "one-half k x squared" }
+                  ],
+                  "pointsPerCorrect": 10,
+                  "negativePoints": false
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kb-physics-waves",
+      "nodeType": "topic",
+      "title": "Waves and Optics",
+      "description": "Wave properties, sound, light, and electromagnetic spectrum",
+      "spokenText": "Wave physics covers properties of mechanical and electromagnetic waves, including sound and light.",
+      "extensions": {
+        "knowledgeBowl": {
+          "competitionYear": "2024-2025",
+          "domain": "science",
+          "category": "physics",
+          "questionWeight": 0.015,
+          "speedTarget": 4.5
+        }
+      },
+      "children": [
+        {
+          "id": "kb-physics-wave-properties",
+          "nodeType": "segment",
+          "title": "Wave Properties",
+          "description": "Wavelength, frequency, amplitude, and wave speed",
+          "content": "Waves transfer energy without transferring matter. Key properties include wavelength (λ), frequency (f), amplitude, and wave speed (v = fλ). Waves can be transverse or longitudinal.",
+          "extensions": {
+            "knowledgeBowl": {
+              "competitionYear": "2024-2025",
+              "domain": "science",
+              "category": "physics",
+              "speedTarget": 4.0,
+              "buzzPoints": [
+                "v equals f lambda identifies wave speed equation",
+                "Perpendicular oscillation indicates transverse wave",
+                "Parallel oscillation indicates longitudinal wave"
+              ]
+            }
+          },
+          "assessments": [
+            {
+              "id": "assess-waves-tossup-001",
+              "type": "choice",
+              "questionType": "toss_up",
+              "stem": "This type of wave has oscillations perpendicular to the direction of energy transfer. Light and water waves are examples.",
+              "options": [
+                { "id": "a", "text": "Longitudinal wave" },
+                { "id": "b", "text": "Transverse wave", "correct": true },
+                { "id": "c", "text": "Standing wave" },
+                { "id": "d", "text": "Compression wave" }
+              ],
+              "feedback": {
+                "correct": "Correct! Transverse waves oscillate perpendicular to energy transfer.",
+                "incorrect": "Transverse waves have perpendicular oscillations. Light is a transverse wave."
+              },
+              "extensions": {
+                "knowledgeBowl": {
+                  "timeLimit": 10,
+                  "points": 10,
+                  "buzzTrigger": "perpendicular to the direction"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "kb-physics-em-spectrum",
+          "nodeType": "segment",
+          "title": "Electromagnetic Spectrum",
+          "description": "Radio waves, microwaves, infrared, visible light, UV, X-rays, gamma rays",
+          "content": "The electromagnetic spectrum spans from low-frequency radio waves to high-frequency gamma rays. In order of increasing frequency: radio, microwave, infrared, visible, ultraviolet, X-ray, gamma. All EM waves travel at the speed of light in a vacuum.",
+          "extensions": {
+            "knowledgeBowl": {
+              "competitionYear": "2024-2025",
+              "domain": "science",
+              "category": "physics",
+              "speedTarget": 3.5,
+              "buzzPoints": [
+                "ROYGBIV for visible spectrum order",
+                "Highest frequency/energy is gamma rays",
+                "Lowest frequency/longest wavelength is radio"
+              ]
+            }
+          },
+          "assessments": [
+            {
+              "id": "assess-em-bonus-001",
+              "type": "bonus",
+              "stem": "Answer these questions about the electromagnetic spectrum.",
+              "extensions": {
+                "knowledgeBowl": {
+                  "leadIn": "For 10 points each, identify these parts of the electromagnetic spectrum.",
+                  "parts": [
+                    {
+                      "prompt": "This type of EM radiation has the longest wavelength and is used in broadcasting.",
+                      "answer": "Radio waves",
+                      "alternateAnswers": ["Radio"],
+                      "points": 10
+                    },
+                    {
+                      "prompt": "This portion of the spectrum, with wavelengths between 400 and 700 nanometers, can be detected by the human eye.",
+                      "answer": "Visible light",
+                      "alternateAnswers": ["Visible", "Light"],
+                      "points": 10
+                    },
+                    {
+                      "prompt": "This highest-energy form of EM radiation is produced by nuclear reactions and can penetrate most matter.",
+                      "answer": "Gamma rays",
+                      "alternateAnswers": ["Gamma radiation", "Gamma"],
+                      "points": 10
+                    }
+                  ],
+                  "totalPoints": 30,
+                  "conferenceTime": 5
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kb-physics-scientists",
+      "nodeType": "topic",
+      "title": "Famous Physicists",
+      "description": "Key scientists and their contributions to physics",
+      "spokenText": "Knowledge Bowl frequently asks about famous physicists. Know their key discoveries and contributions.",
+      "extensions": {
+        "knowledgeBowl": {
+          "competitionYear": "2024-2025",
+          "domain": "science",
+          "category": "physics",
+          "questionWeight": 0.01
+        }
+      },
+      "children": [
+        {
+          "id": "kb-physics-scientists-modern",
+          "nodeType": "segment",
+          "title": "Modern Physicists",
+          "description": "Einstein, Bohr, Heisenberg, Feynman, Hawking, and others",
+          "content": "Key modern physicists include Albert Einstein (relativity, photoelectric effect), Niels Bohr (atomic model), Werner Heisenberg (uncertainty principle), Richard Feynman (QED), and Stephen Hawking (black holes, cosmology).",
+          "extensions": {
+            "knowledgeBowl": {
+              "competitionYear": "2024-2025",
+              "domain": "science",
+              "category": "physics",
+              "speedTarget": 3.0,
+              "buzzPoints": [
+                "E=mc² uniquely identifies Einstein",
+                "Uncertainty principle identifies Heisenberg",
+                "Electron orbits and atomic model often signals Bohr"
+              ]
+            }
+          },
+          "assessments": [
+            {
+              "id": "assess-scientists-pyramid-001",
+              "type": "pyramid",
+              "stem": "Identify this physicist.",
+              "extensions": {
+                "knowledgeBowl": {
+                  "pyramidClues": [
+                    {
+                      "text": "This physicist worked on the Manhattan Project and later became known for his work in quantum electrodynamics.",
+                      "revealPoints": 30,
+                      "difficulty": "expert"
+                    },
+                    {
+                      "text": "He won the Nobel Prize in 1965 and was known for his Feynman diagrams.",
+                      "revealPoints": 20,
+                      "difficulty": "hard"
+                    },
+                    {
+                      "text": "This Caltech professor was famous for his lectures and his work on the Challenger disaster investigation.",
+                      "revealPoints": 10,
+                      "difficulty": "medium"
+                    },
+                    {
+                      "text": "This American physicist wrote 'Surely You're Joking' and was known for playing bongo drums.",
+                      "revealPoints": 5,
+                      "difficulty": "easy"
+                    }
+                  ],
+                  "answer": "Richard Feynman",
+                  "alternateAnswers": ["Feynman", "Richard P. Feynman"]
+                }
+              }
+            },
+            {
+              "id": "assess-scientists-pyramid-002",
+              "type": "pyramid",
+              "stem": "Identify this physicist.",
+              "extensions": {
+                "knowledgeBowl": {
+                  "pyramidClues": [
+                    {
+                      "text": "This physicist proposed the equivalence of mass and energy in 1905.",
+                      "revealPoints": 30,
+                      "difficulty": "hard"
+                    },
+                    {
+                      "text": "He won the Nobel Prize for explaining the photoelectric effect, not for relativity.",
+                      "revealPoints": 20,
+                      "difficulty": "medium"
+                    },
+                    {
+                      "text": "This German-born physicist developed both special and general relativity.",
+                      "revealPoints": 10,
+                      "difficulty": "easy"
+                    },
+                    {
+                      "text": "His famous equation is E equals m c squared.",
+                      "revealPoints": 5,
+                      "difficulty": "giveaway"
+                    }
+                  ],
+                  "answer": "Albert Einstein",
+                  "alternateAnswers": ["Einstein"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "summaryAssessments": {
+    "diagnostic": {
+      "id": "physics-diagnostic",
+      "type": "diagnostic",
+      "title": "Physics Diagnostic Assessment",
+      "description": "Baseline assessment covering all physics topics",
+      "extensions": {
+        "knowledgeBowl": {
+          "duration": 1200,
+          "questionsPerTopic": 3,
+          "difficultyMix": {
+            "jv": 0.3,
+            "varsity": 0.5,
+            "championship": 0.2
+          }
+        }
+      }
+    },
+    "speedDrill": {
+      "id": "physics-speed-drill",
+      "type": "lightning",
+      "title": "Physics Speed Drill",
+      "description": "Rapid-fire physics questions for speed training",
+      "extensions": {
+        "knowledgeBowl": {
+          "category": "Physics Quick Recall",
+          "timeLimit": 120,
+          "targetQuestionsPerMinute": 4
+        }
+      }
+    }
+  }
+}
