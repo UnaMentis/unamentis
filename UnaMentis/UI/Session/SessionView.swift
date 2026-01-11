@@ -83,7 +83,8 @@ public struct SessionView: View {
                             TranscriptView(
                                 conversationHistory: viewModel.conversationHistory,
                                 userTranscript: viewModel.userTranscript,
-                                aiResponse: viewModel.aiResponse
+                                aiResponse: viewModel.aiResponse,
+                                highlightedMessageId: viewModel.highlightedMessageId
                             )
                             .frame(maxWidth: .infinity)
 
@@ -101,7 +102,8 @@ public struct SessionView: View {
                             TranscriptView(
                                 conversationHistory: viewModel.conversationHistory,
                                 userTranscript: viewModel.userTranscript,
-                                aiResponse: viewModel.aiResponse
+                                aiResponse: viewModel.aiResponse,
+                                highlightedMessageId: viewModel.highlightedMessageId
                             )
 
                             // Visual asset overlay - shows synchronized visuals during curriculum playback
@@ -145,10 +147,13 @@ public struct SessionView: View {
                                 .transition(.opacity.combined(with: .scale))
 
                             if viewModel.showCurriculumControls {
-                                // Curriculum playback controls: Mute | Pause/Play | Slide-to-Stop
+                                // Curriculum playback controls with segment navigation
                                 CurriculumPlaybackControls(
                                     isPaused: $viewModel.isPaused,
                                     isMuted: $viewModel.isMuted,
+                                    currentSegmentIndex: viewModel.currentSegmentIndex,
+                                    hasNextTopic: viewModel.hasNextTopic,
+                                    nextTopicTitle: viewModel.nextTopicTitle,
                                     onPauseResume: {
                                         if viewModel.isPaused {
                                             viewModel.resumePlayback()
@@ -158,6 +163,15 @@ public struct SessionView: View {
                                     },
                                     onStop: {
                                         viewModel.stopPlayback()
+                                    },
+                                    onGoBack: {
+                                        viewModel.goBackOneSegment()
+                                    },
+                                    onReplay: {
+                                        viewModel.replayCurrentTopic()
+                                    },
+                                    onNextTopic: {
+                                        viewModel.skipToNextTopic()
                                     },
                                     onMuteChanged: { muted in
                                         viewModel.setMicrophoneMuted(muted)
@@ -226,7 +240,9 @@ public struct SessionView: View {
                 SessionHelpSheet()
             }
             .sheet(isPresented: $viewModel.showSettings) {
-                SessionSettingsView()
+                NavigationStack {
+                    VoiceSettingsView(showDoneButton: true)
+                }
             }
             .alert("Error", isPresented: $viewModel.showError) {
                 Button("OK") { viewModel.showError = false }
@@ -387,6 +403,9 @@ struct TranscriptView: View {
     let userTranscript: String
     let aiResponse: String
 
+    /// ID of the currently playing message for highlighting and scrolling
+    var highlightedMessageId: UUID?
+
     /// Check if user transcript is already in history (to avoid duplication)
     private var isUserTranscriptInHistory: Bool {
         guard !userTranscript.isEmpty else { return false }
@@ -415,7 +434,8 @@ struct TranscriptView: View {
                     ForEach(conversationHistory) { message in
                         TranscriptBubble(
                             text: message.text,
-                            isUser: message.isUser
+                            isUser: message.isUser,
+                            isHighlighted: message.id == highlightedMessageId
                         )
                         .id(message.id)
                     }
@@ -459,6 +479,14 @@ struct TranscriptView: View {
                     proxy.scrollTo("bottom", anchor: .bottom)
                 }
             }
+            .onChange(of: highlightedMessageId) { _, newId in
+                // Scroll to highlighted message when segment navigation occurs
+                if let id = newId {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        proxy.scrollTo(id, anchor: .center)
+                    }
+                }
+            }
         }
         .background {
             RoundedRectangle(cornerRadius: 16)
@@ -470,6 +498,7 @@ struct TranscriptView: View {
 struct TranscriptBubble: View {
     let text: String
     let isUser: Bool
+    var isHighlighted: Bool = false
 
     var body: some View {
         HStack {
@@ -482,12 +511,18 @@ struct TranscriptBubble: View {
                 .background {
                     RoundedRectangle(cornerRadius: 14)
                         #if os(iOS)
-                        .fill(isUser ? Color.blue : Color(.systemGray5))
+                        .fill(isUser ? Color.blue : (isHighlighted ? Color.blue.opacity(0.2) : Color(.systemGray5)))
                         #else
-                        .fill(isUser ? Color.blue : Color(NSColor.controlBackgroundColor))
+                        .fill(isUser ? Color.blue : (isHighlighted ? Color.blue.opacity(0.2) : Color(NSColor.controlBackgroundColor)))
                         #endif
                 }
                 .foregroundStyle(isUser ? .white : .primary)
+                .overlay {
+                    if isHighlighted && !isUser {
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(Color.blue.opacity(0.5), lineWidth: 2)
+                    }
+                }
 
             if !isUser { Spacer(minLength: 40) }
         }
@@ -611,8 +646,9 @@ struct SessionControlButton: View {
 
 // MARK: - Curriculum Playback Controls
 
-/// Controls for curriculum playback mode: Mute, Pause/Play, and Slide-to-Stop
-/// Uses the new SessionControlBar component for a unified low-profile control experience.
+/// Controls for curriculum playback mode with segment navigation.
+/// Uses CurriculumControlBar for full navigation capabilities (go-back, replay, next topic).
+@MainActor
 struct CurriculumPlaybackControls: View {
     /// Whether the session is paused
     @Binding var isPaused: Bool
@@ -620,21 +656,45 @@ struct CurriculumPlaybackControls: View {
     /// Whether the microphone is muted
     @Binding var isMuted: Bool
 
+    /// Current segment index (for enabling go-back button)
+    var currentSegmentIndex: Int = 0
+
+    /// Whether there is a next topic available
+    var hasNextTopic: Bool = false
+
+    /// Title of the next topic (for accessibility)
+    var nextTopicTitle: String?
+
     /// Callback when pause/resume is toggled
-    let onPauseResume: () -> Void
+    let onPauseResume: @MainActor () -> Void
 
     /// Callback when stop action completes
-    let onStop: () -> Void
+    let onStop: @MainActor () -> Void
+
+    /// Callback when go-back button is tapped
+    var onGoBack: (@MainActor () -> Void)?
+
+    /// Callback when replay button is tapped
+    var onReplay: (@MainActor () -> Void)?
+
+    /// Callback when next topic button is tapped
+    var onNextTopic: (@MainActor () -> Void)?
 
     /// Optional callback when mute changes
-    var onMuteChanged: ((Bool) -> Void)?
+    var onMuteChanged: (@MainActor (Bool) -> Void)?
 
     var body: some View {
-        SessionControlBar(
+        CurriculumControlBar(
             isPaused: $isPaused,
             isMuted: $isMuted,
+            currentSegmentIndex: currentSegmentIndex,
+            hasNextTopic: hasNextTopic,
+            nextTopicTitle: nextTopicTitle,
             onStop: onStop,
-            onPauseChanged: { _ in
+            onGoBack: { [onGoBack] in onGoBack?() },
+            onReplay: { [onReplay] in onReplay?() },
+            onNextTopic: { [onNextTopic] in onNextTopic?() },
+            onPauseChanged: { [onPauseResume] _ in
                 onPauseResume()
             },
             onMuteChanged: onMuteChanged
@@ -647,14 +707,17 @@ extension CurriculumPlaybackControls {
     /// Initializer for backward compatibility with existing code that uses closures
     init(
         isPaused: Bool,
-        onPauseResume: @escaping () -> Void,
-        onStop: @escaping () -> Void
+        onPauseResume: @escaping @MainActor () -> Void,
+        onStop: @escaping @MainActor () -> Void
     ) {
         self._isPaused = .constant(isPaused)
         self._isMuted = .constant(false)
         self.onPauseResume = onPauseResume
         self.onStop = onStop
         self.onMuteChanged = nil
+        self.onGoBack = nil
+        self.onReplay = nil
+        self.onNextTopic = nil
     }
 }
 
@@ -683,306 +746,6 @@ struct MetricsBadge: View {
             }
         }
         .foregroundStyle(.secondary)
-    }
-}
-
-// MARK: - Session Settings View
-
-struct SessionSettingsView: View {
-    @Environment(\.dismiss) private var dismiss
-    @StateObject private var settings = SessionSettingsModel()
-
-    var body: some View {
-        NavigationStack {
-            List {
-                // MARK: Audio Settings
-                Section("Audio") {
-                    Picker("Sample Rate", selection: $settings.sampleRate) {
-                        Text("16 kHz").tag(16000.0)
-                        Text("24 kHz").tag(24000.0)
-                        Text("48 kHz").tag(48000.0)
-                    }
-
-                    Picker("Buffer Size", selection: $settings.bufferSize) {
-                        Text("256 (Low Latency)").tag(UInt32(256))
-                        Text("512").tag(UInt32(512))
-                        Text("1024 (Default)").tag(UInt32(1024))
-                        Text("2048 (Stable)").tag(UInt32(2048))
-                    }
-
-                    Toggle("Voice Processing", isOn: $settings.enableVoiceProcessing)
-                    Toggle("Echo Cancellation", isOn: $settings.enableEchoCancellation)
-                    Toggle("Noise Suppression", isOn: $settings.enableNoiseSuppression)
-                }
-
-                // MARK: VAD Settings
-                Section("Voice Activity Detection") {
-                    Picker("VAD Provider", selection: $settings.vadProvider) {
-                        ForEach(VADProvider.allCases, id: \.self) { provider in
-                            Text(provider.displayName).tag(provider)
-                        }
-                    }
-
-                    VStack(alignment: .leading) {
-                        Text("VAD Threshold: \(settings.vadThreshold, specifier: "%.2f")")
-                        Slider(value: $settings.vadThreshold, in: 0.1...0.9, step: 0.05)
-                    }
-
-                    Toggle("Enable Barge-In", isOn: $settings.enableBargeIn)
-
-                    if settings.enableBargeIn {
-                        VStack(alignment: .leading) {
-                            Text("Barge-In Threshold: \(settings.bargeInThreshold, specifier: "%.2f")")
-                            Slider(value: $settings.bargeInThreshold, in: 0.3...0.9, step: 0.05)
-                        }
-                    }
-                }
-
-                // MARK: Voice Settings
-                Section("Voice (TTS)") {
-                    Picker("Provider", selection: $settings.ttsProvider) {
-                        ForEach(TTSProvider.allCases, id: \.self) { provider in
-                            Text(provider.displayName).tag(provider)
-                        }
-                    }
-
-                    // Voice picker for self-hosted TTS providers
-                    if settings.ttsProvider == .selfHosted || settings.ttsProvider == .vibeVoice {
-                        Picker("Voice", selection: $settings.ttsVoice) {
-                            ForEach(settings.availableVoices, id: \.self) { voice in
-                                Text(settings.voiceDisplayName(voice)).tag(voice)
-                            }
-                        }
-                    }
-
-                    VStack(alignment: .leading) {
-                        Text("Speaking Rate: \(settings.speakingRate, specifier: "%.1f")x")
-                        Slider(value: $settings.speakingRate, in: 0.5...2.0, step: 0.1)
-                    }
-
-                    VStack(alignment: .leading) {
-                        Text("Volume: \(Int(settings.volume * 100))%")
-                        Slider(value: $settings.volume, in: 0.0...1.0, step: 0.1)
-                    }
-                }
-
-                // MARK: LLM Settings
-                Section("AI Model") {
-                    Picker("Provider", selection: $settings.llmProvider) {
-                        ForEach(LLMProvider.allCases, id: \.self) { provider in
-                            Text(provider.displayName).tag(provider)
-                        }
-                    }
-
-                    Picker("Model", selection: $settings.llmModel) {
-                        ForEach(settings.llmProvider.availableModels, id: \.self) { model in
-                            Text(model).tag(model)
-                        }
-                    }
-
-                    VStack(alignment: .leading) {
-                        Text("Temperature: \(settings.temperature, specifier: "%.1f")")
-                        Slider(value: $settings.temperature, in: 0.0...2.0, step: 0.1)
-                    }
-
-                    Stepper("Max Tokens: \(settings.maxTokens)", value: $settings.maxTokens, in: 256...4096, step: 256)
-                }
-
-                // MARK: Session Settings
-                Section("Session") {
-                    Toggle("Cost Tracking", isOn: $settings.enableCostTracking)
-                    Toggle("Auto-Save Transcript", isOn: $settings.autoSaveTranscript)
-
-                    Picker("Max Duration", selection: $settings.maxDuration) {
-                        Text("30 minutes").tag(TimeInterval(1800))
-                        Text("60 minutes").tag(TimeInterval(3600))
-                        Text("90 minutes").tag(TimeInterval(5400))
-                        Text("Unlimited").tag(TimeInterval(0))
-                    }
-                }
-            }
-            .navigationTitle("Session Settings")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Reset") {
-                        settings.resetToDefaults()
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Session Settings Model
-
-@MainActor
-class SessionSettingsModel: ObservableObject {
-    private let defaults = UserDefaults.standard
-
-    // Audio
-    @Published var sampleRate: Double {
-        didSet { defaults.set(sampleRate, forKey: "sampleRate") }
-    }
-    @Published var bufferSize: UInt32 {
-        didSet { defaults.set(Int(bufferSize), forKey: "bufferSize") }
-    }
-    @Published var enableVoiceProcessing: Bool {
-        didSet { defaults.set(enableVoiceProcessing, forKey: "enableVoiceProcessing") }
-    }
-    @Published var enableEchoCancellation: Bool {
-        didSet { defaults.set(enableEchoCancellation, forKey: "enableEchoCancellation") }
-    }
-    @Published var enableNoiseSuppression: Bool {
-        didSet { defaults.set(enableNoiseSuppression, forKey: "enableNoiseSuppression") }
-    }
-
-    // VAD
-    @Published var vadProvider: VADProvider {
-        didSet { defaults.set(vadProvider.rawValue, forKey: "vadProvider") }
-    }
-    @Published var vadThreshold: Float {
-        didSet { defaults.set(vadThreshold, forKey: "vadThreshold") }
-    }
-    @Published var enableBargeIn: Bool {
-        didSet { defaults.set(enableBargeIn, forKey: "enableBargeIn") }
-    }
-    @Published var bargeInThreshold: Float {
-        didSet { defaults.set(bargeInThreshold, forKey: "bargeInThreshold") }
-    }
-
-    // TTS
-    @Published var ttsProvider: TTSProvider {
-        didSet { defaults.set(ttsProvider.rawValue, forKey: "ttsProvider") }
-    }
-    @Published var ttsVoice: String {
-        didSet { defaults.set(ttsVoice, forKey: "ttsVoice") }
-    }
-    @Published var speakingRate: Float {
-        didSet { defaults.set(speakingRate, forKey: "speakingRate") }
-    }
-    @Published var volume: Float {
-        didSet { defaults.set(volume, forKey: "volume") }
-    }
-
-    /// Available TTS voices - includes both OpenAI-compatible and native VibeVoice voices
-    var availableVoices: [String] {
-        // OpenAI-compatible aliases + native VibeVoice voices
-        ["alloy", "echo", "fable", "nova", "onyx", "shimmer",
-         "Carter", "Davis", "Emma", "Frank", "Grace", "Mike", "Samuel"]
-    }
-
-    /// Voice display names with gender and description
-    /// Covers both OpenAI-compatible aliases and native VibeVoice voices
-    func voiceDisplayName(_ voiceId: String) -> String {
-        switch voiceId.lowercased() {
-        // OpenAI-compatible aliases (map to VibeVoice voices)
-        case "alloy": return "Alloy → Carter - Male, Neutral"
-        case "echo": return "Echo → Davis - Male, Warm"
-        case "fable": return "Fable → Emma - Female, Storyteller"
-        case "nova": return "Nova → Grace - Female, Friendly"
-        case "onyx": return "Onyx → Frank - Male, Deep"
-        case "shimmer": return "Shimmer → Mike - Male, Expressive"
-        // Native VibeVoice voices
-        case "carter": return "Carter - Male, Neutral"
-        case "davis": return "Davis - Male, Warm"
-        case "emma": return "Emma - Female, Storyteller"
-        case "frank": return "Frank - Male, Deep"
-        case "grace": return "Grace - Female, Friendly"
-        case "mike": return "Mike - Male, Expressive"
-        case "samuel": return "Samuel - Male, Indian Accent"
-        default: return voiceId.capitalized
-        }
-    }
-
-    // LLM
-    @Published var llmProvider: LLMProvider {
-        didSet {
-            defaults.set(llmProvider.rawValue, forKey: "llmProvider")
-            // Update model when provider changes
-            if !llmProvider.availableModels.contains(llmModel) {
-                llmModel = llmProvider.availableModels.first ?? ""
-            }
-        }
-    }
-    @Published var llmModel: String {
-        didSet { defaults.set(llmModel, forKey: "llmModel") }
-    }
-    @Published var temperature: Float {
-        didSet { defaults.set(temperature, forKey: "temperature") }
-    }
-    @Published var maxTokens: Int {
-        didSet { defaults.set(maxTokens, forKey: "maxTokens") }
-    }
-
-    // Session
-    @Published var enableCostTracking: Bool {
-        didSet { defaults.set(enableCostTracking, forKey: "enableCostTracking") }
-    }
-    @Published var autoSaveTranscript: Bool {
-        didSet { defaults.set(autoSaveTranscript, forKey: "autoSaveTranscript") }
-    }
-    @Published var maxDuration: TimeInterval {
-        didSet { defaults.set(maxDuration, forKey: "maxDuration") }
-    }
-
-    init() {
-        // Load saved values or use defaults
-        self.sampleRate = defaults.object(forKey: "sampleRate") as? Double ?? 48000
-        self.bufferSize = UInt32(defaults.object(forKey: "bufferSize") as? Int ?? 1024)
-        self.enableVoiceProcessing = defaults.object(forKey: "enableVoiceProcessing") as? Bool ?? true
-        self.enableEchoCancellation = defaults.object(forKey: "enableEchoCancellation") as? Bool ?? true
-        self.enableNoiseSuppression = defaults.object(forKey: "enableNoiseSuppression") as? Bool ?? true
-
-        self.vadProvider = defaults.string(forKey: "vadProvider")
-            .flatMap { VADProvider(rawValue: $0) } ?? .silero
-        self.vadThreshold = defaults.object(forKey: "vadThreshold") as? Float ?? 0.5
-        self.enableBargeIn = defaults.object(forKey: "enableBargeIn") as? Bool ?? true
-        self.bargeInThreshold = defaults.object(forKey: "bargeInThreshold") as? Float ?? 0.7
-
-        self.ttsProvider = defaults.string(forKey: "ttsProvider")
-            .flatMap { TTSProvider(rawValue: $0) } ?? .appleTTS
-        self.ttsVoice = defaults.string(forKey: "ttsVoice") ?? "nova"
-        self.speakingRate = defaults.object(forKey: "speakingRate") as? Float ?? 1.0
-        self.volume = defaults.object(forKey: "volume") as? Float ?? 1.0
-
-        self.llmProvider = defaults.string(forKey: "llmProvider")
-            .flatMap { LLMProvider(rawValue: $0) } ?? .localMLX
-        self.llmModel = defaults.string(forKey: "llmModel") ?? "ministral-3b (on-device)"
-        self.temperature = defaults.object(forKey: "temperature") as? Float ?? 0.7
-        self.maxTokens = defaults.object(forKey: "maxTokens") as? Int ?? 1024
-
-        self.enableCostTracking = defaults.object(forKey: "enableCostTracking") as? Bool ?? true
-        self.autoSaveTranscript = defaults.object(forKey: "autoSaveTranscript") as? Bool ?? true
-        self.maxDuration = defaults.object(forKey: "maxDuration") as? TimeInterval ?? 5400
-    }
-
-    func resetToDefaults() {
-        sampleRate = 48000
-        bufferSize = 1024
-        enableVoiceProcessing = true
-        enableEchoCancellation = true
-        enableNoiseSuppression = true
-        vadProvider = .silero
-        vadThreshold = 0.5
-        enableBargeIn = true
-        bargeInThreshold = 0.7
-        ttsProvider = .appleTTS
-        ttsVoice = "nova"
-        speakingRate = 1.0
-        volume = 1.0
-        llmProvider = .localMLX
-        llmModel = "ministral-3b (on-device)"
-        temperature = 0.7
-        maxTokens = 1024
-        enableCostTracking = true
-        autoSaveTranscript = true
-        maxDuration = 5400
     }
 }
 
@@ -1035,6 +798,9 @@ class SessionViewModel: ObservableObject {
 
     /// Full conversation history for display
     @Published var conversationHistory: [ConversationMessage] = []
+
+    /// ID of the currently playing message for transcript highlighting
+    @Published var highlightedMessageId: UUID?
 
     /// UMCF transcript data for this topic (if available)
     @Published var umcfTranscript: TopicTranscriptResponse?
@@ -1122,11 +888,39 @@ class SessionViewModel: ObservableObject {
     /// See docs/CURRICULUM_SESSION_UX.md for full design documentation.
     private var audioQueue: [(audio: Data, text: String, index: Int)] = []
 
+    // MARK: - Audio Segment Caching (for replay/rewind)
+
+    /// Cache of audio segments for instant replay and segment navigation
+    private let audioSegmentCache = AudioSegmentCache()
+
+    // MARK: - Auto-Continue to Next Topic
+
+    /// User preference for auto-continuing to next topic
+    @AppStorage("autoContinueTopics") private var autoContinueTopics: Bool = true
+
+    /// Pre-fetched audio queue for the next topic (for seamless transition)
+    private var nextTopicAudioQueue: [(audio: Data, text: String, index: Int)] = []
+
+    /// Pending text segments for the next topic
+    private var nextTopicPendingText: [Int: String] = [:]
+
+    /// Total segments in the pre-generated next topic
+    private var nextTopicTotalSegments: Int = 0
+
+    /// The topic being pre-generated (if any)
+    private var preGeneratedNextTopic: Topic?
+
+    /// Whether we're currently pre-generating the next topic
+    private var isPreGeneratingNextTopic: Bool = false
+
     /// Whether audio is currently playing
     @Published private(set) var isPlayingAudio: Bool = false
 
     /// Audio player delegate for handling playback completion
     private var audioDelegate: AudioPlayerDelegate?
+
+    /// Player for transition announcements (retained to prevent deallocation during playback)
+    private var announcementPlayer: AVAudioPlayer?
 
     /// Timer for updating audio level from playback metering
     private var audioMeteringTimer: Timer?
@@ -1155,6 +949,27 @@ class SessionViewModel: ObservableObject {
         return state == .aiSpeaking || state == .aiThinking
     }
 
+    /// Whether there is a next topic in the curriculum
+    var hasNextTopic: Bool {
+        guard let currentTopic = topic,
+              let curriculum = currentTopic.curriculum,
+              let topicsArray = curriculum.topics?.array as? [Topic] else { return false }
+        let sortedTopics = topicsArray.sorted { ($0.orderIndex) < ($1.orderIndex) }
+        guard let currentIndex = sortedTopics.firstIndex(where: { $0.id == currentTopic.id }) else { return false }
+        return currentIndex + 1 < sortedTopics.count
+    }
+
+    /// Title of the next topic (for accessibility)
+    var nextTopicTitle: String? {
+        guard let currentTopic = topic,
+              let curriculum = currentTopic.curriculum,
+              let topicsArray = curriculum.topics?.array as? [Topic] else { return nil }
+        let sortedTopics = topicsArray.sorted { ($0.orderIndex) < ($1.orderIndex) }
+        guard let currentIndex = sortedTopics.firstIndex(where: { $0.id == currentTopic.id }),
+              currentIndex + 1 < sortedTopics.count else { return nil }
+        return sortedTopics[currentIndex + 1].title
+    }
+
     /// Pending text segments waiting for audio (keyed by segment index).
     /// Text is buffered here until its audio arrives, then both are displayed together.
     /// See `audioQueue` documentation for the full synchronization design.
@@ -1169,8 +984,8 @@ class SessionViewModel: ObservableObject {
     /// Session start time for duration tracking
     private var sessionStartTime: Date?
 
-    /// Topic for curriculum-based sessions (optional)
-    let topic: Topic?
+    /// Topic for curriculum-based sessions (mutable to allow in-place topic transitions)
+    private(set) var topic: Topic?
 
     /// Whether this is a lecture mode session (AI speaks first)
     var isLectureMode: Bool {
@@ -1934,6 +1749,18 @@ class SessionViewModel: ObservableObject {
         audioQueue.append((audio: audioData, text: text, index: index))
         logger.info("Queued segment \(index) audio (\(audioData.count) bytes), queue size: \(audioQueue.count)")
 
+        // Cache segment for replay/rewind capability
+        let topicId = topic?.sourceId ?? topic?.id?.uuidString
+        Task { [weak self] in
+            guard let cache = self?.audioSegmentCache else { return }
+            await cache.cacheSegment(
+                index: index,
+                text: text,
+                audioData: audioData,
+                topicId: topicId
+            )
+        }
+
         // Start playback if not already playing and not paused
         if !isPlayingAudio && !isPaused {
             // Configure audio session for playback (required for direct streaming mode)
@@ -1996,6 +1823,103 @@ class SessionViewModel: ObservableObject {
         logger.info("Playback resumed")
     }
 
+    /// Go back one segment (replay the previous segment)
+    /// Uses cached audio for instant playback
+    func goBackOneSegment() {
+        guard currentSegmentIndex > 0 else {
+            logger.info("Cannot go back - already at first segment")
+            return
+        }
+
+        let targetIndex = currentSegmentIndex - 1
+        logger.info("Going back to segment \(targetIndex) from \(currentSegmentIndex)")
+
+        // Stop current playback
+        audioPlayer?.stop()
+        audioPlayer = nil
+        audioQueue.removeAll()
+
+        Task {
+            // Get all cached segments from target index onward
+            let segmentsToReplay = await audioSegmentCache.getSegments(from: targetIndex)
+
+            guard !segmentsToReplay.isEmpty else {
+                logger.warning("Segment \(targetIndex) not cached, cannot go back")
+                return
+            }
+
+            // Rebuild the queue from cached segments
+            await MainActor.run {
+                audioQueue = segmentsToReplay.map { (audio: $0.audioData, text: $0.text, index: $0.index) }
+                currentSegmentIndex = targetIndex
+                completedSegmentCount = targetIndex
+
+                // Resume playback
+                isPaused = false
+                playNextAudioSegment()
+            }
+
+            logger.info("Replaying from segment \(targetIndex), queue size: \(segmentsToReplay.count)")
+        }
+    }
+
+    /// Replay the entire current topic from the beginning
+    /// Uses cached audio for instant playback
+    func replayCurrentTopic() {
+        logger.info("Replaying current topic from beginning")
+
+        // Stop current playback
+        audioPlayer?.stop()
+        audioPlayer = nil
+        audioQueue.removeAll()
+
+        Task {
+            // Get all cached segments
+            let allSegments = await audioSegmentCache.getAllSegments()
+
+            guard !allSegments.isEmpty else {
+                logger.warning("No cached segments available for replay")
+                return
+            }
+
+            // Rebuild the queue from all cached segments
+            await MainActor.run {
+                audioQueue = allSegments.map { (audio: $0.audioData, text: $0.text, index: $0.index) }
+                currentSegmentIndex = 0
+                completedSegmentCount = 0
+
+                // Clear conversation history to restart fresh
+                conversationHistory.removeAll()
+                aiResponse = ""
+
+                // Resume playback
+                isPaused = false
+                playNextAudioSegment()
+            }
+
+            logger.info("Replaying topic from beginning, \(allSegments.count) segments queued")
+        }
+    }
+
+    /// Skip to the next topic in the curriculum
+    /// This is called manually by the user or automatically on topic completion
+    func skipToNextTopic() {
+        logger.info("Skip to next topic requested")
+
+        // If we have pre-generated content, use it
+        if preGeneratedNextTopic != nil && !nextTopicAudioQueue.isEmpty {
+            Task {
+                await transitionToNextTopic()
+            }
+            return
+        }
+
+        // Otherwise, try to start the next topic fresh
+        Task {
+            await tryStartNextTopic()
+        }
+    }
+
     /// Stop curriculum playback completely and save progress
     func stopPlayback() {
         guard showCurriculumControls else { return }
@@ -2033,6 +1957,260 @@ class SessionViewModel: ObservableObject {
 
         // Notify Watch of session end
         teardownWatchSync()
+    }
+
+    // MARK: - Topic Auto-Continue
+
+    /// Pre-generate the next topic's audio for seamless transition
+    /// Called automatically when current topic reaches 70% progress
+    private func preGenerateNextTopic() async {
+        guard !isPreGeneratingNextTopic else {
+            logger.info("Already pre-generating next topic")
+            return
+        }
+
+        guard let currentTopic = topic,
+              let curriculum = currentTopic.curriculum else {
+            logger.info("No curriculum context for pre-generation")
+            return
+        }
+
+        // Get next topic using CurriculumEngine pattern
+        let topics = (curriculum.topics?.array as? [Topic] ?? []).sorted { ($0.orderIndex) < ($1.orderIndex) }
+        guard let currentIndex = topics.firstIndex(where: { $0.id == currentTopic.id }),
+              currentIndex + 1 < topics.count else {
+            logger.info("No next topic available - at end of curriculum")
+            return
+        }
+
+        let nextTopic = topics[currentIndex + 1]
+
+        // Ensure we have valid source IDs before pre-generating
+        guard let curriculumSourceId = curriculum.sourceId, !curriculumSourceId.isEmpty,
+              let nextTopicSourceId = nextTopic.sourceId, !nextTopicSourceId.isEmpty else {
+            logger.warning("Missing source IDs for curriculum or next topic - cannot pre-generate")
+            return
+        }
+
+        logger.info("Pre-generating audio for next topic: \(nextTopic.title ?? "Unknown")")
+
+        isPreGeneratingNextTopic = true
+        preGeneratedNextTopic = nextTopic
+
+        // Get voice from settings
+        let voice = UserDefaults.standard.string(forKey: "ttsVoice") ?? "nova"
+
+        // Stream next topic's audio into separate buffer
+        await transcriptStreamer.streamTopicAudio(
+            curriculumId: curriculumSourceId,
+            topicId: nextTopicSourceId,
+            voice: voice,
+            onSegmentText: { [weak self] index, _, text in
+                Task { @MainActor in
+                    self?.nextTopicPendingText[index] = text
+                }
+            },
+            onSegmentAudio: { [weak self] index, audioData in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    let text = self.nextTopicPendingText[index] ?? ""
+                    self.nextTopicAudioQueue.append((audio: audioData, text: text, index: index))
+                    self.nextTopicTotalSegments = max(self.nextTopicTotalSegments, index + 1)
+                }
+            },
+            onComplete: { [weak self] in
+                Task { @MainActor in
+                    self?.logger.info("Pre-generation complete for next topic: \(self?.nextTopicAudioQueue.count ?? 0) segments")
+                }
+            },
+            onError: { [weak self] error in
+                Task { @MainActor in
+                    self?.logger.error("Pre-generation failed: \(error.localizedDescription)")
+                    self?.isPreGeneratingNextTopic = false
+                    self?.preGeneratedNextTopic = nil
+                }
+            }
+        )
+    }
+
+    /// Transition to the next topic using pre-generated content
+    private func transitionToNextTopic() async {
+        guard let nextTopic = preGeneratedNextTopic else {
+            logger.warning("No pre-generated topic available for transition")
+            return
+        }
+
+        logger.info("Transitioning to next topic: \(nextTopic.title ?? "Unknown")")
+
+        // Announce the transition via a brief spoken message
+        let currentTitle = topic?.title ?? "the current topic"
+        let nextTitle = nextTopic.title ?? "the next topic"
+        let announcement = "Great work completing \(currentTitle). Now continuing with \(nextTitle)."
+
+        // Update UI to show transition
+        aiResponse = "Transitioning to: \(nextTitle)"
+
+        // Speak the transition announcement using TTS
+        await speakTransitionAnnouncement(announcement)
+
+        // Clear current topic's cache
+        await audioSegmentCache.clearCache()
+
+        // Swap to the next topic
+        topic = nextTopic
+        audioQueue = nextTopicAudioQueue
+        pendingTextSegments = nextTopicPendingText
+        totalSegments = nextTopicTotalSegments
+        currentSegmentIndex = 0
+        completedSegmentCount = 0
+
+        // Clear conversation for fresh topic
+        conversationHistory.removeAll()
+        aiResponse = ""
+
+        // Reset pre-generation state
+        nextTopicAudioQueue = []
+        nextTopicPendingText = [:]
+        nextTopicTotalSegments = 0
+        preGeneratedNextTopic = nil
+        isPreGeneratingNextTopic = false
+
+        // Continue playback with the new topic
+        playNextAudioSegment()
+    }
+
+    /// Try to start the next topic without pre-generated content
+    private func tryStartNextTopic() async {
+        guard let currentTopic = topic,
+              let curriculum = currentTopic.curriculum else {
+            logger.info("No curriculum context for next topic")
+            state = .userSpeaking
+            isDirectStreamingMode = false
+            return
+        }
+
+        // Get next topic
+        let topics = (curriculum.topics?.array as? [Topic] ?? []).sorted { ($0.orderIndex) < ($1.orderIndex) }
+        guard let currentIndex = topics.firstIndex(where: { $0.id == currentTopic.id }),
+              currentIndex + 1 < topics.count else {
+            logger.info("No next topic - reached end of curriculum")
+            state = .userSpeaking
+            isDirectStreamingMode = false
+            return
+        }
+
+        let nextTopic = topics[currentIndex + 1]
+        logger.info("Starting next topic fresh: \(nextTopic.title ?? "Unknown")")
+
+        // Announce transition
+        let announcement = "Now continuing with \(nextTopic.title ?? "the next topic")."
+        await speakTransitionAnnouncement(announcement)
+
+        // Clear current state
+        await audioSegmentCache.clearCache()
+        audioQueue.removeAll()
+        pendingTextSegments.removeAll()
+        conversationHistory.removeAll()
+        aiResponse = ""
+
+        // Switch to next topic
+        topic = nextTopic
+        currentSegmentIndex = 0
+        completedSegmentCount = 0
+        totalSegments = 0
+
+        // Start streaming the new topic
+        await startDirectStreamingForCurrentTopic()
+    }
+
+    /// Speak a transition announcement using TTS
+    private func speakTransitionAnnouncement(_ text: String) async {
+        // Use Apple TTS for announcement - it's always available and reliable
+        // This is a brief interruption before continuing with the next topic
+        do {
+            let ttsService = AppleTTSService()
+
+            // Synthesize the announcement
+            let stream = try await ttsService.synthesize(text: text)
+
+            // Collect all audio chunks
+            var audioData = Data()
+            for try await chunk in stream {
+                audioData.append(chunk.audioData)
+            }
+
+            guard !audioData.isEmpty else {
+                logger.warning("No audio data generated for transition announcement")
+                return
+            }
+
+            // Play the complete announcement (retain player to prevent deallocation)
+            announcementPlayer = try AVAudioPlayer(data: audioData)
+            announcementPlayer?.play()
+
+            // Wait for playback to complete
+            if let duration = announcementPlayer?.duration {
+                try await Task.sleep(for: .milliseconds(Int(duration * 1000) + 100))
+            }
+
+            // Release the player
+            announcementPlayer = nil
+        } catch {
+            logger.warning("Failed to speak transition announcement: \(error.localizedDescription)")
+            announcementPlayer = nil
+            // Continue anyway - the announcement is not critical
+        }
+    }
+
+    /// Start direct streaming for the current topic
+    private func startDirectStreamingForCurrentTopic() async {
+        guard let currentTopic = topic,
+              let curriculum = currentTopic.curriculum else {
+            logger.warning("No topic or curriculum for streaming")
+            return
+        }
+
+        // Ensure we have valid source IDs before streaming
+        guard let curriculumSourceId = curriculum.sourceId, !curriculumSourceId.isEmpty,
+              let topicSourceId = currentTopic.sourceId, !topicSourceId.isEmpty else {
+            logger.error("Missing source IDs for curriculum or topic - cannot stream")
+            state = .idle
+            isDirectStreamingMode = false
+            return
+        }
+
+        let voice = UserDefaults.standard.string(forKey: "ttsVoice") ?? "nova"
+
+        await transcriptStreamer.streamTopicAudio(
+            curriculumId: curriculumSourceId,
+            topicId: topicSourceId,
+            voice: voice,
+            onSegmentText: { [weak self] index, _, text in
+                Task { @MainActor in
+                    self?.pendingTextSegments[index] = text
+                    self?.totalSegments = max(self?.totalSegments ?? 0, index + 1)
+                }
+            },
+            onSegmentAudio: { [weak self] index, audioData in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    let text = self.pendingTextSegments[index] ?? ""
+                    self.queueAudioWithText(audioData: audioData, text: text, index: index)
+                }
+            },
+            onComplete: { [weak self] in
+                Task { @MainActor in
+                    self?.logger.info("Topic streaming complete")
+                }
+            },
+            onError: { [weak self] error in
+                Task { @MainActor in
+                    self?.logger.error("Topic streaming failed: \(error.localizedDescription)")
+                    self?.state = .idle
+                    self?.isDirectStreamingMode = false
+                }
+            }
+        )
     }
 
     // MARK: - Watch Sync Methods
@@ -2880,20 +3058,48 @@ class SessionViewModel: ObservableObject {
             isPlayingAudio = false
             logger.info("Audio queue empty, playback complete")
 
-            // If we were in direct streaming mode and audio is done, transition state
+            // If we were in direct streaming mode and audio is done, handle completion
             if isDirectStreamingMode {
-                logger.info("Direct streaming audio complete, transitioning to userSpeaking")
-
                 // Save progress before transitioning
                 if let topic = topic {
                     completedSegmentCount = totalSegments
                     saveProgress(to: topic)
                 }
 
-                state = .userSpeaking
-                isDirectStreamingMode = false
+                // Check for auto-continue to next topic
+                if autoContinueTopics && preGeneratedNextTopic != nil && !nextTopicAudioQueue.isEmpty {
+                    logger.info("Auto-continuing to pre-generated next topic")
+                    Task {
+                        await transitionToNextTopic()
+                    }
+                } else if autoContinueTopics {
+                    logger.info("Auto-continue enabled, trying to start next topic")
+                    Task {
+                        await tryStartNextTopic()
+                    }
+                } else {
+                    logger.info("Direct streaming audio complete, transitioning to userSpeaking")
+                    state = .userSpeaking
+                    isDirectStreamingMode = false
+                }
             }
             return
+        }
+
+        // Trigger pre-generation at 70% progress (or 3 segments remaining)
+        if isDirectStreamingMode && autoContinueTopics && totalSegments > 0 {
+            let progress = Double(completedSegmentCount) / Double(totalSegments)
+            let remainingSegments = totalSegments - completedSegmentCount
+            let shouldPreGenerate = !isPreGeneratingNextTopic &&
+                                   preGeneratedNextTopic == nil &&
+                                   (progress > 0.7 || remainingSegments <= 3)
+
+            if shouldPreGenerate {
+                logger.info("Triggering pre-generation at \(Int(progress * 100))% progress")
+                Task {
+                    await preGenerateNextTopic()
+                }
+            }
         }
 
         let segment = audioQueue.removeFirst()
@@ -2907,11 +3113,16 @@ class SessionViewModel: ObservableObject {
         // NOW display the text - synchronized with audio playback start
         if !text.isEmpty {
             aiResponse = text
-            conversationHistory.append(ConversationMessage(
+            let message = ConversationMessage(
                 text: text,
                 isUser: false,
                 timestamp: Date()
-            ))
+            )
+            conversationHistory.append(message)
+
+            // Set highlighted message for transcript scrolling
+            highlightedMessageId = message.id
+
             logger.info("Displaying segment \(index) text (synced with audio start)")
         }
 

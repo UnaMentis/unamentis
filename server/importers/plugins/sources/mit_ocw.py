@@ -16,6 +16,10 @@ Download Strategy:
 - We parse the downloaded HTML to extract lecture structure and content
 """
 
+__version__ = "1.0.0"
+__author__ = "UnaMentis Team"
+__url__ = "https://ocw.mit.edu/"
+
 import asyncio
 import io
 import json

@@ -174,17 +174,19 @@ There are TWO separate web interfaces. Do not confuse them:
 
 ### Build & Test Commands
 ```bash
-# Build for simulator
+# Build for simulator (iPhone 16 Pro for CI parity)
 xcodebuild -project UnaMentis.xcodeproj -scheme UnaMentis \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
 
-# Run all tests
-xcodebuild test -project UnaMentis.xcodeproj -scheme UnaMentis \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+# Testing - use the unified test runner for CI parity
+./scripts/test-quick.sh          # Unit tests only (fast)
+./scripts/test-all.sh            # All tests + 80% coverage enforcement
+./scripts/test-integration.sh    # Integration tests only
+./scripts/test-ci.sh             # Direct runner with env var config
 
-# Run specific test class
+# Run specific test class (direct xcodebuild)
 xcodebuild test -project UnaMentis.xcodeproj -scheme UnaMentis \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
   -only-testing:UnaMentisTests/ProgressTrackerTests
 ```
 
@@ -282,15 +284,16 @@ This is non-negotiable. Server work is NOT complete until:
 **Why:** Unlike compiled code where build success confirms the code will run, server code changes only take effect after restart. Telling the user to restart the server means you haven't verified your work actually functions.
 
 **How to restart:**
-```bash
-# Management Console (port 8766)
-pkill -f "server/management/server.py"
-cd server/management && python server.py &
 
-# Operations Console (port 3000)
-# Usually auto-reloads, but if needed:
-cd server/web && npm run dev
+Use the `/service` skill for all service restarts. Never use bash commands like `pkill`.
+
 ```
+/service restart management-api    # Management Console (port 8766)
+/service restart web-client        # Operations Console (port 3000)
+/service status                    # Check service status
+```
+
+The Operations Console usually auto-reloads with Next.js dev server.
 
 **How to verify:**
 - Make API calls to test modified endpoints
@@ -711,3 +714,26 @@ curl -s "http://localhost:8766/api/latency-tests/baselines/{id}/check?runId=run_
 ```
 
 See `server/latency_harness/CLAUDE.md` and `docs/LATENCY_TEST_HARNESS_GUIDE.md` for complete documentation.
+
+---
+
+## Cross-Repository Access
+
+This project has read access to related external repositories via `additionalDirectories` in `.claude/settings.json`.
+
+### Available Repos
+
+| Repo | Path | Purpose |
+|------|------|---------|
+| unamentis-android | /Users/ramerman/dev/unamentis-android | Android client |
+
+### Usage
+
+Use absolute paths with Read, Grep, and Glob tools:
+- `Read /Users/ramerman/dev/unamentis-android/README.md`
+- `Grep pattern in /Users/ramerman/dev/unamentis-android/`
+- `Glob /Users/ramerman/dev/unamentis-android/**/*.kt`
+
+For read-only constraint, invoke `/read-external` skill.
+
+See `.claude/skills/read-external/TEMPLATE.md` to add more repos.

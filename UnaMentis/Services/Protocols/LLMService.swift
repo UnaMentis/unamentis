@@ -161,13 +161,16 @@ public struct LLMMetrics: Sendable {
 public protocol LLMService: Actor {
     /// Performance metrics
     var metrics: LLMMetrics { get }
-    
+
     /// Cost per input token (in USD)
     var costPerInputToken: Decimal { get }
-    
+
     /// Cost per output token (in USD)
     var costPerOutputToken: Decimal { get }
-    
+
+    /// Model's context window size in tokens
+    var contextWindowSize: Int { get }
+
     /// Stream a completion
     /// - Parameters:
     ///   - messages: Conversation messages
@@ -177,12 +180,22 @@ public protocol LLMService: Actor {
         messages: [LLMMessage],
         config: LLMConfig
     ) async throws -> AsyncStream<LLMToken>
-    
+
     /// Non-streaming completion (convenience)
     func complete(
         messages: [LLMMessage],
         config: LLMConfig
     ) async throws -> String
+
+    /// Estimate token count for text
+    /// - Parameter text: Text to count tokens for
+    /// - Returns: Estimated token count
+    func estimateTokenCount(_ text: String) -> Int
+
+    /// Estimate token count for messages
+    /// - Parameter messages: Messages to count tokens for
+    /// - Returns: Estimated token count including message overhead
+    func estimateTokenCount(for messages: [LLMMessage]) -> Int
 }
 
 // MARK: - Default Implementation
@@ -199,6 +212,74 @@ extension LLMService {
             result += token.content
         }
         return result
+    }
+
+    /// Default context window (128K for modern models)
+    public var contextWindowSize: Int {
+        128_000
+    }
+
+    /// Default token estimation: ~4 characters per token for English
+    public func estimateTokenCount(_ text: String) -> Int {
+        // Rough estimate: average of 4 characters per token
+        // More accurate would use tiktoken or provider-specific tokenizer
+        max(1, text.count / 4)
+    }
+
+    /// Default token estimation for messages
+    /// Includes ~4 tokens overhead per message for role/formatting
+    public func estimateTokenCount(for messages: [LLMMessage]) -> Int {
+        var total = 0
+        for message in messages {
+            // ~4 tokens overhead for message structure (role, etc.)
+            total += 4
+            total += estimateTokenCount(message.content)
+        }
+        return total
+    }
+}
+
+// MARK: - Token Estimation Utilities
+
+/// Utilities for token estimation across different providers
+public enum TokenEstimation {
+
+    /// Estimate tokens using character-based heuristic
+    /// - Parameters:
+    ///   - text: Text to estimate
+    ///   - charsPerToken: Average characters per token (default 4 for English)
+    /// - Returns: Estimated token count
+    public static func estimate(_ text: String, charsPerToken: Double = 4.0) -> Int {
+        max(1, Int(Double(text.count) / charsPerToken))
+    }
+
+    /// Estimate tokens for messages with overhead
+    /// - Parameters:
+    ///   - messages: Messages to estimate
+    ///   - messageOverhead: Tokens per message for formatting (default 4)
+    /// - Returns: Estimated token count
+    public static func estimate(
+        messages: [LLMMessage],
+        messageOverhead: Int = 4
+    ) -> Int {
+        messages.reduce(0) { total, message in
+            total + messageOverhead + estimate(message.content)
+        }
+    }
+
+    /// Check if messages fit within a context window
+    /// - Parameters:
+    ///   - messages: Messages to check
+    ///   - contextWindow: Maximum context window size
+    ///   - reservedForOutput: Tokens to reserve for model output
+    /// - Returns: Whether messages fit
+    public static func fitsInContext(
+        messages: [LLMMessage],
+        contextWindow: Int,
+        reservedForOutput: Int = 2000
+    ) -> Bool {
+        let estimated = estimate(messages: messages)
+        return estimated < (contextWindow - reservedForOutput)
     }
 }
 

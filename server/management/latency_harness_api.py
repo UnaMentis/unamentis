@@ -260,8 +260,30 @@ async def handle_delete_suite(request: web.Request) -> web.Response:
             status=400
         )
 
-    # TODO: Implement suite deletion
-    return web.json_response({"message": f"Suite {suite_id} deleted"})
+    # Delete from storage
+    if _storage is None:
+        return web.json_response(
+            {"error": "Storage not initialized"},
+            status=500
+        )
+
+    # Check if suite exists first
+    suite = await _storage.get_suite(suite_id)
+    if suite is None:
+        return web.json_response(
+            {"error": f"Suite '{suite_id}' not found"},
+            status=404
+        )
+
+    # Delete the suite
+    deleted = await _storage.delete_suite(suite_id)
+    if not deleted:
+        return web.json_response(
+            {"error": f"Failed to delete suite '{suite_id}'"},
+            status=500
+        )
+
+    return web.json_response({"message": f"Suite '{suite_id}' deleted successfully"})
 
 
 # =============================================================================
@@ -580,6 +602,214 @@ async def handle_export_results(request: web.Request) -> web.Response:
             "completedAt": run.completed_at.isoformat() if run.completed_at else None,
             "results": [r.to_dict() for r in run.results],
         })
+
+
+# =============================================================================
+# Test Target Discovery Endpoints
+# =============================================================================
+
+async def handle_list_test_targets(request: web.Request) -> web.Response:
+    """GET /api/latency-tests/targets - List available test targets.
+
+    Returns all available test targets including:
+    - iOS Simulators (from xcrun simctl)
+    - Physical iOS devices (from xcrun xctrace)
+    - Connected clients (already registered with orchestrator)
+
+    Response format:
+    {
+        "targets": [
+            {
+                "id": "unique-identifier",
+                "name": "iPhone 17 Pro",
+                "type": "ios_simulator" | "ios_device" | "android_simulator" | "android_device" | "web",
+                "platform": "iOS 26.1",
+                "model": "iPhone18,1",
+                "udid": "F5BC44F3-65B1-4822-84F0-62D8D5449297",
+                "status": "available" | "booted" | "connected" | "offline",
+                "isConnected": true/false (registered with orchestrator),
+                "capabilities": { ... } (if connected)
+            }
+        ],
+        "categories": {
+            "ios_simulators": [...],
+            "ios_devices": [...],
+            "connected_clients": [...]
+        }
+    }
+    """
+    import subprocess
+    import json as json_module
+
+    targets = []
+    categories = {
+        "ios_simulators": [],
+        "ios_devices": [],
+        "android_simulators": [],
+        "android_devices": [],
+        "connected_clients": [],
+    }
+
+    # Get connected clients from orchestrator
+    orchestrator = get_orchestrator()
+    connected_client_ids = set()
+    for client in orchestrator.clients.values():
+        connected_client_ids.add(client.client_id)
+        target = {
+            "id": client.client_id,
+            "name": client.client_id,
+            "type": client.client_type.value,
+            "platform": "Connected Client",
+            "model": None,
+            "udid": None,
+            "status": "connected" if client.status.is_connected else "offline",
+            "isConnected": client.status.is_connected,
+            "isRunningTest": client.status.is_running_test,
+            "capabilities": {
+                "supportedSTTProviders": client.capabilities.supported_stt_providers,
+                "supportedLLMProviders": client.capabilities.supported_llm_providers,
+                "supportedTTSProviders": client.capabilities.supported_tts_providers,
+                "hasHighPrecisionTiming": client.capabilities.has_high_precision_timing,
+                "hasDeviceMetrics": client.capabilities.has_device_metrics,
+                "hasOnDeviceML": client.capabilities.has_on_device_ml,
+                "maxConcurrentTests": client.capabilities.max_concurrent_tests,
+            },
+        }
+        targets.append(target)
+        categories["connected_clients"].append(target)
+
+    # Get iOS Simulators
+    try:
+        result = subprocess.run(
+            ["xcrun", "simctl", "list", "devices", "-j"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0:
+            sim_data = json_module.loads(result.stdout)
+            for runtime, devices in sim_data.get("devices", {}).items():
+                # Extract iOS version from runtime identifier
+                # e.g., "com.apple.CoreSimulator.SimRuntime.iOS-26-1" -> "iOS 26.1"
+                platform = "iOS"
+                if "iOS" in runtime:
+                    version_part = runtime.split("iOS-")[-1] if "iOS-" in runtime else ""
+                    if version_part:
+                        platform = f"iOS {version_part.replace('-', '.')}"
+                elif "watchOS" in runtime:
+                    continue  # Skip watchOS for now
+                elif "tvOS" in runtime:
+                    continue  # Skip tvOS for now
+
+                for device in devices:
+                    if not device.get("isAvailable", True):
+                        continue
+
+                    device_name = device.get("name", "Unknown")
+                    udid = device.get("udid", "")
+                    state = device.get("state", "Shutdown").lower()
+
+                    # Determine device category (iPhone vs iPad)
+                    device_type = "iphone" if "iPhone" in device_name else "ipad" if "iPad" in device_name else "other"
+
+                    target = {
+                        "id": f"sim_{udid}",
+                        "name": device_name,
+                        "type": "ios_simulator",
+                        "platform": platform,
+                        "model": device.get("deviceTypeIdentifier", "").split(".")[-1],
+                        "udid": udid,
+                        "status": "booted" if state == "booted" else "available",
+                        "isConnected": f"sim_{udid}" in connected_client_ids,
+                        "deviceCategory": device_type,
+                        "capabilities": None,
+                    }
+                    targets.append(target)
+                    categories["ios_simulators"].append(target)
+    except Exception as e:
+        logger.warning(f"Failed to list iOS simulators: {e}")
+
+    # Get Physical iOS Devices
+    try:
+        result = subprocess.run(
+            ["xcrun", "xctrace", "list", "devices"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0:
+            lines = result.stdout.strip().split("\n")
+            in_devices_section = False
+
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                if "== Devices ==" in line:
+                    in_devices_section = True
+                    continue
+                if "== Simulators ==" in line:
+                    in_devices_section = False
+                    continue
+
+                if in_devices_section and "(" in line and ")" in line:
+                    # Parse device line: "Device Name (version) (UDID)"
+                    # Format: "REA iPhone 17 Pro Max (26.2) (00008150-000614A12100401C)"
+                    try:
+                        # Extract UDID from the last parentheses
+                        parts = line.rsplit("(", 1)
+                        if len(parts) == 2:
+                            udid = parts[1].rstrip(")").strip()
+                            rest = parts[0].strip()
+
+                            # Skip the Mac itself (Mac has UUID format UDID)
+                            if "Mac" in rest:
+                                continue
+
+                            # Extract device name (remove version if present)
+                            # rest is like "REA iPhone 17 Pro Max (26.2)"
+                            if "(" in rest and ")" in rest:
+                                # Has version number, extract name
+                                name_parts = rest.rsplit("(", 1)
+                                device_name = name_parts[0].strip()
+                                platform = f"iOS {name_parts[1].rstrip(')').strip()}"
+                            else:
+                                device_name = rest
+                                platform = "iOS Device"
+
+                            target = {
+                                "id": f"device_{udid}",
+                                "name": device_name,
+                                "type": "ios_device",
+                                "platform": platform,
+                                "model": None,
+                                "udid": udid,
+                                "status": "connected",
+                                "isConnected": f"device_{udid}" in connected_client_ids,
+                                "capabilities": None,
+                            }
+                            targets.append(target)
+                            categories["ios_devices"].append(target)
+                    except Exception:
+                        pass
+    except Exception as e:
+        logger.warning(f"Failed to list physical iOS devices: {e}")
+
+    # Sort simulators by name
+    categories["ios_simulators"].sort(key=lambda x: (x["platform"], x["name"]))
+
+    return web.json_response({
+        "targets": targets,
+        "categories": categories,
+        "summary": {
+            "totalTargets": len(targets),
+            "iosSimulators": len(categories["ios_simulators"]),
+            "iosDevices": len(categories["ios_devices"]),
+            "androidSimulators": len(categories["android_simulators"]),
+            "androidDevices": len(categories["android_devices"]),
+            "connectedClients": len(categories["connected_clients"]),
+        }
+    })
 
 
 # =============================================================================
@@ -1124,6 +1354,433 @@ async def handle_latency_websocket(request: web.Request) -> web.WebSocketRespons
 
 
 # =============================================================================
+# Mass Test Orchestrator Endpoints
+# =============================================================================
+
+# Global mass test orchestrator instance
+_mass_orchestrator = None
+
+
+def get_mass_orchestrator():
+    """Get the global mass test orchestrator instance."""
+    global _mass_orchestrator
+    if _mass_orchestrator is None:
+        from latency_harness.test_orchestrator import MassTestOrchestrator
+        _mass_orchestrator = MassTestOrchestrator()
+    return _mass_orchestrator
+
+
+async def handle_start_mass_test(request: web.Request) -> web.Response:
+    """
+    POST /api/test-orchestrator/start - Start a mass automated test run.
+
+    Request body:
+    {
+        "webClients": 4,
+        "totalSessions": 500,
+        "providerConfigs": {
+            "llm": "anthropic",
+            "llmModel": "claude-3-5-haiku-20241022",
+            "tts": "chatterbox"
+        },
+        "utterances": ["Hello", "Explain history"],
+        "turnsPerSession": 3
+    }
+    """
+    try:
+        data = await request.json()
+
+        orchestrator = get_mass_orchestrator()
+
+        # Parse provider config
+        provider_config = None
+        if "providerConfigs" in data:
+            from latency_harness.test_orchestrator import ProviderConfig
+            pc = data["providerConfigs"]
+            provider_config = ProviderConfig(
+                stt=pc.get("stt", "deepgram"),
+                llm=pc.get("llm", "anthropic"),
+                llm_model=pc.get("llmModel", "claude-3-5-haiku-20241022"),
+                tts=pc.get("tts", "chatterbox"),
+                tts_voice=pc.get("ttsVoice"),
+            )
+
+        run_id = await orchestrator.start_mass_test(
+            total_sessions=data.get("totalSessions", 100),
+            web_clients=data.get("webClients", 4),
+            provider_config=provider_config,
+            utterances=data.get("utterances"),
+            turns_per_session=data.get("turnsPerSession", 3),
+        )
+
+        return web.json_response({
+            "runId": run_id,
+            "status": "running",
+            "message": f"Started mass test with {data.get('webClients', 4)} web clients",
+        })
+
+    except ImportError as e:
+        return web.json_response({
+            "error": f"Playwright not available: {e}. Install with: pip install playwright && playwright install chromium",
+        }, status=500)
+    except Exception as e:
+        logger.exception("Failed to start mass test")
+        return web.json_response({
+            "error": str(e),
+        }, status=500)
+
+
+async def handle_get_mass_test_status(request: web.Request) -> web.Response:
+    """GET /api/test-orchestrator/status/{run_id} - Get mass test progress."""
+    run_id = request.match_info["run_id"]
+
+    try:
+        orchestrator = get_mass_orchestrator()
+        progress = await orchestrator.get_progress(run_id)
+
+        return web.json_response({
+            "runId": progress.run_id,
+            "status": progress.status.value,
+            "progress": {
+                "sessionsCompleted": progress.sessions_completed,
+                "sessionsTotal": progress.sessions_total,
+                "activeClients": progress.active_clients,
+                "elapsedSeconds": progress.elapsed_seconds,
+                "estimatedRemainingSeconds": progress.estimated_remaining_seconds,
+            },
+            "latencyStats": progress.latency_stats,
+            "errors": progress.errors,
+            "systemResources": progress.system_resources,
+        })
+
+    except ValueError as e:
+        return web.json_response({"error": str(e)}, status=404)
+    except Exception as e:
+        logger.exception("Failed to get mass test status")
+        return web.json_response({"error": str(e)}, status=500)
+
+
+async def handle_stop_mass_test(request: web.Request) -> web.Response:
+    """POST /api/test-orchestrator/stop/{run_id} - Stop a mass test run."""
+    run_id = request.match_info["run_id"]
+
+    try:
+        orchestrator = get_mass_orchestrator()
+        progress = await orchestrator.stop_test(run_id)
+
+        return web.json_response({
+            "runId": progress.run_id,
+            "status": progress.status.value,
+            "sessionsCompleted": progress.sessions_completed,
+            "sessionsTotal": progress.sessions_total,
+            "message": "Test stopped",
+        })
+
+    except ValueError as e:
+        return web.json_response({"error": str(e)}, status=404)
+    except Exception as e:
+        logger.exception("Failed to stop mass test")
+        return web.json_response({"error": str(e)}, status=500)
+
+
+async def handle_list_mass_tests(request: web.Request) -> web.Response:
+    """GET /api/test-orchestrator/runs - List mass test runs."""
+    try:
+        orchestrator = get_mass_orchestrator()
+        limit = int(request.query.get("limit", "50"))
+        runs = await orchestrator.list_runs(limit=limit)
+
+        return web.json_response({
+            "runs": [
+                {
+                    "runId": r.run_id,
+                    "status": r.status.value,
+                    "sessionsCompleted": r.sessions_completed,
+                    "sessionsTotal": r.sessions_total,
+                    "elapsedSeconds": r.elapsed_seconds,
+                    "latencyStats": r.latency_stats,
+                }
+                for r in runs
+            ]
+        })
+
+    except Exception as e:
+        logger.exception("Failed to list mass tests")
+        return web.json_response({"error": str(e)}, status=500)
+
+
+# =============================================================================
+# Unified Metrics Ingestion Endpoints
+# =============================================================================
+
+# In-memory metrics storage (would be replaced with persistent storage in production)
+_ingested_metrics: Dict[str, List[dict]] = defaultdict(list)
+_metrics_by_session: Dict[str, dict] = {}
+
+
+async def handle_ingest_metrics(request: web.Request) -> web.Response:
+    """
+    POST /api/metrics/ingest - Ingest metrics from iOS or web clients.
+
+    Accepts both single metrics and batches in the unified format.
+
+    Request body (single):
+    {
+        "client": "ios" | "web",
+        "clientId": "device-uuid",
+        "sessionId": "session-uuid",
+        "timestamp": "2024-01-01T12:00:00Z",
+        "metrics": {
+            "stt_latency_ms": 150.0,
+            "llm_ttfb_ms": 200.0,
+            "llm_completion_ms": 800.0,
+            "tts_ttfb_ms": 100.0,
+            "tts_completion_ms": 400.0,
+            "e2e_latency_ms": 1250.0
+        },
+        "providers": {
+            "stt": "deepgram-nova3",
+            "llm": "anthropic",
+            "llm_model": "claude-3-5-haiku",
+            "tts": "chatterbox"
+        },
+        "resources": {
+            "cpu_percent": 45.2,
+            "memory_mb": 256.0,
+            "thermal_state": "nominal"
+        }
+    }
+
+    Request body (batch):
+    {
+        "client": "ios",
+        "clientId": "device-uuid",
+        "batchSize": 10,
+        "metrics": [...]
+    }
+    """
+    try:
+        data = await request.json()
+
+        client_type = data.get("client", request.headers.get("X-Client-Type", "unknown"))
+        client_id = data.get("clientId", request.headers.get("X-Client-ID", "unknown"))
+        client_name = data.get("clientName", request.headers.get("X-Client-Name"))
+
+        # Handle batch vs single
+        metrics_list = data.get("metrics", [])
+        if isinstance(metrics_list, dict):
+            # Single metric wrapped in the data
+            metrics_list = [data]
+        elif not metrics_list:
+            # Direct single metric (no wrapper)
+            metrics_list = [data]
+
+        ingested_count = 0
+        for metric in metrics_list:
+            session_id = metric.get("sessionId", str(uuid.uuid4()))
+            timestamp = metric.get("timestamp", datetime.now().isoformat())
+
+            # Store the metric
+            metric_record = {
+                "client": client_type,
+                "clientId": client_id,
+                "clientName": client_name,
+                "sessionId": session_id,
+                "timestamp": timestamp,
+                "metrics": metric.get("metrics", {}),
+                "providers": metric.get("providers", {}),
+                "resources": metric.get("resources"),
+                "networkProfile": metric.get("networkProfile"),
+                "networkProjections": metric.get("networkProjections"),
+                "quality": metric.get("quality"),
+                "ingestedAt": datetime.now().isoformat(),
+            }
+
+            # Store by client and session
+            _ingested_metrics[client_id].append(metric_record)
+
+            # Update session summary
+            if session_id not in _metrics_by_session:
+                _metrics_by_session[session_id] = {
+                    "sessionId": session_id,
+                    "client": client_type,
+                    "clientId": client_id,
+                    "clientName": client_name,
+                    "firstSeen": timestamp,
+                    "lastSeen": timestamp,
+                    "metricsCount": 0,
+                    "providers": metric.get("providers", {}),
+                    "latencies": [],
+                }
+
+            session = _metrics_by_session[session_id]
+            session["lastSeen"] = timestamp
+            session["metricsCount"] += 1
+
+            if metric.get("metrics", {}).get("e2e_latency_ms"):
+                session["latencies"].append(metric["metrics"]["e2e_latency_ms"])
+
+            ingested_count += 1
+
+        logger.info(f"Ingested {ingested_count} metrics from {client_type} client {client_id}")
+
+        return web.json_response({
+            "status": "ok",
+            "ingested": ingested_count,
+            "clientId": client_id,
+        })
+
+    except json.JSONDecodeError:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        logger.exception("Failed to ingest metrics")
+        return web.json_response({"error": str(e)}, status=500)
+
+
+async def handle_list_metric_sessions(request: web.Request) -> web.Response:
+    """
+    GET /api/metrics/sessions - List sessions with ingested metrics.
+
+    Query params:
+    - client: Filter by client type (ios, web)
+    - clientId: Filter by specific client ID
+    - limit: Max sessions to return (default 50)
+    """
+    client_filter = request.query.get("client")
+    client_id_filter = request.query.get("clientId")
+    limit = int(request.query.get("limit", "50"))
+
+    sessions = list(_metrics_by_session.values())
+
+    # Apply filters
+    if client_filter:
+        sessions = [s for s in sessions if s["client"] == client_filter]
+    if client_id_filter:
+        sessions = [s for s in sessions if s["clientId"] == client_id_filter]
+
+    # Sort by last seen (most recent first)
+    sessions.sort(key=lambda s: s["lastSeen"], reverse=True)
+
+    # Limit
+    sessions = sessions[:limit]
+
+    # Add computed stats
+    for session in sessions:
+        latencies = session.get("latencies", [])
+        if latencies:
+            session["stats"] = {
+                "count": len(latencies),
+                "median_e2e_ms": statistics.median(latencies) if latencies else None,
+                "p99_e2e_ms": sorted(latencies)[int(len(latencies) * 0.99)] if len(latencies) > 1 else latencies[0] if latencies else None,
+                "min_e2e_ms": min(latencies) if latencies else None,
+                "max_e2e_ms": max(latencies) if latencies else None,
+            }
+        else:
+            session["stats"] = None
+
+        # Remove raw latencies from response
+        del session["latencies"]
+
+    return web.json_response({
+        "sessions": sessions,
+        "total": len(_metrics_by_session),
+        "filtered": len(sessions),
+    })
+
+
+async def handle_get_metrics_summary(request: web.Request) -> web.Response:
+    """
+    GET /api/metrics/summary - Get aggregate metrics summary.
+
+    Query params:
+    - client: Filter by client type
+    - hours: Time window in hours (default 24)
+    """
+    client_filter = request.query.get("client")
+    hours = int(request.query.get("hours", "24"))
+
+    # Note: In production, filter by timestamp within hours window
+    # For now, we aggregate all stored data
+
+    # Aggregate all metrics
+    all_latencies = []
+    clients_seen = set()
+    sessions_seen = set()
+    by_provider = defaultdict(list)
+
+    for client_id, metrics in _ingested_metrics.items():
+        for metric in metrics:
+            if client_filter and metric.get("client") != client_filter:
+                continue
+
+            clients_seen.add(client_id)
+            sessions_seen.add(metric.get("sessionId"))
+
+            e2e = metric.get("metrics", {}).get("e2e_latency_ms")
+            if e2e:
+                all_latencies.append(e2e)
+
+                # Track by LLM provider
+                llm = metric.get("providers", {}).get("llm", "unknown")
+                by_provider[llm].append(e2e)
+
+    # Compute stats
+    summary = {
+        "timeWindow": f"{hours} hours",
+        "totalMetrics": sum(len(m) for m in _ingested_metrics.values()),
+        "uniqueClients": len(clients_seen),
+        "uniqueSessions": len(sessions_seen),
+    }
+
+    if all_latencies:
+        sorted_latencies = sorted(all_latencies)
+        summary["latencyStats"] = {
+            "count": len(all_latencies),
+            "median_e2e_ms": statistics.median(all_latencies),
+            "p50_e2e_ms": statistics.median(all_latencies),
+            "p95_e2e_ms": sorted_latencies[int(len(sorted_latencies) * 0.95)] if len(sorted_latencies) > 1 else sorted_latencies[0],
+            "p99_e2e_ms": sorted_latencies[int(len(sorted_latencies) * 0.99)] if len(sorted_latencies) > 1 else sorted_latencies[0],
+            "min_e2e_ms": min(all_latencies),
+            "max_e2e_ms": max(all_latencies),
+            "avg_e2e_ms": statistics.mean(all_latencies),
+        }
+    else:
+        summary["latencyStats"] = None
+
+    # Per-provider breakdown
+    summary["byProvider"] = {}
+    for provider, latencies in by_provider.items():
+        if latencies:
+            sorted_l = sorted(latencies)
+            summary["byProvider"][provider] = {
+                "count": len(latencies),
+                "median_e2e_ms": statistics.median(latencies),
+                "p99_e2e_ms": sorted_l[int(len(sorted_l) * 0.99)] if len(sorted_l) > 1 else sorted_l[0],
+            }
+
+    return web.json_response(summary)
+
+
+async def handle_get_client_metrics(request: web.Request) -> web.Response:
+    """
+    GET /api/metrics/clients/{client_id} - Get metrics for a specific client.
+    """
+    client_id = request.match_info["client_id"]
+    limit = int(request.query.get("limit", "100"))
+
+    metrics = _ingested_metrics.get(client_id, [])
+
+    # Sort by timestamp (most recent first)
+    metrics = sorted(metrics, key=lambda m: m.get("timestamp", ""), reverse=True)[:limit]
+
+    return web.json_response({
+        "clientId": client_id,
+        "metricsCount": len(_ingested_metrics.get(client_id, [])),
+        "metrics": metrics,
+    })
+
+
+# =============================================================================
 # Route Registration
 # =============================================================================
 
@@ -1148,7 +1805,10 @@ def register_latency_harness_routes(app: web.Application):
     app.router.add_post("/api/latency-tests/compare", handle_compare_runs)
     app.router.add_get("/api/latency-tests/runs/{run_id}/export", handle_export_results)
 
-    # Clients
+    # Test Targets (available simulators and devices)
+    app.router.add_get("/api/latency-tests/targets", handle_list_test_targets)
+
+    # Clients (connected/registered clients)
     app.router.add_get("/api/latency-tests/clients", handle_list_test_clients)
     app.router.add_post("/api/latency-tests/heartbeat", handle_client_heartbeat_latency)
     app.router.add_post("/api/latency-tests/results", handle_submit_result)
@@ -1160,5 +1820,17 @@ def register_latency_harness_routes(app: web.Application):
 
     # WebSocket for real-time updates
     app.router.add_get("/api/latency-tests/ws", handle_latency_websocket)
+
+    # Mass Test Orchestrator
+    app.router.add_post("/api/test-orchestrator/start", handle_start_mass_test)
+    app.router.add_get("/api/test-orchestrator/status/{run_id}", handle_get_mass_test_status)
+    app.router.add_post("/api/test-orchestrator/stop/{run_id}", handle_stop_mass_test)
+    app.router.add_get("/api/test-orchestrator/runs", handle_list_mass_tests)
+
+    # Unified Metrics Ingestion (iOS/Web clients)
+    app.router.add_post("/api/metrics/ingest", handle_ingest_metrics)
+    app.router.add_get("/api/metrics/sessions", handle_list_metric_sessions)
+    app.router.add_get("/api/metrics/summary", handle_get_metrics_summary)
+    app.router.add_get("/api/metrics/clients/{client_id}", handle_get_client_metrics)
 
     logger.info("Latency harness API routes registered")

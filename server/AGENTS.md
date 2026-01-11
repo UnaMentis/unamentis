@@ -35,15 +35,15 @@ This is non-negotiable. Server work is NOT complete until:
 
 ## Restart Commands
 
-```bash
-# Management Console (port 8766)
-pkill -f "server/management/server.py"
-cd server/management && python server.py &
+Use the `/service` skill for all service restarts. Never use bash commands like `pkill`.
 
-# Operations Console (port 3000)
-# Usually auto-reloads with Next.js dev server, but if needed:
-cd server/web && npm run dev
 ```
+/service restart management-api    # Management Console (port 8766)
+/service restart web-client        # Operations Console (port 3000)
+/service status                    # Check service status
+```
+
+The Operations Console usually auto-reloads with Next.js dev server.
 
 ## Verification Methods
 

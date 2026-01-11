@@ -93,10 +93,20 @@ export function ModelParametersModal({ model, onClose }: ModelParametersModalPro
           </button>
         </div>
 
-        {/* Model Name */}
+        {/* Model Name and Context Window */}
         <div className="mb-6 p-3 bg-slate-900/50 rounded-lg">
-          <span className="text-sm text-slate-400">Model:</span>
-          <span className="ml-2 font-medium text-slate-100">{model.name}</span>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-sm text-slate-400">Model:</span>
+              <span className="ml-2 font-medium text-slate-100">{model.name}</span>
+            </div>
+            {model.context_window_formatted && (
+              <div className="text-right">
+                <span className="text-sm text-slate-400">Max Context:</span>
+                <span className="ml-2 font-medium text-indigo-400">{model.context_window_formatted}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Error Display */}

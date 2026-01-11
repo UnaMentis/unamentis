@@ -20,11 +20,46 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { CurriculumDetail, CurriculumTopic } from '@/types';
 import { CurriculumStudio } from '@/components/curriculum/CurriculumEditor';
-import { Curriculum, ContentNode } from '@/types/curriculum';
+import { Curriculum, Segment, Transcript } from '@/types/curriculum';
+import type { TranscriptSegment, TopicTranscript } from '@/types';
 
 interface CurriculumDetailPanelProps {
   curriculumId: string;
   onBack: () => void;
+}
+
+// Map segment type from API format to editor format
+function mapSegmentType(
+  apiType: TranscriptSegment['type']
+): Segment['type'] {
+  // Map API types to editor types (they're mostly the same)
+  const typeMap: Record<TranscriptSegment['type'], Segment['type']> = {
+    introduction: 'introduction',
+    lecture: 'lecture',
+    explanation: 'explanation',
+    summary: 'summary',
+    checkpoint: 'checkpoint',
+    example: 'example',
+  };
+  return typeMap[apiType] || 'lecture';
+}
+
+// Map transcript segments from API format to editor format
+function mapTranscript(apiTranscript: TopicTranscript): Transcript {
+  return {
+    segments: apiTranscript.segments.map((seg): Segment => ({
+      id: seg.id,
+      type: mapSegmentType(seg.type),
+      content: seg.content,
+      speakingNotes: seg.speakingNotes
+        ? {
+            pace: seg.speakingNotes.pace,
+            emotionalTone: seg.speakingNotes.emotionalTone,
+            emphasis: seg.speakingNotes.emphasis,
+          }
+        : undefined,
+    })),
+  };
 }
 
 // Adapter to convert API response to UMCF format for the editor
@@ -42,10 +77,9 @@ function adaptToUMCF(detail: CurriculumDetail): Curriculum {
       detail.topics?.map((t, i) => ({
         id: { value: t.id.value || `topic-${i}` },
         title: t.title,
-        type: 'topic',
+        type: 'topic' as const,
         description: t.description,
-        // Map other fields as best as possible
-        transcript: t.transcript ? { segments: [] /* TODO: Map segments properly */ } : undefined,
+        transcript: t.transcript ? mapTranscript(t.transcript) : undefined,
       })) || [],
   };
 }
@@ -67,6 +101,18 @@ async function updateCurriculum(id: string, data: Partial<CurriculumDetail>): Pr
   });
   if (!response.ok) {
     throw new Error('Failed to update curriculum');
+  }
+}
+
+async function saveCurriculumUMCF(id: string, umcfData: Curriculum): Promise<void> {
+  const response = await fetch(`/api/curricula/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(umcfData),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(errorData.error || 'Failed to save curriculum');
   }
 }
 
@@ -173,9 +219,9 @@ export function CurriculumDetailPanel({ curriculumId, onBack }: CurriculumDetail
       <CurriculumStudio
         initialData={adaptToUMCF(curriculum)}
         onSave={async (data) => {
-          // TODO: Implement save back to API
-          console.log('Saving UMCF:', data);
-          setIsStudioOpen(false);
+          await saveCurriculumUMCF(curriculumId, data);
+          // Refresh the curriculum data to get updated version
+          await fetchCurriculum();
         }}
         onBack={() => setIsStudioOpen(false)}
       />

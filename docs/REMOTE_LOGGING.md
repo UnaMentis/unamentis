@@ -127,7 +127,7 @@ Logs work automatically - localhost:8765 is used by default.
 
 ### Service won't start
 1. Check for port conflicts: `lsof -i :8765`
-2. Kill any existing processes: `pkill -f log_server.py`
+2. Restart the log server via USM: `/service restart log-server`
 3. Reinstall: `./scripts/setup_log_service.sh uninstall && ./scripts/setup_log_service.sh install`
 
 ### Web interface not loading

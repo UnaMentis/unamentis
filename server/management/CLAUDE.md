@@ -26,12 +26,44 @@ Python/aiohttp web server for content administration and curriculum management.
 |------|---------|
 | `server.py` | Main aiohttp server (3,500+ lines) |
 | `import_api.py` | Curriculum import API endpoints |
+| `fov_context_api.py` | FOV context management API endpoints |
 | `resource_monitor.py` | System resource monitoring |
 | `idle_manager.py` | Idle state management |
 | `metrics_history.py` | Metrics collection and history |
 | `diagnostic_logging.py` | Diagnostic logging system |
 | `static/` | HTML/JavaScript frontend |
 | `data/` | Runtime data directory |
+| `fov_context/` | FOV context management package |
+
+## FOV Context Management
+
+The `fov_context/` package provides hierarchical cognitive buffer management for voice tutoring sessions. This is the server-side implementation of foveated context management.
+
+**Key Components:**
+
+| File | Purpose |
+|------|---------|
+| `fov_context/models.py` | Buffer models, token budgets, model tiers |
+| `fov_context/manager.py` | FOVContextManager for building LLM context |
+| `fov_context/confidence.py` | ConfidenceMonitor for uncertainty detection |
+| `fov_context/session.py` | FOVSession integrating context + confidence |
+
+**API Endpoints (fov_context_api.py):**
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/sessions` | POST | Create new session with FOV context |
+| `/api/sessions/{id}` | GET/DELETE | Get/end session |
+| `/api/sessions/{id}/topic` | PUT | Set current topic |
+| `/api/sessions/{id}/messages` | GET | Build LLM messages |
+| `/api/sessions/{id}/analyze-response` | POST | Analyze response confidence |
+
+**Running Tests:**
+```bash
+python3 -m pytest management/fov_context/tests/ -v
+```
+
+See [docs/architecture/FOV_CONTEXT_MANAGEMENT.md](../../docs/architecture/FOV_CONTEXT_MANAGEMENT.md) for complete documentation.
 
 ## API Patterns
 
@@ -46,14 +78,17 @@ The curriculum database is in `../database/`:
 - Schema defined in `schema.sql`
 - Python interface in `curriculum_db.py`
 
-## Restart Command
+## Service Management
 
-```bash
-pkill -f "server/management/server.py"
-cd server/management && python server.py &
+**Use the `/service` skill for all service control.** Never use bash commands like pkill.
+
+```
+/service restart management-api    # Restart this server after code changes
+/service status                    # Check service status
+/service logs management-api       # View server logs
 ```
 
-Always restart after code changes and verify via API calls or log inspection.
+See `.claude/skills/service/SKILL.md` for full documentation including all service IDs and API details.
 
 ## Testing Best Practices
 

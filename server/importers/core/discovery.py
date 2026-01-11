@@ -19,11 +19,70 @@ import importlib.util
 import inspect
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Dict, List, Optional, Type
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_module_metadata(module: ModuleType) -> Dict[str, Optional[str]]:
+    """
+    Extract metadata from a Python module.
+
+    Looks for standard module-level attributes and falls back to parsing
+    the module docstring for common patterns.
+
+    Args:
+        module: The loaded Python module
+
+    Returns:
+        Dictionary with keys: version, author, url, email, license
+    """
+    metadata: Dict[str, Optional[str]] = {
+        "version": None,
+        "author": None,
+        "url": None,
+        "email": None,
+        "license": None,
+    }
+
+    # Extract from module attributes (standard Python convention)
+    if hasattr(module, "__version__"):
+        metadata["version"] = str(module.__version__)
+    if hasattr(module, "__author__"):
+        metadata["author"] = str(module.__author__)
+    if hasattr(module, "__url__"):
+        metadata["url"] = str(module.__url__)
+    if hasattr(module, "__email__"):
+        metadata["email"] = str(module.__email__)
+    if hasattr(module, "__license__"):
+        metadata["license"] = str(module.__license__)
+
+    # Fall back to parsing docstring if attributes not defined
+    docstring = module.__doc__
+    if docstring:
+        # Extract Reference URL (common pattern in our plugins)
+        if metadata["url"] is None:
+            ref_match = re.search(r"Reference:\s*(https?://[^\s]+)", docstring)
+            if ref_match:
+                metadata["url"] = ref_match.group(1)
+
+        # Extract Author from docstring (e.g., "Author: John Doe")
+        if metadata["author"] is None:
+            author_match = re.search(r"Author:\s*(.+?)(?:\n|$)", docstring)
+            if author_match:
+                metadata["author"] = author_match.group(1).strip()
+
+        # Extract Version from docstring (e.g., "Version: 1.2.0")
+        if metadata["version"] is None:
+            version_match = re.search(r"Version:\s*([\d.]+)", docstring)
+            if version_match:
+                metadata["version"] = version_match.group(1)
+
+    return metadata
 
 # Plugin types supported
 PLUGIN_TYPES = ["sources", "parsers", "enrichers"]
@@ -193,7 +252,7 @@ class PluginDiscovery:
             logger.debug(f"No handler/plugin class found in {file_path}")
             return None
 
-        # Extract metadata from the handler
+        # Extract metadata from the handler and module
         try:
             instance = handler_class()
             self._loaded_classes[instance.source_id] = handler_class
@@ -202,19 +261,35 @@ class PluginDiscovery:
             source_info = instance.source_info
             default_license = instance.default_license
 
+            # Extract module-level metadata (version, author, url, etc.)
+            module_metadata = _extract_module_metadata(module)
+
+            # Determine version: module attribute > docstring > default
+            version = module_metadata["version"] or "1.0.0"
+
+            # Determine author: module attribute > docstring > None
+            author = module_metadata["author"]
+
+            # Determine URL: source_info.base_url > module attribute > docstring
+            url = None
+            if hasattr(source_info, "base_url") and source_info.base_url:
+                url = source_info.base_url
+            elif module_metadata["url"]:
+                url = module_metadata["url"]
+
             return DiscoveredPlugin(
                 plugin_id=instance.source_id,
                 name=source_info.name,
                 description=source_info.description,
-                version="1.0.0",  # TODO: Extract from module if available
+                version=version,
                 plugin_type=plugin_type,
                 file_path=str(file_path),
                 module_name=module_name,
                 class_name=class_name,
                 license_type=default_license.type if default_license else None,
                 features=source_info.features if hasattr(source_info, "features") else [],
-                author=None,  # TODO: Extract from module docstring
-                url=source_info.base_url if hasattr(source_info, "base_url") else None,
+                author=author,
+                url=url,
             )
         except Exception as e:
             logger.warning(f"Error extracting metadata from {file_path}: {e}")

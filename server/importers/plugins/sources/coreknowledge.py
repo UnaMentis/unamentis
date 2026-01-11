@@ -26,6 +26,10 @@ Key Features:
 - Standards-aligned to Common Core and state standards
 """
 
+__version__ = "1.0.0"
+__author__ = "UnaMentis Team"
+__url__ = "https://www.coreknowledge.org/"
+
 import asyncio
 import json
 import logging

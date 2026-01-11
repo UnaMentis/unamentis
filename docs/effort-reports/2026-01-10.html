@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnaMentis Effort Report - 2026-01-10</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #059669;
+            --warning: #d97706;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        h2 { font-size: 1.5rem; margin: 2rem 0 1rem; color: var(--primary-dark); border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.75rem; color: var(--text); }
+        .meta { color: var(--text-muted); margin-bottom: 2rem; }
+
+        /* Executive Summary - Prominent */
+        .executive-summary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .executive-summary h2 {
+            color: white;
+            border-bottom-color: rgba(255,255,255,0.3);
+            margin-top: 0;
+        }
+        .estimate-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .estimate-card {
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .estimate-card.primary {
+            background: rgba(255,255,255,0.25);
+            border: 2px solid rgba(255,255,255,0.4);
+        }
+        .estimate-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+        .estimate-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .estimate-unit {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+        .estimate-hours {
+            font-size: 0.875rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: var(--bg);
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        td { font-size: 0.95rem; }
+        tr:last-child td { border-bottom: none; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .total-row { font-weight: 600; background: var(--bg); }
+
+        /* Lists */
+        ul { margin: 0.5rem 0; padding-left: 1.5rem; }
+        li { margin: 0.25rem 0; }
+
+        /* Methodology */
+        .formula {
+            background: #f1f5f9;
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+        .param-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .estimate-grid { grid-template-columns: 1fr; }
+            .estimate-value { font-size: 2rem; }
+            body { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>UnaMentis Project Effort Estimation</h1>
+        <p class="meta">Generated: January 10, 2026 at 17:44 · Branch: rea/main-dev · Commits: 253</p>
+
+        <!-- Executive Summary -->
+        <div class="executive-summary">
+            <h2>Executive Summary</h2>
+            <div class="estimate-grid">
+                <div class="estimate-card primary">
+                    <div class="estimate-label">AI-Assisted Development (Actual)</div>
+                    <div class="estimate-value">14-18</div>
+                    <div class="estimate-unit">months</div>
+                    <div class="estimate-hours">2,454-3,190 man-hours</div>
+                </div>
+                <div class="estimate-card">
+                    <div class="estimate-label">Pure Human Development (No AI)</div>
+                    <div class="estimate-value">50-57</div>
+                    <div class="estimate-unit">months</div>
+                    <div class="estimate-hours">8,589-9,877 man-hours</div>
+                </div>
+            </div>
+            <p style="margin-top: 1.5rem; opacity: 0.9; font-size: 0.95rem;">
+                Based on 139,040 lines of source code across 372 files.
+                Estimates assume a single mid-senior developer working 40 hours/week.
+            </p>
+        </div>
+
+        <!-- Codebase Statistics -->
+        <h2>Codebase Statistics</h2>
+
+        <div class="card">
+            <h3>Source Code by Component</h3>
+            <table>
+                <thead>
+                    <tr><th>Component</th><th class="num">Files</th><th class="num">Lines</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>iOS App (Swift)</td><td class="num">123</td><td class="num">51,993</td></tr>
+                    <tr><td>iOS Tests (Swift)</td><td class="num">31</td><td class="num">8,749</td></tr>
+                    <tr><td>Server (Python)</td><td class="num">91</td><td class="num">43,962</td></tr>
+                    <tr><td>Operations Console (TS/React)</td><td class="num">110</td><td class="num">26,198</td></tr>
+                    <tr><td>Management Console (JS/HTML/CSS)</td><td class="num">2</td><td class="num">6,985</td></tr>
+                    <tr><td>Shell Scripts</td><td class="num">15</td><td class="num">1,153</td></tr>
+                    <tr class="total-row"><td>Total Source Code</td><td class="num">372</td><td class="num">139,040</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h3>Documentation & Specifications</h3>
+            <table>
+                <thead>
+                    <tr><th>Type</th><th class="num">Files</th><th class="num">Lines</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Technical Documentation</td><td class="num">67</td><td class="num">35,684</td></tr>
+                    <tr><td>Curriculum Specification</td><td class="num">22</td><td class="num">17,961</td></tr>
+                    <tr class="total-row"><td>Total Documentation</td><td class="num">89</td><td class="num">53,645</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Architecture -->
+        <h2>Architectural Complexity</h2>
+
+        <div class="card">
+            <h3>iOS Application Architecture</h3>
+            <table>
+                <thead>
+                    <tr><th>Component</th><th class="num">Count</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>LLM Service Providers</td><td class="num">5</td></tr>
+                    <tr><td>STT Service Providers</td><td class="num">9</td></tr>
+                    <tr><td>TTS Service Providers</td><td class="num">7</td></tr>
+                    <tr><td>VAD Services</td><td class="num">1</td></tr>
+                    <tr><td>Core System Modules</td><td class="num">12</td></tr>
+                    <tr><td>UI View Modules</td><td class="num">9</td></tr>
+                    <tr><td>CoreData Managed Objects</td><td class="num">8</td></tr>
+                    <tr><td>App Intents (Siri Shortcuts)</td><td class="num">7</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Calculation Breakdown -->
+        <h2>Effort Calculation</h2>
+
+        <div class="card">
+            <h3>Hours by Component (Raw)</h3>
+            <table>
+                <thead>
+                    <tr><th>Component</th><th class="num">Lines</th><th class="num">LOC/Hour</th><th class="num">Hours</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>iOS Swift (complex audio/ML)</td><td class="num">60,742</td><td class="num">17.5</td><td class="num">3,471</td></tr>
+                    <tr><td>Python Backend</td><td class="num">43,962</td><td class="num">27.5</td><td class="num">1,599</td></tr>
+                    <tr><td>TypeScript/React</td><td class="num">33,183</td><td class="num">27.5</td><td class="num">1,207</td></tr>
+                    <tr><td>Documentation</td><td class="num">53,645</td><td class="num">45.0</td><td class="num">1,192</td></tr>
+                    <tr class="total-row"><td>Raw Total</td><td class="num"></td><td class="num"></td><td class="num">7,468</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h3>Final Estimates</h3>
+
+            <h4 style="margin-top: 1rem;">Pure Human Development (No AI)</h4>
+            <div class="formula">
+Raw Hours (7,468) × Planning Overhead (1.15) = 8,589 hours
+8,589 hours ÷ 40 hrs/week = 214.7 weeks
+8,589 hours ÷ 173 hrs/month = 49.6 months
+            </div>
+
+            <h4 style="margin-top: 1.5rem;">AI-Assisted Development</h4>
+            <div class="formula">
+Raw Hours (7,468) ÷ AI Factor (3.5) = 2,134 hours
+2,134 hours × Planning Overhead (1.15) = 2,454 hours
+2,454 hours ÷ 40 hrs/week = 61.3 weeks
+2,454 hours ÷ 173 hrs/month = 14.2 months
+            </div>
+        </div>
+
+        <!-- Methodology -->
+        <h2>Methodology</h2>
+
+        <div class="card">
+            <h3>Estimation Parameters</h3>
+            <table class="param-table">
+                <tbody>
+                    <tr><td>Swift (complex)</td><td>17.5 LOC/hour - Real-time audio, CoreData, ML integration</td></tr>
+                    <tr><td>Python Backend</td><td>27.5 LOC/hour - Standard web services, plugin architecture</td></tr>
+                    <tr><td>TypeScript/React</td><td>27.5 LOC/hour - Modern framework, component-based</td></tr>
+                    <tr><td>Documentation</td><td>45.0 LOC/hour - Technical writing</td></tr>
+                    <tr><td>AI Adjustment</td><td>÷3.5 - AI-assisted projects produce 3.5x output</td></tr>
+                    <tr><td>Planning Overhead</td><td>+15% - Architecture and planning time</td></tr>
+                    <tr><td>Work Week</td><td>40 hours</td></tr>
+                    <tr><td>Work Month</td><td>173 hours (average business month)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h3>Complexity Factors Considered</h3>
+            <ul>
+                <li>Real-time audio processing with &lt;500ms latency requirement</li>
+                <li>On-device ML integration (llama.cpp, Silero VAD)</li>
+                <li>Multiple third-party API integrations (21+ external services)</li>
+                <li>CoreData persistence layer with 8 entity types</li>
+                <li>Swift 6.0 with C++ interoperability</li>
+                <li>Multi-platform considerations (iOS 18+)</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Generated by <code>scripts/generate-effort-report.py</code></p>
+            <p>UnaMentis - Voice AI Tutoring Platform</p>
+        </div>
+    </div>
+</body>
+</html>

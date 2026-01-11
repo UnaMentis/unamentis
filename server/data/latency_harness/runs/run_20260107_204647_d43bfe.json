@@ -1,0 +1,14 @@
+{
+  "id": "run_20260107_204647_d43bfe",
+  "suiteName": "Quick Validation",
+  "suiteId": "quick_validation",
+  "startedAt": "2026-01-07T20:46:47.003285",
+  "completedAt": "2026-01-07T20:46:47.003523",
+  "clientId": "cli_mock_client",
+  "clientType": "ios_simulator",
+  "status": "completed",
+  "totalConfigurations": 3,
+  "completedConfigurations": 3,
+  "progressPercent": 100.0,
+  "elapsedTimeSeconds": 0.000238
+}

@@ -388,6 +388,178 @@ public actor CurriculumEngine: ObservableObject {
 
 // MARK: - Curriculum Progress
 
+// MARK: - FOV Context Generation
+
+extension CurriculumEngine {
+
+    /// Generate a compressed curriculum outline for the semantic buffer (peripheral vision)
+    /// - Returns: Curriculum outline with topic titles and brief objectives
+    @MainActor
+    public func generateCurriculumOutline() -> String {
+        guard let curriculum = activeCurriculum else { return "" }
+
+        let topics = getTopics()
+        var outline: [String] = []
+
+        outline.append("Curriculum: \(curriculum.name ?? "Untitled")")
+
+        for topic in topics {
+            let status = topic.status == .completed ? "✓" : "○"
+            let objectives = topic.learningObjectives.prefix(2).joined(separator: "; ")
+            outline.append("\(status) \(topic.orderIndex + 1). \(topic.title ?? "Untitled")")
+            if !objectives.isEmpty {
+                outline.append("   → \(objectives)")
+            }
+        }
+
+        return outline.joined(separator: "\n")
+    }
+
+    /// Get the current position within the curriculum
+    /// - Parameter topic: Topic to get position for
+    /// - Returns: Curriculum position information
+    @MainActor
+    public func getTopicPosition(for topic: Topic) -> CurriculumPosition {
+        let topics = getTopics()
+        let currentIndex = topics.firstIndex(where: { $0.id == topic.id }) ?? 0
+
+        // Find parent unit if topic hierarchy exists
+        var unitTitle: String? = nil
+        // For now, we'll use the curriculum name as the unit
+        // In the future, this could traverse the UMCF hierarchy
+
+        return CurriculumPosition(
+            curriculumTitle: activeCurriculum?.name ?? "",
+            currentTopicIndex: currentIndex,
+            totalTopics: topics.count,
+            currentUnitTitle: unitTitle
+        )
+    }
+
+    /// Generate foveated context for a topic (full detail for current, compressed for adjacent)
+    /// This is the core "foveated rendering" implementation for curriculum context
+    /// - Parameters:
+    ///   - topic: Central topic (foveal region, maximum detail)
+    ///   - tokenBudget: Maximum tokens for the entire context
+    /// - Returns: Foveated context string
+    @MainActor
+    public func generateFoveatedContext(
+        for topic: Topic,
+        tokenBudget: Int = 4000
+    ) -> String {
+        let topics = getTopics()
+        guard let currentIndex = topics.firstIndex(where: { $0.id == topic.id }) else {
+            return generateContext(for: topic)
+        }
+
+        var context: [String] = []
+        var remainingBudget = tokenBudget
+
+        // FOVEAL: Current topic at full detail (60% of budget)
+        let fovealBudget = Int(Double(tokenBudget) * 0.6)
+        let fovealContext = generateContext(for: topic)
+        let truncatedFoveal = Self.truncateToTokenBudget(fovealContext, budget: fovealBudget)
+        context.append("### CURRENT TOPIC (FULL DETAIL)\n\(truncatedFoveal)")
+        remainingBudget -= truncatedFoveal.count / 4
+
+        // PARAFOVEAL: Adjacent topics at medium detail (30% of budget)
+        let parafovealBudget = Int(Double(tokenBudget) * 0.3) / 2 // Split between prev/next
+
+        // Previous topic
+        if currentIndex > 0 {
+            let prevTopic = topics[currentIndex - 1]
+            let prevContext = generateBriefContext(for: prevTopic, maxTokens: parafovealBudget)
+            if !prevContext.isEmpty {
+                context.append("### PREVIOUS TOPIC (CONTEXT)\n\(prevContext)")
+                remainingBudget -= prevContext.count / 4
+            }
+        }
+
+        // Next topic
+        if currentIndex < topics.count - 1 {
+            let nextTopic = topics[currentIndex + 1]
+            let nextContext = generateBriefContext(for: nextTopic, maxTokens: parafovealBudget)
+            if !nextContext.isEmpty {
+                context.append("### UPCOMING TOPIC (PREVIEW)\n\(nextContext)")
+                remainingBudget -= nextContext.count / 4
+            }
+        }
+
+        return context.joined(separator: "\n\n")
+    }
+
+    /// Generate brief context for a topic (parafoveal/peripheral detail level)
+    /// - Parameters:
+    ///   - topic: Topic to summarize
+    ///   - maxTokens: Maximum tokens for this summary
+    /// - Returns: Brief context string
+    @MainActor
+    private func generateBriefContext(for topic: Topic, maxTokens: Int) -> String {
+        var brief = "Topic: \(topic.title ?? "Unknown")"
+
+        // Add first 2 objectives only
+        let objectives = topic.learningObjectives.prefix(2)
+        if !objectives.isEmpty {
+            brief += "\nObjectives: " + objectives.joined(separator: "; ")
+        }
+
+        return Self.truncateToTokenBudget(brief, budget: maxTokens)
+    }
+
+    /// Truncate text to fit within a token budget
+    /// - Parameters:
+    ///   - text: Text to truncate
+    ///   - budget: Maximum tokens
+    /// - Returns: Truncated text
+    private static func truncateToTokenBudget(_ text: String, budget: Int) -> String {
+        let estimatedTokens = text.count / 4
+        if estimatedTokens <= budget {
+            return text
+        }
+
+        let targetChars = budget * 4
+        return String(text.prefix(targetChars - 3)) + "..."
+    }
+
+    /// Get glossary terms relevant to a segment
+    /// - Parameters:
+    ///   - segmentContent: Content of the current segment
+    ///   - topic: Current topic
+    /// - Returns: Relevant glossary terms
+    @MainActor
+    public func getRelevantGlossaryTerms(
+        for segmentContent: String,
+        in topic: Topic
+    ) -> [GlossaryTerm] {
+        // For now, return an empty array
+        // In the future, this will extract terms from UMCF glossary
+        // and match against segment content
+        return []
+    }
+
+    /// Get misconception triggers for a topic
+    /// - Parameter topic: Topic to get triggers for
+    /// - Returns: Misconception triggers
+    @MainActor
+    public func getMisconceptionTriggers(for topic: Topic) -> [MisconceptionTrigger] {
+        // For now, return an empty array
+        // In the future, this will extract from UMCF misconceptions section
+        return []
+    }
+
+    /// Get alternative explanations for a topic
+    /// - Parameter topic: Topic to get explanations for
+    /// - Returns: Alternative explanations
+    @MainActor
+    public func getAlternativeExplanations(for topic: Topic) -> [AlternativeExplanation] {
+        // For now, return an empty array
+        // In the future, this will extract from UMCF alternativeExplanations
+        return []
+    }
+}
+
+// MARK: - Curriculum Progress
+
 /// Overall progress for a curriculum
 public struct CurriculumProgress: Sendable {
     /// Total number of topics

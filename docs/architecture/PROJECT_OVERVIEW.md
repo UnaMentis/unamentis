@@ -88,7 +88,7 @@ All components are **protocol-based and swappable**. The system supports multipl
 | **AssemblyAI** | Universal-2 | Cloud | Word-level timestamps |
 | **Groq** | Whisper-large-v3-turbo | Cloud | Free tier (14,400 req/day), 300x real-time |
 | **OpenAI** | Whisper | Cloud | High accuracy, batch processing |
-| **Self-hosted** | whisper.cpp, faster-whisper | Local server | OpenAI-compatible API |
+| **Self-hosted** | whisper.cpp, faster-whisper | Local server | OpenAI-compatible API, WebSocket streaming |
 
 ### Text-to-Speech (TTS) Models
 
@@ -109,10 +109,16 @@ Chatterbox is our featured self-hosted TTS model with advanced capabilities:
 - **Emotion Control:** Exaggeration parameter (0.0-1.5) controls emotional intensity
 - **Generation Fidelity:** CFG weight (0.0-1.0) for output consistency
 - **Paralinguistic Tags:** `[laugh]`, `[cough]`, `[chuckle]`, `[sigh]`, `[gasp]`
-- **Voice Cloning:** Zero-shot cloning from reference audio
+- **Voice Cloning:** Zero-shot cloning from reference audio (with UI for file selection and recording)
 - **Languages:** 23 languages supported
 - **Modes:** Streaming and non-streaming
 - **Presets:** Default, Natural, Expressive, Low Latency
+
+The iOS app includes a dedicated Chatterbox Settings view with voice cloning UI that allows users to:
+- Enable/disable voice cloning
+- Select reference audio files from device storage
+- Record new reference audio directly (5+ seconds required)
+- Preview and manage reference audio samples
 
 ### Large Language Models (LLM)
 
@@ -208,12 +214,51 @@ UnaMentis/
 ```
 Microphone -> AudioEngine -> VAD -> STT (streaming)
     -> SessionManager (turn-taking, context)
+    -> FOV Context Manager (build hierarchical context)
     -> PatchPanel (route to LLM endpoint)
-    -> LLM (streaming) -> TTS (streaming)
+    -> LLM (streaming) -> Confidence Monitor
+    -> TTS (streaming)
     -> AudioEngine -> Speaker
 ```
 
 **Session States:** Idle → User Speaking → Processing → AI Thinking → AI Speaking → (loop)
+
+### Curriculum Auto-Continuation
+
+Seamless topic-to-topic transitions for uninterrupted learning sessions:
+
+**Features:**
+- **Auto-Continue:** Automatically transitions to next topic when current topic completes
+- **Pre-Generation:** Starts generating next topic's audio at 70% progress for seamless transitions
+- **Transition Announcements:** Clear audio and visual notification of topic changes
+- **Audio Segment Caching:** Caches all segments for current topic (up to 50MB) for instant replay
+- **Navigation Controls:** Go back one segment, replay topic, skip to next topic buttons
+- **User Preference:** Settings toggle to enable/disable auto-continuation (default ON)
+
+**Implementation:**
+- `AudioSegmentCache` actor for thread-safe segment caching
+- Pre-generation buffer for next topic audio
+- Transition announcement via Apple TTS
+- `CurriculumControlBar` UI component with navigation buttons
+
+### FOV Context Management
+
+Foveated context management builds optimal LLM context for voice tutoring, inspired by VR foveated rendering where the center of attention gets full detail.
+
+**Hierarchical Buffers:**
+
+| Buffer | Purpose | Token Budget (Cloud) |
+|--------|---------|---------------------|
+| **Immediate** | Current segment, recent turns, barge-in | 4,000 |
+| **Working** | Current topic content, glossary, misconceptions | 4,000 |
+| **Episodic** | Session history, learner signals, completed topics | 2,500 |
+| **Semantic** | Curriculum outline, position, prerequisites | 1,500 |
+
+**Adaptive Scaling:** Budgets scale for model context window (Cloud 12K, Mid-range 8K, On-device 4K, Tiny 2K).
+
+**Confidence Monitoring:** Analyzes responses for hedging, deflection, knowledge gaps. Automatically expands context when uncertainty detected.
+
+See [FOV_CONTEXT_MANAGEMENT.md](FOV_CONTEXT_MANAGEMENT.md) for complete documentation.
 
 ### LLM Routing (Patch Panel)
 
@@ -291,6 +336,10 @@ A switchboard system for routing LLM calls to any endpoint:
 - Plugin management API
 - Authentication (JWT tokens, rate limiting)
 - Diagnostic logging and resource monitoring
+- **FOV Context Management** for voice tutoring sessions (see [FOV_CONTEXT_MANAGEMENT.md](FOV_CONTEXT_MANAGEMENT.md))
+- **TTS Caching System** - Global cross-user audio cache with priority-based generation
+- **Session Management** - Per-user session state with cross-device resume support
+- **Scheduled Deployments** - Admin-triggered curriculum pre-generation
 
 ### Operations Console (Port 3000)
 
@@ -328,6 +377,58 @@ UnaMentis can connect to local/LAN servers for zero-cost inference:
 - Auto-discovery of available models/voices
 - Health monitoring with automatic fallback
 - OpenAI-compatible API support
+
+### TTS Caching & Session Management
+
+A comprehensive architecture for multi-user tutoring with global audio caching and per-user session state.
+
+**Components:**
+
+| Component | Purpose |
+|-----------|---------|
+| **TTSCache** | Global user-agnostic audio cache (shared across all users) |
+| **TTSResourcePool** | Priority-based TTS generation with concurrency limits |
+| **SessionCacheIntegration** | Bridge between per-user sessions and global cache |
+| **UserSession** | Per-user state with voice config and playback position |
+| **ScheduledDeploymentManager** | Admin-triggered curriculum pre-generation |
+
+**Key Design Principles:**
+
+1. **User-Agnostic Cache Keys:** Cache keys contain only `text + voice_id + provider + speed` (no user_id). Users with identical voice configurations share cached audio.
+
+2. **Cross-User Cache Sharing:** When User A generates audio for "Welcome to the lesson" with voice "nova", User B requesting the same text with the same voice gets an instant cache hit (0ms TTS latency).
+
+3. **Priority-Based Generation:**
+   - `LIVE (10)` - User actively waiting, highest priority (7 concurrent max)
+   - `PREFETCH (5)` - Near-future prefetch, background priority
+   - `SCHEDULED (1)` - Background pre-generation (3 concurrent max)
+
+4. **Separate Semaphores:** Live requests never blocked by background generation. Each priority level has its own concurrency pool.
+
+**Performance (tested):**
+- Sequential cache hits: 1-3ms latency
+- 50 concurrent cache hits: 1,155 req/sec, 35ms avg latency
+- Cache storage: Filesystem-based with async I/O
+
+**API Endpoints:**
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/tts` | POST | Generate TTS (cache-first) |
+| `/api/tts/cache/stats` | GET | Cache and resource pool stats |
+| `/api/tts/cache` | GET | Direct cache lookup |
+| `/api/tts/cache` | PUT | Direct cache insertion (dev) |
+| `/api/tts/cache` | DELETE | Clear cache |
+| `/api/tts/prefetch/topic` | POST | Prefetch topic segments |
+| `/api/deployments` | POST/GET | Scheduled pre-generation |
+
+**Corporate Training Example:**
+```
+500 employees start "Security Training 2024" simultaneously:
+- Admin pre-generates all segments the night before
+- Day-of: 100% cache hits, 0ms TTS latency for everyone
+- Server easily handles 500 concurrent sessions
+```
 
 ### Architecture Relationship
 
@@ -497,6 +598,7 @@ python -m latency_harness.cli --suite quick_validation --format json
 - **Network Projections:** Automatic latency projections for localhost, WiFi, cellular
 - **Regression Detection:** Baseline comparison with severity levels (minor/moderate/severe)
 - **Resource Monitoring:** CPU, memory, thermal state tracking during tests
+- **Audio File Loading:** Full audio input scenario support with file loading, format conversion, and STT streaming
 
 See `server/latency_harness/CLAUDE.md` and `docs/LATENCY_TEST_HARNESS_GUIDE.md` for details.
 
@@ -524,25 +626,29 @@ UnaMentis implements a comprehensive **5-phase Code Quality Initiative** that en
 | Component | Tool | Purpose |
 |-----------|------|---------|
 | Pre-commit Hooks | Native git hooks | Lint, format, secrets check |
+| Hook Bypass Audit | `scripts/hook-audit.sh` | Detect `--no-verify` usage |
 | Dependency Management | Renovate | Auto-updates with grouping |
 | AI Code Review | CodeRabbit | Automated PR review (free for OSS) |
 | Performance Testing | Latency Harness | Regression detection |
 | Security Scanning | CodeQL, Gitleaks | Vulnerability detection |
 | DORA Metrics | Apache DevLake | Engineering health |
 | Feature Flags | Unleash | Safe rollouts |
+| Mutation Testing | mutmut, Stryker, Muter | Test quality validation |
+| Chaos Engineering | Custom runbook | Voice pipeline resilience |
 
 ### GitHub Actions Workflows
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | iOS CI | Push/PR | Build, lint, test, coverage |
-| Server CI | Push/PR | Python linting, tests |
-| Web Client CI | Push/PR | Lint, typecheck, build |
+| Server CI | Push/PR | Python linting, tests, coverage |
+| Web Client CI | Push/PR | Lint, typecheck, build, coverage |
 | Nightly E2E | Daily 2am | Full E2E + latency tests |
 | Performance | Push/PR/scheduled | Latency regression check |
 | Security | Push/PR/weekly | Secrets, CodeQL, audits |
 | Quality Metrics | Daily | CI/PR/bug metrics |
 | Feature Flags | Weekly | Stale flag audit |
+| Mutation Testing | Weekly (Sunday 4am) | Test quality validation |
 
 ### Feature Flag System
 
@@ -585,9 +691,22 @@ cd server/devlake && docker compose up -d
 
 # Start feature flags
 cd server/feature-flags && docker compose up -d
+
+# Audit for hook bypasses
+./scripts/hook-audit.sh
 ```
 
-See [CODE_QUALITY_INITIATIVE.md](../CODE_QUALITY_INITIATIVE.md) for complete documentation.
+### Chaos Engineering
+
+The project includes a comprehensive chaos engineering runbook for testing voice pipeline resilience:
+
+- **Network Degradation:** High latency (500ms+), packet loss (5-20%), disconnections
+- **API Failures:** Provider timeouts, rate limiting, partial responses
+- **Resource Pressure:** Memory limits, thermal throttling, battery constraints
+
+See [CHAOS_ENGINEERING_RUNBOOK.md](../testing/CHAOS_ENGINEERING_RUNBOOK.md) for test scenarios.
+
+See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for complete documentation.
 
 ---
 
@@ -617,6 +736,16 @@ See [CODE_QUALITY_INITIATIVE.md](../CODE_QUALITY_INITIATIVE.md) for complete doc
 - Graceful degradation architecture
 - Plugin-based importer framework
 - Latency test harness (CLI, REST API, iOS harness, Web dashboard)
+- FOV Context Management (hierarchical cognitive buffers, confidence monitoring)
+- Curriculum auto-continuation with pre-generation and segment caching
+- CodeRabbit AI code review integration (CLI + VS Code extension)
+- **TTS Caching System** (global cross-user cache, priority-based generation, 1000+ req/sec)
+- **Session Management** (UserSession, PlaybackState, SessionCacheIntegration)
+- **TTSResourcePool** (separate semaphores for live vs background, concurrency control)
+- **Self-hosted STT WebSocket streaming** (whisper.cpp, faster-whisper compatible)
+- **Voice cloning UI** (Chatterbox settings with file picker and audio recorder)
+- **Latency harness audio file loading** (full STT pipeline testing with real audio)
+- **LaTeX formula rendering** (SwiftMath integration with Unicode fallback)
 
 ### In Progress
 - Android client (separate repository)
@@ -716,6 +845,10 @@ See [CODE_QUALITY_INITIATIVE.md](../CODE_QUALITY_INITIATIVE.md) for complete doc
 | `curriculum/spec/umcf-schema.json` | UMCF JSON Schema (1,905 lines) |
 | `curriculum/spec/UMCF_SPECIFICATION.md` | Human-readable format spec |
 | `server/management/server.py` | Management API backend |
+| `server/management/tts_cache/cache.py` | Global TTS cache implementation |
+| `server/management/tts_cache/resource_pool.py` | Priority-based TTS generation pool |
+| `server/management/session_cache_integration.py` | Session-cache bridge |
+| `server/management/fov_context/session.py` | UserSession, PlaybackState, SessionManager |
 | `server/importers/plugins/sources/mit_ocw.py` | MIT OCW course handler |
 | `server/web/src/components/curriculum/` | Curriculum Studio components |
 | `server/web-client/src/app/` | Web client application |
@@ -738,6 +871,7 @@ See [CODE_QUALITY_INITIATIVE.md](../CODE_QUALITY_INITIATIVE.md) for complete doc
 | [UnaMentis_TDD.md](UnaMentis_TDD.md) | Technical Design Document |
 | [ENTERPRISE_ARCHITECTURE.md](ENTERPRISE_ARCHITECTURE.md) | System design |
 | [PATCH_PANEL_ARCHITECTURE.md](PATCH_PANEL_ARCHITECTURE.md) | LLM routing |
+| [FOV_CONTEXT_MANAGEMENT.md](FOV_CONTEXT_MANAGEMENT.md) | Foveated context for voice tutoring |
 | [FALLBACK_ARCHITECTURE.md](FALLBACK_ARCHITECTURE.md) | Graceful degradation |
 
 ### Curriculum

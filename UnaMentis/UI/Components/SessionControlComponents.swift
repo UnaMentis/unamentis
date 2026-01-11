@@ -248,6 +248,164 @@ public struct SessionPauseButton: View {
     }
 }
 
+// MARK: - Shared Haptic Feedback
+
+#if os(iOS)
+/// Shared haptic feedback generators for curriculum control buttons
+@MainActor
+private enum HapticFeedback {
+    static let light = UIImpactFeedbackGenerator(style: .light)
+    static let medium = UIImpactFeedbackGenerator(style: .medium)
+}
+#endif
+
+// MARK: - Go Back Segment Button
+
+/// A button to go back one segment in curriculum playback.
+/// Like a rewind button, allows user to replay the previous segment.
+@MainActor
+public struct GoBackSegmentButton: View {
+    /// Whether the button is enabled (can go back)
+    let isEnabled: Bool
+
+    /// Callback when button is tapped
+    let action: @MainActor () -> Void
+
+    /// Button size
+    private let buttonSize: CGFloat = 44
+
+    public init(isEnabled: Bool, action: @escaping @MainActor () -> Void) {
+        self.isEnabled = isEnabled
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: {
+            action()
+            triggerFeedback()
+        }) {
+            ZStack {
+                Circle()
+                    .fill(isEnabled ? Color.blue.opacity(0.15) : Color.gray.opacity(0.1))
+                    .frame(width: buttonSize, height: buttonSize)
+
+                Image(systemName: "gobackward.10")
+                    .font(.system(size: 18))
+                    .foregroundStyle(isEnabled ? .blue : .gray.opacity(0.5))
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .accessibilityLabel("Go back one segment")
+        .accessibilityHint("Replays the previous segment of the lesson")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    @MainActor
+    private func triggerFeedback() {
+        #if os(iOS)
+        HapticFeedback.light.impactOccurred()
+        #endif
+    }
+}
+
+// MARK: - Replay Topic Button
+
+/// A button to replay the entire current topic from the beginning.
+@MainActor
+public struct ReplayTopicButton: View {
+    /// Callback when button is tapped
+    let action: @MainActor () -> Void
+
+    /// Button size
+    private let buttonSize: CGFloat = 44
+
+    public init(action: @escaping @MainActor () -> Void) {
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: {
+            action()
+            triggerFeedback()
+        }) {
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.15))
+                    .frame(width: buttonSize, height: buttonSize)
+
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.orange)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Replay topic")
+        .accessibilityHint("Starts the current topic from the beginning")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    @MainActor
+    private func triggerFeedback() {
+        #if os(iOS)
+        HapticFeedback.medium.impactOccurred()
+        #endif
+    }
+}
+
+// MARK: - Next Topic Button
+
+/// A button to skip to the next topic in the curriculum.
+@MainActor
+public struct NextTopicButton: View {
+    /// Whether the button is enabled (has next topic)
+    let isEnabled: Bool
+
+    /// Title of the next topic (for accessibility)
+    let nextTopicTitle: String?
+
+    /// Callback when button is tapped
+    let action: @MainActor () -> Void
+
+    /// Button size
+    private let buttonSize: CGFloat = 44
+
+    public init(isEnabled: Bool, nextTopicTitle: String? = nil, action: @escaping @MainActor () -> Void) {
+        self.isEnabled = isEnabled
+        self.nextTopicTitle = nextTopicTitle
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: {
+            action()
+            triggerFeedback()
+        }) {
+            ZStack {
+                Circle()
+                    .fill(isEnabled ? Color.green.opacity(0.15) : Color.gray.opacity(0.1))
+                    .frame(width: buttonSize, height: buttonSize)
+
+                Image(systemName: "forward.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(isEnabled ? .green : .gray.opacity(0.5))
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .accessibilityLabel(isEnabled ? "Next topic\(nextTopicTitle.map { ": \($0)" } ?? "")" : "No next topic")
+        .accessibilityHint(isEnabled ? "Skips to the next topic in the curriculum" : "This is the last topic in the curriculum")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    @MainActor
+    private func triggerFeedback() {
+        #if os(iOS)
+        HapticFeedback.medium.impactOccurred()
+        #endif
+    }
+}
+
 // MARK: - Session Control Bar
 
 /// A low-profile control bar for tutoring sessions containing all session controls.
@@ -301,6 +459,115 @@ public struct SessionControlBar: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Session controls")
+    }
+}
+
+// MARK: - Curriculum Control Bar
+
+/// A control bar for curriculum playback with segment navigation.
+/// Extends SessionControlBar with go-back, replay, and next topic buttons.
+@MainActor
+public struct CurriculumControlBar: View {
+    /// Whether the session is paused
+    @Binding var isPaused: Bool
+
+    /// Whether the microphone is muted
+    @Binding var isMuted: Bool
+
+    /// Current segment index (for enabling go-back button)
+    let currentSegmentIndex: Int
+
+    /// Whether there is a next topic available
+    let hasNextTopic: Bool
+
+    /// Title of the next topic (for accessibility)
+    let nextTopicTitle: String?
+
+    /// Callback when stop action completes
+    let onStop: @MainActor () -> Void
+
+    /// Callback when go-back button is tapped
+    let onGoBack: @MainActor () -> Void
+
+    /// Callback when replay button is tapped
+    let onReplay: @MainActor () -> Void
+
+    /// Callback when next topic button is tapped
+    let onNextTopic: @MainActor () -> Void
+
+    /// Callback when pause state changes
+    var onPauseChanged: (@MainActor (Bool) -> Void)?
+
+    /// Callback when mute state changes
+    var onMuteChanged: (@MainActor (Bool) -> Void)?
+
+    public init(
+        isPaused: Binding<Bool>,
+        isMuted: Binding<Bool>,
+        currentSegmentIndex: Int,
+        hasNextTopic: Bool,
+        nextTopicTitle: String? = nil,
+        onStop: @escaping @MainActor () -> Void,
+        onGoBack: @escaping @MainActor () -> Void,
+        onReplay: @escaping @MainActor () -> Void,
+        onNextTopic: @escaping @MainActor () -> Void,
+        onPauseChanged: (@MainActor (Bool) -> Void)? = nil,
+        onMuteChanged: (@MainActor (Bool) -> Void)? = nil
+    ) {
+        self._isPaused = isPaused
+        self._isMuted = isMuted
+        self.currentSegmentIndex = currentSegmentIndex
+        self.hasNextTopic = hasNextTopic
+        self.nextTopicTitle = nextTopicTitle
+        self.onStop = onStop
+        self.onGoBack = onGoBack
+        self.onReplay = onReplay
+        self.onNextTopic = onNextTopic
+        self.onPauseChanged = onPauseChanged
+        self.onMuteChanged = onMuteChanged
+    }
+
+    public var body: some View {
+        VStack(spacing: 12) {
+            // Navigation controls row
+            HStack(spacing: 20) {
+                // Go back one segment
+                GoBackSegmentButton(
+                    isEnabled: currentSegmentIndex > 0,
+                    action: onGoBack
+                )
+
+                // Replay topic from beginning
+                ReplayTopicButton(action: onReplay)
+
+                // Skip to next topic
+                NextTopicButton(
+                    isEnabled: hasNextTopic,
+                    nextTopicTitle: nextTopicTitle,
+                    action: onNextTopic
+                )
+            }
+
+            // Standard session controls row
+            HStack(spacing: 16) {
+                // Mute button
+                SessionMuteButton(isMuted: $isMuted, onMuteChanged: onMuteChanged)
+
+                // Pause button
+                SessionPauseButton(isPaused: $isPaused, onPauseChanged: onPauseChanged)
+
+                // Slide to stop
+                SlideToStopButton(onStop: onStop)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Curriculum playback controls")
     }
 }
 

@@ -1,6 +1,7 @@
 {
   "permissions": {
     "additionalDirectories": [
+      "/Users/ramerman/dev/unamentis-android"
     ]
   },
   "hooks": {

@@ -733,6 +733,10 @@ class LatencyTestOrchestrator:
             tts_completion_ms=100 + random.uniform(0, 100),
             e2e_latency_ms=base_latency * 2 + random.uniform(0, 200),
             network_profile=config.network_profile,
+            stt_config=config.stt.to_dict(),
+            llm_config=config.llm.to_dict(),
+            tts_config=config.tts.to_dict(),
+            audio_config=config.audio_engine.to_dict(),
             errors=[],
         )
 

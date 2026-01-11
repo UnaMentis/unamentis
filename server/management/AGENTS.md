@@ -48,9 +48,11 @@ The curriculum database is in `../database/`:
 
 ## Restart and Verify
 
-```bash
-pkill -f "server/management/server.py"
-cd server/management && python server.py &
+Use the `/service` skill for service restarts. Never use bash commands like `pkill`.
+
+```
+/service restart management-api    # Restart this server
+/service status                    # Check service status
 ```
 
 Always restart after code changes and verify via API calls or log inspection.

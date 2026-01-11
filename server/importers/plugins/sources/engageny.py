@@ -27,6 +27,10 @@ Key Features:
 - Modular structure: Grades -> Modules -> Topics -> Lessons
 """
 
+__version__ = "1.0.0"
+__author__ = "UnaMentis Team"
+__url__ = "https://archive.org/details/engageny-mathematics"
+
 import asyncio
 import io
 import json

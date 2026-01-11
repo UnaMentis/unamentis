@@ -6,6 +6,7 @@
 import SwiftUI
 import CoreData
 import Logging
+import UniformTypeIdentifiers
 
 struct CurriculumView: View {
     @EnvironmentObject var appState: AppState
@@ -15,9 +16,11 @@ struct CurriculumView: View {
     @State private var selectedCurriculum: Curriculum?
     @State private var showingImportOptions = false
     @State private var showingServerBrowser = false
+    @State private var showingFileImporter = false
     @State private var importError: String?
     @State private var showingError = false
     @State private var showingCurriculumHelp = false
+    @State private var isImportingFile = false
 
     private static let logger = Logger(label: "com.unamentis.curriculum.view")
 
@@ -164,12 +167,25 @@ struct CurriculumView: View {
             Button("Browse Server Curricula") {
                 showingServerBrowser = true
             }
+            Button("Import from File") {
+                showingFileImporter = true
+            }
             Button("Load Sample (PyTorch Fundamentals)") {
                 Task { await loadSampleCurriculum() }
             }
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Choose how to import a curriculum")
+        }
+        .fileImporter(
+            isPresented: $showingFileImporter,
+            allowedContentTypes: [
+                UTType(filenameExtension: "umcf") ?? .json,
+                UTType(filenameExtension: "umcfz") ?? .gzip
+            ],
+            allowsMultipleSelection: false
+        ) { result in
+            Task { await handleFileImport(result) }
         }
         .sheet(isPresented: $showingServerBrowser) {
             ServerCurriculumBrowser { downloadedCurriculum in
@@ -199,6 +215,47 @@ struct CurriculumView: View {
             importError = error.localizedDescription
             showingError = true
             isLoading = false
+        }
+    }
+
+    @MainActor
+    private func handleFileImport(_ result: Result<[URL], Error>) async {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else {
+                Self.logger.warning("No file selected")
+                return
+            }
+
+            isImportingFile = true
+            isLoading = true
+            Self.logger.info("Importing UMCF file: \(url.lastPathComponent)")
+
+            do {
+                // Start accessing the security-scoped resource
+                guard url.startAccessingSecurityScopedResource() else {
+                    throw UMCFFileError.fileReadFailed("Unable to access file")
+                }
+                defer { url.stopAccessingSecurityScopedResource() }
+
+                let fileHandler = UMCFFileHandler()
+                _ = try await fileHandler.importAndStore(from: url)
+
+                Self.logger.info("Successfully imported curriculum from file")
+                await loadCurricula()
+            } catch {
+                Self.logger.error("Failed to import file: \(error)")
+                importError = error.localizedDescription
+                showingError = true
+                isLoading = false
+            }
+
+            isImportingFile = false
+
+        case .failure(let error):
+            Self.logger.error("File picker error: \(error)")
+            importError = error.localizedDescription
+            showingError = true
         }
     }
 
@@ -1348,6 +1405,12 @@ struct CurriculumHelpSheet: View {
                         iconColor: .green,
                         title: "Browse Server",
                         description: "Download curricula from your management console."
+                    )
+                    CurriculumHelpRow(
+                        icon: "doc.fill",
+                        iconColor: .blue,
+                        title: "Import from File",
+                        description: "Import .umcf or .umcfz curriculum files from Files app."
                     )
                     CurriculumHelpRow(
                         icon: "doc.badge.plus",

@@ -33,17 +33,17 @@ This is non-negotiable. Server work is NOT complete until:
 
 **Why:** Unlike compiled code where build success confirms the code will run, server code changes only take effect after restart. Telling the user to restart the server means you haven't verified your work actually functions.
 
-## Restart Commands
+## Restarting Servers
 
-```bash
-# Management Console (port 8766)
-pkill -f "server/management/server.py"
-cd server/management && python server.py &
+**Use the `/service` skill to manage all server restarts.** Never use pkill or manual restart commands.
 
-# Operations Console (port 3000)
-# Usually auto-reloads with Next.js dev server, but if needed:
-cd server/web && npm run dev
 ```
+/service restart management-api    # Restart Management Console
+/service restart web-server        # Restart Operations Console
+/service status                    # Check all service status
+```
+
+See the skill documentation at `.claude/skills/service/SKILL.md` for full usage.
 
 ## Verification Methods
 

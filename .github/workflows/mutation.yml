@@ -1,0 +1,327 @@
+name: Mutation Testing
+
+on:
+  schedule:
+    # Run weekly on Sundays at 4am UTC
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Which target to run mutation testing on'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - ios
+          - python
+          - web
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  # Python mutation testing with mutmut
+  python-mutation:
+    name: Python Mutation Testing
+    runs-on: ubuntu-latest
+    if: github.event.inputs.target == 'all' || github.event.inputs.target == 'python' || github.event_name == 'schedule'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install mutmut pytest pytest-asyncio pytest-cov aiohttp beautifulsoup4 pluggy bcrypt PyJWT
+
+    - name: Run mutmut on server/importers
+      id: mutmut-importers
+      working-directory: server/importers
+      run: |
+        echo "Running mutation testing on importers..."
+        mutmut run --paths-to-mutate=. --tests-dir=tests --runner="python -m pytest" --no-progress || true
+
+        # Get results
+        RESULTS=$(mutmut results 2>/dev/null || echo "No results")
+        echo "$RESULTS"
+
+        # Calculate mutation score
+        KILLED=$(echo "$RESULTS" | grep -E "^Killed:" | awk '{print $2}' || echo "0")
+        SURVIVED=$(echo "$RESULTS" | grep -E "^Survived:" | awk '{print $2}' || echo "0")
+        TOTAL=$((KILLED + SURVIVED))
+
+        if [ "$TOTAL" -gt 0 ]; then
+          SCORE=$((KILLED * 100 / TOTAL))
+        else
+          SCORE=0
+        fi
+
+        echo "score=$SCORE" >> $GITHUB_OUTPUT
+        echo "killed=$KILLED" >> $GITHUB_OUTPUT
+        echo "survived=$SURVIVED" >> $GITHUB_OUTPUT
+      continue-on-error: true
+
+    - name: Run mutmut on server/management
+      id: mutmut-management
+      working-directory: server/management
+      run: |
+        echo "Running mutation testing on management..."
+        mutmut run --paths-to-mutate=. --tests-dir=tests --runner="python -m pytest" --no-progress || true
+
+        # Get results
+        RESULTS=$(mutmut results 2>/dev/null || echo "No results")
+        echo "$RESULTS"
+
+        # Calculate mutation score
+        KILLED=$(echo "$RESULTS" | grep -E "^Killed:" | awk '{print $2}' || echo "0")
+        SURVIVED=$(echo "$RESULTS" | grep -E "^Survived:" | awk '{print $2}' || echo "0")
+        TOTAL=$((KILLED + SURVIVED))
+
+        if [ "$TOTAL" -gt 0 ]; then
+          SCORE=$((KILLED * 100 / TOTAL))
+        else
+          SCORE=0
+        fi
+
+        echo "score=$SCORE" >> $GITHUB_OUTPUT
+        echo "killed=$KILLED" >> $GITHUB_OUTPUT
+        echo "survived=$SURVIVED" >> $GITHUB_OUTPUT
+      continue-on-error: true
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Python Mutation Testing Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Module | Killed | Survived | Score |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|--------|----------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Importers | ${{ steps.mutmut-importers.outputs.killed || '0' }} | ${{ steps.mutmut-importers.outputs.survived || '0' }} | ${{ steps.mutmut-importers.outputs.score || '0' }}% |" >> $GITHUB_STEP_SUMMARY
+        echo "| Management | ${{ steps.mutmut-management.outputs.killed || '0' }} | ${{ steps.mutmut-management.outputs.survived || '0' }} | ${{ steps.mutmut-management.outputs.score || '0' }}% |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Note:** A mutation score of 100% means all mutations were detected by tests." >> $GITHUB_STEP_SUMMARY
+        echo "Aim for >70% mutation score for critical code paths." >> $GITHUB_STEP_SUMMARY
+
+  # Web mutation testing with Stryker
+  web-mutation:
+    name: Web Mutation Testing
+    runs-on: ubuntu-latest
+    if: github.event.inputs.target == 'all' || github.event.inputs.target == 'web' || github.event_name == 'schedule'
+
+    defaults:
+      run:
+        working-directory: server/web
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: server/web/pnpm-lock.yaml
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile || pnpm install
+
+    - name: Install Stryker
+      run: pnpm add -D @stryker-mutator/core @stryker-mutator/typescript-checker @stryker-mutator/vitest-runner
+
+    - name: Create Stryker config
+      run: |
+        cat > stryker.config.json << 'EOF'
+        {
+          "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+          "packageManager": "pnpm",
+          "reporters": ["clear-text", "html", "json"],
+          "testRunner": "vitest",
+          "checkers": ["typescript"],
+          "tsconfigFile": "tsconfig.json",
+          "mutate": [
+            "src/lib/**/*.ts",
+            "!src/lib/**/*.test.ts",
+            "!src/lib/**/*.d.ts"
+          ],
+          "timeoutMS": 60000,
+          "concurrency": 2,
+          "thresholds": {
+            "high": 80,
+            "low": 60,
+            "break": null
+          }
+        }
+        EOF
+
+    - name: Run Stryker
+      id: stryker
+      run: |
+        npx stryker run --logLevel info || true
+
+        # Extract score from JSON report if available
+        if [ -f reports/mutation/mutation.json ]; then
+          SCORE=$(cat reports/mutation/mutation.json | jq -r '.schemaVersion // "N/A"')
+          echo "Mutation testing completed"
+        else
+          echo "No JSON report generated"
+        fi
+      continue-on-error: true
+
+    - name: Upload Stryker report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: stryker-report
+        path: server/web/reports/mutation/
+        retention-days: 30
+      continue-on-error: true
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## Web Mutation Testing Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Stryker mutation testing completed. Check the uploaded artifact for detailed results." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Mutation testing helps verify that your tests actually catch bugs, not just execute code.**" >> $GITHUB_STEP_SUMMARY
+
+  # iOS mutation testing with Muter (when available)
+  ios-mutation:
+    name: iOS Mutation Testing
+    runs-on: macos-14
+    if: github.event.inputs.target == 'ios'
+    # Note: iOS mutation testing is optional and only runs on manual trigger
+    # Muter is complex to set up in CI and resource-intensive
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Select Xcode 16.2
+      run: sudo xcode-select -s /Applications/Xcode_16.2.app
+
+    - name: Install Muter
+      run: |
+        brew install muter
+      continue-on-error: true
+
+    - name: Create placeholder model files
+      run: |
+        mkdir -p models
+        touch models/llama-3.2-3b-instruct-q4_k_m.gguf
+        touch models/ministral-3b-instruct-q4_k_m.gguf
+        touch models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
+
+    - name: Run Muter
+      id: muter
+      run: |
+        # Muter configuration
+        cat > muter.conf.json << 'EOF'
+        {
+          "executable": "/usr/bin/xcodebuild",
+          "arguments": [
+            "test",
+            "-project", "UnaMentis.xcodeproj",
+            "-scheme", "UnaMentis",
+            "-destination", "platform=iOS Simulator,name=iPhone 16 Pro",
+            "-only-testing:UnaMentisTests/Unit",
+            "CODE_SIGNING_ALLOWED=NO"
+          ],
+          "exclude": [
+            "UnaMentisTests/**",
+            "**/Generated/**"
+          ]
+        }
+        EOF
+
+        # Run Muter (this is resource-intensive)
+        muter run --skip-coverage --format json > muter-results.json 2>&1 || true
+      continue-on-error: true
+
+    - name: Upload Muter report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: muter-report
+        path: muter-results.json
+        retention-days: 30
+      continue-on-error: true
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "## iOS Mutation Testing Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "iOS mutation testing with Muter completed." >> $GITHUB_STEP_SUMMARY
+        echo "Check the uploaded artifact for detailed results." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Note:** iOS mutation testing is resource-intensive and runs only on manual trigger." >> $GITHUB_STEP_SUMMARY
+
+  # Summary job
+  summary:
+    name: Mutation Testing Summary
+    runs-on: ubuntu-latest
+    needs: [python-mutation, web-mutation]
+    if: always() && (github.event.inputs.target == 'all' || github.event_name == 'schedule')
+
+    steps:
+    - name: Generate Summary
+      env:
+        PYTHON_RESULT: ${{ needs.python-mutation.result }}
+        WEB_RESULT: ${{ needs.web-mutation.result }}
+      run: |
+        echo "## Mutation Testing Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Target | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Python | ${PYTHON_RESULT} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Web | ${WEB_RESULT} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### What is Mutation Testing?" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Mutation testing introduces small changes (mutations) to your code and checks if your tests catch them." >> $GITHUB_STEP_SUMMARY
+        echo "- **Killed mutants**: Tests caught the bug (good!)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Survived mutants**: Tests missed the bug (needs improvement)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "A high mutation score (>70%) indicates your tests effectively catch bugs, not just execute code." >> $GITHUB_STEP_SUMMARY
+
+    - name: Create issue on low mutation score
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'Mutation Testing Alert - Low Mutation Score',
+            body: `## Mutation Testing Results
+
+            The weekly mutation testing run has completed with potential issues.
+
+            **Run:** [${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+
+            Please review the mutation testing results and consider:
+            - Adding more specific assertions to tests
+            - Testing edge cases and boundary conditions
+            - Adding tests for error handling paths
+
+            Low mutation scores indicate that tests may pass without actually catching bugs.
+            `,
+            labels: ['mutation-testing', 'automated']
+          });

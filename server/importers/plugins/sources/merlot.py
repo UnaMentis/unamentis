@@ -20,6 +20,10 @@ Required Attribution:
 for Learning Online and Teaching (www.merlot.org). Some rights reserved."
 """
 
+__version__ = "1.0.0"
+__author__ = "UnaMentis Team"
+__url__ = "https://www.merlot.org/"
+
 import asyncio
 import json
 import logging

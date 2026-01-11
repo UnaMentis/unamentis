@@ -1449,3 +1449,332 @@ export async function getMapStyles(): Promise<MapStylesResponse> {
     ],
   }));
 }
+
+// =============================================================================
+// FOV Context Management APIs
+// =============================================================================
+
+import type {
+  FOVSessionsResponse,
+  FOVSessionDebug,
+  FOVHealthStatus,
+  FOVConfidenceAnalysis,
+  FOVContextBuildResponse,
+} from '@/types';
+
+/**
+ * Get FOV system health status
+ */
+export async function getFOVHealth(): Promise<FOVHealthStatus> {
+  return fetchWithFallback('/api/fov/health', () => ({
+    status: 'unavailable' as const,
+    sessions: { total: 0, active: 0, paused: 0 },
+    error: 'Backend not available',
+  }));
+}
+
+/**
+ * List all FOV sessions
+ */
+export async function getFOVSessions(): Promise<FOVSessionsResponse> {
+  return fetchWithFallback('/api/sessions', () => ({
+    sessions: [],
+    error: 'Backend not available',
+  }));
+}
+
+/**
+ * Create a new FOV session
+ */
+export async function createFOVSession(params: {
+  curriculum_id: string;
+  model_name?: string;
+  model_context_window?: number;
+  system_prompt?: string;
+}): Promise<{ session_id: string; state: string; error?: string }> {
+  if (USE_MOCK) {
+    return {
+      session_id: `mock-session-${Date.now()}`,
+      state: 'created',
+    };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  return response.json();
+}
+
+/**
+ * Get FOV session details
+ */
+export async function getFOVSession(
+  sessionId: string
+): Promise<FOVSessionDebug & { error?: string }> {
+  return fetchWithFallback(`/api/sessions/${sessionId}`, () => ({
+    error: 'Session not found',
+    session_id: '',
+    state: 'ended' as const,
+    curriculum_id: '',
+    turn_count: 0,
+    barge_in_count: 0,
+    model_tier: 'CLOUD' as const,
+    buffers: {
+      immediate: { current_segment: null, barge_in: null, turn_count: 0, max_turns: 10 },
+      working: { topic_id: null, topic_title: null, glossary_count: 0, misconception_count: 0 },
+      episodic: {
+        topic_summary_count: 0,
+        questions_count: 0,
+        learner_signals: { clarifications: 0, repetitions: 0, confusions: 0 },
+      },
+      semantic: {
+        curriculum_id: null,
+        current_topic_index: 0,
+        total_topics: 0,
+        has_outline: false,
+      },
+    },
+    token_usage: {
+      immediate: { budget: 0, estimated_used: 0, percentage: 0 },
+      working: { budget: 0, estimated_used: 0, percentage: 0 },
+      episodic: { budget: 0, estimated_used: 0, percentage: 0 },
+      semantic: { budget: 0, estimated_used: 0, percentage: 0 },
+    },
+    total_context_tokens: 0,
+    confidence_history: [],
+    barge_in_history: [],
+    budget_config: {
+      tier: 'CLOUD' as const,
+      immediate_budget: 0,
+      working_budget: 0,
+      episodic_budget: 0,
+      semantic_budget: 0,
+      total_budget: 0,
+      max_conversation_turns: 0,
+    },
+  }));
+}
+
+/**
+ * Get detailed debug info for a session
+ */
+export async function getFOVSessionDebug(sessionId: string): Promise<FOVSessionDebug> {
+  return fetchWithFallback(`/api/sessions/${sessionId}/debug`, () => ({
+    session_id: '',
+    state: 'ended' as const,
+    curriculum_id: '',
+    turn_count: 0,
+    barge_in_count: 0,
+    model_tier: 'CLOUD' as const,
+    buffers: {
+      immediate: { current_segment: null, barge_in: null, turn_count: 0, max_turns: 10 },
+      working: { topic_id: null, topic_title: null, glossary_count: 0, misconception_count: 0 },
+      episodic: {
+        topic_summary_count: 0,
+        questions_count: 0,
+        learner_signals: { clarifications: 0, repetitions: 0, confusions: 0 },
+      },
+      semantic: {
+        curriculum_id: null,
+        current_topic_index: 0,
+        total_topics: 0,
+        has_outline: false,
+      },
+    },
+    token_usage: {
+      immediate: { budget: 0, estimated_used: 0, percentage: 0 },
+      working: { budget: 0, estimated_used: 0, percentage: 0 },
+      episodic: { budget: 0, estimated_used: 0, percentage: 0 },
+      semantic: { budget: 0, estimated_used: 0, percentage: 0 },
+    },
+    total_context_tokens: 0,
+    confidence_history: [],
+    barge_in_history: [],
+    budget_config: {
+      tier: 'CLOUD' as const,
+      immediate_budget: 0,
+      working_budget: 0,
+      episodic_budget: 0,
+      semantic_budget: 0,
+      total_budget: 0,
+      max_conversation_turns: 0,
+    },
+  }));
+}
+
+/**
+ * Start an FOV session
+ */
+export async function startFOVSession(
+  sessionId: string
+): Promise<{ state: string; error?: string }> {
+  if (USE_MOCK) {
+    return { state: 'active' };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/start`, {
+    method: 'POST',
+  });
+
+  return response.json();
+}
+
+/**
+ * Add a conversation turn
+ */
+export async function addFOVTurn(
+  sessionId: string,
+  role: 'user' | 'assistant',
+  content: string
+): Promise<{ turn_id: string; error?: string }> {
+  if (USE_MOCK) {
+    return { turn_id: `mock-turn-${Date.now()}` };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/turns`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role, content }),
+  });
+
+  return response.json();
+}
+
+/**
+ * Handle a barge-in event
+ */
+export async function handleFOVBargeIn(
+  sessionId: string,
+  utterance: string
+): Promise<{
+  context: FOVContextBuildResponse;
+  messages: Array<{ role: string; content: string }>;
+  error?: string;
+}> {
+  if (USE_MOCK) {
+    return {
+      context: {
+        system_message: 'Mock system message',
+        immediate: 'Mock immediate context',
+        working: 'Mock working context',
+        episodic: 'Mock episodic context',
+        semantic: 'Mock semantic context',
+        total_tokens: 1000,
+      },
+      messages: [
+        { role: 'system', content: 'Mock system message' },
+        { role: 'user', content: utterance },
+      ],
+    };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/barge-in`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ utterance }),
+  });
+
+  return response.json();
+}
+
+/**
+ * Set current topic for a session
+ */
+export async function setFOVTopic(
+  sessionId: string,
+  params: {
+    topic_id: string;
+    topic_title: string;
+    topic_content?: string;
+    learning_objectives?: string[];
+    glossary_terms?: Array<{ term: string; definition: string }>;
+  }
+): Promise<{ topic_id: string; error?: string }> {
+  if (USE_MOCK) {
+    return { topic_id: params.topic_id };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/topic`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  return response.json();
+}
+
+/**
+ * Analyze response confidence
+ */
+export async function analyzeFOVResponse(
+  sessionId: string,
+  response: string
+): Promise<FOVConfidenceAnalysis> {
+  if (USE_MOCK) {
+    return {
+      confidence_score: 0.85,
+      uncertainty_score: 0.15,
+      hedging_score: 0.1,
+      deflection_score: 0.05,
+      knowledge_gap_score: 0.1,
+      vague_language_score: 0.05,
+      detected_markers: [],
+      trend: 'stable',
+    };
+  }
+
+  const resp = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/analyze-response`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ response }),
+  });
+
+  return resp.json();
+}
+
+/**
+ * Build context for an LLM call
+ */
+export async function buildFOVContext(
+  sessionId: string,
+  bargeInUtterance?: string
+): Promise<FOVContextBuildResponse> {
+  if (USE_MOCK) {
+    return {
+      system_message: 'Mock system message',
+      immediate: 'Mock immediate context',
+      working: 'Mock working context',
+      episodic: 'Mock episodic context',
+      semantic: 'Mock semantic context',
+      total_tokens: 1000,
+    };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}/context/build`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ barge_in_utterance: bargeInUtterance }),
+  });
+
+  return response.json();
+}
+
+/**
+ * Delete an FOV session
+ */
+export async function deleteFOVSession(
+  sessionId: string
+): Promise<{ deleted: boolean; error?: string }> {
+  if (USE_MOCK) {
+    return { deleted: true };
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/sessions/${sessionId}`, {
+    method: 'DELETE',
+  });
+
+  return response.json();
+}
