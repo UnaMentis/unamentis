@@ -18,14 +18,15 @@ mcp__XcodeBuildMCP__session-set-defaults({
 
 ## Tasks
 
-### 3.1 GLM-ASR On-Device STT (BLOCKED - Info Only)
-**Status:** No action needed (correctly blocked)
+### 3.1 GLM-ASR On-Device STT
+**Status:** ALREADY COMPLETE (working for weeks)
 **File:** `UnaMentis/Services/STT/GLMASROnDeviceSTTService.swift`
 
-This remains BLOCKED pending model downloads. The architecture is complete but disabled. Requires:
-- CoreML models from Hugging Face
-- GGUF model bundled
+**Note:** The original plan incorrectly listed this as blocked. GLM-ASR on-device STT has been fully functional for weeks with:
+- CoreML models integrated
+- GGUF model bundled and working
 - Swift/C++ interop enabled
+- No action was needed for this workstream
 
 ---
 
