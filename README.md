@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![iOS CI](https://github.com/UnaMentis/unamentis/actions/workflows/ios.yml/badge.svg)](https://github.com/UnaMentis/unamentis/actions/workflows/ios.yml)
 [![codecov](https://codecov.io/gh/UnaMentis/unamentis/branch/main/graph/badge.svg)](https://codecov.io/gh/UnaMentis/unamentis)
-[![Code Quality](https://img.shields.io/badge/code%20quality-A-brightgreen)](docs/CODE_QUALITY_INITIATIVE.md)
+[![Code Quality](https://img.shields.io/badge/code%20quality-A-brightgreen)](docs/quality/CODE_QUALITY_INITIATIVE.md)
 
 **Real-time bidirectional, hands free, mobile, voice learning platform that uses AI on device and on a server to provide extensive learning sessions.
 These sessions can be ad-hoc or based on proven curriculum from many well known sources.**
@@ -226,7 +226,7 @@ cd server/devlake && docker compose up -d    # DORA metrics
 cd server/feature-flags && docker compose up -d  # Feature flags
 ```
 
-See [docs/CODE_QUALITY_INITIATIVE.md](docs/CODE_QUALITY_INITIATIVE.md) for the complete quality initiative documentation, including mutation testing and chaos engineering.
+See [docs/quality/CODE_QUALITY_INITIATIVE.md](docs/quality/CODE_QUALITY_INITIATIVE.md) for the complete quality initiative documentation, including mutation testing and chaos engineering.
 
 ## Architecture
 

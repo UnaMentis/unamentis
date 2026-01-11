@@ -132,7 +132,7 @@ These documents capture research and planning for features under consideration:
 |----------|-------------|
 | [TASK_STATUS.md](TASK_STATUS.md) | Current implementation progress |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
-| [DEVELOPMENT_EXCELLENCE.md](DEVELOPMENT_EXCELLENCE.md) | Development tooling and automation plan |
+| [DEVELOPMENT_EXCELLENCE.md](quality/DEVELOPMENT_EXCELLENCE.md) | Development tooling and automation plan |
 
 ---
 
@@ -174,4 +174,4 @@ The curriculum format has its own comprehensive documentation:
 - **Writing iOS code?** Follow [ios/IOS_STYLE_GUIDE.md](ios/IOS_STYLE_GUIDE.md)
 - **Working with curriculum?** See [../curriculum/README.md](../curriculum/README.md)
 - **Debugging issues?** Check [testing/DEBUG_TESTING_UI.md](testing/DEBUG_TESTING_UI.md) and [REMOTE_LOGGING.md](REMOTE_LOGGING.md)
-- **Development tooling?** See [DEVELOPMENT_EXCELLENCE.md](DEVELOPMENT_EXCELLENCE.md)
+- **Development tooling?** See [DEVELOPMENT_EXCELLENCE.md](quality/DEVELOPMENT_EXCELLENCE.md)

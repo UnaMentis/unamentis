@@ -425,5 +425,5 @@ sudo killall -9 com.apple.CoreSimulator.CoreSimulatorService
 - [AGENTS.md](../AGENTS.md) - AI development guidelines
 - [IOS_STYLE_GUIDE.md](IOS_STYLE_GUIDE.md) - Swift/SwiftUI coding standards
 - [UnaMentis_TDD.md](UnaMentis_TDD.md) - Technical design document
-- [CODE_QUALITY_INITIATIVE.md](../CODE_QUALITY_INITIATIVE.md) - Quality infrastructure and testing
+- [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) - Quality infrastructure and testing
 - [CHAOS_ENGINEERING_RUNBOOK.md](../testing/CHAOS_ENGINEERING_RUNBOOK.md) - Voice pipeline resilience testing

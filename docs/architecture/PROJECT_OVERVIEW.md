@@ -706,7 +706,7 @@ The project includes a comprehensive chaos engineering runbook for testing voice
 
 See [CHAOS_ENGINEERING_RUNBOOK.md](../testing/CHAOS_ENGINEERING_RUNBOOK.md) for test scenarios.
 
-See [CODE_QUALITY_INITIATIVE.md](../CODE_QUALITY_INITIATIVE.md) for complete documentation.
+See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for complete documentation.
 
 ---
 

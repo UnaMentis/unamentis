@@ -384,7 +384,7 @@ When chaos tests reveal issues:
 
 - [LATENCY_TEST_HARNESS_GUIDE.md](../LATENCY_TEST_HARNESS_GUIDE.md) - Performance testing
 - [design/AUDIO_LATENCY_TEST_HARNESS.md](../design/AUDIO_LATENCY_TEST_HARNESS.md) - Latency harness architecture
-- [CODE_QUALITY_INITIATIVE.md](../CODE_QUALITY_INITIATIVE.md) - Quality infrastructure overview
+- [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) - Quality infrastructure overview
 
 ## Appendix: Failure Mode Reference
 
