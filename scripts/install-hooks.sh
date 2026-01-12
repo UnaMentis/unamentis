@@ -67,6 +67,14 @@ if [ -f "$HOOKS_SOURCE/pre-push" ]; then
     echo -e "${GREEN}  Pre-push hook installed.${NC}"
 fi
 
+# Install prepare-commit-msg hook if it exists
+if [ -f "$HOOKS_SOURCE/prepare-commit-msg" ]; then
+    echo -e "${YELLOW}Installing prepare-commit-msg hook...${NC}"
+    cp "$HOOKS_SOURCE/prepare-commit-msg" "$HOOKS_TARGET/prepare-commit-msg"
+    chmod +x "$HOOKS_TARGET/prepare-commit-msg"
+    echo -e "${GREEN}  Prepare-commit-msg hook installed (auto-populates from Claude draft).${NC}"
+fi
+
 echo ""
 echo -e "${BLUE}Checking tool availability...${NC}"
 
@@ -114,9 +122,10 @@ echo -e "${BLUE}========================================${NC}"
 echo -e "${GREEN}Git hooks installed successfully!${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
-echo "The following checks will run automatically:"
+echo "The following hooks will run automatically:"
 echo "  - Pre-commit: Lint staged Swift, Python, and JS/TS files"
 echo "  - Pre-commit: Check for secrets (if gitleaks is installed)"
+echo "  - Prepare-commit-msg: Pre-populate message from Claude's draft"
 echo ""
 echo "To bypass hooks temporarily (not recommended):"
 echo "  git commit --no-verify"

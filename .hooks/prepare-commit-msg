@@ -1,0 +1,39 @@
+#!/bin/bash
+# UnaMentis Prepare-Commit-Message Hook
+# Pre-populates commit message from Claude's draft file if available.
+# Install with: ./scripts/install-hooks.sh
+
+COMMIT_MSG_FILE="$1"
+COMMIT_SOURCE="$2"
+
+# Only pre-populate for regular commits (not merges, squashes, etc.)
+if [ -n "$COMMIT_SOURCE" ]; then
+    exit 0
+fi
+
+# Path to Claude's draft commit message
+DRAFT_FILE="$(git rev-parse --show-toplevel)/.claude/draft-commit.md"
+
+if [ -f "$DRAFT_FILE" ]; then
+    # Extract Type
+    TYPE=$(grep -A1 "^## Type" "$DRAFT_FILE" | tail -1 | tr -d '[:space:]')
+
+    # Extract Summary
+    SUMMARY=$(grep -A1 "^## Summary" "$DRAFT_FILE" | tail -1)
+
+    # Extract Changes (everything after "## Changes" line)
+    CHANGES=$(sed -n '/^## Changes/,/^## /{ /^## Changes/d; /^## /d; p; }' "$DRAFT_FILE" | sed '/^$/d')
+
+    # Only proceed if we have content
+    if [ -n "$TYPE" ] && [ -n "$SUMMARY" ]; then
+        # Build the commit message
+        {
+            echo "${TYPE}: ${SUMMARY}"
+            echo ""
+            if [ -n "$CHANGES" ]; then
+                echo "$CHANGES"
+                echo ""
+            fi
+        } > "$COMMIT_MSG_FILE"
+    fi
+fi

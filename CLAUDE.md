@@ -201,6 +201,34 @@ Follow Conventional Commits: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `pe
 
 Do NOT commit if either command fails. Fix the issues first.
 
+## Accumulative Commit Message Tracking
+
+Claude automatically tracks work completed, building commit message notes tied to the current uncommitted changes.
+
+### How It Works
+1. After completing a logical unit of work, Claude appends a note to `.claude/draft-commit.md`
+2. Before appending, Claude reads existing content and consolidates:
+   - Identical items are skipped
+   - Related count-based items get combined when specifics don't matter
+   - Specifics are preserved when they add value beyond what's obvious from the changed files
+3. Claude never removes content it didn't add
+
+### Detail Level
+- **Be specific** when it tells a story (e.g., "Added retry logic with exponential backoff")
+- **Be concise** when obvious from context (e.g., don't mention routine import updates)
+- **Use counts** when individual items aren't important (e.g., "Fixed 5 linting warnings")
+
+### Viewing and Clearing
+- Use `/commit-message` to view the accumulated notes formatted for commit
+- Use `/commit-message clear` to reset after committing
+- The draft persists across Claude sessions until cleared
+
+### Lifecycle
+1. Work begins, draft accumulates notes
+2. Work complete, human reviews draft via `/commit-message`
+3. Human commits with their preferred message
+4. Human (or Claude on request) clears the draft for next commit
+
 ## Key Documentation
 
 - `docs/setup/DEV_ENVIRONMENT.md` - **Developer environment setup guide**

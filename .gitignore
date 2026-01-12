@@ -89,3 +89,6 @@ server/management/data/
 
 # Next.js build and development artifacts
 server/web/.next/
+
+# Claude draft files
+.claude/draft-commit.md
