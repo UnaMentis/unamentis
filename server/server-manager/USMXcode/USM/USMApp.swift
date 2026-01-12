@@ -265,17 +265,50 @@ enum ServiceStatus: String {
     }
 }
 
+enum ServiceCategory: String, CaseIterable {
+    case core = "Core Services"
+    case development = "Development Tools"
+}
+
 struct Service: Identifiable {
     let id: String
     let displayName: String
     let processName: String
     let port: Int?
     let startCommand: String
+    let stopCommand: String?  // Optional custom stop command (for Docker, etc.)
     let workingDirectory: String?
+    let category: ServiceCategory
+    let isDockerCompose: Bool  // Whether this is a Docker Compose stack
+    let webUIPort: Int?  // Port for opening web UI (if different from main port)
     var status: ServiceStatus = .unknown
     var cpuPercent: Double?
     var memoryMB: Int?
     var pid: Int?
+
+    init(
+        id: String,
+        displayName: String,
+        processName: String,
+        port: Int?,
+        startCommand: String,
+        stopCommand: String? = nil,
+        workingDirectory: String? = nil,
+        category: ServiceCategory = .core,
+        isDockerCompose: Bool = false,
+        webUIPort: Int? = nil
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.processName = processName
+        self.port = port
+        self.startCommand = startCommand
+        self.stopCommand = stopCommand
+        self.workingDirectory = workingDirectory
+        self.category = category
+        self.isDockerCompose = isDockerCompose
+        self.webUIPort = webUIPort
+    }
 }
 
 // MARK: - Service Manager
@@ -283,16 +316,42 @@ struct Service: Identifiable {
 @MainActor
 class ServiceManager: ObservableObject {
     @Published var services: [Service] = []
+    @Published var developmentMode: Bool {
+        didSet {
+            UserDefaults.standard.set(developmentMode, forKey: "USM_DevelopmentMode")
+        }
+    }
+
     private var timer: Timer?
     private var apiServer: APIServer?
 
     private let projectRoot: String
     private let serverPath: String
 
+    /// Services visible based on current mode
+    var visibleServices: [Service] {
+        if developmentMode {
+            return services
+        } else {
+            return services.filter { $0.category == .core }
+        }
+    }
+
+    /// Core services only
+    var coreServices: [Service] {
+        services.filter { $0.category == .core }
+    }
+
+    /// Development services only
+    var developmentServices: [Service] {
+        services.filter { $0.category == .development }
+    }
+
     init() {
         // Detect project root dynamically
         self.projectRoot = ServiceManager.detectProjectRoot()
         self.serverPath = "\(projectRoot)/server"
+        self.developmentMode = UserDefaults.standard.bool(forKey: "USM_DevelopmentMode")
         setupServices()
         startMonitoring()
         startAPIServer()
@@ -345,13 +404,16 @@ class ServiceManager: ObservableObject {
 
     private func setupServices() {
         services = [
+            // MARK: Core Services
             Service(
                 id: "postgresql",
                 displayName: "PostgreSQL",
                 processName: "postgres",
                 port: 5432,
                 startCommand: "/opt/homebrew/bin/brew services start postgresql@17",
-                workingDirectory: nil
+                stopCommand: "/opt/homebrew/bin/brew services stop postgresql@17",
+                workingDirectory: nil,
+                category: .core
             ),
             Service(
                 id: "log-server",
@@ -359,7 +421,8 @@ class ServiceManager: ObservableObject {
                 processName: "log_server.py",
                 port: 8765,
                 startCommand: "python3 scripts/log_server.py",
-                workingDirectory: projectRoot
+                workingDirectory: projectRoot,
+                category: .core
             ),
             Service(
                 id: "management-api",
@@ -367,7 +430,8 @@ class ServiceManager: ObservableObject {
                 processName: "server.py",
                 port: 8766,
                 startCommand: "python3 management/server.py",  // Expects AUTH_SECRET_KEY and DATABASE_URL from environment
-                workingDirectory: serverPath
+                workingDirectory: serverPath,
+                category: .core
             ),
             Service(
                 id: "web-server",
@@ -375,7 +439,8 @@ class ServiceManager: ObservableObject {
                 processName: "next-server",
                 port: 3000,
                 startCommand: "npm run serve",
-                workingDirectory: "\(serverPath)/web"
+                workingDirectory: "\(serverPath)/web",
+                category: .core
             ),
             Service(
                 id: "web-client",
@@ -383,7 +448,8 @@ class ServiceManager: ObservableObject {
                 processName: "next-server",
                 port: 3001,
                 startCommand: "pnpm dev --port 3001",
-                workingDirectory: "\(serverPath)/web-client"
+                workingDirectory: "\(serverPath)/web-client",
+                category: .core
             ),
             Service(
                 id: "ollama",
@@ -391,7 +457,22 @@ class ServiceManager: ObservableObject {
                 processName: "ollama",
                 port: 11434,
                 startCommand: "ollama serve",
-                workingDirectory: nil
+                workingDirectory: nil,
+                category: .core
+            ),
+
+            // MARK: Development Tools
+            Service(
+                id: "feature-flags",
+                displayName: "Feature Flags",
+                processName: "unleash-server",
+                port: 3063,  // Proxy port (what clients connect to)
+                startCommand: "/usr/local/bin/docker compose -f \(serverPath)/feature-flags/docker-compose.yml up -d",
+                stopCommand: "/usr/local/bin/docker compose -f \(serverPath)/feature-flags/docker-compose.yml down",
+                workingDirectory: "\(serverPath)/feature-flags",
+                category: .development,
+                isDockerCompose: true,
+                webUIPort: 4242  // Unleash admin UI
             )
         ]
     }
@@ -408,7 +489,14 @@ class ServiceManager: ObservableObject {
     func updateStatuses() {
         for i in services.indices {
             let service = services[i]
-            let result = checkProcess(name: service.processName, port: service.port)
+            let result: (running: Bool, pid: Int?, cpuPercent: Double?, memoryMB: Int?)
+
+            if service.isDockerCompose {
+                result = checkDockerContainer(name: service.processName)
+            } else {
+                result = checkProcess(name: service.processName, port: service.port)
+            }
+
             services[i].status = result.running ? .running : .stopped
             services[i].pid = result.pid
             services[i].cpuPercent = result.cpuPercent
@@ -503,6 +591,66 @@ class ServiceManager: ObservableObject {
         }
     }
 
+    /// Check if a Docker container is running
+    private func checkDockerContainer(name: String) -> (running: Bool, pid: Int?, cpuPercent: Double?, memoryMB: Int?) {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/local/bin/docker")
+        task.arguments = ["ps", "--filter", "name=\(name)", "--format", "{{.Status}}"]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = FileHandle.nullDevice
+
+        do {
+            try task.run()
+            task.waitUntilExit()
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !output.isEmpty,
+               output.lowercased().contains("up") {
+                // Container is running, get stats
+                let statsTask = Process()
+                statsTask.executableURL = URL(fileURLWithPath: "/usr/local/bin/docker")
+                statsTask.arguments = ["stats", name, "--no-stream", "--format", "{{.CPUPerc}},{{.MemUsage}}"]
+                let statsPipe = Pipe()
+                statsTask.standardOutput = statsPipe
+                statsTask.standardError = FileHandle.nullDevice
+                try statsTask.run()
+                statsTask.waitUntilExit()
+
+                let statsData = statsPipe.fileHandleForReading.readDataToEndOfFile()
+                let statsStr = String(data: statsData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                let parts = statsStr.split(separator: ",").map { String($0) }
+
+                var cpuPercent: Double?
+                var memoryMB: Int?
+
+                if parts.count >= 1 {
+                    // Parse "1.23%" -> 1.23
+                    let cpuStr = parts[0].replacingOccurrences(of: "%", with: "")
+                    cpuPercent = Double(cpuStr)
+                }
+                if parts.count >= 2 {
+                    // Parse "123.4MiB / 1GiB" -> 123
+                    let memStr = parts[1].split(separator: "/").first?.trimmingCharacters(in: .whitespaces) ?? ""
+                    if memStr.contains("GiB") {
+                        let val = Double(memStr.replacingOccurrences(of: "GiB", with: "")) ?? 0
+                        memoryMB = Int(val * 1024)
+                    } else if memStr.contains("MiB") {
+                        memoryMB = Int(Double(memStr.replacingOccurrences(of: "MiB", with: "")) ?? 0)
+                    }
+                }
+
+                return (true, nil, cpuPercent, memoryMB)
+            }
+        } catch {
+            // Docker check failed
+        }
+
+        return (false, nil, nil, nil)
+    }
+
     func start(_ serviceId: String) {
         guard let service = services.first(where: { $0.id == serviceId }) else { return }
 
@@ -529,10 +677,10 @@ class ServiceManager: ObservableObject {
 
         let task = Process()
 
-        // PostgreSQL uses brew services for stop
-        if serviceId == "postgresql" {
-            task.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/brew")
-            task.arguments = ["services", "stop", "postgresql@17"]
+        // Use custom stop command if available
+        if let stopCommand = service.stopCommand {
+            task.executableURL = URL(fileURLWithPath: "/bin/zsh")
+            task.arguments = ["-c", stopCommand]
         } else {
             // Try to get PID from stored value, or look it up by port
             var pidToKill: Int?
@@ -563,7 +711,9 @@ class ServiceManager: ObservableObject {
             print("Failed to stop service: \(error)")
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        // Docker Compose takes longer to stop
+        let delay = service.isDockerCompose ? 3.0 : 1.0
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             self.updateStatuses()
         }
     }
@@ -605,8 +755,8 @@ class ServiceManager: ObservableObject {
         // Refresh status first to get accurate state
         updateStatuses()
 
-        // Get list of services to start
-        let servicesToStart = services.filter { $0.status != .running }
+        // Only start visible services (respects dev mode)
+        let servicesToStart = visibleServices.filter { $0.status != .running }
 
         // Start services with a small delay between each to avoid overwhelming the system
         for (index, service) in servicesToStart.enumerated() {
@@ -620,8 +770,8 @@ class ServiceManager: ObservableObject {
         // Refresh status first to get accurate PIDs
         updateStatuses()
 
-        // Get list of services to stop (reverse order: stop dependent services first)
-        let servicesToStop = services.filter { $0.status == .running }.reversed()
+        // Only stop visible services (respects dev mode), in reverse order
+        let servicesToStop = visibleServices.filter { $0.status == .running }.reversed()
 
         // Stop services with a small delay between each
         for (index, service) in servicesToStop.enumerated() {
@@ -649,7 +799,22 @@ class ServiceManager: ObservableObject {
         }
     }
 
+    func openFeatureFlags() {
+        if let url = URL(string: "http://localhost:4242") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    func openServiceUI(_ serviceId: String) {
+        guard let service = services.first(where: { $0.id == serviceId }) else { return }
+        let port = service.webUIPort ?? service.port ?? 0
+        if port > 0, let url = URL(string: "http://localhost:\(port)") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     /// Calculates the width needed for the longest service name plus padding
+    /// Uses all services (not just visible) to ensure consistent layout
     var maxServiceNameWidth: CGFloat {
         let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
         let padding: CGFloat = 8
@@ -730,6 +895,7 @@ struct USMApp: App {
 
 struct PopoverContent: View {
     @ObservedObject var serviceManager: ServiceManager
+    @State private var devToolsExpanded = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -749,9 +915,9 @@ struct PopoverContent: View {
 
             Divider()
 
-            // Services List
+            // Core Services List
             VStack(spacing: 1) {
-                ForEach(serviceManager.services) { service in
+                ForEach(serviceManager.coreServices) { service in
                     ServiceRow(
                         service: service,
                         nameWidth: serviceManager.maxServiceNameWidth,
@@ -760,6 +926,41 @@ struct PopoverContent: View {
                 }
             }
             .padding(.vertical, 4)
+
+            // Development Tools Section (only visible in dev mode)
+            if serviceManager.developmentMode && !serviceManager.developmentServices.isEmpty {
+                Divider()
+
+                // Collapsible header
+                Button(action: { devToolsExpanded.toggle() }) {
+                    HStack {
+                        Image(systemName: devToolsExpanded ? "chevron.down" : "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("Development Tools")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+
+                if devToolsExpanded {
+                    VStack(spacing: 1) {
+                        ForEach(serviceManager.developmentServices) { service in
+                            ServiceRow(
+                                service: service,
+                                nameWidth: serviceManager.maxServiceNameWidth,
+                                serviceManager: serviceManager
+                            )
+                        }
+                    }
+                    .padding(.bottom, 4)
+                }
+            }
 
             Divider()
 
@@ -794,15 +995,34 @@ struct PopoverContent: View {
                 }
                 .buttonStyle(.borderless)
                 .help("Open Logs (localhost:8765)")
+
+                // Feature Flags UI button (only in dev mode when running)
+                if serviceManager.developmentMode,
+                   let ffService = serviceManager.services.first(where: { $0.id == "feature-flags" }),
+                   ffService.status == .running {
+                    Button(action: { serviceManager.openFeatureFlags() }) {
+                        Image(systemName: "flag")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Open Feature Flags UI (localhost:4242)")
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
 
             Divider()
 
-            // Quit
+            // Footer: Dev Mode Toggle and Quit
             HStack {
+                Toggle(isOn: $serviceManager.developmentMode) {
+                    Label("Dev Mode", systemImage: "wrench.and.screwdriver")
+                        .font(.caption)
+                }
+                .toggleStyle(.checkbox)
+                .help("Show development tools like Feature Flags, Latency Harness")
+
                 Spacer()
+
                 Button("Quit") {
                     NSApp.terminate(nil)
                 }

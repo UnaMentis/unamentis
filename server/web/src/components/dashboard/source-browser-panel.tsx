@@ -25,11 +25,14 @@ import {
   Building2,
   Tag,
   Filter,
+  List,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { useMainScrollRestoration } from '@/hooks/useScrollRestoration';
+import { AddToListModal } from './add-to-list-modal';
 
 // Types matching the actual backend API responses
 interface License {
@@ -92,6 +95,13 @@ interface ImportJob {
   error?: string;
 }
 
+interface CourseImportStatus {
+  imported: boolean;
+  curriculumId?: string;
+  importedAt?: string;
+  lists?: { id: string; name: string }[];
+}
+
 // Valid view modes for URL state
 const VIEW_MODES = ['sources', 'catalog', 'detail'] as const;
 type ViewMode = (typeof VIEW_MODES)[number];
@@ -120,6 +130,8 @@ export function SourceBrowserPanel() {
     parseAsString.withDefault('')
   );
   const [selectedLevel, setSelectedLevel] = useQueryState('level', parseAsString.withDefault(''));
+  const [sortBy, setSortBy] = useQueryState('sort', parseAsString.withDefault('relevance'));
+  const [sortOrder, setSortOrder] = useQueryState('order', parseAsString.withDefault('asc'));
 
   // Local state (not URL-synced)
   const [loading, setLoading] = useState(true);
@@ -131,6 +143,14 @@ export function SourceBrowserPanel() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [importJobs, setImportJobs] = useState<ImportJob[]>([]);
+
+  // Import status for courses (keyed by course ID)
+  const [courseImportStatus, setCourseImportStatus] = useState<Record<string, CourseImportStatus>>({});
+
+  // Multi-select state
+  const [selectedCourseIds, setSelectedCourseIds] = useState<Set<string>>(new Set());
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
+  const [showAddToListModal, setShowAddToListModal] = useState(false);
 
   // Filter state (available options from API)
   const [availableFilters, setAvailableFilters] = useState<{
@@ -156,6 +176,9 @@ export function SourceBrowserPanel() {
     generateSpokenText: true,
     buildKnowledgeGraph: true,
   });
+
+  // Toast notifications
+  const { showToast } = useToast();
 
   // Scroll restoration
   useMainScrollRestoration('source-browser-panel');
@@ -183,7 +206,9 @@ export function SourceBrowserPanel() {
             currentPage,
             searchQuery || undefined,
             selectedSubject || undefined,
-            selectedLevel || undefined
+            selectedLevel || undefined,
+            sortBy || undefined,
+            sortOrder || undefined
           );
         }
       }
@@ -228,7 +253,9 @@ export function SourceBrowserPanel() {
       page: number = 1,
       search?: string,
       subject?: string,
-      level?: string
+      level?: string,
+      sort?: string,
+      order?: string
     ) => {
       setLoading(true);
       setError(null);
@@ -239,6 +266,8 @@ export function SourceBrowserPanel() {
         if (search) params.set('search', search);
         if (subject) params.set('subject', subject);
         if (level) params.set('level', level);
+        if (sort) params.set('sortBy', sort);
+        if (order) params.set('sortOrder', order);
 
         const response = await fetch(
           `${BACKEND_URL}/api/import/sources/${sourceId}/courses?${params}`
@@ -300,6 +329,49 @@ export function SourceBrowserPanel() {
     }
   };
 
+  // Fetch import status for a list of courses
+  const fetchImportStatus = useCallback(async (sourceId: string, courseIds: string[]) => {
+    if (courseIds.length === 0) return;
+
+    try {
+      // Fetch both import status and list memberships in parallel
+      const [statusResponse, membershipsResponse] = await Promise.all([
+        fetch(`${BACKEND_URL}/api/import/status?source_id=${sourceId}&course_ids=${courseIds.join(',')}`),
+        fetch(`${BACKEND_URL}/api/lists/memberships?source_id=${sourceId}&course_ids=${courseIds.join(',')}`),
+      ]);
+
+      const statusData = await statusResponse.json();
+      const membershipsData = await membershipsResponse.json();
+
+      // Merge import status with list memberships
+      const mergedStatus: Record<string, CourseImportStatus> = {};
+      const importedCourses = statusData.success ? statusData.courses || {} : {};
+      const memberships = membershipsData.memberships || {};
+
+      // Initialize with import status
+      for (const courseId of courseIds) {
+        mergedStatus[courseId] = {
+          imported: importedCourses[courseId]?.imported || false,
+          curriculumId: importedCourses[courseId]?.curriculumId,
+          importedAt: importedCourses[courseId]?.importedAt,
+          lists: memberships[courseId] || [],
+        };
+      }
+
+      setCourseImportStatus(mergedStatus);
+    } catch (err) {
+      console.error('Failed to fetch import status:', err);
+    }
+  }, []);
+
+  // Fetch import status when courses change
+  useEffect(() => {
+    if (courses.length > 0 && selectedSource) {
+      const courseIds = courses.map((c) => c.id);
+      fetchImportStatus(selectedSource.id, courseIds);
+    }
+  }, [courses, selectedSource, fetchImportStatus]);
+
   const handleSourceSelect = (source: CurriculumSource) => {
     setSelectedSource(source);
     setSelectedSourceId(source.id);
@@ -309,7 +381,13 @@ export function SourceBrowserPanel() {
     setSelectedLevel('');
     setCurrentPage(1);
     setSelectedCourseId(null);
-    fetchCatalog(source.id, 1);
+    // Reset sort to default when entering a new source
+    setSortBy('relevance');
+    setSortOrder('asc');
+    // Clear any selections
+    setSelectedCourseIds(new Set());
+    setLastSelectedIndex(null);
+    fetchCatalog(source.id, 1, undefined, undefined, undefined, 'relevance', 'asc');
   };
 
   const handleCourseSelect = (course: Course) => {
@@ -329,7 +407,9 @@ export function SourceBrowserPanel() {
       1,
       searchQuery || undefined,
       selectedSubject || undefined,
-      selectedLevel || undefined
+      selectedLevel || undefined,
+      sortBy || undefined,
+      sortOrder || undefined
     );
   };
 
@@ -346,7 +426,26 @@ export function SourceBrowserPanel() {
         1,
         searchQuery || undefined,
         type === 'subject' ? value : selectedSubject || undefined,
-        type === 'level' ? value : selectedLevel || undefined
+        type === 'level' ? value : selectedLevel || undefined,
+        sortBy || undefined,
+        sortOrder || undefined
+      );
+    }
+  };
+
+  const handleSortChange = (newSortBy: string, newSortOrder: string) => {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    if (selectedSource) {
+      setCurrentPage(1);
+      fetchCatalog(
+        selectedSource.id,
+        1,
+        searchQuery || undefined,
+        selectedSubject || undefined,
+        selectedLevel || undefined,
+        newSortBy,
+        newSortOrder
       );
     }
   };
@@ -359,8 +458,91 @@ export function SourceBrowserPanel() {
       newPage,
       searchQuery || undefined,
       selectedSubject || undefined,
-      selectedLevel || undefined
+      selectedLevel || undefined,
+      sortBy || undefined,
+      sortOrder || undefined
     );
+  };
+
+  // Multi-select handlers
+  const handleSelectionToggle = (courseId: string, index: number, shiftKey: boolean) => {
+    setSelectedCourseIds((prev) => {
+      const newSet = new Set(prev);
+
+      if (shiftKey && lastSelectedIndex !== null) {
+        // Range selection
+        const start = Math.min(lastSelectedIndex, index);
+        const end = Math.max(lastSelectedIndex, index);
+        for (let i = start; i <= end; i++) {
+          newSet.add(courses[i].id);
+        }
+      } else {
+        // Toggle single item
+        if (newSet.has(courseId)) {
+          newSet.delete(courseId);
+        } else {
+          newSet.add(courseId);
+        }
+      }
+
+      setLastSelectedIndex(index);
+      return newSet;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedCourseIds(new Set());
+    setLastSelectedIndex(null);
+  };
+
+  const handleBulkImport = async () => {
+    if (!selectedSource || selectedCourseIds.size === 0) return;
+
+    const courseIdsToImport = Array.from(selectedCourseIds);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const courseId of courseIdsToImport) {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/import/jobs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sourceId: selectedSource.id,
+            courseId,
+            outputName: courseId.replace(/[^a-z0-9]/gi, '-').toLowerCase(),
+            ...importOptions,
+          }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch {
+        failCount++;
+      }
+    }
+
+    // Show result toast
+    if (failCount === 0) {
+      showToast({
+        type: 'success',
+        title: 'Bulk Import Started',
+        message: `Started importing ${successCount} course${successCount > 1 ? 's' : ''}.`,
+      });
+    } else {
+      showToast({
+        type: 'warning',
+        title: 'Bulk Import Partially Started',
+        message: `Started ${successCount}, failed ${failCount}.`,
+      });
+    }
+
+    clearSelection();
+    fetchImportJobs();
   };
 
   const handleStartImport = async () => {
@@ -384,22 +566,26 @@ export function SourceBrowserPanel() {
       const data = await response.json();
 
       if (data.success) {
-        // Go back to sources view to show the import progress
-        setViewMode('sources');
-        setSelectedSource(null);
-        setSelectedSourceId(null);
-        setSelectedCourse(null);
-        setSelectedCourseId(null);
-        setSearchQuery('');
-        setSelectedSubject('');
-        setSelectedLevel('');
-        setCurrentPage(1);
+        // Show success toast and refresh import jobs
+        showToast({
+          type: 'success',
+          title: 'Import Started',
+          message: `"${selectedCourse.title}" is being imported. Check the Sources tab for progress.`,
+        });
         fetchImportJobs();
       } else {
-        setError(data.error || 'Failed to start import');
+        showToast({
+          type: 'error',
+          title: 'Import Failed',
+          message: data.error || 'Failed to start import',
+        });
       }
     } catch (err) {
-      setError('Failed to start import');
+      showToast({
+        type: 'error',
+        title: 'Import Failed',
+        message: 'Failed to start import. Please try again.',
+      });
       console.error('Error starting import:', err);
     } finally {
       setImporting(false);
@@ -671,6 +857,23 @@ export function SourceBrowserPanel() {
           </select>
         )}
 
+        {/* Sort dropdown */}
+        <select
+          value={`${sortBy}-${sortOrder}`}
+          onChange={(e) => {
+            const [newSort, newOrder] = e.target.value.split('-');
+            handleSortChange(newSort, newOrder);
+          }}
+          className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-orange-500"
+        >
+          <option value="relevance-asc">Sort: Relevance</option>
+          <option value="title-asc">Sort: Title (A-Z)</option>
+          <option value="title-desc">Sort: Title (Z-A)</option>
+          <option value="level-asc">Sort: Level (Easy first)</option>
+          <option value="level-desc">Sort: Level (Hard first)</option>
+          <option value="date-desc">Sort: Recently Added</option>
+        </select>
+
         <button
           onClick={handleSearch}
           className="px-4 py-2 bg-orange-500 hover:bg-orange-400 text-white font-medium rounded-lg transition-colors"
@@ -681,13 +884,55 @@ export function SourceBrowserPanel() {
 
       {/* Course Grid */}
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {courses.map((course) => (
+        {courses.map((course, index) => (
           <Card
             key={course.id}
-            className="cursor-pointer hover:border-orange-500/50 transition-all group"
+            className={cn(
+              'cursor-pointer hover:border-orange-500/50 transition-all group relative',
+              selectedCourseIds.has(course.id) && 'border-orange-500 bg-orange-500/5'
+            )}
             onClick={() => handleCourseSelect(course)}
           >
-            <CardContent className="p-5">
+            {/* Selection Checkbox */}
+            <div
+              className="absolute top-3 left-3 z-10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <input
+                type="checkbox"
+                checked={selectedCourseIds.has(course.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectionToggle(course.id, index, e.shiftKey);
+                }}
+                onChange={() => {}} // Required for controlled checkbox
+                className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-orange-500 focus:ring-orange-500 focus:ring-offset-0 cursor-pointer"
+              />
+            </div>
+
+            <CardContent className="p-5 pl-10">
+              {/* Status Badges */}
+              {(courseImportStatus[course.id]?.imported ||
+                (courseImportStatus[course.id]?.lists?.length ?? 0) > 0) && (
+                <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                  {courseImportStatus[course.id]?.imported && (
+                    <Badge variant="success" className="text-xs">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Imported
+                    </Badge>
+                  )}
+                  {(courseImportStatus[course.id]?.lists?.length ?? 0) > 0 && (
+                    <Badge variant="default" className="text-xs" title={
+                      courseImportStatus[course.id]?.lists?.map((l) => l.name).join(', ')
+                    }>
+                      <List className="w-3 h-3 mr-1" />
+                      {courseImportStatus[course.id]?.lists?.length}{' '}
+                      {courseImportStatus[course.id]?.lists?.length === 1 ? 'list' : 'lists'}
+                    </Badge>
+                  )}
+                </div>
+              )}
+
               {/* Header */}
               <div className="flex items-start justify-between gap-2 mb-3">
                 <h4 className="font-semibold text-slate-100 group-hover:text-orange-400 transition-colors line-clamp-2">
@@ -772,6 +1017,56 @@ export function SourceBrowserPanel() {
           </CardContent>
         </Card>
       )}
+
+      {/* Floating Selection Action Bar */}
+      {selectedCourseIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+          <div className="flex items-center gap-4 px-6 py-3 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl">
+            <span className="text-sm text-slate-300">
+              {selectedCourseIds.size} course{selectedCourseIds.size > 1 ? 's' : ''} selected
+            </span>
+            <div className="w-px h-6 bg-slate-600" />
+            <button
+              onClick={handleBulkImport}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-400 text-white font-medium rounded-lg transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Import Selected
+            </button>
+            <button
+              onClick={() => setShowAddToListModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors"
+            >
+              <List className="w-4 h-4" />
+              Add to List
+            </button>
+            <button
+              onClick={clearSelection}
+              className="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-700 rounded-lg transition-colors"
+              title="Clear selection"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Add to List Modal */}
+      <AddToListModal
+        isOpen={showAddToListModal}
+        onClose={() => setShowAddToListModal(false)}
+        courses={courses
+          .filter((c) => selectedCourseIds.has(c.id))
+          .map((c) => ({
+            sourceId: selectedSource?.id || '',
+            courseId: c.id,
+            courseTitle: c.title,
+            courseThumbnailUrl: c.thumbnailUrl,
+          }))}
+        onSuccess={() => {
+          clearSelection();
+        }}
+      />
     </div>
   );
 
@@ -790,7 +1085,15 @@ export function SourceBrowserPanel() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <h3 className="text-xl font-semibold text-slate-100">{selectedCourse.title}</h3>
+            <div className="flex items-center gap-3">
+              <h3 className="text-xl font-semibold text-slate-100">{selectedCourse.title}</h3>
+              {courseImportStatus[selectedCourse.id]?.imported && (
+                <Badge variant="success" className="text-xs">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Imported
+                </Badge>
+              )}
+            </div>
             <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
               <div className="flex items-center gap-1.5">
                 <Users className="w-4 h-4" />

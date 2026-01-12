@@ -31,6 +31,9 @@ from import_api import register_import_routes, init_import_system, set_import_co
 # Import curriculum reprocessing system
 from reprocess_api import register_reprocess_routes, init_reprocess_system
 
+# Import curriculum lists system
+from lists_api import register_lists_routes
+
 # Import plugin management system
 from plugin_api import register_plugin_routes
 
@@ -4383,6 +4386,9 @@ def create_app() -> web.Application:
 
     # Curriculum Import System (Source Browser)
     register_import_routes(app)
+
+    # Curriculum Lists System
+    register_lists_routes(app)
 
     # Curriculum Reprocessing System
     register_reprocess_routes(app)

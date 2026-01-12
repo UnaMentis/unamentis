@@ -8,6 +8,12 @@
 
 set -e
 
+# Check if xcodebuild is available (macOS only)
+if ! command -v xcodebuild &> /dev/null; then
+    echo "Warning: xcodebuild not available (requires macOS), skipping tests"
+    exit 0
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "Running quick unit tests..."

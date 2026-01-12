@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 # Global orchestrator instance
 _orchestrator: Optional[ImportOrchestrator] = None
 
+# Reference to the aiohttp app for database access
+_app: Optional[web.Application] = None
+
 # Callback to reload curricula after import (set by server.py)
 _on_import_complete_callback: Optional[Callable] = None
 
@@ -43,12 +46,48 @@ def set_import_complete_callback(callback: Callable):
     _on_import_complete_callback = callback
 
 
+async def _record_imported_course(progress) -> None:
+    """Record a completed import in the database for tracking."""
+    global _app
+    if _app is None or "db_pool" not in _app:
+        logger.warning("Database pool not available, skipping import tracking")
+        return
+
+    try:
+        pool = _app["db_pool"]
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO imported_courses (source_id, course_id, curriculum_id, import_job_id)
+                VALUES ($1, $2, $3::uuid, $4)
+                ON CONFLICT (source_id, course_id) DO UPDATE SET
+                    curriculum_id = EXCLUDED.curriculum_id,
+                    import_job_id = EXCLUDED.import_job_id,
+                    imported_at = NOW()
+                """,
+                progress.config.source_id,
+                progress.config.course_id,
+                progress.result.curriculum_id if progress.result else None,
+                progress.id,
+            )
+            logger.info(
+                f"Recorded imported course: {progress.config.source_id}/{progress.config.course_id}"
+            )
+    except Exception as e:
+        logger.error(f"Failed to record imported course: {e}")
+
+
 def _handle_import_progress(progress):
-    """Handle import progress updates. Trigger reload on completion."""
+    """Handle import progress updates. Trigger reload and tracking on completion."""
     from importers.core.models import ImportStatus
 
     if progress.status == ImportStatus.COMPLETE:
         logger.info(f"Import {progress.id} completed, triggering curriculum reload")
+
+        # Record the import in the database (async operation)
+        if _app is not None:
+            asyncio.create_task(_record_imported_course(progress))
+
         if _on_import_complete_callback:
             try:
                 _on_import_complete_callback(progress)
@@ -146,6 +185,8 @@ async def handle_get_courses(request: web.Request) -> web.Response:
     - subject: Subject filter
     - level: Level filter
     - features: Feature filter (comma-separated)
+    - sortBy: Sort field (title, level, date, relevance)
+    - sortOrder: Sort direction (asc, desc)
     """
     source_id = request.match_info["source_id"]
 
@@ -161,6 +202,8 @@ async def handle_get_courses(request: web.Request) -> web.Response:
         page = int(request.query.get("page", "1"))
         page_size = int(request.query.get("pageSize", "20"))
         search = request.query.get("search")
+        sort_by = request.query.get("sortBy", "relevance")
+        sort_order = request.query.get("sortOrder", "asc")
 
         filters = {}
         if request.query.get("subject"):
@@ -177,6 +220,26 @@ async def handle_get_courses(request: web.Request) -> web.Response:
             filters=filters if filters else None,
             search=search,
         )
+
+        # Apply sorting (handlers return courses, we sort them here)
+        if courses and sort_by != "relevance":
+            reverse = sort_order == "desc"
+            if sort_by == "title":
+                courses = sorted(courses, key=lambda c: c.title.lower(), reverse=reverse)
+            elif sort_by == "level":
+                # Sort by level with a defined order
+                level_order = {
+                    "undergraduate": 1, "graduate": 2, "high school": 0,
+                    "introductory": 1, "intermediate": 2, "advanced": 3,
+                }
+                courses = sorted(
+                    courses,
+                    key=lambda c: level_order.get(c.level.lower() if c.level else "", 99),
+                    reverse=reverse
+                )
+            elif sort_by == "date":
+                # Sort by ID as a proxy for date (newer courses have higher IDs typically)
+                courses = sorted(courses, key=lambda c: c.id, reverse=reverse)
 
         return web.json_response({
             "success": True,
@@ -487,11 +550,98 @@ async def handle_cancel_import(request: web.Request) -> web.Response:
 
 
 # =============================================================================
+# Import Status Routes
+# =============================================================================
+
+async def handle_get_import_status(request: web.Request) -> web.Response:
+    """
+    GET /api/import/status
+
+    Query which courses have been imported.
+
+    Query parameters:
+    - source_id: Source ID (required)
+    - course_ids: Comma-separated list of course IDs to check
+
+    Returns import status for the requested courses.
+    """
+    try:
+        source_id = request.query.get("source_id")
+        course_ids_param = request.query.get("course_ids", "")
+
+        if not source_id:
+            return web.json_response({
+                "success": False,
+                "error": "source_id is required",
+            }, status=400)
+
+        course_ids = [c.strip() for c in course_ids_param.split(",") if c.strip()]
+
+        if "db_pool" not in request.app:
+            return web.json_response({
+                "success": False,
+                "error": "Database not available",
+            }, status=503)
+
+        pool = request.app["db_pool"]
+        async with pool.acquire() as conn:
+            if course_ids:
+                # Query specific courses
+                rows = await conn.fetch(
+                    """
+                    SELECT course_id, curriculum_id, imported_at
+                    FROM imported_courses
+                    WHERE source_id = $1 AND course_id = ANY($2)
+                    """,
+                    source_id,
+                    course_ids,
+                )
+            else:
+                # Query all courses for this source
+                rows = await conn.fetch(
+                    """
+                    SELECT course_id, curriculum_id, imported_at
+                    FROM imported_courses
+                    WHERE source_id = $1
+                    """,
+                    source_id,
+                )
+
+        # Build response
+        courses = {}
+        for row in rows:
+            courses[row["course_id"]] = {
+                "imported": True,
+                "curriculumId": str(row["curriculum_id"]) if row["curriculum_id"] else None,
+                "importedAt": row["imported_at"].isoformat() if row["imported_at"] else None,
+            }
+
+        # Add entries for requested courses that aren't imported
+        for course_id in course_ids:
+            if course_id not in courses:
+                courses[course_id] = {"imported": False}
+
+        return web.json_response({
+            "success": True,
+            "courses": courses,
+        })
+
+    except Exception as e:
+        logger.exception("Error querying import status")
+        return web.json_response({
+            "success": False,
+            "error": str(e),
+        }, status=500)
+
+
+# =============================================================================
 # Route Registration
 # =============================================================================
 
 def register_import_routes(app: web.Application):
     """Register all import-related routes on the application."""
+    global _app
+    _app = app  # Store app reference for database access in callbacks
 
     # Initialize import system
     init_import_system()
@@ -510,5 +660,8 @@ def register_import_routes(app: web.Application):
     app.router.add_get("/api/import/jobs", handle_list_imports)
     app.router.add_get("/api/import/jobs/{job_id}", handle_get_import_progress)
     app.router.add_delete("/api/import/jobs/{job_id}", handle_cancel_import)
+
+    # Import status (tracking which courses have been imported)
+    app.router.add_get("/api/import/status", handle_get_import_status)
 
     logger.info("Import API routes registered")

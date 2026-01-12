@@ -1308,3 +1308,63 @@ COMMENT ON TABLE consent_records IS 'GDPR/COPPA compliant consent tracking';
 COMMENT ON TABLE consent_audit_log IS 'Audit trail for consent changes';
 COMMENT ON TABLE data_retention_policies IS 'Per-organization data retention configuration';
 COMMENT ON TABLE auth_audit_log IS 'SOC2-ready authentication audit trail';
+
+-- ============================================================================
+-- CURRICULUM IMPORT TRACKING
+-- ============================================================================
+-- Tracks which source courses have been imported to UMCF format
+
+CREATE TABLE imported_courses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    source_id VARCHAR(100) NOT NULL,
+    course_id VARCHAR(255) NOT NULL,
+    curriculum_id UUID REFERENCES curricula(id) ON DELETE SET NULL,
+    imported_at TIMESTAMPTZ DEFAULT NOW(),
+    imported_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    import_job_id VARCHAR(100),
+    CONSTRAINT unique_imported_course UNIQUE (source_id, course_id)
+);
+
+CREATE INDEX idx_imported_source_course ON imported_courses(source_id, course_id);
+CREATE INDEX idx_imported_curriculum ON imported_courses(curriculum_id);
+
+COMMENT ON TABLE imported_courses IS 'Tracks which external source courses have been imported to UMCF';
+
+-- ============================================================================
+-- CURRICULUM LISTS (User Collections)
+-- ============================================================================
+-- User-created lists for organizing source courses before import
+
+CREATE TABLE curriculum_lists (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    is_shared BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT unique_list_name_per_user UNIQUE (user_id, name)
+);
+
+CREATE INDEX idx_lists_user ON curriculum_lists(user_id);
+CREATE INDEX idx_lists_shared ON curriculum_lists(is_shared) WHERE is_shared = true;
+
+-- Items within a list (source courses, not imported curricula)
+CREATE TABLE curriculum_list_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    list_id UUID NOT NULL REFERENCES curriculum_lists(id) ON DELETE CASCADE,
+    source_id VARCHAR(100) NOT NULL,
+    course_id VARCHAR(255) NOT NULL,
+    course_title VARCHAR(500),
+    course_thumbnail_url TEXT,
+    notes TEXT,
+    order_index INTEGER DEFAULT 0,
+    added_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT unique_course_per_list UNIQUE (list_id, source_id, course_id)
+);
+
+CREATE INDEX idx_list_items_list ON curriculum_list_items(list_id);
+CREATE INDEX idx_list_items_course ON curriculum_list_items(source_id, course_id);
+
+COMMENT ON TABLE curriculum_lists IS 'User-created lists for organizing source courses';
+COMMENT ON TABLE curriculum_list_items IS 'Source courses added to user lists';

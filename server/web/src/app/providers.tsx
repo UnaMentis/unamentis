@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { WebSocketProvider } from '@/lib/websocket-provider';
+import { ToastProvider } from '@/components/ui/toast';
 import { initializeTestHooks } from '@/lib/test-hooks';
 
 interface ProvidersProps {
@@ -16,5 +17,9 @@ export function Providers({ children }: ProvidersProps) {
     initializeTestHooks(serverUrl);
   }, []);
 
-  return <WebSocketProvider>{children}</WebSocketProvider>;
+  return (
+    <WebSocketProvider>
+      <ToastProvider>{children}</ToastProvider>
+    </WebSocketProvider>
+  );
 }
