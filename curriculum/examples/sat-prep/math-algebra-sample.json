@@ -479,6 +479,7 @@
           "testVersion": "digital-2024",
           "section": "math",
           "domain": "algebra",
+          "skill": "algebraic_word_problems",
           "weight": 0.10,
           "strategyTags": ["translation", "modeling"]
         }
@@ -542,6 +543,108 @@
           ]
         }
       ]
+    },
+    {
+      "id": "sat-algebra-linear-functions",
+      "nodeType": "topic",
+      "title": "Linear Functions",
+      "description": "Interpreting and analyzing linear functions in context",
+      "spokenText": "Linear functions help us model real-world relationships. Understanding slope and intercept is key.",
+      "extensions": {
+        "sat": {
+          "testVersion": "digital-2024",
+          "section": "math",
+          "domain": "algebra",
+          "skill": "linear_functions",
+          "weight": 0.08,
+          "collegeBoardAlignment": "H.A.2"
+        }
+      },
+      "learningObjectiveRefs": ["lo-algebra-003"],
+      "children": [
+        {
+          "id": "sat-algebra-slope-intercept",
+          "nodeType": "segment",
+          "title": "Slope-Intercept Form",
+          "description": "Understanding y = mx + b and its components",
+          "overview": "In y = mx + b, m is the slope (rate of change) and b is the y-intercept (starting value).",
+          "extensions": {
+            "sat": {
+              "testVersion": "digital-2024",
+              "section": "math",
+              "domain": "algebra",
+              "skill": "linear_functions",
+              "timeTarget": 60,
+              "strategyTags": ["slope_interpretation", "intercept_meaning"]
+            }
+          },
+          "content": {
+            "workedExamples": [
+              {
+                "problem": "A phone plan costs $25 per month plus $0.10 per text. Write the cost function.",
+                "steps": [
+                  "Identify the rate: $0.10 per text (slope m = 0.10)",
+                  "Identify the fixed cost: $25 (y-intercept b = 25)",
+                  "Write: C(t) = 0.10t + 25"
+                ],
+                "solution": "C(t) = 0.10t + 25",
+                "verification": "Check: 100 texts = 0.10(100) + 25 = $35 ✓"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "sat-algebra-linear-inequalities",
+      "nodeType": "topic",
+      "title": "Linear Inequalities",
+      "description": "Solving and graphing linear inequalities",
+      "spokenText": "Inequalities work like equations but remember to flip the sign when multiplying or dividing by negatives.",
+      "extensions": {
+        "sat": {
+          "testVersion": "digital-2024",
+          "section": "math",
+          "domain": "algebra",
+          "skill": "linear_inequalities",
+          "weight": 0.05,
+          "collegeBoardAlignment": "H.A.3"
+        }
+      },
+      "learningObjectiveRefs": ["lo-algebra-004"],
+      "children": [
+        {
+          "id": "sat-algebra-solving-inequalities",
+          "nodeType": "segment",
+          "title": "Solving Linear Inequalities",
+          "description": "Solving inequalities with one variable",
+          "overview": "Solve like equations, but flip the inequality sign when multiplying or dividing by a negative number.",
+          "extensions": {
+            "sat": {
+              "testVersion": "digital-2024",
+              "section": "math",
+              "domain": "algebra",
+              "skill": "linear_inequalities",
+              "timeTarget": 50,
+              "strategyTags": ["inequality_rules", "sign_flip"],
+              "commonErrors": ["forgot_to_flip_sign"]
+            }
+          },
+          "content": {
+            "workedExamples": [
+              {
+                "problem": "Solve: -2x + 5 > 11",
+                "steps": [
+                  "Subtract 5 from both sides: -2x > 6",
+                  "Divide by -2 AND flip the sign: x < -3"
+                ],
+                "solution": "x < -3",
+                "strategyNote": "FLIP the inequality when dividing by negative!"
+              }
+            ]
+          }
+        }
+      ]
     }
   ],
   "strategies": [
@@ -587,7 +690,9 @@
           "timeLimit": 1800,
           "skillsCovered": [
             "linear_equations_one_variable",
-            "systems_linear_equations"
+            "systems_linear_equations",
+            "linear_functions",
+            "linear_inequalities"
           ]
         }
       }

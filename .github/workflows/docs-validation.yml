@@ -6,12 +6,14 @@ on:
     paths:
       - '**.md'
       - 'docs/**'
+      - 'curriculum/**'
       - '.github/workflows/docs-validation.yml'
   pull_request:
     branches: [ main, develop ]
     paths:
       - '**.md'
       - 'docs/**'
+      - 'curriculum/**'
       - '.github/workflows/docs-validation.yml'
   workflow_dispatch:
 
@@ -161,10 +163,86 @@ jobs:
           exit 1
         fi
 
+  validate-curriculum-schema:
+    name: Validate Curriculum Schema
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install jsonschema
+      run: pip install jsonschema
+
+    - name: Create validation script
+      run: |
+        cat > /tmp/validate_schema.py << 'PYEOF'
+        import json
+        import jsonschema
+        import sys
+
+        schema_file = sys.argv[1]
+        instance_file = sys.argv[2]
+
+        with open(schema_file) as f:
+            schema = json.load(f)
+        with open(instance_file) as f:
+            instance = json.load(f)
+
+        try:
+            jsonschema.validate(instance=instance, schema=schema)
+            sys.exit(0)
+        except jsonschema.ValidationError as e:
+            print(f"Validation error: {e.message}", file=sys.stderr)
+            sys.exit(1)
+        PYEOF
+
+    - name: Validate curriculum JSON against UMCF schema
+      run: |
+        echo "## Curriculum Schema Validation Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        SCHEMA_FILE="curriculum/spec/umcf-schema.json"
+
+        if [ ! -f "$SCHEMA_FILE" ]; then
+          echo "Schema file not found: $SCHEMA_FILE" >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
+
+        # Find all curriculum JSON files (excluding the schema itself)
+        invalid=0
+        validated=0
+
+        while IFS= read -r file; do
+          # Check if the file references the UMCF schema
+          if grep -q '"\$schema"' "$file" 2>/dev/null; then
+            validated=$((validated + 1))
+            # Validate against the schema
+            if ! python3 /tmp/validate_schema.py "$SCHEMA_FILE" "$file" 2>&1; then
+              echo "- Schema validation failed: \`$file\`" >> $GITHUB_STEP_SUMMARY
+              invalid=$((invalid + 1))
+            fi
+          fi
+        done < <(find curriculum -name '*.json' -not -name 'umcf-schema.json')
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Validated $validated curriculum file(s) against UMCF schema." >> $GITHUB_STEP_SUMMARY
+
+        if [ $invalid -eq 0 ]; then
+          echo "All curriculum files passed schema validation." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "Found $invalid file(s) with schema violations." >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
+
   summary:
     name: Validation Summary
     runs-on: ubuntu-latest
-    needs: [validate-markdown, validate-yaml, validate-json]
+    needs: [validate-markdown, validate-yaml, validate-json, validate-curriculum-schema]
     if: always()
 
     steps:
@@ -177,3 +255,4 @@ jobs:
         echo "| Markdown | ${{ needs.validate-markdown.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "| YAML | ${{ needs.validate-yaml.result }} |" >> $GITHUB_STEP_SUMMARY
         echo "| JSON | ${{ needs.validate-json.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Curriculum Schema | ${{ needs.validate-curriculum-schema.result }} |" >> $GITHUB_STEP_SUMMARY
