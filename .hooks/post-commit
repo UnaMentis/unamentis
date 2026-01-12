@@ -1,0 +1,28 @@
+#!/bin/bash
+# UnaMentis Post-Commit Hook
+# Automatically clears the Claude draft commit file after a successful commit.
+# This ensures the draft stays in sync with the actual repo state.
+# Install with: ./scripts/install-hooks.sh
+
+DRAFT_FILE="$(git rev-parse --show-toplevel)/.claude/draft-commit.md"
+
+if [ -f "$DRAFT_FILE" ]; then
+    # Check if draft has content (not just the template)
+    CONTENT=$(grep -v "^#" "$DRAFT_FILE" | grep -v "^$" | head -1)
+    if [ -n "$CONTENT" ]; then
+        # Reset to empty template
+        cat > "$DRAFT_FILE" << 'EOF'
+# Draft Commit Message
+
+## Type
+
+
+## Summary
+
+
+## Changes
+
+EOF
+        echo "Draft commit message cleared after successful commit."
+    fi
+fi

@@ -220,14 +220,14 @@ Claude automatically tracks work completed, building commit message notes tied t
 
 ### Viewing and Clearing
 - Use `/commit-message` to view the accumulated notes formatted for commit
-- Use `/commit-message clear` to reset after committing
-- The draft persists across Claude sessions until cleared
+- Use `/commit-message clear` to manually reset if needed
+- The draft is **automatically cleared** by the post-commit hook after successful commits
 
 ### Lifecycle
 1. Work begins, draft accumulates notes
 2. Work complete, human reviews draft via `/commit-message`
 3. Human commits with their preferred message
-4. Human (or Claude on request) clears the draft for next commit
+4. Post-commit hook automatically clears the draft for the next commit
 
 ## Key Documentation
 

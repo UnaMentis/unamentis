@@ -75,6 +75,14 @@ if [ -f "$HOOKS_SOURCE/prepare-commit-msg" ]; then
     echo -e "${GREEN}  Prepare-commit-msg hook installed (auto-populates from Claude draft).${NC}"
 fi
 
+# Install post-commit hook if it exists
+if [ -f "$HOOKS_SOURCE/post-commit" ]; then
+    echo -e "${YELLOW}Installing post-commit hook...${NC}"
+    cp "$HOOKS_SOURCE/post-commit" "$HOOKS_TARGET/post-commit"
+    chmod +x "$HOOKS_TARGET/post-commit"
+    echo -e "${GREEN}  Post-commit hook installed (auto-clears Claude draft after commit).${NC}"
+fi
+
 echo ""
 echo -e "${BLUE}Checking tool availability...${NC}"
 
@@ -126,10 +134,11 @@ echo "The following hooks will run automatically:"
 echo "  - Pre-commit: Lint staged Swift, Python, and JS/TS files"
 echo "  - Pre-commit: Check for secrets (if gitleaks is installed)"
 echo "  - Prepare-commit-msg: Pre-populate message from Claude's draft"
+echo "  - Post-commit: Clear Claude's draft after successful commit"
 echo ""
 echo "To bypass hooks temporarily (not recommended):"
 echo "  git commit --no-verify"
 echo ""
 echo "To uninstall hooks:"
-echo "  rm .git/hooks/pre-commit .git/hooks/pre-push .git/hooks/prepare-commit-msg"
+echo "  rm .git/hooks/pre-commit .git/hooks/pre-push .git/hooks/prepare-commit-msg .git/hooks/post-commit"
 echo ""
