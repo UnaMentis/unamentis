@@ -28,25 +28,34 @@ enum LearningSection: String, CaseIterable, Identifiable {
 struct LearningView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedSection: LearningSection = .curriculum
+    @State private var modulesEnabled = false
+    @State private var checkingFeatureFlag = true
 
     private static let logger = Logger(label: "com.unamentis.learning.view")
+
+    /// Available sections based on feature flags
+    private var availableSections: [LearningSection] {
+        modulesEnabled ? LearningSection.allCases : [.curriculum]
+    }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Segmented control for section selection
-                Picker("Learning Section", selection: $selectedSection) {
-                    ForEach(LearningSection.allCases) { section in
-                        Label(section.rawValue, systemImage: section.icon)
-                            .tag(section)
+                // Only show segmented control if modules are enabled
+                if modulesEnabled {
+                    Picker("Learning Section", selection: $selectedSection) {
+                        ForEach(availableSections) { section in
+                            Label(section.rawValue, systemImage: section.icon)
+                                .tag(section)
+                        }
                     }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .padding(.bottom, 4)
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
 
-                Divider()
+                    Divider()
+                }
 
                 // Content based on selection
                 switch selectedSection {
@@ -54,8 +63,14 @@ struct LearningView: View {
                     CurriculumContentView()
                         .environmentObject(appState)
                 case .modules:
-                    ModulesView()
-                        .environmentObject(appState)
+                    if modulesEnabled {
+                        ModulesView()
+                            .environmentObject(appState)
+                    } else {
+                        // Fallback to curriculum if modules disabled
+                        CurriculumContentView()
+                            .environmentObject(appState)
+                    }
                 }
             }
             .navigationTitle("Learning")
@@ -65,9 +80,41 @@ struct LearningView: View {
                 }
             }
         }
+        .task {
+            await checkFeatureFlags()
+        }
         .onChange(of: selectedSection) { _, newSection in
             Self.logger.debug("Learning section changed to: \(newSection.rawValue)")
         }
+    }
+
+    /// Check feature flags for modules visibility
+    private func checkFeatureFlags() async {
+        checkingFeatureFlag = true
+
+        // Check if specialized modules feature is enabled
+        // Key matches FeatureFlagKeys.specializedModules
+        var enabled = await FeatureFlagService.shared.isEnabled("feature_specialized_modules")
+
+        // For development: enable modules when flag service is unavailable
+        #if DEBUG
+        if !enabled {
+            Self.logger.debug("Feature flag disabled or unavailable, enabling modules for DEBUG build")
+            enabled = true
+        }
+        #endif
+
+        await MainActor.run {
+            modulesEnabled = enabled
+            checkingFeatureFlag = false
+
+            // If modules are disabled and currently selected, switch to curriculum
+            if !enabled && selectedSection == .modules {
+                selectedSection = .curriculum
+            }
+        }
+
+        Self.logger.info("Specialized modules feature flag: \(enabled)")
     }
 }
 

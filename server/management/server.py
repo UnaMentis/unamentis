@@ -68,6 +68,9 @@ from deployment_api import register_deployment_routes, ScheduledDeploymentManage
 # Import audio WebSocket handler
 from audio_ws import AudioWebSocketHandler, register_audio_websocket
 
+# Import modules API for server-driven training modules
+from modules_api import register_modules_routes
+
 # Import session management (for UserSession, UserVoiceConfig)
 from fov_context import SessionManager, UserVoiceConfig
 
@@ -4431,6 +4434,9 @@ def create_app() -> web.Application:
 
     # TTS Cache System
     register_tts_routes(app)
+
+    # Training Modules System (server-driven module discovery and download)
+    register_modules_routes(app)
 
     # Authentication System
     # Note: Auth requires a database pool. For now, we set up the routes but

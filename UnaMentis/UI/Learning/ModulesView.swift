@@ -9,6 +9,11 @@
 import SwiftUI
 import Logging
 
+/// Wrapper for module ID to make it Identifiable for fullScreenCover
+struct LaunchedModuleIdentifier: Identifiable {
+    let id: String
+}
+
 /// View displaying available specialized training modules
 struct ModulesView: View {
     @EnvironmentObject var appState: AppState
@@ -20,6 +25,7 @@ struct ModulesView: View {
     @State private var errorMessage: String?
     @State private var selectedModule: ModuleSummary?
     @State private var showingModuleDetail = false
+    @State private var launchedModule: LaunchedModuleIdentifier?
 
     private static let logger = Logger(label: "com.unamentis.modules.view")
 
@@ -50,6 +56,33 @@ struct ModulesView: View {
                     onLaunch: { launchModule(module) }
                 )
             }
+        }
+        .fullScreenCover(item: $launchedModule) { module in
+            NavigationStack {
+                moduleViewForId(module.id)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close") {
+                                launchedModule = nil
+                            }
+                        }
+                    }
+            }
+        }
+    }
+
+    /// Returns the appropriate view for a module ID
+    @ViewBuilder
+    private func moduleViewForId(_ moduleId: String) -> some View {
+        switch moduleId {
+        case "knowledge-bowl":
+            KBDashboardView()
+        default:
+            ContentUnavailableView(
+                "Module Not Found",
+                systemImage: "questionmark.circle",
+                description: Text("This module is not available.")
+            )
         }
     }
 
@@ -191,8 +224,7 @@ struct ModulesView: View {
 
     private func launchModule(_ module: ModuleSummary) {
         Self.logger.info("Launching module: \(module.name)")
-        // TODO: Navigate to module's main view
-        // This will open a server-interactive session
+        launchedModule = LaunchedModuleIdentifier(id: module.id)
     }
 
     private func deleteDownloadedModules(at offsets: IndexSet) {
