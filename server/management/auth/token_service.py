@@ -58,6 +58,7 @@ class RefreshTokenData:
     """Refresh token with metadata."""
     token: str
     token_hash: str
+    token_id: str
     family_id: str
     generation: int
     user_id: str
@@ -198,9 +199,13 @@ class TokenService:
             days=self.config.refresh_token_lifetime_days
         )
 
+        # Generate a unique token ID for database storage
+        token_id = str(uuid.uuid4())
+
         return RefreshTokenData(
             token=token,
             token_hash=token_hash,
+            token_id=token_id,
             family_id=family,
             generation=generation,
             user_id=user_id,

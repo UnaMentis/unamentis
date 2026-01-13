@@ -429,8 +429,15 @@ async def handle_get_analysis(request: web.Request) -> web.Response:
             status=404
         )
 
-    analyzer = ResultsAnalyzer()
-    report = analyzer.analyze(run)
+    try:
+        analyzer = ResultsAnalyzer()
+        report = analyzer.analyze(run)
+    except Exception as e:
+        logger.exception(f"Analysis failed for run {run_id}")
+        return web.json_response(
+            {"error": f"Analysis failed: {str(e)}"},
+            status=500
+        )
 
     return web.json_response({
         "runId": report.run_id,
@@ -1567,12 +1574,15 @@ async def handle_ingest_metrics(request: web.Request) -> web.Response:
         client_name = data.get("clientName", request.headers.get("X-Client-Name"))
 
         # Handle batch vs single
-        metrics_list = data.get("metrics", [])
-        if isinstance(metrics_list, dict):
-            # Single metric wrapped in the data
-            metrics_list = [data]
-        elif not metrics_list:
-            # Direct single metric (no wrapper)
+        # Check if "metrics" key was explicitly provided
+        if "metrics" in data:
+            metrics_list = data["metrics"]
+            if isinstance(metrics_list, dict):
+                # Single metric wrapped in the data
+                metrics_list = [data]
+            # If metrics is an empty list [], respect that as empty batch
+        else:
+            # No "metrics" key - treat entire data as a single metric
             metrics_list = [data]
 
         ingested_count = 0
@@ -1617,7 +1627,8 @@ async def handle_ingest_metrics(request: web.Request) -> web.Response:
             session["lastSeen"] = timestamp
             session["metricsCount"] += 1
 
-            if metric.get("metrics", {}).get("e2e_latency_ms"):
+            metrics_data = metric.get("metrics", {})
+            if isinstance(metrics_data, dict) and metrics_data.get("e2e_latency_ms"):
                 session["latencies"].append(metric["metrics"]["e2e_latency_ms"])
 
             ingested_count += 1
