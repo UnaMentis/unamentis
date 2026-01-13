@@ -100,10 +100,29 @@ def save_module_content(module_id: str, content: dict[str, Any]):
 # API Handlers
 
 
+def resolve_feature_flags(module: dict) -> dict:
+    """Resolve effective feature flags by applying overrides to base flags.
+
+    Feature flags work as follows:
+    - Base flags (supports_team_mode, etc.) define module capabilities
+    - Feature overrides can disable specific features per deployment
+    - A feature is enabled only if base flag is True AND override is not False
+    """
+    overrides = module.get("feature_overrides", {})
+    return {
+        "supports_team_mode": module.get("supports_team_mode", False) and overrides.get("team_mode", True),
+        "supports_speed_training": module.get("supports_speed_training", False) and overrides.get("speed_training", True),
+        "supports_competition_sim": module.get("supports_competition_sim", False) and overrides.get("competition_sim", True),
+    }
+
+
 async def handle_list_modules(request: web.Request) -> web.Response:
     """GET /api/modules
 
     List all available modules with summary information.
+
+    Query params:
+    - include_disabled: If "true", include disabled modules (admin only)
 
     Response:
     {
@@ -115,6 +134,7 @@ async def handle_list_modules(request: web.Request) -> web.Response:
                 "icon_name": "brain.head.profile",
                 "theme_color_hex": "#9B59B6",
                 "version": "1.0.0",
+                "enabled": true,
                 "supports_team_mode": true,
                 "supports_speed_training": true,
                 "supports_competition_sim": true,
@@ -126,10 +146,19 @@ async def handle_list_modules(request: web.Request) -> web.Response:
     """
     try:
         registry = load_modules_registry()
+        include_disabled = request.query.get("include_disabled", "").lower() == "true"
 
         # Build summary list (without full content)
         modules_summary = []
         for module in registry.get("modules", []):
+            # Skip disabled modules unless explicitly requested
+            is_enabled = module.get("enabled", True)
+            if not is_enabled and not include_disabled:
+                continue
+
+            # Resolve effective feature flags
+            features = resolve_feature_flags(module)
+
             modules_summary.append({
                 "id": module["id"],
                 "name": module["name"],
@@ -137,9 +166,10 @@ async def handle_list_modules(request: web.Request) -> web.Response:
                 "icon_name": module["icon_name"],
                 "theme_color_hex": module["theme_color_hex"],
                 "version": module["version"],
-                "supports_team_mode": module.get("supports_team_mode", False),
-                "supports_speed_training": module.get("supports_speed_training", False),
-                "supports_competition_sim": module.get("supports_competition_sim", False),
+                "enabled": is_enabled,
+                "supports_team_mode": features["supports_team_mode"],
+                "supports_speed_training": features["supports_speed_training"],
+                "supports_competition_sim": features["supports_competition_sim"],
                 "download_size": module.get("download_size"),
             })
 
@@ -181,6 +211,9 @@ async def handle_get_module(request: web.Request) -> web.Response:
         # Load full content to get domain details
         content = load_module_content(module_id)
 
+        # Resolve effective feature flags
+        features = resolve_feature_flags(module)
+
         # Build response with detail but without full questions
         response = {
             "id": module["id"],
@@ -190,9 +223,15 @@ async def handle_get_module(request: web.Request) -> web.Response:
             "icon_name": module["icon_name"],
             "theme_color_hex": module["theme_color_hex"],
             "version": module["version"],
-            "supports_team_mode": module.get("supports_team_mode", False),
-            "supports_speed_training": module.get("supports_speed_training", False),
-            "supports_competition_sim": module.get("supports_competition_sim", False),
+            "enabled": module.get("enabled", True),
+            "supports_team_mode": features["supports_team_mode"],
+            "supports_speed_training": features["supports_speed_training"],
+            "supports_competition_sim": features["supports_competition_sim"],
+            # Include raw flags for admin UI to show base capabilities vs overrides
+            "base_supports_team_mode": module.get("supports_team_mode", False),
+            "base_supports_speed_training": module.get("supports_speed_training", False),
+            "base_supports_competition_sim": module.get("supports_competition_sim", False),
+            "feature_overrides": module.get("feature_overrides", {}),
         }
 
         if content:
@@ -254,6 +293,9 @@ async def handle_download_module(request: web.Request) -> web.Response:
                 status=404
             )
 
+        # Resolve effective feature flags
+        features = resolve_feature_flags(module)
+
         # Build full download response
         total_questions = sum(len(d.get("questions", [])) for d in content.get("domains", []))
 
@@ -265,9 +307,11 @@ async def handle_download_module(request: web.Request) -> web.Response:
             "theme_color_hex": module["theme_color_hex"],
             "version": module["version"],
             "downloaded_at": datetime.now(timezone.utc).isoformat(),
-            "supports_team_mode": module.get("supports_team_mode", False),
-            "supports_speed_training": module.get("supports_speed_training", False),
-            "supports_competition_sim": module.get("supports_competition_sim", False),
+            "enabled": module.get("enabled", True),
+            # Effective feature flags (base AND override)
+            "supports_team_mode": features["supports_team_mode"],
+            "supports_speed_training": features["supports_speed_training"],
+            "supports_competition_sim": features["supports_competition_sim"],
             # Full content for offline operation
             "domains": content.get("domains", []),
             "total_questions": total_questions,
@@ -320,9 +364,11 @@ async def handle_create_module(request: web.Request) -> web.Response:
             "icon_name": data["icon_name"],
             "theme_color_hex": data["theme_color_hex"],
             "version": data.get("version", "1.0.0"),
+            "enabled": data.get("enabled", True),
             "supports_team_mode": data.get("supports_team_mode", False),
             "supports_speed_training": data.get("supports_speed_training", False),
             "supports_competition_sim": data.get("supports_competition_sim", False),
+            "feature_overrides": data.get("feature_overrides", {}),
             "download_size": data.get("download_size"),
         }
 
@@ -390,6 +436,112 @@ async def handle_delete_module(request: web.Request) -> web.Response:
         return web.json_response({"error": str(e)}, status=500)
 
 
+async def handle_update_module_settings(request: web.Request) -> web.Response:
+    """PATCH /api/modules/{module_id}/settings
+
+    Update module settings (enabled state and feature overrides).
+    Admin endpoint for controlling module availability and features.
+
+    Request body:
+    {
+        "enabled": true/false,          // Enable or disable the module
+        "feature_overrides": {          // Override specific features
+            "team_mode": true/false,    // Enable/disable team mode
+            "speed_training": true/false,
+            "competition_sim": true/false
+        }
+    }
+
+    Response:
+    {
+        "success": true,
+        "module_id": "knowledge-bowl",
+        "enabled": true,
+        "feature_overrides": {...},
+        "effective_features": {
+            "supports_team_mode": true,
+            "supports_speed_training": true,
+            "supports_competition_sim": false
+        }
+    }
+    """
+    module_id = request.match_info["module_id"]
+
+    try:
+        data = await request.json()
+        registry = load_modules_registry()
+
+        # Find module
+        module_idx = None
+        for idx, m in enumerate(registry.get("modules", [])):
+            if m["id"] == module_id:
+                module_idx = idx
+                break
+
+        if module_idx is None:
+            return web.json_response(
+                {"error": f"Module not found: {module_id}"},
+                status=404
+            )
+
+        module = registry["modules"][module_idx]
+
+        # Update enabled state if provided
+        if "enabled" in data:
+            module["enabled"] = bool(data["enabled"])
+            logger.info(f"Module {module_id} enabled={module['enabled']}")
+
+        # Update feature overrides if provided
+        if "feature_overrides" in data:
+            overrides = data["feature_overrides"]
+            if not isinstance(overrides, dict):
+                return web.json_response(
+                    {"error": "feature_overrides must be an object"},
+                    status=400
+                )
+
+            # Validate override keys
+            valid_keys = {"team_mode", "speed_training", "competition_sim"}
+            for key in overrides:
+                if key not in valid_keys:
+                    return web.json_response(
+                        {"error": f"Invalid feature override key: {key}. Valid keys: {valid_keys}"},
+                        status=400
+                    )
+                if not isinstance(overrides[key], bool):
+                    return web.json_response(
+                        {"error": f"Feature override value must be boolean: {key}"},
+                        status=400
+                    )
+
+            # Merge with existing overrides
+            existing_overrides = module.get("feature_overrides", {})
+            existing_overrides.update(overrides)
+            module["feature_overrides"] = existing_overrides
+            logger.info(f"Module {module_id} feature_overrides={module['feature_overrides']}")
+
+        # Save changes
+        registry["modules"][module_idx] = module
+        save_modules_registry(registry)
+
+        # Resolve effective features for response
+        features = resolve_feature_flags(module)
+
+        return web.json_response({
+            "success": True,
+            "module_id": module_id,
+            "enabled": module.get("enabled", True),
+            "feature_overrides": module.get("feature_overrides", {}),
+            "effective_features": features,
+        })
+
+    except json.JSONDecodeError:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        logger.exception(f"Error updating module settings for {module_id}")
+        return web.json_response({"error": str(e)}, status=500)
+
+
 def register_modules_routes(app: web.Application):
     """Register all module management routes."""
     # Public endpoints (for clients)
@@ -399,6 +551,7 @@ def register_modules_routes(app: web.Application):
 
     # Admin endpoints (for managing modules)
     app.router.add_post("/api/modules", handle_create_module)
+    app.router.add_patch("/api/modules/{module_id}/settings", handle_update_module_settings)
     app.router.add_delete("/api/modules/{module_id}", handle_delete_module)
 
     # Ensure modules directory exists
@@ -436,9 +589,11 @@ def seed_knowledge_bowl_module():
         "icon_name": "brain.head.profile",
         "theme_color_hex": "#9B59B6",
         "version": "1.0.0",
+        "enabled": True,
         "supports_team_mode": True,
         "supports_speed_training": True,
         "supports_competition_sim": True,
+        "feature_overrides": {},  # No overrides by default
         "download_size": 2097152,  # ~2MB estimate
     }
 

@@ -17,8 +17,38 @@ struct KBDashboardView: View {
     @State private var pendingPracticeStart = false  // Track pending practice session launch
     @StateObject private var questionService = KBQuestionService.shared
     @StateObject private var statsManager = KBStatsManager.shared
+    @StateObject private var moduleRegistry = ModuleRegistry.shared
 
     private static let logger = Logger(label: "com.unamentis.kb.dashboard")
+
+    /// Feature flags from the downloaded module (or defaults if not downloaded)
+    private var moduleFeatures: ModuleFeatures {
+        if let kbModule = moduleRegistry.getDownloaded(moduleId: "knowledge-bowl") {
+            return ModuleFeatures(
+                supportsTeamMode: kbModule.supportsTeamMode,
+                supportsSpeedTraining: kbModule.supportsSpeedTraining,
+                supportsCompetitionSim: kbModule.supportsCompetitionSim
+            )
+        }
+        // Default to all enabled for local-only mode
+        return .defaultEnabled
+    }
+
+    /// Study modes available based on feature flags
+    private var availableStudyModes: [KBStudyMode] {
+        KBStudyMode.allCases.filter { mode in
+            switch mode.requiredFeature {
+            case .none:
+                return true
+            case .teamMode:
+                return moduleFeatures.supportsTeamMode
+            case .speedTraining:
+                return moduleFeatures.supportsSpeedTraining
+            case .competitionSim:
+                return moduleFeatures.supportsCompetitionSim
+            }
+        }
+    }
 
     var body: some View {
         ScrollView {
@@ -190,14 +220,22 @@ struct KBDashboardView: View {
     @ViewBuilder
     private var studyModeSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Study Sessions")
-                .font(.headline)
+            HStack {
+                Text("Study Sessions")
+                    .font(.headline)
+                Spacer()
+                if availableStudyModes.count < KBStudyMode.allCases.count {
+                    Text("\(KBStudyMode.allCases.count - availableStudyModes.count) restricted")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
 
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 12) {
-                ForEach(KBStudyMode.allCases) { mode in
+                ForEach(availableStudyModes) { mode in
                     StudyModeCard(mode: mode)
                         .onTapGesture {
                             Self.logger.info("Selected study mode: \(mode.rawValue)")
@@ -251,6 +289,30 @@ struct KBDashboardView: View {
     }
 }
 
+// MARK: - Feature Flags
+
+/// Feature type that a study mode requires
+enum KBRequiredFeature {
+    case none           // Always available
+    case teamMode       // Requires supportsTeamMode
+    case speedTraining  // Requires supportsSpeedTraining
+    case competitionSim // Requires supportsCompetitionSim
+}
+
+/// Local copy of feature flags for the module
+struct ModuleFeatures {
+    let supportsTeamMode: Bool
+    let supportsSpeedTraining: Bool
+    let supportsCompetitionSim: Bool
+
+    /// Default features when module is not downloaded (local-only mode)
+    static let defaultEnabled = ModuleFeatures(
+        supportsTeamMode: true,
+        supportsSpeedTraining: true,
+        supportsCompetitionSim: true
+    )
+}
+
 // MARK: - Study Modes
 
 /// Available study session modes
@@ -294,6 +356,20 @@ enum KBStudyMode: String, CaseIterable, Identifiable {
         case .speed: return .red
         case .competition: return .purple
         case .team: return .cyan
+        }
+    }
+
+    /// Which feature flag this mode requires (if any)
+    var requiredFeature: KBRequiredFeature {
+        switch self {
+        case .diagnostic, .targeted, .breadth:
+            return .none  // Core study modes, always available
+        case .speed:
+            return .speedTraining
+        case .competition:
+            return .competitionSim
+        case .team:
+            return .teamMode
         }
     }
 }

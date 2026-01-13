@@ -227,16 +227,29 @@ public struct ModuleSummary: Codable, Identifiable, Hashable {
     public let iconName: String
     public let themeColorHex: String
     public let version: String
-    public let supportsTeamMode: Bool
+    public let enabled: Bool?  // Server-side enable/disable
+    public let supportsTeamMode: Bool  // Effective flag (base AND override)
     public let supportsSpeedTraining: Bool
     public let supportsCompetitionSim: Bool
     public let downloadSize: Int?  // Size in bytes
     public let isInstalled: Bool?
 
+    /// Whether the module is available (enabled on server)
+    public var isEnabled: Bool {
+        enabled ?? true
+    }
+
     /// Convert hex color to SwiftUI Color (computed on iOS side)
     public var themeColor: Color {
         Color(hex: themeColorHex) ?? .purple
     }
+}
+
+/// Feature overrides configuration from server
+public struct FeatureOverrides: Codable, Hashable {
+    public let teamMode: Bool?
+    public let speedTraining: Bool?
+    public let competitionSim: Bool?
 }
 
 /// Detailed module information
@@ -248,13 +261,26 @@ public struct ModuleDetail: Codable, Identifiable {
     public let iconName: String
     public let themeColorHex: String
     public let version: String
+    public let enabled: Bool?  // Server-side enable/disable
+    // Effective flags (base AND override)
     public let supportsTeamMode: Bool
     public let supportsSpeedTraining: Bool
     public let supportsCompetitionSim: Bool
+    // Base capabilities (what the module inherently supports)
+    public let baseSupportsTeamMode: Bool?
+    public let baseSupportsSpeedTraining: Bool?
+    public let baseSupportsCompetitionSim: Bool?
+    // Current overrides applied
+    public let featureOverrides: FeatureOverrides?
     public let domains: [ModuleDomain]?
     public let studyModes: [String]?
     public let totalQuestions: Int?
     public let estimatedStudyHours: Double?
+
+    /// Whether the module is available (enabled on server)
+    public var isEnabled: Bool {
+        enabled ?? true
+    }
 }
 
 /// Domain within a module (e.g., Science, Math for Knowledge Bowl)
@@ -284,6 +310,8 @@ public struct DownloadedModule: Codable, Identifiable {
     public let themeColorHex: String
     public let version: String
     public let downloadedAt: Date
+    public let enabled: Bool?  // Server-side enable/disable
+    // Effective feature flags (base AND override applied by server)
     public let supportsTeamMode: Bool
     public let supportsSpeedTraining: Bool
     public let supportsCompetitionSim: Bool
@@ -301,6 +329,11 @@ public struct DownloadedModule: Codable, Identifiable {
 
     /// Module-specific settings
     public let settings: ModuleSettings?
+
+    /// Whether the module is available (enabled on server at download time)
+    public var isEnabled: Bool {
+        enabled ?? true
+    }
 }
 
 /// Domain with full content for offline use
