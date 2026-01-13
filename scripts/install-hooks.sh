@@ -12,6 +12,7 @@
 # - SwiftLint: brew install swiftlint
 # - SwiftFormat: brew install swiftformat
 # - Ruff: pip install ruff (or brew install ruff)
+# - pytest + coverage: pip install pytest pytest-cov pytest-asyncio
 # - Node.js/npm: For ESLint and Prettier in web client
 # - Gitleaks (optional): brew install gitleaks
 
@@ -107,6 +108,7 @@ check_tool "swiftformat" "brew install swiftformat" || true
 echo ""
 echo "Python tools:"
 check_tool "ruff" "pip install ruff" || true
+check_tool "pytest" "pip install pytest pytest-cov pytest-asyncio" || true
 
 echo ""
 echo "JavaScript tools:"
@@ -132,6 +134,7 @@ echo -e "${BLUE}========================================${NC}"
 echo ""
 echo "The following hooks will run automatically:"
 echo "  - Pre-commit: Lint staged Swift, Python, and JS/TS files"
+echo "  - Pre-commit: Enforce 80% test coverage for server/management Python code"
 echo "  - Pre-commit: Check for secrets (if gitleaks is installed)"
 echo "  - Prepare-commit-msg: Pre-populate message from Claude's draft"
 echo "  - Post-commit: Clear Claude's draft after successful commit"

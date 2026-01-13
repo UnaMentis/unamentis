@@ -67,5 +67,117 @@ See [RESOURCES.md](RESOURCES.md) for complete channel/board mappings with IDs.
 
 1. Parse user intent (Slack, Trello, or both)
 2. Resolve channel/board/list using fuzzy matching
-3. Execute appropriate MCP tool(s)
-4. Confirm action to user
+3. **Convert content to platform-native formatting** (see below)
+4. Execute appropriate MCP tool(s)
+5. Confirm action to user
+
+---
+
+## Platform Formatting Guidelines
+
+**CRITICAL: Neither Trello nor Slack supports markdown tables.** You must convert tabular data to platform-native formats.
+
+### Trello Formatting (Markdown subset)
+
+**Supported:**
+- Bold: `**text**` or `__text__`
+- Italic: `*text*` or `_text_`
+- Strikethrough: `~~text~~`
+- Headings: `# H1`, `## H2`, `### H3`
+- Bulleted lists: `- item` or `* item` (blank line required above list)
+- Numbered lists: `1. item`
+- Code blocks: ``` or indent 4 spaces
+- Links: `[text](url)`
+- Horizontal rule: `---`
+
+**NOT Supported:**
+- Tables (pipes and dashes render as plain text)
+- Nested formatting in some contexts
+
+### Slack Formatting (mrkdwn, NOT markdown)
+
+**Supported:**
+- Bold: `*text*` (single asterisk, unlike markdown)
+- Italic: `_text_`
+- Strikethrough: `~text~` (single tilde)
+- Code: `` `code` ``
+- Code blocks: ``` (no syntax highlighting)
+- Links: `<url|text>` (angle brackets, not square)
+- Blockquotes: `>` at line start
+- Lists: Use bullet character or numbers
+
+**NOT Supported:**
+- Tables
+- Headings (# doesn't work)
+- Standard markdown link syntax
+
+---
+
+## Converting Tables to Native Formats
+
+### Option 1: Key-Value Lists (Recommended for Trello)
+
+**Instead of:**
+```
+| Component | Cost |
+|-----------|------|
+| GPU | $100 |
+| STT | $0 |
+```
+
+**Use:**
+```
+**Components:**
+- **GPU:** $100
+- **STT:** $0
+```
+
+### Option 2: Grouped Sections (Best for comparisons)
+
+**Instead of a comparison table, use:**
+```
+## 20 Users
+- **Total:** $100/month
+- GPU: $87-100
+- STT: $0 (Groq free tier)
+- TTS: $0 (self-hosted)
+
+## 100 Users
+- **Total:** $175/month
+- GPU: $115-145
+- STT: $0-30
+- TTS: $0 (self-hosted)
+```
+
+### Option 3: Code Block (Preserves alignment)
+
+For data that must stay aligned, use a code block:
+```
+Component          20 Users    100 Users
+─────────────────────────────────────────
+GPU                $100        $150
+STT                $0          $0-30
+TTS                $0          $0
+─────────────────────────────────────────
+TOTAL              $100        $175
+```
+
+### Option 4: Inline Summary (For Slack)
+
+Slack messages should be concise:
+```
+*Cost Summary:*
+• 20 users: *$100/mo* (GPU $100, STT free, TTS free)
+• 100 users: *$175/mo* (GPU $150, STT $0-30, TTS free)
+```
+
+---
+
+## Formatting Checklist
+
+Before posting to Trello or Slack:
+- [ ] Convert all markdown tables to lists or code blocks
+- [ ] Ensure blank line before any list
+- [ ] Use platform-specific bold/italic syntax
+- [ ] Use `<url|text>` for Slack links, `[text](url)` for Trello
+- [ ] Keep Slack messages concise; Trello can be longer

@@ -25,3 +25,31 @@ python_functions = ["test_*"]
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
+
+[tool.coverage.run]
+branch = true
+source = ["."]
+omit = [
+    "tests/*",
+    "*/tests/*",
+    "migrate_assets.py",  # Migration script, run once
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "except ImportError:",
+    "subprocess.check_call",
+    "logger.debug",
+    "logger.info",
+    "logger.warning",
+    "logger.error",
+    "logging.debug",
+    "logging.info",
+    "logging.warning",
+    "logging.error",
+]

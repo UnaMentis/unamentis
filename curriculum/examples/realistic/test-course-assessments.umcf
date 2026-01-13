@@ -8,7 +8,7 @@
   "description": "A test course for unit testing",
   "version": {
     "number": "1.0.0",
-    "date": "2026-01-11"
+    "date": "2026-01-12"
   },
   "lifecycle": {
     "status": "draft",
@@ -154,7 +154,7 @@
   "_import_metadata": {
     "source": "mock_source",
     "course_id": "test-course-assessments",
-    "imported_at": "2026-01-11T01:38:00.575644",
+    "imported_at": "2026-01-12T21:25:56.122249",
     "attribution": "Test attribution text",
     "stats": {
       "lectures": 3,

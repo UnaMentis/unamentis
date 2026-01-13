@@ -107,6 +107,45 @@ if [ -n "$PYTHON_FILES" ]; then
 fi
 
 # =============================================================================
+# Python Coverage Check (Management Server)
+# =============================================================================
+MANAGEMENT_PYTHON_FILES=$(echo "$STAGED_FILES" | grep -E '^server/management/.*\.py$' || true)
+# Exclude test files from the check trigger
+MANAGEMENT_NON_TEST_FILES=$(echo "$MANAGEMENT_PYTHON_FILES" | grep -v '/tests/' || true)
+
+if [ -n "$MANAGEMENT_NON_TEST_FILES" ]; then
+    echo -e "\n${YELLOW}Checking Python test coverage (server/management)...${NC}"
+
+    # Find pytest
+    PYTEST_CMD=""
+    if [ -f "$HOME/Library/Python/3.9/bin/pytest" ]; then
+        PYTEST_CMD="$HOME/Library/Python/3.9/bin/pytest"
+    elif command -v pytest &> /dev/null; then
+        PYTEST_CMD="pytest"
+    fi
+
+    if [ -n "$PYTEST_CMD" ] && [ -d "server/management" ]; then
+        cd server/management
+
+        # Set PYTHONPATH to include server directory for latency_harness imports
+        export PYTHONPATH="${PWD}/..:${PYTHONPATH}"
+
+        echo "Running pytest with coverage (80% minimum required)..."
+        if ! "$PYTEST_CMD" tests/ --cov=. --cov-report=term --cov-fail-under=80 -q 2>&1; then
+            echo -e "${RED}Coverage check failed! Coverage must be at least 80%.${NC}"
+            echo -e "${YELLOW}Run 'pytest tests/ --cov=. --cov-report=term' in server/management to see details.${NC}"
+            FAILED=1
+        else
+            echo -e "${GREEN}Coverage check passed (80%+ achieved).${NC}"
+        fi
+
+        cd - > /dev/null
+    else
+        echo -e "${YELLOW}pytest not found, skipping coverage check.${NC}"
+    fi
+fi
+
+# =============================================================================
 # JavaScript/TypeScript Checks (Web)
 # =============================================================================
 JS_TS_FILES=$(echo "$STAGED_FILES" | grep -E '\.(js|jsx|ts|tsx)$' || true)

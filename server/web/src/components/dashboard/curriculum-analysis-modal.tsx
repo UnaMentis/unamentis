@@ -86,6 +86,11 @@ const ISSUE_TYPE_INFO: Record<
     icon: Database,
     description: 'Required metadata fields are empty',
   },
+  invalid_bloom_level: {
+    label: 'Invalid Bloom Level',
+    icon: AlertCircle,
+    description: "Learning objective has invalid Bloom's taxonomy level",
+  },
 };
 
 // Severity display information
@@ -144,6 +149,9 @@ export function CurriculumAnalysisModal({
     addAlternatives: true,
     fixMetadata: true,
     llmModel: 'qwen2.5:32b',
+    llmTemperature: 0.7,
+    imageSearchEnabled: true,
+    generatePlaceholders: false,
     dryRun: false,
   });
 
@@ -221,7 +229,7 @@ export function CurriculumAnalysisModal({
         <div className="flex items-center gap-4 mb-4 p-3 bg-slate-900/50 rounded-lg">
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-400">Total Issues:</span>
-            <span className="font-semibold text-slate-100">{analysis.totalIssues}</span>
+            <span className="font-semibold text-slate-100">{analysis.stats.totalIssues}</span>
           </div>
           <div className="h-4 w-px bg-slate-700" />
           {severityCounts.critical > 0 && (
@@ -246,7 +254,7 @@ export function CurriculumAnalysisModal({
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-green-400" />
             <span className="text-sm text-slate-400">Auto-fixable:</span>
-            <span className="font-semibold text-green-400">{analysis.autoFixableCount}</span>
+            <span className="font-semibold text-green-400">{analysis.stats.autoFixableCount}</span>
           </div>
         </div>
 
@@ -339,7 +347,7 @@ export function CurriculumAnalysisModal({
             );
           })}
 
-          {analysis.totalIssues === 0 && (
+          {analysis.stats.totalIssues === 0 && (
             <div className="text-center py-8">
               <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-3" />
               <p className="text-lg font-medium text-slate-100">No Issues Found</p>
@@ -349,7 +357,7 @@ export function CurriculumAnalysisModal({
         </div>
 
         {/* Reprocess Options */}
-        {analysis.totalIssues > 0 && (
+        {analysis.stats.totalIssues > 0 && (
           <div className="border-t border-slate-700 pt-4">
             <h3 className="text-sm font-medium text-slate-300 mb-3">Reprocessing Options</h3>
             <div className="grid grid-cols-2 gap-2 mb-4">
@@ -444,7 +452,7 @@ export function CurriculumAnalysisModal({
           >
             Close
           </button>
-          {analysis.totalIssues > 0 && (
+          {analysis.stats.totalIssues > 0 && (
             <button
               onClick={handleStartReprocess}
               disabled={starting}

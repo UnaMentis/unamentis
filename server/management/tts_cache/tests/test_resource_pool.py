@@ -28,7 +28,7 @@ class TestTTSResourcePool:
     """Tests for TTSResourcePool."""
 
     @pytest.fixture
-    def pool(self):
+    async def pool(self):
         """Create a resource pool for testing."""
         return TTSResourcePool(
             max_concurrent_live=3,
@@ -36,13 +36,15 @@ class TestTTSResourcePool:
             request_timeout=5.0,
         )
 
-    def test_init(self, pool):
+    @pytest.mark.asyncio
+    async def test_init(self, pool):
         """Test pool initialization."""
         assert pool.max_concurrent_live == 3
         assert pool.max_concurrent_background == 2
         assert pool.request_timeout == 5.0
 
-    def test_stats_initial(self, pool):
+    @pytest.mark.asyncio
+    async def test_stats_initial(self, pool):
         """Test initial stats are zero."""
         stats = pool.get_stats()
         assert stats["live_requests"] == 0
@@ -51,7 +53,8 @@ class TestTTSResourcePool:
         assert stats["background_in_flight"] == 0
         assert stats["errors"] == 0
 
-    def test_configure_server(self, pool):
+    @pytest.mark.asyncio
+    async def test_configure_server(self, pool):
         """Test configuring custom TTS server."""
         pool.configure_server("custom", "http://localhost:9000/tts", 48000)
         assert pool.tts_servers["custom"] == "http://localhost:9000/tts"
@@ -62,7 +65,7 @@ class TestResourcePoolConcurrency:
     """Concurrency tests for TTSResourcePool."""
 
     @pytest.fixture
-    def mock_pool(self):
+    async def mock_pool(self):
         """Create a pool with mocked TTS generation."""
         pool = TTSResourcePool(
             max_concurrent_live=2,

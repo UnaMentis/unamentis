@@ -1,20 +1,37 @@
 {
   "$schema": "../../spec/umcf-schema.json",
-  "id": "sat-math-algebra-2024",
-  "version": "1.0.0",
-  "nodeType": "module",
+  "formatIdentifier": "umcf",
+  "id": { "value": "sat-math-algebra-2024" },
   "title": "SAT Math: Algebra",
   "description": "Complete algebra preparation for the Digital SAT covering linear equations, systems, functions, and inequalities.",
-  "spokenText": "Welcome to SAT Algebra preparation. Algebra makes up about 35% of the math section, making it the highest-weight domain. Let's master it.",
+  "version": { "number": "1.0.0" },
   "metadata": {
-    "author": "UnaMentis Curriculum Team",
-    "createdAt": "2024-01-15T00:00:00Z",
-    "updatedAt": "2024-01-15T00:00:00Z",
-    "license": "CC BY-NC-SA 4.0",
-    "language": "en-US"
+    "language": "en-US",
+    "keywords": ["SAT", "algebra", "math", "test prep", "linear equations", "systems"]
+  },
+  "lifecycle": {
+    "status": "final",
+    "created": "2024-01-15T00:00:00Z",
+    "modified": "2024-01-15T00:00:00Z",
+    "contributors": [
+      {
+        "name": "UnaMentis Curriculum Team",
+        "role": "author"
+      }
+    ]
+  },
+  "rights": {
+    "license": {
+      "type": "CC-BY-NC-SA-4.0"
+    }
+  },
+  "educational": {
+    "typicalAgeRange": "15-18",
+    "context": ["school", "training"],
+    "difficulty": "medium"
   },
   "extensions": {
-    "sat": {
+    "https://unamentis.com/extensions/sat": {
       "testVersion": "digital-2024",
       "section": "math",
       "domain": "algebra",
@@ -22,680 +39,457 @@
       "collegeBoardAlignment": "H"
     }
   },
-  "learningObjectives": [
+  "content": [
     {
-      "id": "lo-algebra-001",
-      "statement": "Solve linear equations in one variable",
-      "bloomLevel": "apply"
-    },
-    {
-      "id": "lo-algebra-002",
-      "statement": "Analyze and solve systems of linear equations",
-      "bloomLevel": "analyze"
-    },
-    {
-      "id": "lo-algebra-003",
-      "statement": "Interpret linear functions in context",
-      "bloomLevel": "understand"
-    },
-    {
-      "id": "lo-algebra-004",
-      "statement": "Solve and graph linear inequalities",
-      "bloomLevel": "apply"
-    }
-  ],
-  "children": [
-    {
-      "id": "sat-algebra-linear-equations",
-      "nodeType": "topic",
-      "title": "Linear Equations in One Variable",
-      "description": "Solving equations of the form ax + b = c",
-      "spokenText": "Linear equations are the foundation of SAT algebra. You'll see these throughout the test.",
-      "extensions": {
-        "sat": {
-          "testVersion": "digital-2024",
-          "section": "math",
-          "domain": "algebra",
-          "skill": "linear_equations_one_variable",
-          "weight": 0.10,
-          "collegeBoardAlignment": "H.A.1"
-        }
-      },
-      "children": [
+      "id": { "value": "sat-algebra-module" },
+      "title": "SAT Algebra Module",
+      "type": "module",
+      "description": "Complete algebra preparation for the Digital SAT",
+      "learningObjectives": [
         {
-          "id": "sat-algebra-basic-equations",
-          "nodeType": "segment",
-          "title": "Basic Linear Equations",
-          "description": "Equations requiring one or two steps to solve",
-          "overview": "A linear equation contains a variable raised to the first power. To solve, isolate the variable by performing inverse operations on both sides.",
-          "spokenText": "Let's start with basic equations. The key is performing the same operation on both sides to keep the equation balanced.",
-          "extensions": {
-            "sat": {
-              "testVersion": "digital-2024",
-              "section": "math",
-              "domain": "algebra",
-              "skill": "linear_equations_one_variable",
-              "difficultyRange": { "min": -2.0, "max": -0.5 },
-              "timeTarget": 45,
-              "adaptiveLevel": "module_1",
-              "strategyTags": ["isolation", "inverse_operations"],
-              "commonErrors": ["sign_errors", "division_errors"]
-            }
-          },
-          "keyTerms": [
-            {
-              "term": "Coefficient",
-              "definition": "The number multiplied by a variable",
-              "spokenDefinition": "A coefficient is the number in front of a variable, like the 3 in 3x"
-            },
-            {
-              "term": "Isolate",
-              "definition": "To get a variable alone on one side of an equation",
-              "spokenDefinition": "Isolating means getting the variable by itself"
-            }
-          ],
-          "content": {
-            "conceptExplanation": "A linear equation has the variable raised to the first power only. The goal is to isolate the variable by undoing operations in reverse order.",
-            "workedExamples": [
-              {
-                "problem": "Solve: 2x + 5 = 13",
-                "steps": [
-                  "Start: 2x + 5 = 13",
-                  "Subtract 5 from both sides: 2x = 8",
-                  "Divide both sides by 2: x = 4"
-                ],
-                "solution": "x = 4",
-                "verification": "Check: 2(4) + 5 = 8 + 5 = 13 ✓",
-                "strategyNote": "Always undo addition/subtraction before multiplication/division"
-              },
-              {
-                "problem": "Solve: 7 - 3x = 22",
-                "steps": [
-                  "Start: 7 - 3x = 22",
-                  "Subtract 7 from both sides: -3x = 15",
-                  "Divide both sides by -3: x = -5"
-                ],
-                "solution": "x = -5",
-                "verification": "Check: 7 - 3(-5) = 7 + 15 = 22 ✓",
-                "strategyNote": "Be careful with negative coefficients"
-              }
-            ]
-          },
-          "assessments": [
-            {
-              "id": "sat-algebra-eq-001",
-              "type": "choice",
-              "stem": "What is the solution to 4x - 7 = 17?",
-              "options": [
-                { "id": "a", "text": "x = 2.5" },
-                { "id": "b", "text": "x = 6", "correct": true },
-                { "id": "c", "text": "x = 10" },
-                { "id": "d", "text": "x = 24" }
-              ],
-              "feedback": {
-                "correct": "Correct! Add 7 to get 4x = 24, then divide by 4 to get x = 6.",
-                "incorrect": "Add 7 to both sides first, then divide by 4."
-              },
-              "extensions": {
-                "sat": {
-                  "testVersion": "digital-2024",
-                  "section": "math",
-                  "domain": "algebra",
-                  "difficultyIRT": { "b": -1.5, "a": 1.0 },
-                  "timeTarget": 30,
-                  "adaptiveLevel": "module_1",
-                  "calculatorRecommended": false,
-                  "errorAnalysis": {
-                    "a": "Divided by 4 before adding 7",
-                    "c": "Added 7 but forgot to divide",
-                    "d": "Added 7 and multiplied by 4"
-                  }
-                }
-              }
-            },
-            {
-              "id": "sat-algebra-eq-002",
-              "type": "numeric_entry",
-              "stem": "If 5x + 12 = 37, what is the value of x?",
-              "correctAnswer": 5,
-              "feedback": {
-                "correct": "Correct! 5x = 25, so x = 5.",
-                "incorrect": "Subtract 12 from both sides first, then divide by 5."
-              },
-              "extensions": {
-                "sat": {
-                  "testVersion": "digital-2024",
-                  "section": "math",
-                  "domain": "algebra",
-                  "difficultyIRT": { "b": -1.2, "a": 0.9 },
-                  "timeTarget": 35,
-                  "adaptiveLevel": "module_1",
-                  "calculatorRecommended": false
-                }
-              }
-            },
-            {
-              "id": "sat-algebra-eq-003",
-              "type": "choice",
-              "stem": "If 3(x - 4) = 15, what is the value of x?",
-              "options": [
-                { "id": "a", "text": "x = 3" },
-                { "id": "b", "text": "x = 7" },
-                { "id": "c", "text": "x = 9", "correct": true },
-                { "id": "d", "text": "x = 19" }
-              ],
-              "feedback": {
-                "correct": "Correct! Divide by 3 first to get x - 4 = 5, then add 4.",
-                "incorrect": "You can divide by 3 first, or distribute. Either way, x = 9."
-              },
-              "extensions": {
-                "sat": {
-                  "testVersion": "digital-2024",
-                  "section": "math",
-                  "domain": "algebra",
-                  "difficultyIRT": { "b": -0.5, "a": 1.1 },
-                  "timeTarget": 45,
-                  "adaptiveLevel": "module_1",
-                  "strategyTags": ["distribution", "order_of_operations"],
-                  "errorAnalysis": {
-                    "a": "Divided 15 by 3 and stopped",
-                    "b": "Distributed incorrectly",
-                    "d": "Added 4 before dividing by 3"
-                  }
-                }
-              }
-            }
-          ],
-          "retrievalConfig": {
-            "keyConceptForRetrieval": true,
-            "difficulty": "easy",
-            "retrievalPrompts": [
-              "What's the first step to solve 2x + 5 = 11?",
-              "How do you check if your solution is correct?",
-              "What operation undoes multiplication?"
-            ],
-            "spacingAlgorithm": "sm2",
-            "initialInterval": "P1D",
-            "maxInterval": "P14D"
-          }
+          "id": { "value": "lo-algebra-001" },
+          "statement": "Solve linear equations in one variable",
+          "bloomsLevel": "apply"
         },
         {
-          "id": "sat-algebra-complex-equations",
-          "nodeType": "segment",
-          "title": "Multi-Step Linear Equations",
-          "description": "Equations with variables on both sides, fractions, or multiple steps",
-          "overview": "Complex linear equations require multiple steps: distribute, combine like terms, then isolate the variable.",
-          "spokenText": "Now let's tackle harder equations. These require more steps but use the same principles.",
-          "extensions": {
-            "sat": {
-              "testVersion": "digital-2024",
-              "section": "math",
-              "domain": "algebra",
-              "skill": "linear_equations_one_variable",
-              "difficultyRange": { "min": -0.5, "max": 1.5 },
-              "timeTarget": 75,
-              "adaptiveLevel": "any",
-              "strategyTags": ["distribution", "combining_terms", "variables_both_sides"],
-              "commonErrors": ["distribution_sign_errors", "combining_unlike_terms"]
-            }
-          },
-          "content": {
-            "workedExamples": [
-              {
-                "problem": "Solve: 3x + 7 = 5x - 9",
-                "steps": [
-                  "Start: 3x + 7 = 5x - 9",
-                  "Subtract 3x from both sides: 7 = 2x - 9",
-                  "Add 9 to both sides: 16 = 2x",
-                  "Divide by 2: x = 8"
-                ],
-                "solution": "x = 8",
-                "verification": "Check: 3(8) + 7 = 31; 5(8) - 9 = 31 ✓",
-                "strategyNote": "Get all x terms on one side, constants on the other"
-              },
-              {
-                "problem": "Solve: (2x + 6)/4 = 5",
-                "steps": [
-                  "Multiply both sides by 4: 2x + 6 = 20",
-                  "Subtract 6: 2x = 14",
-                  "Divide by 2: x = 7"
-                ],
-                "solution": "x = 7",
-                "verification": "Check: (2(7) + 6)/4 = 20/4 = 5 ✓",
-                "strategyNote": "Clear fractions first by multiplying by the denominator"
-              }
-            ]
-          },
-          "assessments": [
-            {
-              "id": "sat-algebra-eq-004",
-              "type": "choice",
-              "stem": "What is the solution to 4x - 3 = 2x + 11?",
-              "options": [
-                { "id": "a", "text": "x = 4" },
-                { "id": "b", "text": "x = 7", "correct": true },
-                { "id": "c", "text": "x = 8" },
-                { "id": "d", "text": "x = 14" }
-              ],
-              "extensions": {
-                "sat": {
-                  "testVersion": "digital-2024",
-                  "section": "math",
-                  "domain": "algebra",
-                  "difficultyIRT": { "b": 0.0, "a": 1.2 },
-                  "timeTarget": 50,
-                  "adaptiveLevel": "module_1",
-                  "strategyTags": ["variables_both_sides"],
-                  "errorAnalysis": {
-                    "a": "Arithmetic error in final step",
-                    "c": "Added instead of subtracted",
-                    "d": "Combined incorrectly"
-                  }
-                }
-              }
-            },
-            {
-              "id": "sat-algebra-eq-005",
-              "type": "choice",
-              "stem": "If 2(3x - 4) + 5 = 4x + 9, what is the value of x?",
-              "options": [
-                { "id": "a", "text": "x = 3" },
-                { "id": "b", "text": "x = 6", "correct": true },
-                { "id": "c", "text": "x = 8" },
-                { "id": "d", "text": "x = 12" }
-              ],
-              "extensions": {
-                "sat": {
-                  "testVersion": "digital-2024",
-                  "section": "math",
-                  "domain": "algebra",
-                  "difficultyIRT": { "b": 0.8, "a": 1.3 },
-                  "timeTarget": 75,
-                  "adaptiveLevel": "module_2_hard",
-                  "strategyTags": ["distribution", "combining_terms", "variables_both_sides"],
-                  "errorAnalysis": {
-                    "a": "Distribution error",
-                    "c": "Sign error when combining",
-                    "d": "Forgot to distribute properly"
-                  }
-                }
-              }
-            }
-          ]
+          "id": { "value": "lo-algebra-002" },
+          "statement": "Analyze and solve systems of linear equations",
+          "bloomsLevel": "analyze"
+        },
+        {
+          "id": { "value": "lo-algebra-003" },
+          "statement": "Interpret linear functions in context",
+          "bloomsLevel": "understand"
+        },
+        {
+          "id": { "value": "lo-algebra-004" },
+          "statement": "Solve and graph linear inequalities",
+          "bloomsLevel": "apply"
         }
-      ]
-    },
-    {
-      "id": "sat-algebra-systems",
-      "nodeType": "topic",
-      "title": "Systems of Linear Equations",
-      "description": "Solving two equations with two variables",
-      "spokenText": "Systems of equations appear frequently on the SAT. You'll need to find values that satisfy both equations simultaneously.",
-      "extensions": {
-        "sat": {
-          "testVersion": "digital-2024",
-          "section": "math",
-          "domain": "algebra",
-          "skill": "systems_linear_equations",
-          "weight": 0.08,
-          "collegeBoardAlignment": "H.A.4"
-        }
+      ],
+      "transcript": {
+        "segments": [
+          {
+            "id": "intro-segment",
+            "type": "introduction",
+            "content": "Welcome to SAT Algebra preparation. Algebra makes up about 35% of the math section, making it the highest-weight domain. Let's master it."
+          }
+        ]
       },
       "children": [
         {
-          "id": "sat-algebra-systems-substitution",
-          "nodeType": "segment",
-          "title": "Substitution Method",
-          "description": "Solving systems by substituting one equation into another",
-          "overview": "When one equation is solved for a variable, substitute that expression into the other equation.",
-          "extensions": {
-            "sat": {
-              "testVersion": "digital-2024",
-              "section": "math",
-              "domain": "algebra",
-              "skill": "systems_linear_equations",
-              "difficultyRange": { "min": -0.5, "max": 1.0 },
-              "timeTarget": 90,
-              "strategyTags": ["substitution", "solve_for_one"],
-              "commonErrors": ["substitution_sign_errors", "solving_wrong_variable"]
-            }
-          },
-          "content": {
-            "workedExamples": [
+          "id": { "value": "sat-algebra-linear-equations" },
+          "title": "Linear Equations in One Variable",
+          "type": "topic",
+          "description": "Solving equations of the form ax + b = c",
+          "transcript": {
+            "segments": [
               {
-                "problem": "Solve: y = 2x + 1 and 3x + y = 11",
-                "steps": [
-                  "Substitute y = 2x + 1 into second equation",
-                  "3x + (2x + 1) = 11",
-                  "5x + 1 = 11",
-                  "5x = 10",
-                  "x = 2",
-                  "Back-substitute: y = 2(2) + 1 = 5"
-                ],
-                "solution": "(x, y) = (2, 5)",
-                "verification": "Check both: 5 = 2(2) + 1 ✓; 3(2) + 5 = 11 ✓"
+                "id": "linear-intro",
+                "type": "lecture",
+                "content": "Linear equations are the foundation of SAT algebra. You'll see these throughout the test."
               }
             ]
           },
-          "assessments": [
+          "children": [
             {
-              "id": "sat-algebra-sys-001",
-              "type": "choice",
-              "stem": "If y = 3x - 2 and 2x + y = 8, what is the value of x?",
-              "options": [
-                { "id": "a", "text": "x = 1" },
-                { "id": "b", "text": "x = 2", "correct": true },
-                { "id": "c", "text": "x = 3" },
-                { "id": "d", "text": "x = 4" }
-              ],
-              "extensions": {
-                "sat": {
-                  "testVersion": "digital-2024",
-                  "section": "math",
-                  "domain": "algebra",
-                  "difficultyIRT": { "b": 0.3, "a": 1.1 },
-                  "timeTarget": 70,
-                  "adaptiveLevel": "module_1",
-                  "strategyTags": ["substitution"]
+              "id": { "value": "sat-algebra-basic-equations" },
+              "title": "Basic Linear Equations",
+              "type": "segment",
+              "description": "Equations requiring one or two steps to solve",
+              "transcript": {
+                "segments": [
+                  {
+                    "id": "basic-overview",
+                    "type": "explanation",
+                    "content": "A linear equation contains a variable raised to the first power. To solve, isolate the variable by performing inverse operations on both sides."
+                  },
+                  {
+                    "id": "basic-intro",
+                    "type": "lecture",
+                    "content": "Let's start with basic equations. The key is performing the same operation on both sides to keep the equation balanced."
+                  }
+                ]
+              },
+              "glossaryTerms": [
+                {
+                  "term": "Coefficient",
+                  "definition": "The number multiplied by a variable",
+                  "spokenDefinition": "A coefficient is the number in front of a variable, like the 3 in 3x"
+                },
+                {
+                  "term": "Isolate",
+                  "definition": "To get a variable alone on one side of an equation",
+                  "spokenDefinition": "Isolating means getting the variable by itself"
                 }
+              ],
+              "examples": [
+                {
+                  "id": "ex-basic-1",
+                  "type": "worked_problem",
+                  "title": "Two-step equation",
+                  "content": "Solve: 2x + 5 = 13\n\nSteps:\n1. Subtract 5 from both sides: 2x = 8\n2. Divide both sides by 2: x = 4\n\nCheck: 2(4) + 5 = 8 + 5 = 13",
+                  "spokenContent": "Let's solve 2x plus 5 equals 13. First, subtract 5 from both sides to get 2x equals 8. Then divide by 2 to get x equals 4. Always check: 2 times 4 plus 5 equals 13."
+                },
+                {
+                  "id": "ex-basic-2",
+                  "type": "worked_problem",
+                  "title": "Negative coefficient",
+                  "content": "Solve: 7 - 3x = 22\n\nSteps:\n1. Subtract 7 from both sides: -3x = 15\n2. Divide by -3: x = -5\n\nCheck: 7 - 3(-5) = 7 + 15 = 22",
+                  "spokenContent": "Now solve 7 minus 3x equals 22. Subtract 7 to get negative 3x equals 15. Divide by negative 3 to get x equals negative 5. Be careful with negative coefficients!"
+                }
+              ],
+              "assessments": [
+                {
+                  "id": { "value": "sat-algebra-eq-001" },
+                  "type": "choice",
+                  "title": "Basic equation",
+                  "prompt": "What is the solution to 4x - 7 = 17?",
+                  "spokenPrompt": "What is the solution to 4x minus 7 equals 17?",
+                  "choices": [
+                    { "id": "a", "text": "x = 2.5" },
+                    { "id": "b", "text": "x = 6", "correct": true },
+                    { "id": "c", "text": "x = 10" },
+                    { "id": "d", "text": "x = 24" }
+                  ],
+                  "feedback": {
+                    "correct": {
+                      "text": "Correct! Add 7 to get 4x = 24, then divide by 4 to get x = 6."
+                    },
+                    "incorrect": {
+                      "text": "Add 7 to both sides first, then divide by 4."
+                    }
+                  }
+                },
+                {
+                  "id": { "value": "sat-algebra-eq-002" },
+                  "type": "text_entry",
+                  "title": "Numeric entry",
+                  "prompt": "If 5x + 12 = 37, what is the value of x?",
+                  "correctResponse": ["5"],
+                  "feedback": {
+                    "correct": {
+                      "text": "Correct! 5x = 25, so x = 5."
+                    },
+                    "incorrect": {
+                      "text": "Subtract 12 from both sides first, then divide by 5."
+                    }
+                  }
+                },
+                {
+                  "id": { "value": "sat-algebra-eq-003" },
+                  "type": "choice",
+                  "title": "Parentheses equation",
+                  "prompt": "If 3(x - 4) = 15, what is the value of x?",
+                  "choices": [
+                    { "id": "a", "text": "x = 3" },
+                    { "id": "b", "text": "x = 7" },
+                    { "id": "c", "text": "x = 9", "correct": true },
+                    { "id": "d", "text": "x = 19" }
+                  ],
+                  "feedback": {
+                    "correct": {
+                      "text": "Correct! Divide by 3 first to get x - 4 = 5, then add 4."
+                    },
+                    "incorrect": {
+                      "text": "You can divide by 3 first, or distribute. Either way, x = 9."
+                    }
+                  }
+                }
+              ],
+              "keyConceptForRetrieval": true,
+              "retrievalConfig": {
+                "difficulty": "easy",
+                "retrievalPrompts": [
+                  "What's the first step to solve 2x + 5 = 11?",
+                  "How do you check if your solution is correct?",
+                  "What operation undoes multiplication?"
+                ],
+                "spacingAlgorithm": "sm2",
+                "initialInterval": "P1D",
+                "maxInterval": "P14D"
               }
+            },
+            {
+              "id": { "value": "sat-algebra-complex-equations" },
+              "title": "Multi-Step Linear Equations",
+              "type": "segment",
+              "description": "Equations with variables on both sides, fractions, or multiple steps",
+              "transcript": {
+                "segments": [
+                  {
+                    "id": "complex-overview",
+                    "type": "explanation",
+                    "content": "Complex linear equations require multiple steps: distribute, combine like terms, then isolate the variable."
+                  },
+                  {
+                    "id": "complex-intro",
+                    "type": "lecture",
+                    "content": "Now let's tackle harder equations. These require more steps but use the same principles."
+                  }
+                ]
+              },
+              "examples": [
+                {
+                  "id": "ex-complex-1",
+                  "type": "worked_problem",
+                  "title": "Variables on both sides",
+                  "content": "Solve: 3x + 7 = 5x - 9\n\n1. Subtract 3x: 7 = 2x - 9\n2. Add 9: 16 = 2x\n3. Divide by 2: x = 8\n\nCheck: 3(8) + 7 = 31; 5(8) - 9 = 31"
+                },
+                {
+                  "id": "ex-complex-2",
+                  "type": "worked_problem",
+                  "title": "Fraction equation",
+                  "content": "Solve: (2x + 6)/4 = 5\n\n1. Multiply by 4: 2x + 6 = 20\n2. Subtract 6: 2x = 14\n3. Divide by 2: x = 7\n\nCheck: (2(7) + 6)/4 = 20/4 = 5"
+                }
+              ],
+              "assessments": [
+                {
+                  "id": { "value": "sat-algebra-eq-004" },
+                  "type": "choice",
+                  "title": "Variables both sides",
+                  "prompt": "What is the solution to 4x - 3 = 2x + 11?",
+                  "choices": [
+                    { "id": "a", "text": "x = 4" },
+                    { "id": "b", "text": "x = 7", "correct": true },
+                    { "id": "c", "text": "x = 8" },
+                    { "id": "d", "text": "x = 14" }
+                  ]
+                },
+                {
+                  "id": { "value": "sat-algebra-eq-005" },
+                  "type": "choice",
+                  "title": "Distribution required",
+                  "prompt": "If 2(3x - 4) + 5 = 4x + 9, what is the value of x?",
+                  "choices": [
+                    { "id": "a", "text": "x = 3" },
+                    { "id": "b", "text": "x = 6", "correct": true },
+                    { "id": "c", "text": "x = 8" },
+                    { "id": "d", "text": "x = 12" }
+                  ]
+                }
+              ]
             }
           ]
         },
         {
-          "id": "sat-algebra-systems-elimination",
-          "nodeType": "segment",
-          "title": "Elimination Method",
-          "description": "Solving systems by adding or subtracting equations",
-          "overview": "Add or subtract equations to eliminate one variable. Sometimes you need to multiply first to make coefficients match.",
-          "content": {
-            "workedExamples": [
+          "id": { "value": "sat-algebra-systems" },
+          "title": "Systems of Linear Equations",
+          "type": "topic",
+          "description": "Solving two equations with two variables",
+          "transcript": {
+            "segments": [
               {
-                "problem": "Solve: 2x + 3y = 13 and 2x - y = 5",
-                "steps": [
-                  "Subtract second equation from first: (2x + 3y) - (2x - y) = 13 - 5",
-                  "Simplify: 4y = 8",
-                  "Divide by 4: y = 2",
-                  "Back-substitute into 2x - y = 5: 2x - 2 = 5",
-                  "Solve: 2x = 7, x = 3.5"
-                ],
-                "solution": "(x, y) = (3.5, 2)",
-                "verification": "Check both: 2(3.5) + 3(2) = 13 ✓; 2(3.5) - 2 = 5 ✓"
+                "id": "systems-intro",
+                "type": "lecture",
+                "content": "Systems of equations appear frequently on the SAT. You'll need to find values that satisfy both equations simultaneously."
               }
             ]
           },
-          "extensions": {
-            "sat": {
-              "testVersion": "digital-2024",
-              "section": "math",
-              "domain": "algebra",
-              "skill": "systems_linear_equations",
-              "difficultyRange": { "min": 0.0, "max": 1.5 },
-              "timeTarget": 100,
-              "strategyTags": ["elimination", "coefficient_matching"],
-              "commonErrors": ["wrong_operation", "forgot_to_multiply_entire_equation"]
-            }
-          },
-          "assessments": [
+          "children": [
             {
-              "id": "sat-algebra-sys-002",
-              "type": "choice",
-              "stem": "Given the system 2x + 3y = 13 and 2x - y = 5, what is the value of y?",
-              "options": [
-                { "id": "a", "text": "y = 1" },
-                { "id": "b", "text": "y = 2", "correct": true },
-                { "id": "c", "text": "y = 3" },
-                { "id": "d", "text": "y = 4" }
-              ],
-              "extensions": {
-                "sat": {
-                  "testVersion": "digital-2024",
-                  "section": "math",
-                  "domain": "algebra",
-                  "difficultyIRT": { "b": 0.5, "a": 1.2 },
-                  "timeTarget": 80,
-                  "adaptiveLevel": "any",
-                  "strategyTags": ["elimination"],
-                  "errorAnalysis": {
-                    "a": "Added instead of subtracted",
-                    "c": "Arithmetic error",
-                    "d": "Solved for x instead"
+              "id": { "value": "sat-algebra-systems-substitution" },
+              "title": "Substitution Method",
+              "type": "segment",
+              "description": "Solving systems by substituting one equation into another",
+              "transcript": {
+                "segments": [
+                  {
+                    "id": "sub-overview",
+                    "type": "explanation",
+                    "content": "When one equation is solved for a variable, substitute that expression into the other equation."
                   }
+                ]
+              },
+              "examples": [
+                {
+                  "id": "ex-sub-1",
+                  "type": "worked_problem",
+                  "title": "Basic substitution",
+                  "content": "Solve: y = 2x + 1 and 3x + y = 11\n\n1. Substitute y = 2x + 1: 3x + (2x + 1) = 11\n2. Combine: 5x + 1 = 11\n3. Solve: x = 2\n4. Back-substitute: y = 2(2) + 1 = 5\n\nSolution: (2, 5)"
                 }
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "sat-algebra-word-problems",
-      "nodeType": "topic",
-      "title": "Algebra Word Problems",
-      "description": "Translating real-world scenarios into algebraic equations",
-      "spokenText": "Word problems test your ability to translate English into math. This is where strategy really matters.",
-      "extensions": {
-        "sat": {
-          "testVersion": "digital-2024",
-          "section": "math",
-          "domain": "algebra",
-          "skill": "algebraic_word_problems",
-          "weight": 0.10,
-          "strategyTags": ["translation", "modeling"]
-        }
-      },
-      "children": [
-        {
-          "id": "sat-algebra-word-translation",
-          "nodeType": "segment",
-          "title": "Translating Words to Equations",
-          "description": "Converting verbal descriptions into mathematical expressions",
-          "overview": "Key translations: 'is' = equals, 'of' = multiply, 'per' = divide, 'more than' = add, 'less than' = subtract.",
-          "extensions": {
-            "sat": {
-              "testVersion": "digital-2024",
-              "section": "math",
-              "domain": "algebra",
-              "timeTarget": 90,
-              "strategyTags": ["translation", "key_words"],
-              "commonErrors": ["reversed_subtraction", "percent_confusion"]
-            }
-          },
-          "content": {
-            "translations": [
-              { "phrase": "x is 5 more than y", "equation": "x = y + 5" },
-              { "phrase": "x is 5 less than y", "equation": "x = y - 5" },
-              { "phrase": "twice a number", "equation": "2n" },
-              { "phrase": "the product of a and b", "equation": "a × b" },
-              { "phrase": "the quotient of a and b", "equation": "a ÷ b" },
-              { "phrase": "30% of x", "equation": "0.30x" },
-              { "phrase": "x increased by 20%", "equation": "1.20x" }
-            ]
-          },
-          "assessments": [
+              ],
+              "assessments": [
+                {
+                  "id": { "value": "sat-algebra-sys-001" },
+                  "type": "choice",
+                  "title": "Substitution",
+                  "prompt": "If y = 3x - 2 and 2x + y = 8, what is the value of x?",
+                  "choices": [
+                    { "id": "a", "text": "x = 1" },
+                    { "id": "b", "text": "x = 2", "correct": true },
+                    { "id": "c", "text": "x = 3" },
+                    { "id": "d", "text": "x = 4" }
+                  ]
+                }
+              ]
+            },
             {
-              "id": "sat-algebra-word-001",
-              "type": "choice",
-              "stem": "A store sells pens for $2 each and notebooks for $5 each. If Sarah buys a total of 12 items and spends $45, how many pens did she buy?",
-              "options": [
-                { "id": "a", "text": "3" },
-                { "id": "b", "text": "5", "correct": true },
-                { "id": "c", "text": "7" },
-                { "id": "d", "text": "9" }
-              ],
-              "extensions": {
-                "sat": {
-                  "testVersion": "digital-2024",
-                  "section": "math",
-                  "domain": "algebra",
-                  "difficultyIRT": { "b": 0.7, "a": 1.2 },
-                  "timeTarget": 120,
-                  "adaptiveLevel": "module_2_hard",
-                  "strategyTags": ["systems_word_problem", "translation"],
-                  "errorAnalysis": {
-                    "a": "Solved for notebooks instead",
-                    "c": "Reversed the equations",
-                    "d": "Calculation error"
+              "id": { "value": "sat-algebra-systems-elimination" },
+              "title": "Elimination Method",
+              "type": "segment",
+              "description": "Solving systems by adding or subtracting equations",
+              "transcript": {
+                "segments": [
+                  {
+                    "id": "elim-overview",
+                    "type": "explanation",
+                    "content": "Add or subtract equations to eliminate one variable. Sometimes you need to multiply first to make coefficients match."
                   }
+                ]
+              },
+              "examples": [
+                {
+                  "id": "ex-elim-1",
+                  "type": "worked_problem",
+                  "title": "Basic elimination",
+                  "content": "Solve: 2x + 3y = 13 and 2x - y = 5\n\n1. Subtract: 4y = 8\n2. Solve: y = 2\n3. Back-substitute: 2x - 2 = 5, x = 3.5\n\nSolution: (3.5, 2)"
                 }
+              ],
+              "assessments": [
+                {
+                  "id": { "value": "sat-algebra-sys-002" },
+                  "type": "choice",
+                  "title": "Elimination",
+                  "prompt": "Given the system 2x + 3y = 13 and 2x - y = 5, what is the value of y?",
+                  "choices": [
+                    { "id": "a", "text": "y = 1" },
+                    { "id": "b", "text": "y = 2", "correct": true },
+                    { "id": "c", "text": "y = 3" },
+                    { "id": "d", "text": "y = 4" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": { "value": "sat-algebra-word-problems" },
+          "title": "Algebra Word Problems",
+          "type": "topic",
+          "description": "Translating real-world scenarios into algebraic equations",
+          "transcript": {
+            "segments": [
+              {
+                "id": "word-intro",
+                "type": "lecture",
+                "content": "Word problems test your ability to translate English into math. This is where strategy really matters."
               }
+            ]
+          },
+          "children": [
+            {
+              "id": { "value": "sat-algebra-word-translation" },
+              "title": "Translating Words to Equations",
+              "type": "segment",
+              "description": "Converting verbal descriptions into mathematical expressions",
+              "transcript": {
+                "segments": [
+                  {
+                    "id": "trans-overview",
+                    "type": "explanation",
+                    "content": "Key translations: 'is' = equals, 'of' = multiply, 'per' = divide, 'more than' = add, 'less than' = subtract."
+                  }
+                ]
+              },
+              "assessments": [
+                {
+                  "id": { "value": "sat-algebra-word-001" },
+                  "type": "choice",
+                  "title": "Word problem",
+                  "prompt": "A store sells pens for $2 each and notebooks for $5 each. If Sarah buys a total of 12 items and spends $45, how many pens did she buy?",
+                  "choices": [
+                    { "id": "a", "text": "3" },
+                    { "id": "b", "text": "5", "correct": true },
+                    { "id": "c", "text": "7" },
+                    { "id": "d", "text": "9" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": { "value": "sat-algebra-linear-functions" },
+          "title": "Linear Functions",
+          "type": "topic",
+          "description": "Interpreting and analyzing linear functions in context",
+          "transcript": {
+            "segments": [
+              {
+                "id": "func-intro",
+                "type": "lecture",
+                "content": "Linear functions help us model real-world relationships. Understanding slope and intercept is key."
+              }
+            ]
+          },
+          "children": [
+            {
+              "id": { "value": "sat-algebra-slope-intercept" },
+              "title": "Slope-Intercept Form",
+              "type": "segment",
+              "description": "Understanding y = mx + b and its components",
+              "transcript": {
+                "segments": [
+                  {
+                    "id": "slope-overview",
+                    "type": "explanation",
+                    "content": "In y = mx + b, m is the slope (rate of change) and b is the y-intercept (starting value)."
+                  }
+                ]
+              },
+              "examples": [
+                {
+                  "id": "ex-slope-1",
+                  "type": "worked_problem",
+                  "title": "Phone plan model",
+                  "content": "A phone plan costs $25 per month plus $0.10 per text.\n\n1. Rate: $0.10 per text (slope m = 0.10)\n2. Fixed cost: $25 (y-intercept b = 25)\n3. Function: C(t) = 0.10t + 25\n\nCheck: 100 texts = 0.10(100) + 25 = $35"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": { "value": "sat-algebra-linear-inequalities" },
+          "title": "Linear Inequalities",
+          "type": "topic",
+          "description": "Solving and graphing linear inequalities",
+          "transcript": {
+            "segments": [
+              {
+                "id": "ineq-intro",
+                "type": "lecture",
+                "content": "Inequalities work like equations but remember to flip the sign when multiplying or dividing by negatives."
+              }
+            ]
+          },
+          "children": [
+            {
+              "id": { "value": "sat-algebra-solving-inequalities" },
+              "title": "Solving Linear Inequalities",
+              "type": "segment",
+              "description": "Solving inequalities with one variable",
+              "transcript": {
+                "segments": [
+                  {
+                    "id": "solve-ineq-overview",
+                    "type": "explanation",
+                    "content": "Solve like equations, but flip the inequality sign when multiplying or dividing by a negative number."
+                  }
+                ]
+              },
+              "examples": [
+                {
+                  "id": "ex-ineq-1",
+                  "type": "worked_problem",
+                  "title": "Inequality with negative",
+                  "content": "Solve: -2x + 5 > 11\n\n1. Subtract 5: -2x > 6\n2. Divide by -2 AND flip: x < -3\n\nRemember: FLIP the inequality when dividing by negative!"
+                }
+              ]
             }
           ]
         }
       ]
-    },
-    {
-      "id": "sat-algebra-linear-functions",
-      "nodeType": "topic",
-      "title": "Linear Functions",
-      "description": "Interpreting and analyzing linear functions in context",
-      "spokenText": "Linear functions help us model real-world relationships. Understanding slope and intercept is key.",
-      "extensions": {
-        "sat": {
-          "testVersion": "digital-2024",
-          "section": "math",
-          "domain": "algebra",
-          "skill": "linear_functions",
-          "weight": 0.08,
-          "collegeBoardAlignment": "H.A.2"
-        }
-      },
-      "learningObjectiveRefs": ["lo-algebra-003"],
-      "children": [
-        {
-          "id": "sat-algebra-slope-intercept",
-          "nodeType": "segment",
-          "title": "Slope-Intercept Form",
-          "description": "Understanding y = mx + b and its components",
-          "overview": "In y = mx + b, m is the slope (rate of change) and b is the y-intercept (starting value).",
-          "extensions": {
-            "sat": {
-              "testVersion": "digital-2024",
-              "section": "math",
-              "domain": "algebra",
-              "skill": "linear_functions",
-              "timeTarget": 60,
-              "strategyTags": ["slope_interpretation", "intercept_meaning"]
-            }
-          },
-          "content": {
-            "workedExamples": [
-              {
-                "problem": "A phone plan costs $25 per month plus $0.10 per text. Write the cost function.",
-                "steps": [
-                  "Identify the rate: $0.10 per text (slope m = 0.10)",
-                  "Identify the fixed cost: $25 (y-intercept b = 25)",
-                  "Write: C(t) = 0.10t + 25"
-                ],
-                "solution": "C(t) = 0.10t + 25",
-                "verification": "Check: 100 texts = 0.10(100) + 25 = $35 ✓"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "id": "sat-algebra-linear-inequalities",
-      "nodeType": "topic",
-      "title": "Linear Inequalities",
-      "description": "Solving and graphing linear inequalities",
-      "spokenText": "Inequalities work like equations but remember to flip the sign when multiplying or dividing by negatives.",
-      "extensions": {
-        "sat": {
-          "testVersion": "digital-2024",
-          "section": "math",
-          "domain": "algebra",
-          "skill": "linear_inequalities",
-          "weight": 0.05,
-          "collegeBoardAlignment": "H.A.3"
-        }
-      },
-      "learningObjectiveRefs": ["lo-algebra-004"],
-      "children": [
-        {
-          "id": "sat-algebra-solving-inequalities",
-          "nodeType": "segment",
-          "title": "Solving Linear Inequalities",
-          "description": "Solving inequalities with one variable",
-          "overview": "Solve like equations, but flip the inequality sign when multiplying or dividing by a negative number.",
-          "extensions": {
-            "sat": {
-              "testVersion": "digital-2024",
-              "section": "math",
-              "domain": "algebra",
-              "skill": "linear_inequalities",
-              "timeTarget": 50,
-              "strategyTags": ["inequality_rules", "sign_flip"],
-              "commonErrors": ["forgot_to_flip_sign"]
-            }
-          },
-          "content": {
-            "workedExamples": [
-              {
-                "problem": "Solve: -2x + 5 > 11",
-                "steps": [
-                  "Subtract 5 from both sides: -2x > 6",
-                  "Divide by -2 AND flip the sign: x < -3"
-                ],
-                "solution": "x < -3",
-                "strategyNote": "FLIP the inequality when dividing by negative!"
-              }
-            ]
-          }
-        }
-      ]
     }
-  ],
-  "strategies": [
-    {
-      "id": "strategy-backsolving",
-      "title": "Back-Solving Strategy",
-      "description": "When given answer choices, plug them back into the problem",
-      "content": {
-        "when": "Use when algebra seems complex but answers are clean numbers",
-        "how": [
-          "Start with choice B or C (middle value)",
-          "Substitute into the original equation",
-          "If too high, try lower; if too low, try higher",
-          "Usually takes 2-3 tries maximum"
-        ],
-        "example": {
-          "problem": "If 3x + 7 = 22, what is x?",
-          "choices": ["A) 3", "B) 5", "C) 7", "D) 9"],
-          "solution": "Try B: 3(5) + 7 = 22 ✓ Answer is B"
-        }
-      },
-      "extensions": {
-        "sat": {
-          "strategyType": "math",
-          "applicableSections": ["math"],
-          "applicableQuestionTypes": ["choice"],
-          "expectedImpact": {
-            "accuracyIncrease": 0.10,
-            "timeChange": -15
-          }
-        }
-      }
-    }
-  ],
-  "summaryAssessments": {
-    "diagnostic": {
-      "id": "algebra-diagnostic",
-      "title": "Algebra Skills Diagnostic",
-      "description": "Assess baseline algebra proficiency",
-      "extensions": {
-        "sat": {
-          "questionCount": 20,
-          "timeLimit": 1800,
-          "skillsCovered": [
-            "linear_equations_one_variable",
-            "systems_linear_equations",
-            "linear_functions",
-            "linear_inequalities"
-          ]
-        }
-      }
-    }
-  }
+  ]
 }
