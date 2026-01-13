@@ -234,7 +234,7 @@ struct LaunchScreenView: View {
 /// Tab indices for programmatic navigation
 enum AppTab: Int {
     case session = 0
-    case curriculum = 1
+    case learning = 1
     case todo = 2
     case history = 3
     case analytics = 4
@@ -402,11 +402,11 @@ struct ContentView: View {
             .toolbar(sessionActivityState.shouldHideTabBar ? .hidden : .visible, for: .tabBar)
             #endif
 
-            CurriculumView()
+            LearningView()
                 .tabItem {
-                    Label("Curriculum", systemImage: "book")
+                    Label("Learning", systemImage: "graduationcap")
                 }
-                .tag(AppTab.curriculum.rawValue)
+                .tag(AppTab.learning.rawValue)
 
             TodoListView()
                 .tabItem {
