@@ -4,7 +4,7 @@
 // Automatically speaks questions via TTS and listens for
 // verbal answers via STT, working alongside the text UI.
 
-import AVFoundation
+@preconcurrency import AVFoundation
 import Combine
 import Foundation
 import Logging

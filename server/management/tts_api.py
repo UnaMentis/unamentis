@@ -16,7 +16,7 @@ import logging
 import aiofiles
 from aiohttp import web
 
-from modules_api import validate_module_id
+from modules_api import validate_module_id, get_module_content_path
 from tts_cache import TTSCache, TTSCacheKey, TTSResourcePool, Priority
 
 logger = logging.getLogger(__name__)
@@ -863,9 +863,14 @@ async def handle_kb_prefetch(request: web.Request) -> web.Response:
             status=503,
         )
 
-    # Load module content
-    modules_dir = Path(__file__).parent / "data" / "modules"
-    content_path = modules_dir / f"{module_id}.json"
+    # Load module content using validated path
+    try:
+        content_path = get_module_content_path(module_id)
+    except ValueError as e:
+        return web.json_response(
+            {"error": str(e)},
+            status=400,
+        )
 
     if not content_path.exists():
         return web.json_response(
@@ -975,9 +980,6 @@ async def handle_kb_coverage(request: web.Request) -> web.Response:
 
     Get audio coverage status for a KB module.
     """
-    import json as json_module
-    from pathlib import Path
-
     module_id = request.match_info.get("module_id")
     if not module_id:
         return web.json_response(
@@ -998,9 +1000,14 @@ async def handle_kb_coverage(request: web.Request) -> web.Response:
             status=503,
         )
 
-    # Load module content
-    modules_dir = Path(__file__).parent / "data" / "modules"
-    content_path = modules_dir / f"{module_id}.json"
+    # Load module content using validated path
+    try:
+        content_path = get_module_content_path(module_id)
+    except ValueError as e:
+        return web.json_response(
+            {"error": str(e)},
+            status=400,
+        )
 
     if not content_path.exists():
         return web.json_response(
