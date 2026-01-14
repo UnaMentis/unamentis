@@ -14,6 +14,7 @@ import logging
 
 from aiohttp import web
 
+from modules_api import validate_module_id
 from tts_cache import TTSCache, TTSCacheKey, TTSResourcePool, Priority
 
 logger = logging.getLogger(__name__)
@@ -820,6 +821,12 @@ async def handle_kb_prefetch(request: web.Request) -> web.Response:
     provider = data.get("provider", "vibevoice")
     force_regenerate = data.get("force_regenerate", False)
 
+    if not validate_module_id(module_id):
+        return web.json_response(
+            {"error": f"Invalid module_id: {module_id}"},
+            status=400,
+        )
+
     kb_audio = request.app.get("kb_audio_manager")
     if not kb_audio:
         return web.json_response(
@@ -909,6 +916,12 @@ async def handle_kb_manifest(request: web.Request) -> web.Response:
             status=400,
         )
 
+    if not validate_module_id(module_id):
+        return web.json_response(
+            {"error": f"Invalid module_id: {module_id}"},
+            status=400,
+        )
+
     kb_audio = request.app.get("kb_audio_manager")
     if not kb_audio:
         return web.json_response(
@@ -939,6 +952,12 @@ async def handle_kb_coverage(request: web.Request) -> web.Response:
     if not module_id:
         return web.json_response(
             {"error": "Missing module_id"},
+            status=400,
+        )
+
+    if not validate_module_id(module_id):
+        return web.json_response(
+            {"error": f"Invalid module_id: {module_id}"},
             status=400,
         )
 

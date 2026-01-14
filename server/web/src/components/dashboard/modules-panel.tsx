@@ -185,6 +185,7 @@ export function ModulesPanel() {
             <AlertTriangle className="w-5 h-5" />
             <span>{error}</span>
             <button
+              type="button"
               onClick={fetchModules}
               className="ml-4 px-3 py-1 bg-slate-700 rounded text-sm hover:bg-slate-600"
             >
@@ -206,6 +207,7 @@ export function ModulesPanel() {
             Training Modules
           </CardTitle>
           <button
+            type="button"
             onClick={fetchModules}
             disabled={loading}
             className="p-2 rounded-md bg-slate-700/50 hover:bg-slate-600/50 transition-colors"
@@ -298,8 +300,12 @@ export function ModulesPanel() {
                 {/* Enable/Disable Toggle */}
                 <div className="flex flex-col items-end gap-2">
                   <button
+                    type="button"
                     onClick={() => handleToggleEnabled(module)}
                     disabled={updating === module.id}
+                    aria-label={`${module.enabled ? 'Disable' : 'Enable'} ${module.name} module`}
+                    role="switch"
+                    aria-checked={module.enabled}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       module.enabled ? 'bg-green-500' : 'bg-slate-600'
                     } ${updating === module.id ? 'opacity-50' : ''}`}
@@ -365,6 +371,7 @@ function FeatureToggle({
 
   return (
     <button
+      type="button"
       onClick={onToggle}
       disabled={disabled}
       title={tooltip}

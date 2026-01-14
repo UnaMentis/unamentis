@@ -16,6 +16,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
@@ -37,9 +38,33 @@ def get_modules_registry_path() -> Path:
     return MODULES_DIR / "registry.json"
 
 
+def validate_module_id(module_id: str) -> bool:
+    """Validate module_id to prevent path traversal attacks.
+
+    Module IDs must be alphanumeric with hyphens and underscores only.
+    """
+    if not module_id:
+        return False
+    return bool(re.match(r'^[a-zA-Z0-9_-]+$', module_id))
+
+
 def get_module_content_path(module_id: str) -> Path:
-    """Get path to module content file."""
-    return MODULES_DIR / f"{module_id}.json"
+    """Get path to module content file.
+
+    Raises ValueError if module_id contains path traversal attempts.
+    """
+    if not validate_module_id(module_id):
+        raise ValueError(f"Invalid module_id: {module_id}")
+
+    content_path = MODULES_DIR / f"{module_id}.json"
+
+    # Resolve to absolute path and verify it's within MODULES_DIR
+    resolved = content_path.resolve()
+    modules_resolved = MODULES_DIR.resolve()
+    if not str(resolved).startswith(str(modules_resolved)):
+        raise ValueError(f"Path traversal detected in module_id: {module_id}")
+
+    return content_path
 
 
 def ensure_modules_directory():
@@ -196,6 +221,12 @@ async def handle_get_module(request: web.Request) -> web.Response:
     """
     module_id = request.match_info["module_id"]
 
+    if not validate_module_id(module_id):
+        return web.json_response(
+            {"error": f"Invalid module_id: {module_id}"},
+            status=400
+        )
+
     try:
         registry = load_modules_registry()
 
@@ -272,6 +303,12 @@ async def handle_download_module(request: web.Request) -> web.Response:
     - Module settings (timing, TTS options, etc.)
     """
     module_id = request.match_info["module_id"]
+
+    if not validate_module_id(module_id):
+        return web.json_response(
+            {"error": f"Invalid module_id: {module_id}"},
+            status=400
+        )
 
     try:
         registry = load_modules_registry()
@@ -412,6 +449,12 @@ async def handle_delete_module(request: web.Request) -> web.Response:
     """
     module_id = request.match_info["module_id"]
 
+    if not validate_module_id(module_id):
+        return web.json_response(
+            {"error": f"Invalid module_id: {module_id}"},
+            status=400
+        )
+
     try:
         registry = load_modules_registry()
 
@@ -470,6 +513,12 @@ async def handle_update_module_settings(request: web.Request) -> web.Response:
     }
     """
     module_id = request.match_info["module_id"]
+
+    if not validate_module_id(module_id):
+        return web.json_response(
+            {"error": f"Invalid module_id: {module_id}"},
+            status=400
+        )
 
     try:
         data = await request.json()

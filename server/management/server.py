@@ -4661,10 +4661,20 @@ def create_app() -> web.Application:
         })
 
         # Schedule KB audio prefetch in background (checks coverage and generates if needed)
-        asyncio.create_task(schedule_kb_audio_prefetch(app))
+        app["kb_audio_prefetch_task"] = asyncio.create_task(schedule_kb_audio_prefetch(app))
 
     # Cleanup hook to stop background tasks
     async def on_cleanup(app):
+        # Cancel KB audio prefetch task if running
+        task = app.get("kb_audio_prefetch_task")
+        if task and not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            logger.info("[Cleanup] KB audio prefetch task cancelled")
+
         # Close database pool if it exists
         if "db_pool" in app:
             await app["db_pool"].close()
