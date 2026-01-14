@@ -92,3 +92,7 @@ server/web/.next/
 
 # Claude draft files
 .claude/draft-commit.md
+
+# Archive files in project root
+/*.zip
+/*.tar.gz

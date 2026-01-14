@@ -57,6 +57,7 @@ from fov_context_api import setup_fov_context_routes
 
 # Import TTS cache system
 from tts_cache import TTSCache, TTSResourcePool, CurriculumPrefetcher
+from tts_cache.kb_audio import KBAudioManager
 from tts_api import register_tts_routes
 
 # Import session-cache integration
@@ -69,7 +70,7 @@ from deployment_api import register_deployment_routes, ScheduledDeploymentManage
 from audio_ws import AudioWebSocketHandler, register_audio_websocket
 
 # Import modules API for server-driven training modules
-from modules_api import register_modules_routes
+from modules_api import register_modules_routes, schedule_kb_audio_prefetch
 
 # Import session management (for UserSession, UserVoiceConfig)
 from fov_context import SessionManager, UserVoiceConfig
@@ -4578,6 +4579,13 @@ def create_app() -> web.Application:
         prefetcher = CurriculumPrefetcher(tts_cache, resource_pool)
         app["tts_prefetcher"] = prefetcher
 
+        # Initialize Knowledge Bowl audio manager for pre-generated TTS
+        kb_audio_dir = Path(__file__).parent / "data" / "kb_audio"
+        kb_audio_manager = KBAudioManager(str(kb_audio_dir), resource_pool)
+        await kb_audio_manager.initialize()
+        app["kb_audio_manager"] = kb_audio_manager
+        logger.info("[Startup] KB audio manager initialized")
+
         # Initialize session manager (handles both FOV and user sessions)
         session_manager = SessionManager()
         app["session_manager"] = session_manager
@@ -4651,6 +4659,9 @@ def create_app() -> web.Application:
             "port": PORT,
             "diagnostic_enabled": diag_logger.is_enabled()
         })
+
+        # Schedule KB audio prefetch in background (checks coverage and generates if needed)
+        asyncio.create_task(schedule_kb_audio_prefetch(app))
 
     # Cleanup hook to stop background tasks
     async def on_cleanup(app):

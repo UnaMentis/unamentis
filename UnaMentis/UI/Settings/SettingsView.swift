@@ -697,10 +697,71 @@ class SettingsViewModel: ObservableObject {
 
         serverConnectionStatus = .checking
 
-        // Try Ollama health check first (port 11434)
-        guard let url = URL(string: "http://\(primaryServerIP):11434/api/version") else {
-            serverConnectionStatus = .failed
+        // Try Management API first (port 8766) - this is the main server orchestrator
+        let managementConnected = await checkManagementAPI()
+
+        if managementConnected {
+            serverConnectionStatus = .connected
+
+            // Discover models through Management API
+            let managementModels = await ServerConfigManager.shared.discoverManagementModels(host: primaryServerIP)
+            if !managementModels.isEmpty {
+                // Extract LLM models from management API response
+                discoveredModels = managementModels
+                    .filter { $0.type == "llm" }
+                    .map { $0.name }
+
+                // Build summary from management API data
+                let llmCount = managementModels.filter { $0.type == "llm" }.count
+                let ttsCount = managementModels.filter { $0.type == "tts" }.count
+                let sttCount = managementModels.filter { $0.type == "stt" }.count
+                var summaryParts: [String] = []
+                if llmCount > 0 { summaryParts.append("\(llmCount) LLM model(s)") }
+                if ttsCount > 0 { summaryParts.append("\(ttsCount) TTS") }
+                if sttCount > 0 { summaryParts.append("\(sttCount) STT") }
+                serverCapabilitiesSummary = summaryParts.isEmpty ? "Server connected" : summaryParts.joined(separator: ", ")
+            } else {
+                // Fall back to direct capability discovery
+                let capabilities = await ServerConfigManager.shared.discoverCapabilities(host: primaryServerIP)
+                discoveredModels = capabilities.llmModels
+                discoveredPiperVoices = capabilities.piperVoices
+                discoveredVibeVoiceVoices = capabilities.vibeVoiceVoices
+                serverCapabilitiesSummary = capabilities.summary
+            }
+
+            // Auto-select first discovered model if current model not in list
+            if !discoveredModels.isEmpty && !discoveredModels.contains(llmModel) {
+                llmModel = discoveredModels[0]
+            }
             return
+        }
+
+        // Fall back to checking Ollama directly (port 11434)
+        let ollamaConnected = await checkOllamaDirectly()
+
+        if ollamaConnected {
+            serverConnectionStatus = .connected
+
+            // Discover capabilities (checks Ollama, Piper, and VibeVoice)
+            let capabilities = await ServerConfigManager.shared.discoverCapabilities(host: primaryServerIP)
+            discoveredModels = capabilities.llmModels
+            discoveredPiperVoices = capabilities.piperVoices
+            discoveredVibeVoiceVoices = capabilities.vibeVoiceVoices
+            serverCapabilitiesSummary = capabilities.summary
+
+            // Auto-select first discovered model if current model not in list
+            if !discoveredModels.isEmpty && !discoveredModels.contains(llmModel) {
+                llmModel = discoveredModels[0]
+            }
+        } else {
+            serverConnectionStatus = .failed
+        }
+    }
+
+    /// Check if Management API is reachable
+    private func checkManagementAPI() async -> Bool {
+        guard let url = URL(string: "http://\(primaryServerIP):8766/health") else {
+            return false
         }
 
         do {
@@ -711,25 +772,34 @@ class SettingsViewModel: ObservableObject {
 
             if let httpResponse = response as? HTTPURLResponse,
                httpResponse.statusCode == 200 {
-                serverConnectionStatus = .connected
-
-                // Discover capabilities (checks Ollama, Piper, and VibeVoice)
-                let capabilities = await ServerConfigManager.shared.discoverCapabilities(host: primaryServerIP)
-                discoveredModels = capabilities.llmModels
-                discoveredPiperVoices = capabilities.piperVoices
-                discoveredVibeVoiceVoices = capabilities.vibeVoiceVoices
-                serverCapabilitiesSummary = capabilities.summary
-
-                // Auto-select first discovered model if current model not in list
-                if !discoveredModels.isEmpty && !discoveredModels.contains(llmModel) {
-                    llmModel = discoveredModels[0]
-                }
-            } else {
-                serverConnectionStatus = .failed
+                return true
             }
         } catch {
-            serverConnectionStatus = .failed
+            // Management API not reachable
         }
+        return false
+    }
+
+    /// Check if Ollama is reachable directly
+    private func checkOllamaDirectly() async -> Bool {
+        guard let url = URL(string: "http://\(primaryServerIP):11434/api/version") else {
+            return false
+        }
+
+        do {
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 5
+
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            if let httpResponse = response as? HTTPURLResponse,
+               httpResponse.statusCode == 200 {
+                return true
+            }
+        } catch {
+            // Ollama not reachable
+        }
+        return false
     }
 
     enum Preset {

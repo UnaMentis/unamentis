@@ -34,6 +34,12 @@ final class KBVoiceCoordinator: ObservableObject {
     private var audioEngine: AudioEngine?
     private let telemetry: TelemetryEngine
 
+    /// Pre-generated audio cache for KB questions
+    private var audioCache: KBAudioCache?
+
+    /// Whether to use server pre-generated TTS (vs local Apple TTS)
+    private var useServerTTS: Bool = false
+
     // MARK: - State Management
 
     private var sttStreamTask: Task<Void, Never>?
@@ -84,6 +90,16 @@ final class KBVoiceCoordinator: ObservableObject {
 
         // Configure audio engine
         try await engine.configure(config: .default)
+
+        // Initialize server audio cache if self-hosted is enabled
+        let selfHostedEnabled = UserDefaults.standard.bool(forKey: "selfHostedEnabled")
+        let serverIP = UserDefaults.standard.string(forKey: "primaryServerIP") ?? ""
+
+        if selfHostedEnabled && !serverIP.isEmpty {
+            audioCache = KBAudioCache(serverHost: serverIP)
+            useServerTTS = true
+            Self.logger.info("KB audio cache initialized for server: \(serverIP)")
+        }
 
         isReady = true
         Self.logger.info("KB voice coordinator ready")
@@ -202,22 +218,77 @@ final class KBVoiceCoordinator: ObservableObject {
 
     /// Speak a question with proper pacing for competition style
     func speakQuestion(_ question: KBQuestion) async {
-        // Speak the question text
+        // Try server cache first if available
+        if useServerTTS, let cache = audioCache {
+            do {
+                if let cached = try await cache.getAudio(
+                    questionId: question.id,
+                    segment: .question
+                ) {
+                    try await playCachedAudio(cached)
+                    return
+                }
+            } catch {
+                Self.logger.warning("Server audio unavailable, falling back to local: \(error)")
+            }
+        }
+
+        // Fallback: speak with local TTS
         await speak(question.questionText)
     }
 
     /// Speak correct/incorrect feedback with explanation
-    func speakFeedback(isCorrect: Bool, correctAnswer: String, explanation: String) async {
-        if isCorrect {
-            await speak("Correct!")
+    func speakFeedback(isCorrect: Bool, correctAnswer: String, explanation: String, question: KBQuestion? = nil) async {
+        // Try server feedback audio first
+        if useServerTTS, let cache = audioCache {
+            do {
+                let feedbackType = isCorrect ? "correct" : "incorrect"
+                if let feedbackAudio = try await cache.getFeedbackAudio(feedbackType) {
+                    try await playCachedAudio(feedbackAudio)
+                } else {
+                    // Fallback for feedback
+                    if isCorrect {
+                        await speak("Correct!")
+                    } else {
+                        await speak("Incorrect. The correct answer is \(correctAnswer).")
+                    }
+                }
+            } catch {
+                // Fallback to local TTS
+                if isCorrect {
+                    await speak("Correct!")
+                } else {
+                    await speak("Incorrect. The correct answer is \(correctAnswer).")
+                }
+            }
         } else {
-            await speak("Incorrect. The correct answer is \(correctAnswer).")
+            if isCorrect {
+                await speak("Correct!")
+            } else {
+                await speak("Incorrect. The correct answer is \(correctAnswer).")
+            }
         }
 
         // Brief pause before explanation
         try? await Task.sleep(nanoseconds: 500_000_000)
 
         if !explanation.isEmpty {
+            // Try cached explanation
+            if useServerTTS, let cache = audioCache, let q = question {
+                do {
+                    if let cached = try await cache.getAudio(
+                        questionId: q.id,
+                        segment: .explanation
+                    ) {
+                        try await playCachedAudio(cached)
+                        return
+                    }
+                } catch {
+                    Self.logger.debug("Explanation cache miss, using local TTS")
+                }
+            }
+
+            // Fallback: local TTS
             await speak(explanation)
         }
     }
@@ -236,6 +307,70 @@ final class KBVoiceCoordinator: ObservableObject {
         }
 
         await speak(message)
+    }
+
+    // MARK: - Server Audio Cache
+
+    /// Play pre-cached audio from server
+    private func playCachedAudio(_ cached: KBCachedAudio) async throws {
+        guard let audioEngine = audioEngine else {
+            throw VoiceCoordinatorError.notConfigured
+        }
+
+        // Ensure audio engine is running for playback
+        if !await audioEngine.isRunning {
+            try await audioEngine.start()
+        }
+
+        isSpeaking = true
+        Self.logger.debug("Playing cached audio (\(cached.data.count) bytes)")
+
+        // Create format for 24kHz 16-bit mono WAV (server default)
+        guard let format = AVAudioFormat(
+            commonFormat: .pcmFormatInt16,
+            sampleRate: Double(cached.sampleRate),
+            channels: 1,
+            interleaved: false
+        ) else {
+            throw VoiceCoordinatorError.audioFormatUnavailable
+        }
+
+        // Skip WAV header (44 bytes) to get raw PCM data
+        let pcmData: Data
+        if cached.data.count > 44 {
+            pcmData = cached.data.dropFirst(44)
+        } else {
+            pcmData = cached.data
+        }
+
+        do {
+            try await audioEngine.playRawAudio(pcmData, format: format)
+        } catch {
+            Self.logger.error("Failed to play cached audio: \(error)")
+            throw error
+        }
+
+        isSpeaking = false
+        Self.logger.debug("Finished playing cached audio")
+    }
+
+    /// Warm the cache at session start
+    func warmCache(questions: [KBQuestion]) async {
+        guard let cache = audioCache else { return }
+
+        Self.logger.info("Warming audio cache for \(min(5, questions.count)) questions")
+        await cache.warmCache(questions: questions, lookahead: 5)
+    }
+
+    /// Prefetch audio for upcoming questions
+    func prefetchUpcoming(questions: [KBQuestion], currentIndex: Int) async {
+        guard let cache = audioCache else { return }
+
+        await cache.prefetchUpcoming(
+            questions: questions,
+            currentIndex: currentIndex,
+            lookahead: 3
+        )
     }
 
     // MARK: - STT: Listening for Answers

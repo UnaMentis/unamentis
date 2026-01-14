@@ -12,14 +12,18 @@ Modules are server-controlled:
 - Downloaded modules include full content for offline operation
 """
 
+import asyncio
 import json
 import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from aiohttp import web
+
+if TYPE_CHECKING:
+    from tts_cache.kb_audio import KBAudioManager
 
 logger = logging.getLogger(__name__)
 
@@ -1510,3 +1514,83 @@ def create_miscellaneous_domain() -> dict[str, Any]:
             },
         ],
     }
+
+
+# KB Audio Pre-generation
+
+
+async def check_and_prefetch_kb_audio(
+    kb_audio_manager: "KBAudioManager",
+    force_regenerate: bool = False,
+    voice_id: str = "nova",
+    provider: str = "vibevoice",
+) -> Optional[str]:
+    """Check KB audio coverage and trigger prefetch if needed.
+
+    Called at server startup to ensure KB module has pre-generated audio.
+    Returns the job ID if prefetch was started, None if audio is already complete.
+
+    Args:
+        kb_audio_manager: The KBAudioManager instance
+        force_regenerate: If True, regenerate all audio even if complete
+        voice_id: Voice ID for TTS generation
+        provider: TTS provider to use
+
+    Returns:
+        Job ID if prefetch was started, None if already complete
+    """
+    module_id = "knowledge-bowl"
+
+    # Load module content
+    content = load_module_content(module_id)
+    if not content:
+        logger.warning(f"KB module content not found, cannot prefetch audio")
+        return None
+
+    # Check current coverage
+    coverage = kb_audio_manager.get_coverage_status(module_id, content)
+
+    logger.info(
+        f"KB audio coverage: {coverage.covered_segments}/{coverage.total_segments} "
+        f"segments ({coverage.coverage_percent:.1f}%)"
+    )
+
+    # Trigger prefetch if coverage is incomplete or force regenerate requested
+    if coverage.coverage_percent < 100.0 or force_regenerate:
+        logger.info(f"Starting KB audio prefetch (force={force_regenerate})")
+
+        # Start prefetch in background task
+        job_id = await kb_audio_manager.prefetch_module(
+            module_id=module_id,
+            module_content=content,
+            voice_id=voice_id,
+            provider=provider,
+            force_regenerate=force_regenerate,
+        )
+
+        return job_id
+    else:
+        logger.info("KB audio fully covered, no prefetch needed")
+        return None
+
+
+async def schedule_kb_audio_prefetch(app: web.Application) -> None:
+    """Schedule KB audio prefetch after server startup.
+
+    This should be called from a startup hook to trigger prefetch
+    in the background after the server is fully initialized.
+    """
+    # Wait a moment for server to be fully ready
+    await asyncio.sleep(2.0)
+
+    kb_audio_manager = app.get("kb_audio_manager")
+    if not kb_audio_manager:
+        logger.warning("KB audio manager not available, skipping prefetch")
+        return
+
+    try:
+        job_id = await check_and_prefetch_kb_audio(kb_audio_manager)
+        if job_id:
+            logger.info(f"KB audio prefetch started: {job_id}")
+    except Exception as e:
+        logger.error(f"KB audio prefetch failed: {e}")

@@ -622,6 +622,393 @@ async def handle_cancel_prefetch(request: web.Request) -> web.Response:
 
 
 # =============================================================================
+# Knowledge Bowl Audio Endpoints
+# =============================================================================
+
+
+async def handle_kb_audio_get(request: web.Request) -> web.Response:
+    """
+    GET /api/kb/audio/{question_id}/{segment}
+
+    Serve pre-generated KB audio for a question segment.
+
+    Path params:
+        question_id: Question identifier (e.g., "sci-phys-001")
+        segment: Segment type ("question", "answer", "hint", "explanation")
+
+    Query params:
+        hint_index: Index for hint segments (default: 0)
+        module_id: Module identifier (default: "knowledge-bowl")
+
+    Response:
+        Content-Type: audio/wav
+        X-KB-Cache-Status: hit|miss
+        X-KB-Duration-Seconds: 8.5
+    """
+    question_id = request.match_info.get("question_id")
+    segment = request.match_info.get("segment")
+    module_id = request.query.get("module_id", "knowledge-bowl")
+    hint_index = int(request.query.get("hint_index", "0"))
+
+    if not question_id or not segment:
+        return web.json_response(
+            {"error": "Missing question_id or segment"},
+            status=400,
+        )
+
+    valid_segments = {"question", "answer", "hint", "explanation"}
+    if segment not in valid_segments:
+        return web.json_response(
+            {"error": f"Invalid segment type. Valid: {list(valid_segments)}"},
+            status=400,
+        )
+
+    kb_audio = request.app.get("kb_audio_manager")
+    if not kb_audio:
+        return web.json_response(
+            {"error": "KB audio manager not initialized"},
+            status=503,
+        )
+
+    audio = await kb_audio.get_audio(
+        module_id=module_id,
+        question_id=question_id,
+        segment_type=segment,
+        hint_index=hint_index,
+    )
+
+    if audio is None:
+        return web.json_response(
+            {"error": "Audio not found", "question_id": question_id, "segment": segment},
+            status=404,
+        )
+
+    # Estimate duration from file size
+    duration = kb_audio._estimate_duration(len(audio))
+
+    return web.Response(
+        body=audio,
+        content_type="audio/wav",
+        headers={
+            "X-KB-Cache-Status": "hit",
+            "X-KB-Duration-Seconds": str(round(duration, 2)),
+            "X-KB-Sample-Rate": "24000",
+        },
+    )
+
+
+async def handle_kb_audio_batch(request: web.Request) -> web.Response:
+    """
+    POST /api/kb/audio/batch
+
+    Get metadata for multiple audio segments (for client prefetching).
+
+    Request body:
+    {
+        "module_id": "knowledge-bowl",
+        "question_ids": ["sci-phys-001", "sci-phys-002"],
+        "segments": ["question", "answer", "explanation"]
+    }
+
+    Response:
+    {
+        "segments": {
+            "sci-phys-001": {
+                "question": {"available": true, "duration": 8.5, "size": 204800},
+                "answer": {"available": true, "duration": 1.1, "size": 25600}
+            }
+        },
+        "total_size_bytes": 2097152,
+        "available_count": 6,
+        "missing_count": 0
+    }
+    """
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response(
+            {"error": "Invalid JSON body"},
+            status=400,
+        )
+
+    module_id = data.get("module_id", "knowledge-bowl")
+    question_ids = data.get("question_ids", [])
+    segments = data.get("segments", ["question", "answer", "explanation"])
+
+    if not question_ids:
+        return web.json_response(
+            {"error": "Missing question_ids"},
+            status=400,
+        )
+
+    kb_audio = request.app.get("kb_audio_manager")
+    if not kb_audio:
+        return web.json_response(
+            {"error": "KB audio manager not initialized"},
+            status=503,
+        )
+
+    manifest = await kb_audio.get_manifest(module_id)
+
+    result = {"segments": {}}
+    total_size = 0
+    available_count = 0
+    missing_count = 0
+
+    for qid in question_ids:
+        result["segments"][qid] = {}
+
+        for seg in segments:
+            if manifest and qid in manifest.segments and seg in manifest.segments[qid]:
+                entry = manifest.segments[qid][seg]
+                result["segments"][qid][seg] = {
+                    "available": True,
+                    "duration": entry.duration_seconds,
+                    "size": entry.size_bytes,
+                }
+                total_size += entry.size_bytes
+                available_count += 1
+            else:
+                result["segments"][qid][seg] = {
+                    "available": False,
+                    "duration": 0,
+                    "size": 0,
+                }
+                missing_count += 1
+
+    result["total_size_bytes"] = total_size
+    result["available_count"] = available_count
+    result["missing_count"] = missing_count
+
+    return web.json_response(result)
+
+
+async def handle_kb_prefetch(request: web.Request) -> web.Response:
+    """
+    POST /api/kb/prefetch
+
+    Trigger pre-generation of all TTS audio for a KB module.
+
+    Request body:
+    {
+        "module_id": "knowledge-bowl",
+        "voice_id": "nova",
+        "provider": "vibevoice",
+        "force_regenerate": false
+    }
+
+    Response:
+    {
+        "status": "started",
+        "job_id": "kb_prefetch_abc123",
+        "total_segments": 200
+    }
+    """
+    import json as json_module
+    from pathlib import Path
+
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response(
+            {"error": "Invalid JSON body"},
+            status=400,
+        )
+
+    module_id = data.get("module_id", "knowledge-bowl")
+    voice_id = data.get("voice_id", "nova")
+    provider = data.get("provider", "vibevoice")
+    force_regenerate = data.get("force_regenerate", False)
+
+    kb_audio = request.app.get("kb_audio_manager")
+    if not kb_audio:
+        return web.json_response(
+            {"error": "KB audio manager not initialized"},
+            status=503,
+        )
+
+    # Load module content
+    modules_dir = Path(__file__).parent / "data" / "modules"
+    content_path = modules_dir / f"{module_id}.json"
+
+    if not content_path.exists():
+        return web.json_response(
+            {"error": f"Module content not found: {module_id}"},
+            status=404,
+        )
+
+    try:
+        with open(content_path) as f:
+            module_content = json_module.load(f)
+    except Exception as e:
+        return web.json_response(
+            {"error": f"Failed to load module content: {e}"},
+            status=500,
+        )
+
+    # Extract segments to get count
+    segments = kb_audio.extract_segments(module_content)
+
+    # Start prefetch job
+    job_id = await kb_audio.prefetch_module(
+        module_id=module_id,
+        module_content=module_content,
+        voice_id=voice_id,
+        provider=provider,
+        force_regenerate=force_regenerate,
+    )
+
+    return web.json_response({
+        "status": "started",
+        "job_id": job_id,
+        "total_segments": len(segments),
+        "module_id": module_id,
+    })
+
+
+async def handle_kb_prefetch_status(request: web.Request) -> web.Response:
+    """
+    GET /api/kb/prefetch/{job_id}
+
+    Get status of a KB prefetch job.
+    """
+    job_id = request.match_info.get("job_id")
+    if not job_id:
+        return web.json_response(
+            {"error": "Missing job_id"},
+            status=400,
+        )
+
+    kb_audio = request.app.get("kb_audio_manager")
+    if not kb_audio:
+        return web.json_response(
+            {"error": "KB audio manager not initialized"},
+            status=503,
+        )
+
+    progress = kb_audio.get_progress(job_id)
+    if not progress:
+        return web.json_response(
+            {"error": f"Job not found: {job_id}"},
+            status=404,
+        )
+
+    return web.json_response(progress)
+
+
+async def handle_kb_manifest(request: web.Request) -> web.Response:
+    """
+    GET /api/kb/manifest/{module_id}
+
+    Get the audio manifest for a KB module.
+    """
+    module_id = request.match_info.get("module_id")
+    if not module_id:
+        return web.json_response(
+            {"error": "Missing module_id"},
+            status=400,
+        )
+
+    kb_audio = request.app.get("kb_audio_manager")
+    if not kb_audio:
+        return web.json_response(
+            {"error": "KB audio manager not initialized"},
+            status=503,
+        )
+
+    manifest = await kb_audio.get_manifest(module_id)
+    if not manifest:
+        return web.json_response(
+            {"error": f"No manifest found for module: {module_id}"},
+            status=404,
+        )
+
+    return web.json_response(manifest.to_dict())
+
+
+async def handle_kb_coverage(request: web.Request) -> web.Response:
+    """
+    GET /api/kb/coverage/{module_id}
+
+    Get audio coverage status for a KB module.
+    """
+    import json as json_module
+    from pathlib import Path
+
+    module_id = request.match_info.get("module_id")
+    if not module_id:
+        return web.json_response(
+            {"error": "Missing module_id"},
+            status=400,
+        )
+
+    kb_audio = request.app.get("kb_audio_manager")
+    if not kb_audio:
+        return web.json_response(
+            {"error": "KB audio manager not initialized"},
+            status=503,
+        )
+
+    # Load module content
+    modules_dir = Path(__file__).parent / "data" / "modules"
+    content_path = modules_dir / f"{module_id}.json"
+
+    if not content_path.exists():
+        return web.json_response(
+            {"error": f"Module content not found: {module_id}"},
+            status=404,
+        )
+
+    try:
+        with open(content_path) as f:
+            module_content = json_module.load(f)
+    except Exception as e:
+        return web.json_response(
+            {"error": f"Failed to load module content: {e}"},
+            status=500,
+        )
+
+    coverage = kb_audio.get_coverage_status(module_id, module_content)
+    return web.json_response(coverage.to_dict())
+
+
+async def handle_kb_feedback_audio(request: web.Request) -> web.Response:
+    """
+    GET /api/kb/feedback/{feedback_type}
+
+    Get pre-generated feedback audio (correct/incorrect).
+    """
+    feedback_type = request.match_info.get("feedback_type")
+    if feedback_type not in ("correct", "incorrect"):
+        return web.json_response(
+            {"error": "Invalid feedback type. Valid: correct, incorrect"},
+            status=400,
+        )
+
+    kb_audio = request.app.get("kb_audio_manager")
+    if not kb_audio:
+        return web.json_response(
+            {"error": "KB audio manager not initialized"},
+            status=503,
+        )
+
+    audio = await kb_audio.get_feedback_audio(feedback_type)
+    if audio is None:
+        return web.json_response(
+            {"error": f"Feedback audio not found: {feedback_type}"},
+            status=404,
+        )
+
+    return web.Response(
+        body=audio,
+        content_type="audio/wav",
+        headers={
+            "X-KB-Cache-Status": "hit",
+        },
+    )
+
+
+# =============================================================================
 # Route Registration
 # =============================================================================
 
@@ -646,5 +1033,14 @@ def register_tts_routes(app: web.Application):
     app.router.add_post("/api/tts/prefetch/topic", handle_prefetch_topic)
     app.router.add_get("/api/tts/prefetch/status/{job_id}", handle_prefetch_status)
     app.router.add_delete("/api/tts/prefetch/{job_id}", handle_cancel_prefetch)
+
+    # Knowledge Bowl audio endpoints
+    app.router.add_get("/api/kb/audio/{question_id}/{segment}", handle_kb_audio_get)
+    app.router.add_post("/api/kb/audio/batch", handle_kb_audio_batch)
+    app.router.add_post("/api/kb/prefetch", handle_kb_prefetch)
+    app.router.add_get("/api/kb/prefetch/{job_id}", handle_kb_prefetch_status)
+    app.router.add_get("/api/kb/manifest/{module_id}", handle_kb_manifest)
+    app.router.add_get("/api/kb/coverage/{module_id}", handle_kb_coverage)
+    app.router.add_get("/api/kb/feedback/{feedback_type}", handle_kb_feedback_audio)
 
     logger.info("TTS API routes registered")
