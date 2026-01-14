@@ -298,7 +298,7 @@ Git hooks automatically run quality checks before commits and pushes. This preve
 ```
 
 This installs:
-- **Pre-commit hook**: Runs SwiftLint, SwiftFormat, Ruff (Python), ESLint (JS/TS) on staged files
+- **Pre-commit hook**: Runs SwiftLint, SwiftFormat, Ruff (Python), Bandit (security), ESLint (JS/TS) on staged files
 - **Pre-push hook**: Runs quick tests before pushing
 
 **Optional tools for hooks** (install as needed):
@@ -306,12 +306,14 @@ This installs:
 # Swift linting and formatting (recommended)
 brew install swiftlint swiftformat
 
-# Python linting (for server work)
-pip install ruff
+# Python linting and security scanning (for server work)
+pip install ruff bandit
 
 # Secrets detection (optional but recommended)
 brew install gitleaks
 ```
+
+> **Note**: Path injection and other complex security issues are caught by CodeQL in CI. Bandit provides fast, pre-commit security scanning for common issues like command injection, hardcoded credentials, and unsafe deserialization.
 
 The hooks will skip checks for tools that aren't installed, but will run what's available.
 

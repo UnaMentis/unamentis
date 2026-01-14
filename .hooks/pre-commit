@@ -107,6 +107,21 @@ if [ -n "$PYTHON_FILES" ]; then
 fi
 
 # =============================================================================
+# Python Security Scan (Bandit)
+# =============================================================================
+# Bandit catches security issues like command injection, hardcoded passwords,
+# unsafe pickle use, etc. Note: Path injection is caught by CodeQL in CI.
+if [ -n "$PYTHON_FILES" ]; then
+    if command -v bandit &> /dev/null; then
+        echo -e "\n${YELLOW}Running Python security scan (Bandit)...${NC}"
+        echo "$PYTHON_FILES" | xargs bandit -q -ll 2>/dev/null || {
+            echo -e "${RED}Bandit found security issues. Please fix them before committing.${NC}"
+            FAILED=1
+        }
+    fi
+fi
+
+# =============================================================================
 # Python Coverage Check (Management Server)
 # =============================================================================
 MANAGEMENT_PYTHON_FILES=$(echo "$STAGED_FILES" | grep -E '^server/management/.*\.py$' || true)

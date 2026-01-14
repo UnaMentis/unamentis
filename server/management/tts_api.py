@@ -835,7 +835,6 @@ async def handle_kb_prefetch(request: web.Request) -> web.Response:
     }
     """
     import json as json_module
-    from pathlib import Path
 
     try:
         data = await request.json()

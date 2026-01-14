@@ -15,6 +15,7 @@ Modules are server-controlled:
 import asyncio
 import json
 import logging
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -51,10 +52,9 @@ def get_module_content_path(module_id: str) -> Path:
     """Get path to module content file.
 
     Returns the resolved (absolute) path to ensure path traversal protection.
-    Uses filesystem lookup to break taint flow - the returned path comes from
-    the actual filesystem, not from user input.
+    Uses validation, filesystem lookup, and path containment checks.
 
-    Raises ValueError if module_id is invalid or not found.
+    Raises ValueError if module_id is invalid or path escapes base directory.
     """
     if not validate_module_id(module_id):
         raise ValueError(f"Invalid module_id: {module_id}")
@@ -62,19 +62,27 @@ def get_module_content_path(module_id: str) -> Path:
     # Ensure directory exists for lookups
     ensure_modules_directory()
 
+    # Get resolved base directory
+    modules_resolved = MODULES_DIR.resolve()
+
     # Build mapping from filesystem - this breaks taint flow since paths
     # come from glob results, not user input
-    modules_resolved = MODULES_DIR.resolve()
     valid_modules = {f.stem: f.resolve() for f in modules_resolved.glob("*.json")}
 
     # Look up module by ID - returns path from filesystem, not from user input
     if module_id in valid_modules:
-        return valid_modules[module_id]
+        result_path = valid_modules[module_id]
+    else:
+        # Module doesn't exist yet - construct path safely
+        # After validation, we know module_id is safe (alphanumeric, hyphen, underscore)
+        result_path = (modules_resolved / f"{module_id}.json").resolve()
 
-    # Module doesn't exist yet - construct path safely
-    # After validation, we know module_id is safe (alphanumeric, hyphen, underscore)
-    new_path = modules_resolved / f"{module_id}.json"
-    return new_path.resolve()
+    # Path containment check - ensure result stays within modules directory
+    # This is the canonical pattern CodeQL recognizes for path traversal prevention
+    if not str(result_path).startswith(str(modules_resolved) + os.sep):
+        raise ValueError(f"Invalid module path for: {module_id}")
+
+    return result_path
 
 
 def ensure_modules_directory():
@@ -1603,7 +1611,7 @@ async def check_and_prefetch_kb_audio(
     # Load module content
     content = load_module_content(module_id)
     if not content:
-        logger.warning(f"KB module content not found, cannot prefetch audio")
+        logger.warning(f"KB module content not found for {module_id}, cannot prefetch audio")
         return None
 
     # Check current coverage
