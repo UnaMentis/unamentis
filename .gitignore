@@ -96,3 +96,6 @@ server/web/.next/
 # Archive files in project root
 /*.zip
 /*.tar.gz
+
+# Xcode test results
+*.xcresult

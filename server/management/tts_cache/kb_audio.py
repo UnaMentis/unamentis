@@ -185,6 +185,13 @@ class KBCoverageStatus:
     total_size_bytes: int
     is_complete: bool
 
+    @property
+    def coverage_percent(self) -> float:
+        """Calculate coverage percentage."""
+        if self.total_segments == 0:
+            return 0.0
+        return round(self.covered_segments / self.total_segments * 100, 1)
+
     def to_dict(self) -> Dict:
         return {
             "module_id": self.module_id,
@@ -195,10 +202,7 @@ class KBCoverageStatus:
             "missing_segments": self.missing_segments,
             "total_size_bytes": self.total_size_bytes,
             "is_complete": self.is_complete,
-            "coverage_percent": round(
-                (self.covered_segments / self.total_segments * 100)
-                if self.total_segments > 0 else 0, 1
-            ),
+            "coverage_percent": self.coverage_percent,
         }
 
 

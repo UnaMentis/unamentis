@@ -187,7 +187,8 @@ final class KBVoiceCoordinator: ObservableObject {
         }
 
         // Ensure audio engine is running for playback
-        if !await audioEngine.isRunning {
+        let engineRunning = await audioEngine.isRunning
+        if !engineRunning {
             do {
                 try await audioEngine.start()
             } catch {
@@ -318,7 +319,8 @@ final class KBVoiceCoordinator: ObservableObject {
         }
 
         // Ensure audio engine is running for playback
-        if !await audioEngine.isRunning {
+        let engineRunning = await audioEngine.isRunning
+        if !engineRunning {
             try await audioEngine.start()
         }
 
@@ -402,7 +404,7 @@ final class KBVoiceCoordinator: ObservableObject {
             }
     }
 
-    private func handleVADResult(_ result: VADResult, buffer: AVAudioPCMBuffer) async {
+    private func handleVADResult(_ result: VADResult, buffer: sending AVAudioPCMBuffer) async {
         // Only process VAD when listening and not speaking
         guard isListening && !isSpeaking else { return }
 

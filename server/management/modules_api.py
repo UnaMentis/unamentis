@@ -15,11 +15,10 @@ Modules are server-controlled:
 import asyncio
 import json
 import logging
-import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from aiohttp import web
 
@@ -51,6 +50,7 @@ def validate_module_id(module_id: str) -> bool:
 def get_module_content_path(module_id: str) -> Path:
     """Get path to module content file.
 
+    Returns the resolved (absolute) path to ensure path traversal protection.
     Raises ValueError if module_id contains path traversal attempts.
     """
     if not validate_module_id(module_id):
@@ -66,7 +66,8 @@ def get_module_content_path(module_id: str) -> Path:
     except ValueError:
         raise ValueError(f"Path traversal detected in module_id: {module_id}")
 
-    return content_path
+    # Return resolved path to ensure consistent, validated path usage
+    return resolved
 
 
 def ensure_modules_directory():
@@ -999,7 +1000,7 @@ def create_literature_domain() -> dict[str, Any]:
     return {
         "id": "literature",
         "name": "Literature",
-        "icon_name": "book",
+        "icon_name": "book.closed",
         "weight": 0.12,
         "subcategories": ["American Literature", "British Literature", "World Literature", "Poetry", "Drama"],
         "questions": [
@@ -1312,7 +1313,7 @@ def create_language_domain() -> dict[str, Any]:
     return {
         "id": "language",
         "name": "Language",
-        "icon_name": "textformat",
+        "icon_name": "character.book.closed",
         "weight": 0.05,
         "subcategories": ["Grammar", "Vocabulary", "Etymology", "Foreign Languages"],
         "questions": [
@@ -1364,7 +1365,7 @@ def create_technology_domain() -> dict[str, Any]:
     return {
         "id": "technology",
         "name": "Technology",
-        "icon_name": "desktopcomputer",
+        "icon_name": "cpu",
         "weight": 0.04,
         "subcategories": ["Computer Science", "Engineering", "Inventions", "Internet"],
         "questions": [
@@ -1520,7 +1521,7 @@ def create_miscellaneous_domain() -> dict[str, Any]:
     return {
         "id": "miscellaneous",
         "name": "Miscellaneous",
-        "icon_name": "questionmark.diamond",
+        "icon_name": "puzzlepiece",
         "weight": 0.01,
         "subcategories": ["General Knowledge", "Trivia", "Cross-Domain"],
         "questions": [
