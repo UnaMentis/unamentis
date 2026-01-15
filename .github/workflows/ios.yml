@@ -132,6 +132,31 @@ jobs:
         XCBEAUTIFY_RENDERER=github-actions \
         ./scripts/test-ci.sh
 
+    - name: Install xcresultparser
+      run: brew install xcresultparser
+
+    - name: Convert coverage to Cobertura XML
+      if: always()
+      run: |
+        if [ -d "UnitTestResults.xcresult" ]; then
+          xcresultparser \
+            --output-format cobertura \
+            "UnitTestResults.xcresult" > coverage.xml
+          echo "Coverage report generated:"
+          head -20 coverage.xml
+        else
+          echo "No xcresult bundle found, skipping coverage conversion"
+        fi
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v5
+      if: always()
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: coverage.xml
+        flags: ios
+        fail_ci_if_error: false
+
     - name: Upload Unit Test Results
       uses: actions/upload-artifact@v4
       if: always()
