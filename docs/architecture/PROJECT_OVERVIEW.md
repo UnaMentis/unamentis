@@ -815,7 +815,7 @@ UnaMentis implements a comprehensive **5-phase Code Quality Initiative** that en
 | DORA Metrics | Apache DevLake | Engineering health |
 | Feature Flags | Unleash | Safe rollouts |
 | Mutation Testing | mutmut, Stryker, Muter | Test quality validation |
-| Property Testing | Hypothesis, proptest | Invariant verification (45 Python, 12 Rust tests) |
+| Property Testing | Hypothesis, proptest | Invariant verification (70 Python, 37 Rust tests) |
 | Chaos Engineering | Custom runbook | Voice pipeline resilience |
 
 ### GitHub Actions Workflows

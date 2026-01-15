@@ -60,7 +60,14 @@ const OPS_TABS = [
   'models',
   'users',
 ] as const;
-const CONTENT_TABS = ['curricula', 'sources', 'plugins', 'imports', 'reprocess', 'tts-profiles'] as const;
+const CONTENT_TABS = [
+  'curricula',
+  'sources',
+  'plugins',
+  'imports',
+  'reprocess',
+  'tts-profiles',
+] as const;
 const ALL_TABS = [...OPS_TABS, ...CONTENT_TABS] as const;
 
 export function Dashboard() {

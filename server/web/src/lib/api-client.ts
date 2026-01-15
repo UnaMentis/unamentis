@@ -1783,11 +1783,7 @@ export async function deleteFOVSession(
 // TTS Profile Management APIs
 // =============================================================================
 
-import type {
-  TTSProfile,
-  CreateProfileData,
-  UpdateProfileData,
-} from '@/types';
+import type { TTSProfile, CreateProfileData, UpdateProfileData } from '@/types';
 
 // Mock TTS profiles for demo mode
 const mockTTSProfiles: TTSProfile[] = [
@@ -1852,9 +1848,7 @@ export async function getTTSProfiles(params?: {
       filtered = filtered.filter((p) => p.provider === params.provider);
     }
     if (params?.tags?.length) {
-      filtered = filtered.filter((p) =>
-        params.tags!.some((tag) => p.tags?.includes(tag))
-      );
+      filtered = filtered.filter((p) => params.tags!.some((tag) => p.tags?.includes(tag)));
     }
     if (params?.use_case) {
       filtered = filtered.filter((p) => p.use_case === params.use_case);

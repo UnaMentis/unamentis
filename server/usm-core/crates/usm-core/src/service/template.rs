@@ -223,3 +223,298 @@ mod tests {
         );
     }
 }
+
+/// Property-based tests for ServiceTemplate
+#[cfg(test)]
+mod property_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    // --- Strategies for generating test data ---
+
+    /// Generate valid port numbers
+    fn port_strategy() -> impl Strategy<Value = u16> {
+        1024u16..=65535u16
+    }
+
+    /// Generate valid port ranges where min <= max
+    fn port_range_strategy() -> impl Strategy<Value = (u16, u16)> {
+        (1024u16..=60000u16).prop_flat_map(|start| {
+            (Just(start), start..=65535u16)
+        })
+    }
+
+    /// Generate valid service identifiers
+    fn identifier_strategy() -> impl Strategy<Value = String> {
+        "[a-z][a-z0-9-]{1,20}".prop_map(|s| s.to_string())
+    }
+
+    /// Generate valid display names
+    fn display_name_strategy() -> impl Strategy<Value = String> {
+        "[A-Z][A-Za-z0-9 ]{1,30}".prop_map(|s| s.to_string())
+    }
+
+    // --- Property Tests: Port Validation ---
+
+    proptest! {
+        /// Port validation should be consistent with port range
+        #[test]
+        fn port_validation_matches_range(
+            port in port_strategy(),
+            range in port_range_strategy(),
+        ) {
+            let (min, max) = range;
+            let template = ServiceTemplate {
+                id: "test".to_string(),
+                display_name: "Test".to_string(),
+                description: None,
+                default_port: min,
+                port_range: Some((min, max)),
+                start_command: "echo".to_string(),
+                stop_command: None,
+                health_endpoint: None,
+                health_timeout_ms: 5000,
+                category: ServiceCategory::Core,
+                supports_multiple: false,
+                is_docker: false,
+                default_env: std::collections::HashMap::new(),
+            };
+
+            let expected = port >= min && port <= max;
+            prop_assert_eq!(
+                template.is_port_valid(port),
+                expected,
+                "Port {} validation failed for range [{}, {}]",
+                port, min, max
+            );
+        }
+
+        /// Templates without port range accept any port
+        #[test]
+        fn no_range_accepts_all_ports(port in port_strategy()) {
+            let template = ServiceTemplate {
+                id: "test".to_string(),
+                display_name: "Test".to_string(),
+                description: None,
+                default_port: 8000,
+                port_range: None,
+                start_command: "echo".to_string(),
+                stop_command: None,
+                health_endpoint: None,
+                health_timeout_ms: 5000,
+                category: ServiceCategory::Core,
+                supports_multiple: false,
+                is_docker: false,
+                default_env: std::collections::HashMap::new(),
+            };
+
+            prop_assert!(template.is_port_valid(port));
+        }
+    }
+
+    // --- Property Tests: Port Allocation ---
+
+    proptest! {
+        /// next_available_port returns valid port or None
+        #[test]
+        fn available_port_in_range(
+            range in port_range_strategy(),
+            used_count in 0usize..50,
+        ) {
+            let (min, max) = range;
+            let template = ServiceTemplate {
+                id: "test".to_string(),
+                display_name: "Test".to_string(),
+                description: None,
+                default_port: min,
+                port_range: Some((min, max)),
+                start_command: "echo".to_string(),
+                stop_command: None,
+                health_endpoint: None,
+                health_timeout_ms: 5000,
+                category: ServiceCategory::Core,
+                supports_multiple: true,
+                is_docker: false,
+                default_env: std::collections::HashMap::new(),
+            };
+
+            // Create list of used ports
+            let used_ports: Vec<u16> = (min..min.saturating_add(used_count as u16))
+                .collect();
+
+            if let Some(port) = template.next_available_port(&used_ports) {
+                // Returned port must be in range
+                prop_assert!(port >= min && port <= max,
+                    "Allocated port {} outside range [{}, {}]", port, min, max);
+                // Returned port must not be in used list
+                prop_assert!(!used_ports.contains(&port),
+                    "Allocated port {} was already used", port);
+            }
+        }
+
+        /// Full range returns None
+        #[test]
+        fn full_range_returns_none(range in port_range_strategy()) {
+            let (min, max) = range;
+            let template = ServiceTemplate {
+                id: "test".to_string(),
+                display_name: "Test".to_string(),
+                description: None,
+                default_port: min,
+                port_range: Some((min, max)),
+                start_command: "echo".to_string(),
+                stop_command: None,
+                health_endpoint: None,
+                health_timeout_ms: 5000,
+                category: ServiceCategory::Core,
+                supports_multiple: true,
+                is_docker: false,
+                default_env: std::collections::HashMap::new(),
+            };
+
+            // Use all ports in range
+            let used_ports: Vec<u16> = (min..=max).collect();
+            prop_assert_eq!(template.next_available_port(&used_ports), None);
+        }
+    }
+
+    // --- Property Tests: Command Substitution ---
+
+    proptest! {
+        /// Port substitution produces valid port string
+        #[test]
+        fn command_substitution_port(port in port_strategy()) {
+            let template = ServiceTemplate {
+                id: "test".to_string(),
+                display_name: "Test".to_string(),
+                description: None,
+                default_port: 8000,
+                port_range: None,
+                start_command: "server --port {port}".to_string(),
+                stop_command: None,
+                health_endpoint: None,
+                health_timeout_ms: 5000,
+                category: ServiceCategory::Core,
+                supports_multiple: false,
+                is_docker: false,
+                default_env: std::collections::HashMap::new(),
+            };
+
+            let instance = super::super::instance::ServiceInstance {
+                id: "test-instance".to_string(),
+                template_id: "test".to_string(),
+                port,
+                working_dir: None,
+                config_path: None,
+                version: None,
+                git_branch: None,
+                tags: vec![],
+                auto_start: false,
+                env_vars: std::collections::HashMap::new(),
+                status: super::super::instance::ServiceStatus::Stopped,
+                pid: None,
+                started_at: None,
+                created_at: chrono::Utc::now(),
+                created_via: "test".to_string(),
+            };
+
+            let cmd = template.build_start_command(&instance);
+            let expected = format!("server --port {}", port);
+            prop_assert_eq!(cmd, expected);
+        }
+
+        /// Health endpoint substitution produces valid URL
+        #[test]
+        fn health_endpoint_substitution(port in port_strategy()) {
+            let template = ServiceTemplate {
+                id: "test".to_string(),
+                display_name: "Test".to_string(),
+                description: None,
+                default_port: 8000,
+                port_range: None,
+                start_command: "echo".to_string(),
+                stop_command: None,
+                health_endpoint: Some("http://localhost:{port}/health".to_string()),
+                health_timeout_ms: 5000,
+                category: ServiceCategory::Core,
+                supports_multiple: false,
+                is_docker: false,
+                default_env: std::collections::HashMap::new(),
+            };
+
+            let instance = super::super::instance::ServiceInstance {
+                id: "test".to_string(),
+                template_id: "test".to_string(),
+                port,
+                working_dir: None,
+                config_path: None,
+                version: None,
+                git_branch: None,
+                tags: vec![],
+                auto_start: false,
+                env_vars: std::collections::HashMap::new(),
+                status: super::super::instance::ServiceStatus::Stopped,
+                pid: None,
+                started_at: None,
+                created_at: chrono::Utc::now(),
+                created_via: "test".to_string(),
+            };
+
+            let endpoint = template.build_health_endpoint(&instance);
+            let expected = Some(format!("http://localhost:{}/health", port));
+            prop_assert_eq!(endpoint, expected);
+        }
+    }
+
+    // --- Property Tests: Serialization ---
+
+    proptest! {
+        /// ServiceCategory serialization roundtrip
+        #[test]
+        fn category_json_roundtrip(idx in 0usize..5) {
+            let categories = [
+                ServiceCategory::Core,
+                ServiceCategory::Development,
+                ServiceCategory::Database,
+                ServiceCategory::Infrastructure,
+                ServiceCategory::Custom,
+            ];
+            let category = categories[idx % categories.len()];
+
+            let json = serde_json::to_string(&category).expect("JSON serialize failed");
+            let restored: ServiceCategory = serde_json::from_str(&json).expect("JSON deserialize failed");
+            prop_assert_eq!(category, restored);
+        }
+
+        /// ServiceTemplate serialization roundtrip
+        #[test]
+        fn template_json_roundtrip(
+            id in identifier_strategy(),
+            display_name in display_name_strategy(),
+            port in port_strategy(),
+        ) {
+            let template = ServiceTemplate {
+                id: id.clone(),
+                display_name: display_name.clone(),
+                description: Some("Test description".to_string()),
+                default_port: port,
+                port_range: Some((port, port.saturating_add(100).min(65535))),
+                start_command: "echo test".to_string(),
+                stop_command: None,
+                health_endpoint: Some(format!("http://localhost:{}/health", port)),
+                health_timeout_ms: 5000,
+                category: ServiceCategory::Core,
+                supports_multiple: true,
+                is_docker: false,
+                default_env: std::collections::HashMap::new(),
+            };
+
+            let json = serde_json::to_string(&template).expect("JSON serialize failed");
+            let restored: ServiceTemplate = serde_json::from_str(&json).expect("JSON deserialize failed");
+
+            prop_assert_eq!(restored.id, id);
+            prop_assert_eq!(restored.display_name, display_name);
+            prop_assert_eq!(restored.default_port, port);
+        }
+    }
+}

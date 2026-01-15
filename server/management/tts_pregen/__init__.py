@@ -17,6 +17,16 @@ from .models import (
 )
 from .repository import TTSPregenRepository
 from .profile_manager import TTSProfileManager
+from .comparison_manager import TTSComparisonManager
+from .job_manager import JobManager
+from .orchestrator import TTSPregenOrchestrator
+from .content_extractors import (
+    ContentExtractor,
+    KnowledgeBowlExtractor,
+    CurriculumExtractor,
+    CustomTextExtractor,
+    get_extractor,
+)
 
 __all__ = [
     # Models
@@ -36,4 +46,13 @@ __all__ = [
     # Services
     "TTSPregenRepository",
     "TTSProfileManager",
+    "TTSComparisonManager",
+    "JobManager",
+    "TTSPregenOrchestrator",
+    # Content Extractors
+    "ContentExtractor",
+    "KnowledgeBowlExtractor",
+    "CurriculumExtractor",
+    "CustomTextExtractor",
+    "get_extractor",
 ]

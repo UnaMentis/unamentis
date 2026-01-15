@@ -879,3 +879,446 @@ class TestInitialization:
         assert app.router.add_get.call_count > 0
         assert app.router.add_put.call_count > 0
         assert app.router.add_delete.call_count > 0
+
+
+# =============================================================================
+# Comparison Session API Tests
+# =============================================================================
+
+from tts_pregen.models import (
+    TTSComparisonSession,
+    TTSComparisonVariant,
+    TTSComparisonRating,
+)
+
+
+def create_mock_session(**kwargs) -> TTSComparisonSession:
+    """Create a mock comparison session for testing."""
+    defaults = {
+        "name": "Test Session",
+        "samples": [{"text": "Hello"}, {"text": "World"}],
+        "configurations": [
+            {"name": "A", "provider": "chatterbox", "voice_id": "nova"},
+            {"name": "B", "provider": "piper", "voice_id": "default"},
+        ],
+        "description": "Test session",
+    }
+    defaults.update(kwargs)
+    return TTSComparisonSession.create(**defaults)
+
+
+def create_mock_variant(session_id, **kwargs) -> TTSComparisonVariant:
+    """Create a mock variant for testing."""
+    defaults = {
+        "session_id": session_id,
+        "sample_index": 0,
+        "config_index": 0,
+        "text_content": "Test text",
+        "tts_config": {"provider": "chatterbox", "voice_id": "nova"},
+    }
+    defaults.update(kwargs)
+    return TTSComparisonVariant.create(**defaults)
+
+
+@pytest.fixture
+def mock_comparison_manager():
+    """Create a mock comparison manager."""
+    return AsyncMock()
+
+
+@pytest.fixture
+def mock_session():
+    """Create a sample mock session."""
+    return create_mock_session()
+
+
+class TestCreateSessionAPI:
+    """Tests for POST /api/tts/pregen/sessions."""
+
+    @pytest.mark.asyncio
+    async def test_create_session_success(self, mock_comparison_manager, mock_session):
+        """Test successful session creation."""
+        mock_comparison_manager.create_session = AsyncMock(return_value=mock_session)
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_create_session
+
+            request = AsyncMock()
+            request.json = AsyncMock(return_value={
+                "name": "Test Session",
+                "samples": [{"text": "Hello"}],
+                "configurations": [{"name": "A", "provider": "chatterbox", "voice_id": "nova"}],
+            })
+
+            response = await handle_create_session(request)
+
+            assert response.status == 200
+            body = json.loads(response.text)
+            assert body["success"] is True
+            assert "session" in body
+
+    @pytest.mark.asyncio
+    async def test_create_session_missing_name(self, mock_comparison_manager):
+        """Test session creation without name."""
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_create_session
+
+            request = AsyncMock()
+            request.json = AsyncMock(return_value={
+                "samples": [{"text": "Hello"}],
+                "configurations": [{"name": "A", "provider": "chatterbox", "voice_id": "nova"}],
+            })
+
+            response = await handle_create_session(request)
+
+            assert response.status == 400
+            body = json.loads(response.text)
+            assert "name is required" in body["error"]
+
+    @pytest.mark.asyncio
+    async def test_create_session_missing_samples(self, mock_comparison_manager):
+        """Test session creation without samples."""
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_create_session
+
+            request = AsyncMock()
+            request.json = AsyncMock(return_value={
+                "name": "Test",
+                "configurations": [{"name": "A", "provider": "chatterbox", "voice_id": "nova"}],
+            })
+
+            response = await handle_create_session(request)
+
+            assert response.status == 400
+            body = json.loads(response.text)
+            assert "samples is required" in body["error"]
+
+    @pytest.mark.asyncio
+    async def test_create_session_missing_configurations(self, mock_comparison_manager):
+        """Test session creation without configurations."""
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_create_session
+
+            request = AsyncMock()
+            request.json = AsyncMock(return_value={
+                "name": "Test",
+                "samples": [{"text": "Hello"}],
+            })
+
+            response = await handle_create_session(request)
+
+            assert response.status == 400
+            body = json.loads(response.text)
+            assert "configurations is required" in body["error"]
+
+
+class TestListSessionsAPI:
+    """Tests for GET /api/tts/pregen/sessions."""
+
+    @pytest.mark.asyncio
+    async def test_list_sessions_success(self, mock_comparison_manager, mock_session):
+        """Test successful session listing."""
+        mock_comparison_manager.list_sessions = AsyncMock(return_value=([mock_session], 1))
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_list_sessions
+
+            request = AsyncMock()
+            request.query = {}
+
+            response = await handle_list_sessions(request)
+
+            assert response.status == 200
+            body = json.loads(response.text)
+            assert body["success"] is True
+            assert len(body["sessions"]) == 1
+            assert body["total"] == 1
+
+    @pytest.mark.asyncio
+    async def test_list_sessions_with_status_filter(self, mock_comparison_manager):
+        """Test listing sessions with status filter."""
+        mock_comparison_manager.list_sessions = AsyncMock(return_value=([], 0))
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_list_sessions
+
+            request = AsyncMock()
+            request.query = {"status": "ready"}
+
+            response = await handle_list_sessions(request)
+
+            assert response.status == 200
+            mock_comparison_manager.list_sessions.assert_called_once()
+
+
+class TestGetSessionAPI:
+    """Tests for GET /api/tts/pregen/sessions/{session_id}."""
+
+    @pytest.mark.asyncio
+    async def test_get_session_success(self, mock_comparison_manager, mock_session):
+        """Test getting an existing session."""
+        mock_variant = create_mock_variant(mock_session.id)
+        mock_comparison_manager.get_session_with_variants = AsyncMock(
+            return_value=(mock_session, [mock_variant], {})
+        )
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_get_session
+
+            request = AsyncMock()
+            request.match_info = {"session_id": str(mock_session.id)}
+
+            response = await handle_get_session(request)
+
+            assert response.status == 200
+            body = json.loads(response.text)
+            assert body["success"] is True
+            assert "session" in body
+            assert "variants" in body
+
+    @pytest.mark.asyncio
+    async def test_get_session_not_found(self, mock_comparison_manager):
+        """Test getting non-existent session."""
+        mock_comparison_manager.get_session_with_variants = AsyncMock(
+            return_value=(None, [], {})
+        )
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_get_session
+
+            request = AsyncMock()
+            request.match_info = {"session_id": str(uuid4())}
+
+            response = await handle_get_session(request)
+
+            assert response.status == 404
+
+    @pytest.mark.asyncio
+    async def test_get_session_invalid_uuid(self, mock_comparison_manager):
+        """Test getting session with invalid UUID."""
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_get_session
+
+            request = AsyncMock()
+            request.match_info = {"session_id": "invalid-uuid"}
+
+            response = await handle_get_session(request)
+
+            assert response.status == 400
+
+
+class TestDeleteSessionAPI:
+    """Tests for DELETE /api/tts/pregen/sessions/{session_id}."""
+
+    @pytest.mark.asyncio
+    async def test_delete_session_success(self, mock_comparison_manager, mock_session):
+        """Test successful session deletion."""
+        mock_comparison_manager.delete_session = AsyncMock(return_value=True)
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_delete_session
+
+            request = AsyncMock()
+            request.match_info = {"session_id": str(mock_session.id)}
+
+            response = await handle_delete_session(request)
+
+            assert response.status == 200
+            body = json.loads(response.text)
+            assert body["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_delete_session_not_found(self, mock_comparison_manager):
+        """Test deleting non-existent session."""
+        mock_comparison_manager.delete_session = AsyncMock(return_value=False)
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_delete_session
+
+            request = AsyncMock()
+            request.match_info = {"session_id": str(uuid4())}
+
+            response = await handle_delete_session(request)
+
+            assert response.status == 404
+
+
+class TestGenerateVariantsAPI:
+    """Tests for POST /api/tts/pregen/sessions/{session_id}/generate."""
+
+    @pytest.mark.asyncio
+    async def test_generate_variants_success(self, mock_comparison_manager, mock_session):
+        """Test successful variant generation."""
+        mock_comparison_manager.generate_variants = AsyncMock(return_value=mock_session)
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_generate_session_variants
+
+            request = AsyncMock()
+            request.match_info = {"session_id": str(mock_session.id)}
+            request.json = AsyncMock(return_value={})
+
+            response = await handle_generate_session_variants(request)
+
+            assert response.status == 200
+            body = json.loads(response.text)
+            assert body["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_generate_variants_regenerate(self, mock_comparison_manager, mock_session):
+        """Test regenerate all variants."""
+        mock_comparison_manager.generate_variants = AsyncMock(return_value=mock_session)
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_generate_session_variants
+
+            request = AsyncMock()
+            request.match_info = {"session_id": str(mock_session.id)}
+            request.json = AsyncMock(return_value={"regenerate": True})
+
+            response = await handle_generate_session_variants(request)
+
+            assert response.status == 200
+            mock_comparison_manager.generate_variants.assert_called_once()
+            call_kwargs = mock_comparison_manager.generate_variants.call_args[1]
+            assert call_kwargs.get("regenerate") is True
+
+    @pytest.mark.asyncio
+    async def test_generate_variants_no_tts_pool(self, mock_comparison_manager):
+        """Test generation fails without TTS pool."""
+        mock_comparison_manager.generate_variants = AsyncMock(
+            side_effect=ValueError("No TTS pool available")
+        )
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_generate_session_variants
+
+            request = AsyncMock()
+            request.match_info = {"session_id": str(uuid4())}
+            request.json = AsyncMock(return_value={})
+
+            response = await handle_generate_session_variants(request)
+
+            assert response.status == 400
+
+
+class TestRateVariantAPI:
+    """Tests for POST /api/tts/pregen/variants/{variant_id}/rate."""
+
+    @pytest.mark.asyncio
+    async def test_rate_variant_success(self, mock_comparison_manager, mock_session):
+        """Test successful variant rating."""
+        variant = create_mock_variant(mock_session.id)
+        rating = TTSComparisonRating.create(variant_id=variant.id, rating=4, notes="Good")
+        mock_comparison_manager.rate_variant = AsyncMock(return_value=rating)
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_rate_variant
+
+            request = AsyncMock()
+            request.match_info = {"variant_id": str(variant.id)}
+            request.json = AsyncMock(return_value={"rating": 4, "notes": "Good"})
+
+            response = await handle_rate_variant(request)
+
+            assert response.status == 200
+            body = json.loads(response.text)
+            assert body["success"] is True
+            assert "rating" in body
+
+    @pytest.mark.asyncio
+    async def test_rate_variant_missing_rating(self, mock_comparison_manager):
+        """Test rating without rating value."""
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_rate_variant
+
+            request = AsyncMock()
+            request.match_info = {"variant_id": str(uuid4())}
+            request.json = AsyncMock(return_value={})
+
+            response = await handle_rate_variant(request)
+
+            assert response.status == 400
+            body = json.loads(response.text)
+            assert "rating is required" in body["error"]
+
+    @pytest.mark.asyncio
+    async def test_rate_variant_invalid_rating(self, mock_comparison_manager):
+        """Test rating with invalid value."""
+        mock_comparison_manager.rate_variant = AsyncMock(
+            side_effect=ValueError("Rating must be between 1 and 5")
+        )
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_rate_variant
+
+            request = AsyncMock()
+            request.match_info = {"variant_id": str(uuid4())}
+            request.json = AsyncMock(return_value={"rating": 10})
+
+            response = await handle_rate_variant(request)
+
+            assert response.status == 400
+
+
+class TestGetSessionSummaryAPI:
+    """Tests for GET /api/tts/pregen/sessions/{session_id}/summary."""
+
+    @pytest.mark.asyncio
+    async def test_get_summary_success(self, mock_comparison_manager, mock_session):
+        """Test successful summary retrieval."""
+        mock_comparison_manager.get_session_summary = AsyncMock(
+            return_value={
+                "session_id": str(mock_session.id),
+                "session_name": mock_session.name,
+                "status": "ready",
+                "configuration_rankings": [],
+            }
+        )
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_get_session_summary
+
+            request = AsyncMock()
+            request.match_info = {"session_id": str(mock_session.id)}
+
+            response = await handle_get_session_summary(request)
+
+            assert response.status == 200
+            body = json.loads(response.text)
+            assert body["success"] is True
+            assert "summary" in body
+
+    @pytest.mark.asyncio
+    async def test_get_summary_not_found(self, mock_comparison_manager):
+        """Test summary for non-existent session."""
+        mock_comparison_manager.get_session_summary = AsyncMock(return_value=None)
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_get_session_summary
+
+            request = AsyncMock()
+            request.match_info = {"session_id": str(uuid4())}
+
+            response = await handle_get_session_summary(request)
+
+            assert response.status == 404
+
+
+class TestGetVariantAudioAPI:
+    """Tests for GET /api/tts/pregen/variants/{variant_id}/audio."""
+
+    @pytest.mark.asyncio
+    async def test_get_audio_not_found(self, mock_comparison_manager):
+        """Test getting audio for variant without file."""
+        mock_comparison_manager.get_audio_file_path = AsyncMock(return_value=None)
+
+        with patch("tts_pregen_api._get_comparison_manager", return_value=mock_comparison_manager):
+            from tts_pregen_api import handle_get_variant_audio
+
+            request = AsyncMock()
+            request.match_info = {"variant_id": str(uuid4())}
+
+            response = await handle_get_variant_audio(request)
+
+            assert response.status == 404

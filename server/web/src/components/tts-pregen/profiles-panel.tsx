@@ -167,7 +167,9 @@ export function ProfilesPanel() {
                 type="text"
                 placeholder="Search profiles..."
                 value={searchQuery}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSearchQuery(e.target.value)
+                }
                 className="w-full pl-9 pr-3 py-2 bg-slate-900/50 border border-slate-700 rounded-md text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500"
               />
             </div>
@@ -175,7 +177,9 @@ export function ProfilesPanel() {
             {/* Provider Filter */}
             <select
               value={providerFilter}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setProviderFilter(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setProviderFilter(e.target.value)
+              }
               className="px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 min-w-[150px]"
             >
               {PROVIDERS.map((p) => (

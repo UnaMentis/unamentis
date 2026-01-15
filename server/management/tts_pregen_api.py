@@ -12,7 +12,7 @@ management dashboard, enabling users to:
 import logging
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 from uuid import UUID
 
 from aiohttp import web
@@ -694,8 +694,17 @@ async def handle_create_session(request: web.Request) -> web.Response:
                 {"success": False, "error": "name is required"}, status=400
             )
 
-        samples = data.get("samples", [])
-        configurations = data.get("configurations", [])
+        samples = data.get("samples")
+        if not samples:
+            return web.json_response(
+                {"success": False, "error": "samples is required"}, status=400
+            )
+
+        configurations = data.get("configurations")
+        if not configurations:
+            return web.json_response(
+                {"success": False, "error": "configurations is required"}, status=400
+            )
 
         session = await manager.create_session(
             name=name,
@@ -906,6 +915,435 @@ async def handle_get_variant_audio(request: web.Request) -> web.Response:
 
 
 # =============================================================================
+# Batch Job Handlers
+# =============================================================================
+
+
+def _get_job_manager():
+    """Get the job manager from the app context."""
+    from tts_pregen import JobManager
+    # Get from app context (will be set during init)
+    return _app_ref.get("job_manager")
+
+
+def _get_orchestrator():
+    """Get the orchestrator from the app context."""
+    from tts_pregen import TTSPregenOrchestrator
+    return _app_ref.get("orchestrator")
+
+
+# Store app reference for handler access
+_app_ref: Dict[str, Any] = {}
+
+
+async def handle_create_job(request: web.Request) -> web.Response:
+    """Create a new batch TTS generation job."""
+    try:
+        manager = _get_job_manager()
+        if not manager:
+            return web.json_response(
+                {"success": False, "error": "Job manager not initialized"}, status=500
+            )
+
+        data = await request.json()
+
+        name = data.get("name")
+        if not name:
+            return web.json_response(
+                {"success": False, "error": "name is required"}, status=400
+            )
+
+        source_type = data.get("source_type", "custom")
+        source_id = data.get("source_id")
+        profile_id = data.get("profile_id")
+        tts_config = data.get("tts_config")
+        items = data.get("items", [])
+        output_format = data.get("output_format", "wav")
+        normalize_volume = data.get("normalize_volume", False)
+
+        # If source_type is knowledge-bowl, extract items
+        if source_type == "knowledge-bowl" and not items:
+            from tts_pregen import KnowledgeBowlExtractor
+            extractor = KnowledgeBowlExtractor(
+                include_questions=data.get("include_questions", True),
+                include_answers=data.get("include_answers", True),
+                include_hints=data.get("include_hints", True),
+                include_explanations=data.get("include_explanations", True),
+                domains=data.get("domains"),
+                difficulties=data.get("difficulties"),
+            )
+            items = extractor.extract()
+
+        if not items:
+            return web.json_response(
+                {"success": False, "error": "No items to process"}, status=400
+            )
+
+        profile_uuid = None
+        if profile_id:
+            profile_uuid = _parse_uuid(profile_id, "profile_id")
+
+        job = await manager.create_job(
+            name=name,
+            source_type=source_type,
+            items=items,
+            profile_id=profile_uuid,
+            tts_config=tts_config,
+            source_id=source_id,
+            output_format=output_format,
+            normalize_volume=normalize_volume,
+        )
+
+        return web.json_response({
+            "success": True,
+            "job": job.to_dict(),
+        })
+
+    except ValueError as e:
+        return web.json_response({"success": False, "error": str(e)}, status=400)
+    except Exception as e:
+        logger.exception("Error creating job")
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_list_jobs(request: web.Request) -> web.Response:
+    """List batch jobs with optional filtering."""
+    try:
+        manager = _get_job_manager()
+        if not manager:
+            return web.json_response(
+                {"success": False, "error": "Job manager not initialized"}, status=500
+            )
+
+        # Parse query parameters
+        status = request.query.get("status")
+        job_type = request.query.get("job_type")
+        source_type = request.query.get("source_type")
+        limit = int(request.query.get("limit", "50"))
+        offset = int(request.query.get("offset", "0"))
+
+        status_enum = None
+        if status:
+            from tts_pregen import JobStatus
+            try:
+                status_enum = JobStatus(status)
+            except ValueError:
+                return web.json_response(
+                    {"success": False, "error": f"Invalid status: {status}"}, status=400
+                )
+
+        jobs = await manager.list_jobs(
+            status=status_enum,
+            job_type=job_type,
+            source_type=source_type,
+            limit=limit,
+            offset=offset,
+        )
+
+        return web.json_response({
+            "success": True,
+            "jobs": [j.to_dict() for j in jobs],
+        })
+
+    except Exception as e:
+        logger.exception("Error listing jobs")
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_get_job(request: web.Request) -> web.Response:
+    """Get a specific job by ID."""
+    try:
+        manager = _get_job_manager()
+        if not manager:
+            return web.json_response(
+                {"success": False, "error": "Job manager not initialized"}, status=500
+            )
+
+        job_id = _parse_uuid(request.match_info["job_id"], "job_id")
+        job = await manager.get_job(job_id)
+
+        if not job:
+            return web.json_response(
+                {"success": False, "error": "Job not found"}, status=404
+            )
+
+        return web.json_response({
+            "success": True,
+            "job": job.to_dict(),
+        })
+
+    except ValueError as e:
+        return web.json_response({"success": False, "error": str(e)}, status=400)
+    except Exception as e:
+        logger.exception("Error getting job")
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_get_job_progress(request: web.Request) -> web.Response:
+    """Get progress information for a job."""
+    try:
+        manager = _get_job_manager()
+        if not manager:
+            return web.json_response(
+                {"success": False, "error": "Job manager not initialized"}, status=500
+            )
+
+        job_id = _parse_uuid(request.match_info["job_id"], "job_id")
+        progress = await manager.get_job_progress(job_id)
+
+        if not progress:
+            return web.json_response(
+                {"success": False, "error": "Job not found"}, status=404
+            )
+
+        return web.json_response({
+            "success": True,
+            "progress": progress,
+        })
+
+    except ValueError as e:
+        return web.json_response({"success": False, "error": str(e)}, status=400)
+    except Exception as e:
+        logger.exception("Error getting job progress")
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_delete_job(request: web.Request) -> web.Response:
+    """Delete a job and all its items."""
+    try:
+        manager = _get_job_manager()
+        if not manager:
+            return web.json_response(
+                {"success": False, "error": "Job manager not initialized"}, status=500
+            )
+
+        job_id = _parse_uuid(request.match_info["job_id"], "job_id")
+        deleted = await manager.delete_job(job_id)
+
+        if not deleted:
+            return web.json_response(
+                {"success": False, "error": "Job not found"}, status=404
+            )
+
+        return web.json_response({"success": True})
+
+    except ValueError as e:
+        return web.json_response({"success": False, "error": str(e)}, status=400)
+    except Exception as e:
+        logger.exception("Error deleting job")
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_start_job(request: web.Request) -> web.Response:
+    """Start a pending job."""
+    try:
+        orchestrator = _get_orchestrator()
+        if not orchestrator:
+            return web.json_response(
+                {"success": False, "error": "Orchestrator not initialized"}, status=500
+            )
+
+        job_id = _parse_uuid(request.match_info["job_id"], "job_id")
+        started = await orchestrator.start_job(job_id)
+
+        if not started:
+            manager = _get_job_manager()
+            job = await manager.get_job(job_id) if manager else None
+            if not job:
+                return web.json_response(
+                    {"success": False, "error": "Job not found"}, status=404
+                )
+            return web.json_response(
+                {"success": False, "error": f"Cannot start job in status {job.status.value}"}, status=400
+            )
+
+        return web.json_response({"success": True})
+
+    except ValueError as e:
+        return web.json_response({"success": False, "error": str(e)}, status=400)
+    except Exception as e:
+        logger.exception("Error starting job")
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_pause_job(request: web.Request) -> web.Response:
+    """Pause a running job."""
+    try:
+        manager = _get_job_manager()
+        orchestrator = _get_orchestrator()
+        if not manager or not orchestrator:
+            return web.json_response(
+                {"success": False, "error": "System not initialized"}, status=500
+            )
+
+        job_id = _parse_uuid(request.match_info["job_id"], "job_id")
+
+        # Signal orchestrator to stop
+        if orchestrator.is_job_running(job_id):
+            await orchestrator.stop_job(job_id)
+
+        job = await manager.pause_job(job_id)
+
+        if not job:
+            return web.json_response(
+                {"success": False, "error": "Job not found"}, status=404
+            )
+
+        return web.json_response({
+            "success": True,
+            "job": job.to_dict(),
+        })
+
+    except ValueError as e:
+        return web.json_response({"success": False, "error": str(e)}, status=400)
+    except Exception as e:
+        logger.exception("Error pausing job")
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_resume_job(request: web.Request) -> web.Response:
+    """Resume a paused job."""
+    try:
+        orchestrator = _get_orchestrator()
+        if not orchestrator:
+            return web.json_response(
+                {"success": False, "error": "Orchestrator not initialized"}, status=500
+            )
+
+        job_id = _parse_uuid(request.match_info["job_id"], "job_id")
+        started = await orchestrator.start_job(job_id)
+
+        if not started:
+            return web.json_response(
+                {"success": False, "error": "Cannot resume job"}, status=400
+            )
+
+        return web.json_response({"success": True})
+
+    except ValueError as e:
+        return web.json_response({"success": False, "error": str(e)}, status=400)
+    except Exception as e:
+        logger.exception("Error resuming job")
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_retry_failed_items(request: web.Request) -> web.Response:
+    """Reset failed items in a job to pending for retry."""
+    try:
+        manager = _get_job_manager()
+        if not manager:
+            return web.json_response(
+                {"success": False, "error": "Job manager not initialized"}, status=500
+            )
+
+        job_id = _parse_uuid(request.match_info["job_id"], "job_id")
+        count = await manager.retry_failed_items(job_id)
+
+        return web.json_response({
+            "success": True,
+            "reset_count": count,
+        })
+
+    except ValueError as e:
+        return web.json_response({"success": False, "error": str(e)}, status=400)
+    except Exception as e:
+        logger.exception("Error retrying failed items")
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_get_job_items(request: web.Request) -> web.Response:
+    """Get items for a job with optional filtering."""
+    try:
+        manager = _get_job_manager()
+        if not manager:
+            return web.json_response(
+                {"success": False, "error": "Job manager not initialized"}, status=500
+            )
+
+        job_id = _parse_uuid(request.match_info["job_id"], "job_id")
+
+        # Parse query parameters
+        status = request.query.get("status")
+        limit = int(request.query.get("limit", "100"))
+        offset = int(request.query.get("offset", "0"))
+
+        status_enum = None
+        if status:
+            from tts_pregen import ItemStatus
+            try:
+                status_enum = ItemStatus(status)
+            except ValueError:
+                return web.json_response(
+                    {"success": False, "error": f"Invalid status: {status}"}, status=400
+                )
+
+        items = await manager.get_job_items(
+            job_id=job_id,
+            status=status_enum,
+            limit=limit,
+            offset=offset,
+        )
+
+        return web.json_response({
+            "success": True,
+            "items": [i.to_dict() for i in items],
+        })
+
+    except ValueError as e:
+        return web.json_response({"success": False, "error": str(e)}, status=400)
+    except Exception as e:
+        logger.exception("Error getting job items")
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+async def handle_extract_content(request: web.Request) -> web.Response:
+    """Extract content from a source for preview before creating a job."""
+    try:
+        data = await request.json()
+
+        source_type = data.get("source_type", "custom")
+
+        if source_type == "knowledge-bowl":
+            from tts_pregen import KnowledgeBowlExtractor
+            extractor = KnowledgeBowlExtractor(
+                include_questions=data.get("include_questions", True),
+                include_answers=data.get("include_answers", True),
+                include_hints=data.get("include_hints", True),
+                include_explanations=data.get("include_explanations", True),
+                domains=data.get("domains"),
+                difficulties=data.get("difficulties"),
+            )
+            items = extractor.extract()
+            stats = extractor.get_stats()
+            return web.json_response({
+                "success": True,
+                "items": items[:100],  # Return first 100 for preview
+                "total_count": len(items),
+                "stats": stats,
+            })
+
+        elif source_type == "custom":
+            texts = data.get("texts", [])
+            from tts_pregen import CustomTextExtractor
+            extractor = CustomTextExtractor(texts=texts)
+            items = extractor.extract()
+            return web.json_response({
+                "success": True,
+                "items": items,
+                "total_count": len(items),
+            })
+
+        else:
+            return web.json_response(
+                {"success": False, "error": f"Unsupported source type: {source_type}"}, status=400
+            )
+
+    except Exception as e:
+        logger.exception("Error extracting content")
+        return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+# =============================================================================
 # Initialization and Route Registration
 # =============================================================================
 
@@ -943,6 +1381,24 @@ def init_tts_pregen_system(app: web.Application):
         tts_pool=tts_pool,
         storage_dir=str(PREGEN_OUTPUT_DIR / "comparisons"),
     )
+
+    # Initialize job manager and orchestrator
+    from tts_pregen import JobManager, TTSPregenOrchestrator
+    job_manager = JobManager(
+        repository=repo,
+        base_output_dir=str(PREGEN_OUTPUT_DIR),
+    )
+    _app_ref["job_manager"] = job_manager
+
+    if tts_pool:
+        orchestrator = TTSPregenOrchestrator(
+            job_manager=job_manager,
+            tts_resource_pool=tts_pool,
+        )
+        _app_ref["orchestrator"] = orchestrator
+    else:
+        logger.warning("TTS resource pool not available, batch job execution disabled")
+        _app_ref["orchestrator"] = None
 
     logger.info("TTS pre-generation system initialized")
 
@@ -987,5 +1443,20 @@ def register_tts_pregen_routes(app: web.Application):
     app.router.add_get("/api/tts/pregen/sessions/{session_id}/summary", handle_get_session_summary)
     app.router.add_post("/api/tts/pregen/variants/{variant_id}/rate", handle_rate_variant)
     app.router.add_get("/api/tts/pregen/variants/{variant_id}/audio", handle_get_variant_audio)
+
+    # Batch job routes
+    app.router.add_post("/api/tts/pregen/jobs", handle_create_job)
+    app.router.add_get("/api/tts/pregen/jobs", handle_list_jobs)
+    app.router.add_get("/api/tts/pregen/jobs/{job_id}", handle_get_job)
+    app.router.add_get("/api/tts/pregen/jobs/{job_id}/progress", handle_get_job_progress)
+    app.router.add_delete("/api/tts/pregen/jobs/{job_id}", handle_delete_job)
+    app.router.add_post("/api/tts/pregen/jobs/{job_id}/start", handle_start_job)
+    app.router.add_post("/api/tts/pregen/jobs/{job_id}/pause", handle_pause_job)
+    app.router.add_post("/api/tts/pregen/jobs/{job_id}/resume", handle_resume_job)
+    app.router.add_post("/api/tts/pregen/jobs/{job_id}/retry-failed", handle_retry_failed_items)
+    app.router.add_get("/api/tts/pregen/jobs/{job_id}/items", handle_get_job_items)
+
+    # Content extraction (preview)
+    app.router.add_post("/api/tts/pregen/extract", handle_extract_content)
 
     logger.info("TTS pre-generation API routes registered")

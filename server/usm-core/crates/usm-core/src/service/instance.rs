@@ -267,3 +267,300 @@ mod tests {
         assert_eq!(ServiceStatus::Error.to_string(), "error");
     }
 }
+
+/// Property-based tests for ServiceInstance
+#[cfg(test)]
+mod property_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    // --- Strategies ---
+
+    fn identifier_strategy() -> impl Strategy<Value = String> {
+        "[a-z][a-z0-9-]{1,20}".prop_map(|s| s.to_string())
+    }
+
+    fn tag_strategy() -> impl Strategy<Value = String> {
+        "[a-z][a-z0-9-]{1,10}".prop_map(|s| s.to_string())
+    }
+
+    fn tags_strategy() -> impl Strategy<Value = Vec<String>> {
+        prop::collection::vec(tag_strategy(), 0..5)
+    }
+
+    fn port_strategy() -> impl Strategy<Value = u16> {
+        1024u16..=65535u16
+    }
+
+    // --- Property Tests: Tag Matching ---
+
+    proptest! {
+        /// has_tag is reflexive: if tag is in list, has_tag returns true
+        #[test]
+        fn has_tag_finds_existing_tags(
+            instance_id in identifier_strategy(),
+            template_id in identifier_strategy(),
+            tags in tags_strategy(),
+        ) {
+            let config = InstanceConfig {
+                instance_id,
+                template_id,
+                port: Some(8080),
+                working_dir: None,
+                config_path: None,
+                version: None,
+                git_branch: None,
+                tags: tags.clone(),
+                auto_start: false,
+                env_vars: Default::default(),
+            };
+
+            let instance = ServiceInstance::from_config(config).unwrap();
+
+            for tag in &tags {
+                prop_assert!(instance.has_tag(tag),
+                    "Instance should have tag '{}' but has_tag returned false", tag);
+            }
+        }
+
+        /// has_tag returns false for non-existent tags
+        #[test]
+        fn has_tag_rejects_missing_tags(
+            instance_id in identifier_strategy(),
+            template_id in identifier_strategy(),
+            tags in tags_strategy(),
+            missing_tag in "missing-[a-z]{5}",
+        ) {
+            let config = InstanceConfig {
+                instance_id,
+                template_id,
+                port: Some(8080),
+                working_dir: None,
+                config_path: None,
+                version: None,
+                git_branch: None,
+                tags: tags.clone(),
+                auto_start: false,
+                env_vars: Default::default(),
+            };
+
+            let instance = ServiceInstance::from_config(config).unwrap();
+
+            // If tags doesn't contain missing_tag
+            if !tags.contains(&missing_tag) {
+                prop_assert!(!instance.has_tag(&missing_tag),
+                    "Instance should NOT have tag '{}' but has_tag returned true", missing_tag);
+            }
+        }
+
+        /// matches_tags is consistent with has_tag
+        #[test]
+        fn matches_tags_consistent_with_has_tag(
+            instance_id in identifier_strategy(),
+            template_id in identifier_strategy(),
+            tags in tags_strategy(),
+        ) {
+            let config = InstanceConfig {
+                instance_id,
+                template_id,
+                port: Some(8080),
+                working_dir: None,
+                config_path: None,
+                version: None,
+                git_branch: None,
+                tags: tags.clone(),
+                auto_start: false,
+                env_vars: Default::default(),
+            };
+
+            let instance = ServiceInstance::from_config(config).unwrap();
+
+            // If any tag matches, matches_tags should return true
+            for tag in &tags {
+                let tag_refs: Vec<&str> = vec![tag.as_str()];
+                prop_assert!(instance.matches_tags(&tag_refs),
+                    "matches_tags(['{}']) should be true when has_tag('{}') is true", tag, tag);
+            }
+
+            // Empty tag list should not match
+            prop_assert!(!instance.matches_tags(&[]),
+                "Empty tag list should not match any instance");
+        }
+    }
+
+    // --- Property Tests: Validation ---
+
+    proptest! {
+        /// Empty instance_id is rejected
+        #[test]
+        fn empty_instance_id_rejected(template_id in identifier_strategy()) {
+            let config = InstanceConfig {
+                instance_id: "".to_string(),
+                template_id,
+                port: Some(8080),
+                working_dir: None,
+                config_path: None,
+                version: None,
+                git_branch: None,
+                tags: vec![],
+                auto_start: false,
+                env_vars: Default::default(),
+            };
+
+            prop_assert!(ServiceInstance::from_config(config).is_err());
+        }
+
+        /// Empty template_id is rejected
+        #[test]
+        fn empty_template_id_rejected(instance_id in identifier_strategy()) {
+            let config = InstanceConfig {
+                instance_id,
+                template_id: "".to_string(),
+                port: Some(8080),
+                working_dir: None,
+                config_path: None,
+                version: None,
+                git_branch: None,
+                tags: vec![],
+                auto_start: false,
+                env_vars: Default::default(),
+            };
+
+            prop_assert!(ServiceInstance::from_config(config).is_err());
+        }
+
+        /// Valid config creates instance with correct fields
+        #[test]
+        fn valid_config_creates_instance(
+            instance_id in identifier_strategy(),
+            template_id in identifier_strategy(),
+            port in port_strategy(),
+        ) {
+            let config = InstanceConfig {
+                instance_id: instance_id.clone(),
+                template_id: template_id.clone(),
+                port: Some(port),
+                working_dir: None,
+                config_path: None,
+                version: None,
+                git_branch: None,
+                tags: vec![],
+                auto_start: false,
+                env_vars: Default::default(),
+            };
+
+            let instance = ServiceInstance::from_config(config).unwrap();
+
+            prop_assert_eq!(instance.id, instance_id);
+            prop_assert_eq!(instance.template_id, template_id);
+            prop_assert_eq!(instance.port, port);
+            prop_assert_eq!(instance.status, ServiceStatus::Stopped);
+            prop_assert!(instance.pid.is_none());
+            prop_assert!(instance.started_at.is_none());
+        }
+    }
+
+    // --- Property Tests: Serialization ---
+
+    proptest! {
+        /// ServiceStatus JSON roundtrip
+        #[test]
+        fn status_json_roundtrip(idx in 0usize..6) {
+            let statuses = [
+                ServiceStatus::Stopped,
+                ServiceStatus::Running,
+                ServiceStatus::Starting,
+                ServiceStatus::Stopping,
+                ServiceStatus::Error,
+                ServiceStatus::Unknown,
+            ];
+            let status = statuses[idx % statuses.len()];
+
+            let json = serde_json::to_string(&status).expect("JSON serialize failed");
+            let restored: ServiceStatus = serde_json::from_str(&json).expect("JSON deserialize failed");
+            prop_assert_eq!(status, restored);
+        }
+
+        /// All status variants have unique display strings
+        #[test]
+        fn status_display_unique(_dummy in 0..1) {
+            let statuses = [
+                ServiceStatus::Stopped,
+                ServiceStatus::Running,
+                ServiceStatus::Starting,
+                ServiceStatus::Stopping,
+                ServiceStatus::Error,
+                ServiceStatus::Unknown,
+            ];
+
+            let displays: Vec<String> = statuses.iter().map(|s| s.to_string()).collect();
+            let unique_count = displays.iter().collect::<std::collections::HashSet<_>>().len();
+
+            prop_assert_eq!(displays.len(), unique_count,
+                "Not all status display strings are unique");
+        }
+    }
+
+    // --- Property Tests: Uptime ---
+
+    proptest! {
+        /// Uptime is never negative
+        #[test]
+        fn uptime_never_negative(secs_ago in 0i64..1_000_000) {
+            let started = Utc::now() - chrono::Duration::seconds(secs_ago);
+            let mut instance = ServiceInstance::from_config(InstanceConfig {
+                instance_id: "test".to_string(),
+                template_id: "test".to_string(),
+                port: Some(8080),
+                working_dir: None,
+                config_path: None,
+                version: None,
+                git_branch: None,
+                tags: vec![],
+                auto_start: false,
+                env_vars: Default::default(),
+            }).unwrap();
+
+            instance.started_at = Some(started);
+
+            if let Some(duration) = instance.uptime() {
+                prop_assert!(duration.num_seconds() >= 0,
+                    "Uptime should never be negative, got {} seconds", duration.num_seconds());
+            }
+        }
+    }
+
+    #[test]
+    fn uptime_formatting_consistency() {
+        // Test various durations to ensure formatting is consistent
+        let test_cases = [
+            (30i64, "s"),    // seconds format
+            (90, "m"),       // minutes format
+            (3700, "h"),     // hours format
+            (90000, "d"),    // days format
+        ];
+
+        for (secs, expected_suffix) in test_cases {
+            let started = Utc::now() - chrono::Duration::seconds(secs);
+            let mut instance = ServiceInstance::from_config(InstanceConfig {
+                instance_id: "test".to_string(),
+                template_id: "test".to_string(),
+                port: Some(8080),
+                working_dir: None,
+                config_path: None,
+                version: None,
+                git_branch: None,
+                tags: vec![],
+                auto_start: false,
+                env_vars: Default::default(),
+            }).unwrap();
+
+            instance.started_at = Some(started);
+
+            let uptime_str = instance.uptime_string();
+            assert!(uptime_str.is_some(), "Uptime string should be Some when started_at is set");
+            assert!(uptime_str.unwrap().contains(expected_suffix),
+                "Uptime for {} secs should contain '{}'", secs, expected_suffix);
+        }
+    }
+}

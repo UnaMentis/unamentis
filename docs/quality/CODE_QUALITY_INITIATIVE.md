@@ -24,7 +24,7 @@ UnaMentis implements a **5-phase Code Quality Initiative** that enables a small 
 | DORA metrics and observability | Implemented | Engineering health visibility |
 | AI-powered code review | Implemented | Every PR reviewed by CodeRabbit |
 | Mutation testing | Implemented | Weekly test quality validation |
-| Property-based testing | Implemented | 57 invariant tests (45 Python, 12 Rust) |
+| Property-based testing | Implemented | 107 invariant tests (70 Python, 37 Rust) |
 | Chaos engineering | Implemented | Voice pipeline resilience testing |
 
 ### Philosophy
@@ -369,13 +369,16 @@ Property testing verifies that invariants hold across randomly generated inputs,
 **Frameworks:**
 | Platform | Tool | Tests |
 |----------|------|-------|
-| Python | Hypothesis | 45 property tests |
-| Rust | proptest | 12 property tests |
+| Python | Hypothesis | 70 property tests |
+| Rust | proptest | 37 property tests |
 
 **Test Categories:**
 - **TTS Cache**: Hash determinism, TTL expiration, stats bounds, stateful testing
 - **FOV Context**: Budget sum invariants, tier ordering, buffer rendering
+- **TTS Pre-generation**: Job progress, status state machine, text hashing, serialization
 - **Config**: Port validation, TOML roundtrip, path resolution idempotency
+- **Template**: Port allocation, command substitution, JSON roundtrip
+- **Instance**: Tag matching, validation, uptime calculations
 
 **CI Integration:**
 ```yaml

@@ -38,7 +38,13 @@ export type OpsTabId =
   | 'users';
 
 // Content tabs
-export type ContentTabId = 'curricula' | 'sources' | 'plugins' | 'imports' | 'reprocess' | 'tts-profiles';
+export type ContentTabId =
+  | 'curricula'
+  | 'sources'
+  | 'plugins'
+  | 'imports'
+  | 'reprocess'
+  | 'tts-profiles';
 
 // Combined tab type
 export type TabId = OpsTabId | ContentTabId;

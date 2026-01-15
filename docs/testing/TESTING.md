@@ -444,9 +444,10 @@ Property-based testing complements example-based tests by verifying that invaria
 
 ### Python Property Tests (Hypothesis)
 
-**Test Coverage (45 tests):**
+**Test Coverage (70 tests):**
 - **TTS Cache**: Hash determinism, dict roundtrip, TTL expiration, stats bounds, stateful testing
 - **FOV Context**: Model tier classification, budget sum invariants, tier ordering, buffer rendering
+- **TTS Pre-generation**: Job progress invariants, status state machine, text hashing, serialization roundtrips
 
 **Running Property Tests:**
 ```bash
@@ -476,10 +477,10 @@ def test_addition_is_commutative(a, b):
 
 ### Rust Property Tests (proptest)
 
-**Test Coverage (12 tests):**
-- **Config**: Port validation, TOML roundtrip, path resolution idempotency
-- **Template/Instance**: Serialization roundtrip verification
-- **Default values**: Safety validation
+**Test Coverage (37 property tests, 49 total with unit):**
+- **Config**: Port validation, TOML roundtrip, path resolution idempotency (12 tests)
+- **Template**: Port validation, allocation, command substitution, JSON roundtrip (10 tests)
+- **Instance**: Tag matching, validation, serialization, uptime (15 tests)
 
 **Running Property Tests:**
 ```bash

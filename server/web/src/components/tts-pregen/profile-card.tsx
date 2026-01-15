@@ -1,16 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import {
-  Play,
-  Pause,
-  Star,
-  MoreVertical,
-  Edit,
-  Copy,
-  Trash2,
-  Settings2,
-} from 'lucide-react';
+import { Play, Pause, Star, MoreVertical, Edit, Copy, Trash2, Settings2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -172,11 +163,7 @@ export function ProfileCard({
               disabled={!hasSampleAudio}
               title={hasSampleAudio ? (isPlaying ? 'Pause' : 'Play sample') : 'No sample audio'}
             >
-              {isPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
 
             {/* Menu */}
