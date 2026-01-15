@@ -58,7 +58,7 @@ venv/
 *.pyc
 __pycache__/
 
-# Hypothesis testing cache
+# Hypothesis property testing (transient test data)
 .hypothesis/
 
 # ML Models (too large for git)

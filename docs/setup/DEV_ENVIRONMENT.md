@@ -325,6 +325,55 @@ The hooks will skip checks for tools that aren't installed, but will run what's 
 ./scripts/health-check.sh
 ```
 
+### 5.6 llama.cpp Local Build
+
+The `llama.cpp/` directory contains a **pinned version** of llama.cpp for building:
+- CLI tools (`llama-quantize`, `llama-cli`, `llama-server`, etc.)
+- iOS xcframework (via `build-xcframework.sh`)
+
+**Current version:** b7502 (pinned, detached HEAD)
+
+This directory is separate from the Stanford BDHG llama.cpp SPM package used by the iOS app. The local clone is for model conversion tools and xcframework builds.
+
+#### Using the CLI Tools
+
+```bash
+# Quantize a model
+./llama.cpp/build/bin/llama-quantize \
+    models/input-model-f16.gguf \
+    models/output-model-q4km.gguf Q4_K_M
+
+# Run inference
+./llama.cpp/build/bin/llama-cli -m models/model.gguf -p "Hello"
+```
+
+#### Upgrading llama.cpp
+
+When new model support is needed:
+
+```bash
+cd llama.cpp/
+
+# Re-add remote temporarily
+git remote add origin https://github.com/ggerganov/llama.cpp.git
+git fetch origin --tags
+
+# List available releases
+git tag --list 'b*' | sort -V | tail -10
+
+# Checkout new release
+git checkout b5500  # (example - use latest stable)
+
+# Rebuild tools
+cmake -B build && cmake --build build -j
+
+# Rebuild xcframework if needed
+./build-xcframework.sh
+
+# Remove remote again to stop sync pressure
+git remote remove origin
+```
+
 ---
 
 ## 6. Running the Project

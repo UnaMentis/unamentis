@@ -443,11 +443,13 @@ function handleNewLog(log) {
 
     const entry = document.createElement('div');
     entry.className = 'log-entry animate-fade-in';
+    // Sanitize log level for use in class name (only allow alphanumeric)
+    const safeLevel = (log.level || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     entry.innerHTML = `
-        <span class="log-time">${formatLogTime(log.timestamp)}</span>
-        <span class="log-level log-level-${log.level.toLowerCase()}">${log.level}</span>
+        <span class="log-time">${escapeHtml(formatLogTime(log.timestamp))}</span>
+        <span class="log-level log-level-${safeLevel}">${escapeHtml(log.level || '')}</span>
         <span class="log-message">${escapeHtml(log.message)}</span>
-        <span class="log-source">${log.client_name || log.label || ''}</span>
+        <span class="log-source">${escapeHtml(log.client_name || log.label || '')}</span>
     `;
 
     container.insertBefore(entry, container.firstChild);
@@ -2756,7 +2758,7 @@ function populateFilterDropdowns(filters) {
 
     if (levelSelect && filters.levels) {
         levelSelect.innerHTML = '<option value="">All Levels</option>' +
-            filters.levels.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase()))}</option>`).join('');
+            filters.levels.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))}</option>`).join('');
     }
 }
 
@@ -2883,7 +2885,7 @@ function renderCourseCard(course) {
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1">
                         <h4 class="font-medium text-dark-200 truncate">${escapeHtml(course.title)}</h4>
-                        ${course.level ? `<span class="px-2 py-0.5 text-xs rounded bg-accent-info/20 text-accent-info">${escapeHtml(course.level.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase()))}</span>` : ''}
+                        ${course.level ? `<span class="px-2 py-0.5 text-xs rounded bg-accent-info/20 text-accent-info">${escapeHtml(course.level.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))}</span>` : ''}
                     </div>
                     <div class="text-sm text-dark-400 mb-2">
                         ${course.department ? `<span class="mr-3">${escapeHtml(course.department)}</span>` : ''}
@@ -3004,7 +3006,7 @@ function renderGenericCourseDetail(sourceId, course) {
                         ${(course.features || []).map(f => `
                             <span class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${f.available ? 'bg-accent-success/10 text-accent-success border border-accent-success/20' : 'bg-dark-800/50 text-dark-500 border border-dark-700/50'}">
                                 ${getFeatureIcon(f.type)}
-                                ${escapeHtml(f.type.replace('_', ' '))}
+                                ${escapeHtml(f.type.replace(/_/g, ' '))}
                                 ${f.count ? `<span class="text-xs opacity-75">(${f.count})</span>` : ''}
                             </span>
                         `).join('')}
@@ -3554,7 +3556,7 @@ async function viewMITCourseDetail(courseId) {
                             ${(course.features || []).map(f => `
                                 <span class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${f.available ? 'bg-accent-success/10 text-accent-success border border-accent-success/20' : 'bg-dark-800/50 text-dark-500 border border-dark-700/50'}">
                                     ${getFeatureIcon(f.type)}
-                                    ${escapeHtml(f.type.replace('_', ' '))}
+                                    ${escapeHtml(f.type.replace(/_/g, ' '))}
                                     ${f.count ? `<span class="text-xs opacity-75">(${f.count})</span>` : ''}
                                 </span>
                             `).join('')}
@@ -3886,7 +3888,7 @@ async function viewCK12CourseDetail(courseId) {
                             ${(course.features || []).map(f => `
                                 <span class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${f.available ? 'bg-accent-success/10 text-accent-success border border-accent-success/20' : 'bg-dark-800/50 text-dark-500 border border-dark-700/50'}">
                                     ${getFeatureIcon(f.type)}
-                                    ${escapeHtml(f.type.replace('_', ' '))}
+                                    ${escapeHtml(f.type.replace(/_/g, ' '))}
                                     ${f.count ? `<span class="text-xs opacity-75">(${f.count})</span>` : ''}
                                 </span>
                             `).join('')}

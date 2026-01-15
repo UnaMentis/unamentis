@@ -131,6 +131,101 @@ except ImportError:
     logger.warning("UnleashClient not installed. Install with: pip install UnleashClient")
 
 
+def validate_path_in_directory(file_path: Path, base_directory: Path) -> Path:
+    """Validate that a file path is within the expected directory.
+
+    This prevents path traversal attacks where attackers use '../' sequences
+    to access files outside the intended directory.
+
+    Args:
+        file_path: The path to validate (may contain user input)
+        base_directory: The directory the file must be within
+
+    Returns:
+        The resolved absolute path if valid
+
+    Raises:
+        ValueError: If the path would escape the base directory
+    """
+    # Resolve both paths to absolute paths, following symlinks
+    resolved_base = base_directory.resolve()
+    resolved_path = (base_directory / file_path).resolve()
+
+    # Check if the resolved path is within the base directory
+    try:
+        resolved_path.relative_to(resolved_base)
+    except ValueError:
+        raise ValueError(f"Invalid path: path escapes base directory")
+
+    return resolved_path
+
+
+def sanitize_path_segment(segment: str) -> str:
+    """Sanitize a path segment (like an ID) to prevent path traversal.
+
+    Args:
+        segment: The path segment to sanitize
+
+    Returns:
+        Sanitized segment safe for use in file paths
+
+    Raises:
+        ValueError: If the segment contains invalid characters
+    """
+    if not segment:
+        raise ValueError("Path segment cannot be empty")
+
+    # Reject any path traversal attempts
+    if ".." in segment or "/" in segment or "\\" in segment:
+        raise ValueError("Path segment contains invalid characters")
+
+    # Only allow alphanumeric, hyphens, and underscores
+    sanitized = "".join(c for c in segment if c.isalnum() or c in "-_.")
+    if not sanitized or sanitized != segment:
+        raise ValueError("Path segment contains invalid characters")
+
+    return sanitized
+
+
+def sanitize_file_extension(filename: str, allowed_extensions: set[str]) -> str:
+    """Extract and validate file extension from a filename.
+
+    Args:
+        filename: The filename to extract extension from
+        allowed_extensions: Set of allowed extensions (e.g., {'.png', '.jpg'})
+
+    Returns:
+        The validated extension
+
+    Raises:
+        ValueError: If the extension is not allowed
+    """
+    ext = Path(filename).suffix.lower()
+    if ext not in allowed_extensions:
+        raise ValueError(f"File extension '{ext}' not allowed")
+    return ext
+
+
+def safe_error_response(error: Exception, context: str = "operation") -> web.Response:
+    """Create a safe error response that doesn't expose internal details.
+
+    Args:
+        error: The exception that occurred
+        context: A brief description of the operation that failed
+
+    Returns:
+        A JSON response with a generic error message
+    """
+    # Log the actual error for debugging
+    logger.error(f"Error during {context}: {error}")
+
+    # Return a generic message to avoid leaking internal details
+    return web.json_response(
+        {"error": f"An error occurred during {context}. Please try again."},
+        status=500
+    )
+
+
 def is_flag_enabled(flag_name: str, default: bool = False) -> bool:
     """Check if a feature flag is enabled.
 
@@ -2753,7 +2848,12 @@ async def handle_unarchive_curriculum(request: web.Request) -> web.Response:
         file_name = request.match_info.get("file_name")
 
         archived_dir = PROJECT_ROOT / "curriculum" / "archived"
-        archived_path = archived_dir / file_name
+
+        # Validate path to prevent path traversal attacks
+        try:
+            archived_path = validate_path_in_directory(Path(file_name), archived_dir)
+        except ValueError:
+            return web.json_response({"error": "Invalid file name"}, status=400)
 
         if not archived_path.exists():
             return web.json_response({"error": "Archived curriculum not found"}, status=404)
@@ -2810,7 +2910,12 @@ async def handle_delete_archived_curriculum(request: web.Request) -> web.Respons
         confirm = request.query.get("confirm", "false").lower() == "true"
 
         archived_dir = PROJECT_ROOT / "curriculum" / "archived"
-        archived_path = archived_dir / file_name
+
+        # Validate path to prevent path traversal attacks
+        try:
+            archived_path = validate_path_in_directory(Path(file_name), archived_dir)
+        except ValueError:
+            return web.json_response({"error": "Invalid file name"}, status=400)
 
         if not archived_path.exists():
             return web.json_response({"error": "Archived curriculum not found"}, status=404)
@@ -2987,10 +3092,7 @@ async def handle_import_curriculum(request: web.Request) -> web.Response:
     except asyncio.TimeoutError:
         return web.json_response({"error": "Timeout fetching URL"}, status=408)
     except Exception as e:
-        logger.error(f"Error importing curriculum: {e}")
-        import traceback
-        traceback.print_exc()
-        return web.json_response({"error": str(e)}, status=500)
+        return safe_error_response(e, "curriculum import")
 
 
 # =============================================================================
@@ -3034,13 +3136,21 @@ async def handle_upload_visual_asset(request: web.Request) -> web.Response:
         if not metadata.get("alt"):
             return web.json_response({"error": "Alt text is required for accessibility"}, status=400)
 
+        # Validate path segments to prevent path traversal attacks
+        allowed_image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'}
+        try:
+            safe_curriculum_id = sanitize_path_segment(curriculum_id)
+            safe_topic_id = sanitize_path_segment(topic_id)
+            ext = sanitize_file_extension(file_name, allowed_image_extensions)
+        except ValueError as e:
+            return web.json_response({"error": str(e)}, status=400)
+
         # Create assets directory if needed
-        assets_dir = PROJECT_ROOT / "curriculum" / "assets" / curriculum_id / topic_id
+        assets_dir = PROJECT_ROOT / "curriculum" / "assets" / safe_curriculum_id / safe_topic_id
         assets_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate unique asset ID
         asset_id = f"img-{int(time.time() * 1000)}"
-        ext = Path(file_name).suffix or ".png"
         local_path = assets_dir / f"{asset_id}{ext}"
 
         # Save the file
@@ -3109,10 +3219,7 @@ async def handle_upload_visual_asset(request: web.Request) -> web.Response:
         })
 
     except Exception as e:
-        logger.error(f"Error uploading visual asset: {e}")
-        import traceback
-        traceback.print_exc()
-        return web.json_response({"error": str(e)}, status=500)
+        return safe_error_response(e, "visual asset upload")
 
 
 async def handle_delete_visual_asset(request: web.Request) -> web.Response:
@@ -3412,10 +3519,7 @@ async def handle_preload_curriculum_assets(request: web.Request) -> web.Response
         })
 
     except Exception as e:
-        logger.error(f"Error preloading curriculum assets: {e}")
-        import traceback
-        traceback.print_exc()
-        return web.json_response({"error": str(e)}, status=500)
+        return safe_error_response(e, "curriculum asset preload")
 
 
 async def handle_get_curriculum_with_assets(request: web.Request) -> web.Response:
@@ -3513,10 +3617,7 @@ async def handle_get_curriculum_with_assets(request: web.Request) -> web.Respons
         return web.json_response(umcf)
 
     except Exception as e:
-        logger.error(f"Error getting curriculum with assets: {e}")
-        import traceback
-        traceback.print_exc()
-        return web.json_response({"error": str(e)}, status=500)
+        return safe_error_response(e, "curriculum asset retrieval")
 
 
 # =============================================================================
