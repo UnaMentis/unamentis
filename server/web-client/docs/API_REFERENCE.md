@@ -278,8 +278,8 @@ Change password.
 **Request:**
 ```json
 {
-  "current_password": "oldpassword",
-  "new_password": "newpassword"
+  "current_password": "<current>",
+  "new_password": "<new>"
 }
 ```
 

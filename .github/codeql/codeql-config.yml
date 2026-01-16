@@ -1,0 +1,17 @@
+# CodeQL Configuration
+# This file configures CodeQL analysis for the UnaMentis project
+
+name: "UnaMentis CodeQL Config"
+
+# Use default queries plus security-extended
+queries:
+  - uses: security-extended
+
+# Model packs for custom sanitizer recognition
+packs:
+  python:
+    - codeql/python-queries
+
+# Enable threat model extensions
+model-extensions:
+  - ./extensions/python-sanitizers.yml

@@ -667,8 +667,8 @@ class AuthAPI:
 
         POST /api/auth/password
         {
-            "current_password": "oldpassword",
-            "new_password": "newpassword"
+            "current_password": "<current>",
+            "new_password": "<new>"
         }
         """
         user_id = request.get("user_id")

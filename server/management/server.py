@@ -137,8 +137,8 @@ def validate_path_in_directory(file_path: Path, base_directory: Path) -> Path:
     This prevents path traversal attacks where attackers use '../' sequences
     to access files outside the intended directory.
 
-    Uses CodeQL-recognized patterns (resolve + startswith) for automated security
-    verification, plus relative_to() for defense in depth.
+    Uses CodeQL-recognized patterns (os.path.realpath + startswith) for automated
+    security verification, plus relative_to() for defense in depth.
 
     Args:
         file_path: The path to validate (may contain user input)
@@ -150,28 +150,30 @@ def validate_path_in_directory(file_path: Path, base_directory: Path) -> Path:
     Raises:
         ValueError: If the path would escape the base directory
     """
-    # Resolve both paths to absolute paths, following symlinks
-    resolved_base = base_directory.resolve()
-    # Resolve the combined path to check for traversal attempts
-    resolved_path = (base_directory / file_path).resolve()
+    # CodeQL-recognized pattern: os.path.realpath() + startswith()
+    # This explicit pattern is recognized by CodeQL as a path sanitizer
+    real_base = os.path.realpath(str(base_directory))
+    combined_path = os.path.join(str(base_directory), str(file_path))
+    real_path = os.path.realpath(combined_path)
 
-    # CodeQL-recognized pattern: str().startswith() after resolve()
-    # This pattern is explicitly recognized by CodeQL as a path sanitizer
-    # Include os.sep to prevent /var/uploads matching /var/uploads_backup
-    base_str = str(resolved_base)
-    if not base_str.endswith(os.sep):
-        base_str = base_str + os.sep
-    if not str(resolved_path).startswith(base_str) and resolved_path != resolved_base:
+    # Ensure base ends with separator for proper prefix matching
+    if not real_base.endswith(os.sep):
+        real_base = real_base + os.sep
+
+    # The startswith check after realpath is the CodeQL-recognized sanitizer
+    if not real_path.startswith(real_base) and real_path != real_base.rstrip(os.sep):
         raise ValueError("Invalid path: path escapes base directory")
 
-    # Defense in depth: also use relative_to() which raises if path escapes
+    # Defense in depth: also verify with relative_to()
+    resolved_path = Path(real_path)
+    resolved_base = Path(real_base.rstrip(os.sep))
     try:
         relative_part = resolved_path.relative_to(resolved_base)
     except ValueError:
         raise ValueError("Invalid path: path escapes base directory")
 
-    # Return a newly constructed path from the base and validated relative part
-    # This breaks the taint chain by building from trusted components
+    # Return a newly constructed path from validated components
+    # This breaks the taint chain by building from trusted values
     return resolved_base / relative_part
 
 
@@ -245,6 +247,39 @@ def codeql_assert_path_within(file_path: Path, base_dir: Path) -> None:  # CodeQ
     # The startswith check after realpath is the CodeQL-recognized sanitizer
     if not real_path.startswith(real_base) and real_path != real_base.rstrip(os.sep):
         raise ValueError("Path escapes allowed directory")
+
+
+def sanitize_and_validate_path(file_path: Path, base_dir: Path) -> Path:
+    """Validate a path is within a base directory and return the validated path.
+
+    This function uses os.path.realpath() + str.startswith() which CodeQL
+    explicitly recognizes as path sanitization (py/path-injection sanitizer).
+    Returns the validated path so CodeQL can track that the return value is safe.
+
+    Args:
+        file_path: The path to validate
+        base_dir: The directory the path must be within
+
+    Returns:
+        The validated path (same as input if valid)
+
+    Raises:
+        ValueError: If path would escape base_dir
+    """
+    # CodeQL-recognized pattern: realpath + startswith
+    real_path = os.path.realpath(str(file_path))
+    real_base = os.path.realpath(str(base_dir))
+
+    # Ensure base ends with separator for proper prefix matching
+    if not real_base.endswith(os.sep):
+        real_base = real_base + os.sep
+
+    # The startswith check after realpath is the CodeQL-recognized sanitizer
+    if not real_path.startswith(real_base) and real_path != real_base.rstrip(os.sep):
+        raise ValueError("Path escapes allowed directory")
+
+    # Return the path constructed from the validated real_path
+    return Path(real_path)
 
 
 def safe_error_response(error: Exception, context: str = "operation") -> web.Response:
@@ -3204,16 +3239,16 @@ async def handle_upload_visual_asset(request: web.Request) -> web.Response:
         assets_base = PROJECT_ROOT / "curriculum" / "assets"
         assets_dir = assets_base / safe_curriculum_id / safe_topic_id
 
-        # CodeQL-recognized validation before directory creation
-        codeql_assert_path_within(assets_dir, assets_base)
-
+        # CodeQL-recognized validation: use returned sanitized path
+        assets_dir = sanitize_and_validate_path(assets_dir, assets_base)
         assets_dir.mkdir(parents=True, exist_ok=True)
+
         # Generate unique asset ID
         asset_id = f"img-{int(time.time() * 1000)}"
         local_path = assets_dir / f"{asset_id}{ext}"
 
-        # CodeQL-recognized validation before file write
-        codeql_assert_path_within(local_path, assets_base)
+        # CodeQL-recognized validation: use returned sanitized path
+        local_path = sanitize_and_validate_path(local_path, assets_base)
 
         # Save the file (path uses sanitized segments)
         with open(local_path, "wb") as f:
@@ -3446,15 +3481,14 @@ async def download_and_save_asset(
         assets_base = PROJECT_ROOT / "curriculum" / "assets"
         assets_dir = assets_base / safe_curriculum_id / safe_topic_id
 
-        # CodeQL-recognized validation before directory creation
-        codeql_assert_path_within(assets_dir, assets_base)
-
+        # CodeQL-recognized validation: use returned sanitized path
+        assets_dir = sanitize_and_validate_path(assets_dir, assets_base)
         assets_dir.mkdir(parents=True, exist_ok=True)
 
         local_path = assets_dir / f"{safe_asset_id}{ext}"
 
-        # CodeQL-recognized validation before file operations
-        codeql_assert_path_within(local_path, assets_base)
+        # CodeQL-recognized validation: use returned sanitized path
+        local_path = sanitize_and_validate_path(local_path, assets_base)
 
         # Skip if already downloaded
         if local_path.exists():

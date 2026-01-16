@@ -19,6 +19,7 @@ from server import (
     sanitize_file_extension,
     safe_error_response,
     codeql_assert_path_within,
+    sanitize_and_validate_path,
 )
 
 
@@ -377,3 +378,51 @@ class TestCodeqlAssertPathWithin:
         finally:
             if symlink_path.exists() or symlink_path.is_symlink():
                 symlink_path.unlink()
+
+
+class TestSanitizeAndValidatePath:
+    """Tests for sanitize_and_validate_path function (returns sanitized path)."""
+
+    def test_valid_path_returns_sanitized_path(self, tmp_path):
+        """Test that valid paths return the sanitized path."""
+        test_dir = tmp_path / "subdir"
+        test_dir.mkdir()
+
+        result = sanitize_and_validate_path(test_dir, tmp_path)
+        assert result == test_dir.resolve()
+        assert isinstance(result, Path)
+
+    def test_valid_nested_path_returns_sanitized(self, tmp_path):
+        """Test that nested valid paths return the sanitized path."""
+        nested = tmp_path / "a" / "b" / "c"
+        nested.mkdir(parents=True)
+
+        result = sanitize_and_validate_path(nested, tmp_path)
+        assert result == nested.resolve()
+
+    def test_path_traversal_rejected(self, tmp_path):
+        """Test that path traversal attempts are rejected."""
+        escape_path = tmp_path / ".." / ".." / "etc" / "passwd"
+
+        with pytest.raises(ValueError, match="escapes allowed directory"):
+            sanitize_and_validate_path(escape_path, tmp_path)
+
+    def test_absolute_path_outside_rejected(self, tmp_path):
+        """Test that absolute paths outside base are rejected."""
+        outside_path = Path("/etc/passwd")
+
+        with pytest.raises(ValueError, match="escapes allowed directory"):
+            sanitize_and_validate_path(outside_path, tmp_path)
+
+    def test_base_directory_itself_accepted(self, tmp_path):
+        """Test that the base directory itself is accepted."""
+        result = sanitize_and_validate_path(tmp_path, tmp_path)
+        assert result == tmp_path.resolve()
+
+    def test_returns_path_object(self, tmp_path):
+        """Test that the function returns a Path object."""
+        test_file = tmp_path / "test.txt"
+        test_file.touch()
+
+        result = sanitize_and_validate_path(test_file, tmp_path)
+        assert isinstance(result, Path)
