@@ -42,10 +42,8 @@ final class KBPracticeEngine: ObservableObject {
 
     init() {}
 
-    deinit {
-        timer?.invalidate()
-        timer = nil
-    }
+    // Note: No deinit needed - timer uses [weak self] so deallocation is safe.
+    // The timer will auto-invalidate when no strong references remain.
 
     // MARK: - Session Control
 

@@ -11,7 +11,3 @@ queries:
 packs:
   python:
     - codeql/python-queries
-
-# Enable threat model extensions
-model-extensions:
-  - ./extensions/python-sanitizers.yml
