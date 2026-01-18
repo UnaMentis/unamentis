@@ -7,7 +7,7 @@
 // Project Identity
 // ==========================================
 PRODUCT_NAME = USM
-PRODUCT_DISPLAY_NAME = USM non FFI
+PRODUCT_DISPLAY_NAME = USM (Non-FFI)
 PRODUCT_BUNDLE_IDENTIFIER = com.unamentis.server-manager2
 MARKETING_VERSION = 1.0
 CURRENT_PROJECT_VERSION = 1
@@ -21,8 +21,8 @@ MACOSX_DEPLOYMENT_TARGET = 15.4
 // Info PLIST
 // ==========================================
 GENERATE_INFOPLIST_FILE = YES
-// Menu bar app - hide from dock (temporarily NO for debugging)
-INFOPLIST_KEY_LSUIElement = NO
+// Menu bar app - hide from Dock
+INFOPLIST_KEY_LSUIElement = YES
 // App category
 INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.utilities
 

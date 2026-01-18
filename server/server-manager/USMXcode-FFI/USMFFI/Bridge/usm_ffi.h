@@ -42,7 +42,14 @@ UsmHandle* usm_create(const char* config_path);
 void usm_destroy(UsmHandle* handle);
 
 // Service query functions
+// Memory ownership: usm_get_services allocates a CServiceArray and all embedded
+// C strings (id, template_id, display_name). The caller takes ownership and MUST
+// call usm_free_services to release all memory. Do not free individual strings
+// after calling usm_free_services.
 CServiceArray* usm_get_services(const UsmHandle* handle);
+
+// Free a CServiceArray and all embedded strings. After this call, the array
+// pointer and all string pointers within it are invalid.
 void usm_free_services(CServiceArray* array);
 
 // Service control functions (return 0 on success, -1 on error)

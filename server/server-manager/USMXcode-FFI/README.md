@@ -41,8 +41,7 @@ The app manages these services (configured in `server/usm-core/config/services.t
 | PostgreSQL | 5432 | Core |
 | Log Server | 8765 | Core |
 | Management API | 8766 | Core |
-| Operations Console | 8780 | Core |
-| Next.js Web Server | 3000 | Core |
+| Operations Console | 3000 | Core |
 | Web Client | 3001 | Core |
 | Ollama | 11434 | Core |
 | Feature Flags | 3063 | Development |

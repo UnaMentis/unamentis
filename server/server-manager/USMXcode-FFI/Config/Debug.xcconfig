@@ -4,5 +4,5 @@
 
 #include "Shared.xcconfig"
 
-// No additional debug-specific overrides needed
-// All debug settings use Xcode project defaults
+// Show in Dock during debugging for easier development
+INFOPLIST_KEY_LSUIElement = NO

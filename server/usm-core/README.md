@@ -393,7 +393,7 @@ USM Core is designed to replace the Swift-based subprocess monitoring in the USM
 
 - **Rust Core**: Fully functional with HTTP API and CLI
 - **Swift App**: Works independently (not yet using Rust backend)
-- **Integration**: Can communicate via HTTP API (port 8767)
+- **Integration**: Can communicate via HTTP API (port 8787)
 
 ### Integration Roadmap
 

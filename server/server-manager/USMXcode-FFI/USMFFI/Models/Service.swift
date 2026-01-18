@@ -45,6 +45,18 @@ enum ServiceStatus: Int, Codable, CaseIterable {
         default: return .unknown
         }
     }
+
+    /// String value for API serialization (matches decoder expectation)
+    var stringValue: String {
+        switch self {
+        case .stopped: return "stopped"
+        case .running: return "running"
+        case .starting: return "starting"
+        case .stopping: return "stopping"
+        case .error: return "error"
+        case .unknown: return "unknown"
+        }
+    }
 }
 
 // MARK: - Service Category
@@ -201,39 +213,39 @@ enum ServiceEvent: Codable {
 
         switch self {
         case .statusChanged(let instanceId, let status, let pid):
-            try container.encode("StatusChanged", forKey: .type)
+            try container.encode("status_changed", forKey: .type)
             try container.encode(instanceId, forKey: .instanceId)
-            try container.encode(status.rawValue, forKey: .status)
+            try container.encode(status.stringValue, forKey: .status)
             try container.encodeIfPresent(pid, forKey: .pid)
 
         case .metricsUpdated(let instanceId, let cpu, let mem):
-            try container.encode("MetricsUpdated", forKey: .type)
+            try container.encode("metrics_updated", forKey: .type)
             try container.encode(instanceId, forKey: .instanceId)
             try container.encode(cpu, forKey: .cpuPercent)
             try container.encode(mem, forKey: .memoryMB)
 
         case .healthChanged(let instanceId, let healthy, let message):
-            try container.encode("HealthChanged", forKey: .type)
+            try container.encode("health_changed", forKey: .type)
             try container.encode(instanceId, forKey: .instanceId)
             try container.encode(healthy, forKey: .healthy)
             try container.encodeIfPresent(message, forKey: .message)
 
         case .instanceCreated(let instanceId, let templateId):
-            try container.encode("InstanceCreated", forKey: .type)
+            try container.encode("instance_created", forKey: .type)
             try container.encode(instanceId, forKey: .instanceId)
             try container.encode(templateId, forKey: .templateId)
 
         case .instanceRemoved(let instanceId):
-            try container.encode("InstanceRemoved", forKey: .type)
+            try container.encode("instance_removed", forKey: .type)
             try container.encode(instanceId, forKey: .instanceId)
 
         case .error(let instanceId, let message):
-            try container.encode("Error", forKey: .type)
+            try container.encode("error", forKey: .type)
             try container.encodeIfPresent(instanceId, forKey: .instanceId)
             try container.encode(message, forKey: .message)
 
         case .configReloaded:
-            try container.encode("ConfigReloaded", forKey: .type)
+            try container.encode("config_reloaded", forKey: .type)
         }
     }
 }

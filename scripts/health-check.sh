@@ -7,6 +7,11 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 echo "Running health check..."
 echo ""
 
+# PR validation checks (catches common review issues)
+echo "0. PR validation checks..."
+"$SCRIPT_DIR/lint-pr-checks.sh" || echo "PR checks had warnings (non-blocking)"
+echo ""
+
 # Swift checks
 echo "1. SwiftLint..."
 swiftlint lint --strict

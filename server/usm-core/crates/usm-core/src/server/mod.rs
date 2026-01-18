@@ -120,71 +120,72 @@ struct InstanceQuery {
     status: Option<String>,
 }
 
+/// Helper to insert CPU and memory metrics into a JSON object
+fn insert_metrics(obj: &mut serde_json::Map<String, serde_json::Value>, cpu: f64, memory_bytes: u64) {
+    obj.insert("cpu_percent".to_string(), serde_json::json!(cpu));
+    obj.insert("memory_mb".to_string(), serde_json::json!(memory_bytes / (1024 * 1024)));
+}
+
 async fn list_instances(
     State(state): State<AppState>,
     Query(query): Query<InstanceQuery>,
 ) -> Json<serde_json::Value> {
-    let instances = state.instances.read().await;
+    // Snapshot instance data while holding the lock, then release it
+    let (list, counts, total) = {
+        let instances = state.instances.read().await;
+        let mut list = instances.list();
 
-    let mut list = instances.list();
-
-    // Filter by template
-    if let Some(ref template) = query.template {
-        list.retain(|i| &i.template_id == template);
-    }
-
-    // Filter by tag
-    if let Some(ref tag) = query.tag {
-        list.retain(|i| i.has_tag(tag));
-    }
-
-    // Filter by status
-    if let Some(ref status) = query.status {
-        let status = match status.as_str() {
-            "running" => Some(ServiceStatus::Running),
-            "stopped" => Some(ServiceStatus::Stopped),
-            "error" => Some(ServiceStatus::Error),
-            _ => None,
-        };
-        if let Some(s) = status {
-            list.retain(|i| i.status == s);
+        // Filter by template
+        if let Some(ref template) = query.template {
+            list.retain(|i| &i.template_id == template);
         }
-    }
 
-    let counts = instances.status_counts();
+        // Filter by tag
+        if let Some(ref tag) = query.tag {
+            list.retain(|i| i.has_tag(tag));
+        }
 
-    // Build instances with metrics for running processes
+        // Filter by status
+        if let Some(ref status) = query.status {
+            let status = match status.as_str() {
+                "running" => Some(ServiceStatus::Running),
+                "stopped" => Some(ServiceStatus::Stopped),
+                "error" => Some(ServiceStatus::Error),
+                _ => None,
+            };
+            if let Some(s) = status {
+                list.retain(|i| i.status == s);
+            }
+        }
+
+        let counts = instances.status_counts();
+        let total = instances.len();
+        (list, counts, total)
+    }; // Lock released here
+
+    // Build instances with metrics (monitor calls are outside the lock)
     let instances_with_metrics: Vec<serde_json::Value> = list
         .iter()
         .map(|instance| {
-            let mut json = serde_json::to_value(instance).unwrap_or_default();
+            let mut json = match serde_json::to_value(instance) {
+                Ok(v) => v,
+                Err(e) => {
+                    tracing::warn!("Failed to serialize instance {}: {}", instance.id, e);
+                    serde_json::json!({})
+                }
+            };
             // Add metrics for running instances - try by port first (more reliable), then by PID
             if instance.status == ServiceStatus::Running {
                 // Try to find process by port (most reliable for child processes)
-                let process_info = state.monitor.find_by_port(instance.port);
-                if let Some(info) = process_info {
+                if let Some(info) = state.monitor.find_by_port(instance.port) {
                     if let Some(obj) = json.as_object_mut() {
-                        obj.insert(
-                            "cpu_percent".to_string(),
-                            serde_json::json!(info.cpu_percent),
-                        );
-                        obj.insert(
-                            "memory_mb".to_string(),
-                            serde_json::json!(info.memory_bytes / (1024 * 1024)),
-                        );
+                        insert_metrics(obj, info.cpu_percent, info.memory_bytes);
                     }
                 } else if let Some(pid) = instance.pid {
                     // Fallback to stored PID
                     if let Some(metrics) = state.monitor.get_process_metrics(pid) {
                         if let Some(obj) = json.as_object_mut() {
-                            obj.insert(
-                                "cpu_percent".to_string(),
-                                serde_json::json!(metrics.cpu_percent),
-                            );
-                            obj.insert(
-                                "memory_mb".to_string(),
-                                serde_json::json!(metrics.memory_bytes / (1024 * 1024)),
-                            );
+                            insert_metrics(obj, metrics.cpu_percent, metrics.memory_bytes);
                         }
                     }
                 }
@@ -195,7 +196,7 @@ async fn list_instances(
 
     Json(serde_json::json!({
         "instances": instances_with_metrics,
-        "total": instances.len(),
+        "total": total,
         "running": counts.get(&ServiceStatus::Running).unwrap_or(&0),
         "stopped": counts.get(&ServiceStatus::Stopped).unwrap_or(&0),
         "error": counts.get(&ServiceStatus::Error).unwrap_or(&0)

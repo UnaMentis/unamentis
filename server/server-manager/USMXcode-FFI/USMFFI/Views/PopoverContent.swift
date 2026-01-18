@@ -185,18 +185,21 @@ struct PopoverContent: View {
             }
             .buttonStyle(.borderless)
             .help("Open Operations Console (localhost:3000)")
+            .accessibilityLabel("Open Operations Console")
 
             Button(action: { openURL("http://localhost:3001") }) {
                 Image(systemName: "laptopcomputer")
             }
             .buttonStyle(.borderless)
             .help("Open Web Client (localhost:3001)")
+            .accessibilityLabel("Open Web Client")
 
             Button(action: { openURL("http://localhost:8765") }) {
                 Image(systemName: "doc.text")
             }
             .buttonStyle(.borderless)
             .help("Open Logs (localhost:8765)")
+            .accessibilityLabel("Open Logs")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

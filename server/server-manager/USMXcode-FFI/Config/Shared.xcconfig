@@ -20,8 +20,8 @@ MACOSX_DEPLOYMENT_TARGET = 15.4
 // Info PLIST
 // ==========================================
 GENERATE_INFOPLIST_FILE = YES
-// Menu bar app - hide from Dock (set to NO for debugging)
-INFOPLIST_KEY_LSUIElement = NO
+// Menu bar app - hide from Dock
+INFOPLIST_KEY_LSUIElement = YES
 // App category
 INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.utilities
 

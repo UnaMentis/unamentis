@@ -976,8 +976,8 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 - **Specialized modules framework** (high-stakes learning scenarios)
 - **SAT Preparation Module specification** (adaptive testing, strategy training)
 - **Knowledge Bowl Module specification** (multi-subject mastery, competition simulation)
-- **USM Core** (Rust cross-platform service manager, HTTP/WebSocket API, C FFI, 49 tests)
-- **USM-FFI** macOS menu bar app (Swift, real-time WebSocket, 15 tests)
+- **USM Core** (Rust cross-platform service manager, HTTP/WebSocket API, C FFI, 47 tests)
+- **USM-FFI** macOS menu bar app (Swift, real-time WebSocket, 16 tests)
 
 ### In Progress
 - Android client (separate repository)
@@ -1056,7 +1056,7 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 | Process Monitoring | sysinfo, libproc (macOS), procfs (Linux) |
 | Configuration | TOML (serde) |
 | FFI | C bindings for Swift/Python |
-| Testing | cargo test (49 tests) |
+| Testing | cargo test (47 tests) |
 
 ### Management API
 | Layer | Technology |

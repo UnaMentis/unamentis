@@ -55,7 +55,7 @@ description = "UnaMentis web client (Next.js)"
 default_port = 3001
 port_range = [3001, 3099]
 start_command = "cd {working_dir} && PORT={port} pnpm dev"
-health_endpoint = "http://localhost:{port}"
+health_endpoint = "http://localhost:{port}/api/health"
 health_timeout_ms = 5000
 category = "core"
 supports_multiple = false
@@ -79,7 +79,8 @@ default_port = 5432
 port_range = [5432, 5499]
 start_command = "brew services start postgresql@14 || /opt/homebrew/opt/postgresql@14/bin/pg_ctl -D /opt/homebrew/var/postgresql@14 start"
 stop_command = "brew services stop postgresql@14 || /opt/homebrew/opt/postgresql@14/bin/pg_ctl -D /opt/homebrew/var/postgresql@14 stop"
-health_endpoint = ""
+# Health check via pg_isready (port is fixed at 5432 for Homebrew installation)
+health_check_command = "pg_isready -h localhost -p {port}"
 health_timeout_ms = 5000
 category = "database"
 supports_multiple = false

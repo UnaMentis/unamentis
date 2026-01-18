@@ -395,6 +395,14 @@
             50% { transform: scale(1.05); }
         }
 
+        /* Respect reduced motion preference */
+        @media (prefers-reduced-motion: reduce) {
+            .timer-display.pulse,
+            .timer-display.critical {
+                animation: none;
+            }
+        }
+
         .timer-label {
             font-size: 0.75rem;
             color: var(--text-secondary);

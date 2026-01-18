@@ -68,6 +68,7 @@ struct ServiceRow: View {
                 .disabled(service.status == .running || service.status == .starting)
                 .opacity(service.status == .running || service.status == .starting ? 0.3 : 1.0)
                 .help("Start")
+                .accessibilityLabel("Start \(service.displayName)")
 
                 // Stop button
                 Button(action: { manager.stop(service.id) }) {
@@ -78,6 +79,7 @@ struct ServiceRow: View {
                 .disabled(service.status != .running)
                 .opacity(service.status != .running ? 0.3 : 1.0)
                 .help("Stop")
+                .accessibilityLabel("Stop \(service.displayName)")
 
                 // Restart button
                 Button(action: { manager.restart(service.id) }) {
@@ -88,6 +90,7 @@ struct ServiceRow: View {
                 .disabled(service.status != .running)
                 .opacity(service.status != .running ? 0.3 : 1.0)
                 .help("Restart")
+                .accessibilityLabel("Restart \(service.displayName)")
             }
         }
         .padding(.horizontal, 12)

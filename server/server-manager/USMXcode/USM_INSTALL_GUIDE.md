@@ -30,7 +30,7 @@ rm -rf ~/Applications/USM.app
 ### 3. Remove Xcode Build Artifacts
 ```bash
 rm -rf ~/Library/Developer/Xcode/DerivedData/USM-*
-rm -rf /Users/ramerman/dev/unamentis/server/server-manager/USMXcode/build
+rm -rf "$PROJECT_ROOT/server/server-manager/USMXcode/build"  # Or use relative path from repo root
 ```
 
 ### 4. Clear Preferences
@@ -83,10 +83,11 @@ killall SystemUIServer ControlCenter cfprefsd 2>/dev/null
 1. **Set MCP session defaults:**
 ```
 mcp__XcodeBuildMCP__session-set-defaults({
-  projectPath: "/Users/ramerman/dev/unamentis/server/server-manager/USMXcode/USM.xcodeproj",
+  projectPath: "$PROJECT_ROOT/server/server-manager/USMXcode/USM.xcodeproj",
   scheme: "USM"
 })
 ```
+Note: Replace `$PROJECT_ROOT` with your actual repository path.
 
 2. **Build for macOS:**
 ```

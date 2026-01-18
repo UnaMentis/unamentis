@@ -13,6 +13,7 @@ struct USMFFIApp: App {
         } label: {
             Image("MenuBarIcon")
                 .renderingMode(.template)
+                .accessibilityLabel("UnaMentis Server Manager")
         }
         .menuBarExtraStyle(.window)
 
@@ -76,6 +77,6 @@ struct SettingsView: View {
             Spacer()
         }
         .padding()
-        .frame(width: 320, height: 250)
+        .frame(width: 320, minHeight: 250, maxHeight: 400)
     }
 }
