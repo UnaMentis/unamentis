@@ -10,7 +10,7 @@ import Foundation
 // MARK: - Question Model
 
 /// A Knowledge Bowl question with answer, metadata, and suitability flags
-struct KBQuestion: Codable, Identifiable, Hashable {
+struct KBQuestion: Codable, Identifiable, Hashable, Sendable {
     let id: UUID
     let text: String
     let answer: KBAnswer
@@ -111,7 +111,7 @@ struct KBQuestion: Codable, Identifiable, Hashable {
 // MARK: - Answer Model
 
 /// Answer with primary response and acceptable alternatives
-struct KBAnswer: Codable, Hashable {
+struct KBAnswer: Codable, Hashable, Sendable {
     /// The canonical correct answer
     let primary: String
 
@@ -144,7 +144,7 @@ struct KBAnswer: Codable, Hashable {
 // MARK: - Answer Type
 
 /// Type of answer for specialized matching logic
-enum KBAnswerType: String, Codable, CaseIterable {
+enum KBAnswerType: String, Codable, CaseIterable, Sendable {
     case text           // Generic text answer
     case person         // Person's name (handle first/last order, titles)
     case place          // Geographic location (handle "the", abbreviations)
@@ -158,7 +158,7 @@ enum KBAnswerType: String, Codable, CaseIterable {
 // MARK: - Difficulty Level
 
 /// Difficulty levels aligned with competition standards
-enum KBDifficulty: String, Codable, CaseIterable, Comparable {
+enum KBDifficulty: String, Codable, CaseIterable, Comparable, Sendable {
     case overview       // Basic familiarity
     case foundational   // Core concepts
     case intermediate   // Deeper understanding
@@ -197,7 +197,7 @@ enum KBDifficulty: String, Codable, CaseIterable, Comparable {
 // MARK: - Grade Level
 
 /// Target grade levels for questions
-enum KBGradeLevel: String, Codable, CaseIterable {
+enum KBGradeLevel: String, Codable, CaseIterable, Sendable {
     case middleSchool   // Grades 6-8
     case highSchool     // Grades 9-12
     case advanced       // College-prep / early college
@@ -222,7 +222,7 @@ enum KBGradeLevel: String, Codable, CaseIterable {
 // MARK: - Suitability Flags
 
 /// Flags indicating which round types a question is suitable for
-struct KBSuitability: Codable, Hashable {
+struct KBSuitability: Codable, Hashable, Sendable {
     /// Can be used in written (MCQ) round
     let forWritten: Bool
 
@@ -251,9 +251,10 @@ struct KBSuitability: Codable, Hashable {
 // MARK: - Question Attempt
 
 /// Record of a user's attempt at answering a question
-struct KBQuestionAttempt: Codable, Identifiable {
+struct KBQuestionAttempt: Codable, Identifiable, Sendable {
     let id: UUID
     let questionId: UUID
+    let domain: KBDomain  // Domain for performance tracking
     let timestamp: Date
     let userAnswer: String?
     let selectedChoice: Int?  // 0-3 for A-D in MCQ
@@ -269,6 +270,7 @@ struct KBQuestionAttempt: Codable, Identifiable {
     init(
         id: UUID = UUID(),
         questionId: UUID,
+        domain: KBDomain,
         timestamp: Date = Date(),
         userAnswer: String? = nil,
         selectedChoice: Int? = nil,
@@ -283,6 +285,7 @@ struct KBQuestionAttempt: Codable, Identifiable {
     ) {
         self.id = id
         self.questionId = questionId
+        self.domain = domain
         self.timestamp = timestamp
         self.userAnswer = userAnswer
         self.selectedChoice = selectedChoice
@@ -300,7 +303,7 @@ struct KBQuestionAttempt: Codable, Identifiable {
 // MARK: - Round Type
 
 /// Types of Knowledge Bowl rounds
-enum KBRoundType: String, Codable, CaseIterable {
+enum KBRoundType: String, Codable, CaseIterable, Sendable {
     case written    // MCQ, team works together, timed
     case oral       // Spoken questions, buzzer-based
 
@@ -322,7 +325,7 @@ enum KBRoundType: String, Codable, CaseIterable {
 // MARK: - Match Type
 
 /// How an answer was validated
-enum KBMatchType: String, Codable {
+enum KBMatchType: String, Codable, Sendable {
     case exact          // Exact match to primary answer
     case acceptable     // Matched an acceptable alternative
     case fuzzy          // Matched via fuzzy matching (typos)
@@ -334,7 +337,7 @@ enum KBMatchType: String, Codable {
 // MARK: - Question Bundle
 
 /// Container for bundled questions (loaded from JSON)
-struct KBQuestionBundle: Codable {
+struct KBQuestionBundle: Codable, Sendable {
     let version: String
     let generatedAt: Date?
     let questions: [KBQuestion]

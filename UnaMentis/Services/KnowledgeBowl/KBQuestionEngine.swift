@@ -261,17 +261,17 @@ final class KBQuestionEngine: ObservableObject {
 
 // MARK: - Errors
 
-enum KBQuestionError: LocalizedError {
+enum KBQuestionError: LocalizedError, Sendable {
     case bundleNotFound
-    case decodingFailed(Error)
+    case decodingFailed(String)  // Store error message instead of Error for Sendable
     case insufficientQuestions(needed: Int, available: Int)
 
     var errorDescription: String? {
         switch self {
         case .bundleNotFound:
             return "Question bundle not found in app resources"
-        case .decodingFailed(let error):
-            return "Failed to decode questions: \(error.localizedDescription)"
+        case .decodingFailed(let message):
+            return "Failed to decode questions: \(message)"
         case .insufficientQuestions(let needed, let available):
             return "Not enough questions available: need \(needed), have \(available)"
         }

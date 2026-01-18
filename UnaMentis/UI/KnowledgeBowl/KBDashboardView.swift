@@ -308,9 +308,7 @@ struct KBDashboardView: View {
             roundType: .written,
             questionCount: 10
         )
-        print("[KB] startWrittenPractice - engine has \(engine.totalQuestionCount) questions")
         let questions = engine.selectForSession(config: config)
-        print("[KB] selectForSession returned \(questions.count) questions")
         writtenSessionViewModel = KBWrittenSessionViewModel(questions: questions, config: config)
         showingWrittenSession = true
     }
@@ -321,9 +319,7 @@ struct KBDashboardView: View {
             roundType: .oral,
             questionCount: 5  // Fewer questions for oral practice
         )
-        print("[KB] startOralPractice - engine has \(engine.totalQuestionCount) questions")
         let questions = engine.selectForSession(config: config)
-        print("[KB] selectForSession returned \(questions.count) questions for oral")
         oralSessionViewModel = KBOralSessionViewModel(questions: questions, config: config)
         showingOralSession = true
     }

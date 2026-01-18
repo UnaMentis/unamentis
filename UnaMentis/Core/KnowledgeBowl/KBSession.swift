@@ -87,15 +87,31 @@ struct KBSession: Codable, Identifiable {
 
     /// Accuracy breakdown by domain
     var performanceByDomain: [KBDomain: DomainPerformance] {
-        var performance: [KBDomain: (correct: Int, total: Int, time: TimeInterval)] = [:]
+        var stats: [KBDomain: (correct: Int, total: Int, time: TimeInterval)] = [:]
 
         for attempt in attempts {
-            // We'd need the question to get the domain, so this is simplified
-            // In practice, we'd store the domain in the attempt or look it up
+            let domain = attempt.domain
+            var current = stats[domain] ?? (correct: 0, total: 0, time: 0)
+            current.total += 1
+            if attempt.wasCorrect {
+                current.correct += 1
+            }
+            current.time += attempt.responseTime
+            stats[domain] = current
         }
 
-        // Placeholder, would need question lookup
-        return [:]
+        var result: [KBDomain: DomainPerformance] = [:]
+        for (domain, stat) in stats {
+            let avgTime = stat.total > 0 ? stat.time / Double(stat.total) : 0
+            result[domain] = DomainPerformance(
+                domain: domain,
+                correct: stat.correct,
+                total: stat.total,
+                averageTime: avgTime
+            )
+        }
+
+        return result
     }
 }
 
@@ -286,6 +302,7 @@ final class KBWrittenSessionViewModel: ObservableObject {
 
         let attempt = KBQuestionAttempt(
             questionId: question.id,
+            domain: question.domain,
             selectedChoice: selectedAnswer,
             responseTime: responseTime,
             wasCorrect: isCorrect,

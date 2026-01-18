@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Region
 
 /// Supported Knowledge Bowl regions with distinct rule sets
-enum KBRegion: String, Codable, CaseIterable, Identifiable {
+enum KBRegion: String, Codable, CaseIterable, Identifiable, Sendable {
     case colorado
     case coloradoSprings  // Special sub-region with stricter hand signal rules
     case minnesota
@@ -45,7 +45,7 @@ enum KBRegion: String, Codable, CaseIterable, Identifiable {
 // MARK: - Regional Configuration
 
 /// Complete rule configuration for a Knowledge Bowl region
-struct KBRegionalConfig: Codable, Equatable {
+struct KBRegionalConfig: Codable, Equatable, Sendable {
     let region: KBRegion
 
     // MARK: - Team Configuration
@@ -239,7 +239,7 @@ extension KBRegionalConfig {
 // MARK: - Session Configuration
 
 /// Configuration for a practice session
-struct KBSessionConfig: Codable {
+struct KBSessionConfig: Codable, Sendable {
     let region: KBRegion
     let roundType: KBRoundType
     let questionCount: Int

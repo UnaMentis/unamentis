@@ -156,7 +156,7 @@ final class KBOnDeviceSTT: NSObject, ObservableObject {
 
                 if let error = error {
                     self.logger.error("Recognition error: \(error.localizedDescription)")
-                    self.error = .recognitionFailed(error)
+                    self.error = .recognitionFailed(error.localizedDescription)
                     self.stopListening()
                     return
                 }
@@ -237,7 +237,8 @@ final class KBOnDeviceSTT: NSObject, ObservableObject {
             if transcript.count == lastTranscriptLength {
                 if silenceStartTime == nil {
                     silenceStartTime = Date()
-                } else if Date().timeIntervalSince(silenceStartTime!) >= silenceThreshold {
+                } else if let startTime = silenceStartTime,
+                          Date().timeIntervalSince(startTime) >= silenceThreshold {
                     break
                 }
             } else {
@@ -288,13 +289,13 @@ extension KBOnDeviceSTT: SFSpeechRecognizerDelegate {
 
 // MARK: - Errors
 
-enum KBSTTError: LocalizedError {
+enum KBSTTError: LocalizedError, Sendable {
     case authorizationDenied
     case microphoneAccessDenied
     case restricted
     case recognizerUnavailable
     case recognitionRequestFailed
-    case recognitionFailed(Error)
+    case recognitionFailed(String)  // Store error message instead of Error for Sendable
 
     var errorDescription: String? {
         switch self {
@@ -308,8 +309,8 @@ enum KBSTTError: LocalizedError {
             return "Speech recognizer is not available"
         case .recognitionRequestFailed:
             return "Failed to create speech recognition request"
-        case .recognitionFailed(let error):
-            return "Speech recognition failed: \(error.localizedDescription)"
+        case .recognitionFailed(let message):
+            return "Speech recognition failed: \(message)"
         }
     }
 }

@@ -618,6 +618,9 @@ final class KBOralSessionViewModel: ObservableObject {
     @Published var lastAnswerCorrect: Bool?
     @Published var hasPermissions = false
 
+    // Response Time Tracking
+    private var questionStartTime: Date?
+
     // MARK: - Services
 
     private let tts = KBOnDeviceTTS()
@@ -783,6 +786,7 @@ final class KBOralSessionViewModel: ObservableObject {
 
     private func startListeningPhase() {
         transcript = ""
+        questionStartTime = Date()  // Start timing from when user can answer
         state = .listeningForAnswer
     }
 
@@ -825,10 +829,14 @@ final class KBOralSessionViewModel: ObservableObject {
         // Validate answer
         let result = validator.validate(userAnswer: transcript, question: question)
 
+        // Calculate response time from when user could start answering
+        let responseTime = questionStartTime.map { Date().timeIntervalSince($0) } ?? 0
+
         let attempt = KBQuestionAttempt(
             questionId: question.id,
+            domain: question.domain,
             userAnswer: transcript,
-            responseTime: Date().timeIntervalSince(session.startTime),
+            responseTime: responseTime,
             wasCorrect: result.isCorrect,
             pointsEarned: result.isCorrect ? regionalConfig.oralPointsPerCorrect : 0,
             roundType: .oral,

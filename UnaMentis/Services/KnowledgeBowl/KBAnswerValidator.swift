@@ -11,13 +11,13 @@ import OSLog
 // MARK: - Answer Validator
 
 /// Validates user answers against correct answers using various matching strategies
-final class KBAnswerValidator {
+final class KBAnswerValidator: Sendable {
     private let logger = Logger(subsystem: "com.unamentis", category: "KBAnswerValidator")
 
     // MARK: - Configuration
 
     /// Configuration for answer validation
-    struct Config {
+    struct Config: Sendable {
         /// Maximum Levenshtein distance for fuzzy matching (as percentage of answer length)
         var fuzzyThresholdPercent: Double = 0.20 // Allow ~20% error
 
@@ -32,7 +32,7 @@ final class KBAnswerValidator {
         static let lenient = Config(fuzzyThresholdPercent: 0.30, minimumConfidence: 0.5)
     }
 
-    private var config: Config
+    private let config: Config
 
     // MARK: - Initialization
 
@@ -360,7 +360,7 @@ final class KBAnswerValidator {
 // MARK: - Validation Result
 
 /// Result of answer validation
-struct KBValidationResult {
+struct KBValidationResult: Sendable {
     /// Whether the answer was correct
     let isCorrect: Bool
 

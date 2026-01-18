@@ -29,7 +29,7 @@ final class KBOnDeviceTTS: NSObject, ObservableObject {
     // MARK: - Configuration
 
     /// Voice configuration for questions
-    struct VoiceConfig {
+    struct VoiceConfig: Sendable {
         var language: String = "en-US"
         var rate: Float = AVSpeechUtteranceDefaultSpeechRate
         var pitchMultiplier: Float = 1.0
