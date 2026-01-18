@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -263,7 +263,7 @@
 		0FE75D6CC337CDBA54EE87FC /* ControlButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlButtonsView.swift; sourceTree = "<group>"; };
 		11D96FBF2E03F7600EE74EED /* IdleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdleView.swift; sourceTree = "<group>"; };
 		14F5F7B4594AB0DD6CE717E7 /* ref-botticelli-birth-venus.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "ref-botticelli-birth-venus.jpg"; sourceTree = "<group>"; };
-		16858E63B3D494C0EDB79B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		16858E63B3D494C0EDB79B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1881BE225A87C112361C41D0 /* FOVContextManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FOVContextManager.swift; sourceTree = "<group>"; };
 		18A41B20443F5CDE827A977D /* APIKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeyManager.swift; sourceTree = "<group>"; };
 		190005E1976C45AEAF544C76 /* MapAssetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapAssetView.swift; sourceTree = "<group>"; };
@@ -369,7 +369,7 @@
 		982A6B1F33A22B67C9A23567 /* CurriculumDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumDownloadManager.swift; sourceTree = "<group>"; };
 		99F01835E4A6FD36F8723764 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		9A39F3F414367641F29F2D0D /* CurriculumService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumService.swift; sourceTree = "<group>"; };
-		9ADF33B783CB8AAF071997F6 /* llama-3.2-3b-instruct-q4_k_m.gguf */ = {isa = PBXFileReference; path = "llama-3.2-3b-instruct-q4_k_m.gguf"; sourceTree = "<group>"; };
+		9ADF33B783CB8AAF071997F6 /* llama-3.2-3b-instruct-q4_k_m.gguf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "llama-3.2-3b-instruct-q4_k_m.gguf"; sourceTree = "<group>"; };
 		9AFF6371BD4BDA82DAB5A4A0 /* TodoItemStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItemStatus.swift; sourceTree = "<group>"; };
 		9ED21B50524DB5FEFE3F9E99 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A008CBD6F2FA374F46DDB324 /* AudioEngineConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineConfig.swift; sourceTree = "<group>"; };
@@ -390,7 +390,7 @@
 		AD9B85DFB702289D0E6DB73D /* KBSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KBSession.swift; sourceTree = "<group>"; };
 		AEB55A7777AA7B176D7BB4A7 /* WatchConnectivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityService.swift; sourceTree = "<group>"; };
 		AFC4A17E2DF38A82C06A6DB8 /* ToolCallProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolCallProcessor.swift; sourceTree = "<group>"; };
-		B0F749D0A7C343F32481093F /* UnaMentis.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = UnaMentis.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0F749D0A7C343F32481093F /* UnaMentis.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UnaMentis.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B13D54BC028D63C1771F018C /* ContextSummarizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextSummarizer.swift; sourceTree = "<group>"; };
 		B28BF0821DBE85148E339B50 /* AudioEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineTests.swift; sourceTree = "<group>"; };
 		B73D9C99711971EAA182794A /* CurriculumEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumEntity.swift; sourceTree = "<group>"; };
@@ -1261,12 +1261,6 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1520;
 				TargetAttributes = {
-					250B3CE20887198C8B0639A2 = {
-						DevelopmentTeam = "";
-					};
-					8B385E9CB989C455F6041CA2 = {
-						DevelopmentTeam = "";
-					};
 					C998553426CFA644B116D266 = {
 						DevelopmentTeam = "";
 					};
@@ -1287,7 +1281,6 @@
 				725D430F7D40FF1825D85A13 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 				3157FAD29363A7813CCFD6FA /* XCRemoteSwiftPackageReference "swift-log" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -1587,6 +1580,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = UnaMentis/UnaMentis.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = UnaMentis/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -1605,6 +1599,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "UnaMentis Watch App/Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = com.unamentis.app.watchkitapp;
@@ -1748,6 +1743,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = UnaMentis/UnaMentis.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = UnaMentis/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -1766,6 +1762,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "UnaMentis Watch App/Info.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = com.unamentis.app.watchkitapp;
