@@ -77,18 +77,20 @@ final class USMBridge {
     /// - Parameter instanceId: Service instance ID
     /// - Returns: True if successful
     func startService(_ instanceId: String) -> Bool {
-        guard let h = handle else { return false }
+        queue.sync {
+            guard let h = handle else { return false }
 
-        let result = instanceId.withCString { cId in
-            usm_start_service(h, cId)
-        }
+            let result = instanceId.withCString { cId in
+                usm_start_service(h, cId)
+            }
 
-        if result == 0 {
-            print("[USMBridge] Started service: \(instanceId)")
-            return true
-        } else {
-            print("[USMBridge] Failed to start service: \(instanceId)")
-            return false
+            if result == 0 {
+                print("[USMBridge] Started service: \(instanceId)")
+                return true
+            } else {
+                print("[USMBridge] Failed to start service: \(instanceId)")
+                return false
+            }
         }
     }
 
@@ -96,18 +98,20 @@ final class USMBridge {
     /// - Parameter instanceId: Service instance ID
     /// - Returns: True if successful
     func stopService(_ instanceId: String) -> Bool {
-        guard let h = handle else { return false }
+        queue.sync {
+            guard let h = handle else { return false }
 
-        let result = instanceId.withCString { cId in
-            usm_stop_service(h, cId)
-        }
+            let result = instanceId.withCString { cId in
+                usm_stop_service(h, cId)
+            }
 
-        if result == 0 {
-            print("[USMBridge] Stopped service: \(instanceId)")
-            return true
-        } else {
-            print("[USMBridge] Failed to stop service: \(instanceId)")
-            return false
+            if result == 0 {
+                print("[USMBridge] Stopped service: \(instanceId)")
+                return true
+            } else {
+                print("[USMBridge] Failed to stop service: \(instanceId)")
+                return false
+            }
         }
     }
 
@@ -115,18 +119,20 @@ final class USMBridge {
     /// - Parameter instanceId: Service instance ID
     /// - Returns: True if successful
     func restartService(_ instanceId: String) -> Bool {
-        guard let h = handle else { return false }
+        queue.sync {
+            guard let h = handle else { return false }
 
-        let result = instanceId.withCString { cId in
-            usm_restart_service(h, cId)
-        }
+            let result = instanceId.withCString { cId in
+                usm_restart_service(h, cId)
+            }
 
-        if result == 0 {
-            print("[USMBridge] Restarted service: \(instanceId)")
-            return true
-        } else {
-            print("[USMBridge] Failed to restart service: \(instanceId)")
-            return false
+            if result == 0 {
+                print("[USMBridge] Restarted service: \(instanceId)")
+                return true
+            } else {
+                print("[USMBridge] Failed to restart service: \(instanceId)")
+                return false
+            }
         }
     }
 
