@@ -105,21 +105,61 @@ impl ProcessMonitor for MacOSMonitor {
     fn start_process(&self, command: &str, working_dir: Option<&Path>) -> Result<u32> {
         debug!(command = %command, working_dir = ?working_dir, "Starting process");
 
+        // Create temp file to capture the actual service PID
+        let pid_file = std::env::temp_dir().join(format!("usm-{}.pid", std::process::id()));
+
+        // Wrapper script that:
+        // 1. Starts the service in background
+        // 2. Captures its PID and writes to file
+        // 3. Waits so the shell doesn't exit immediately
+        let wrapper = format!(
+            r#"{{ {} }} & echo $! > "{}" && wait"#,
+            command,
+            pid_file.display()
+        );
+
         let mut cmd = Command::new("/bin/zsh");
-        cmd.args(["-c", &format!("{} &", command)]);
+        cmd.args(["-c", &wrapper]);
 
         if let Some(dir) = working_dir {
             cmd.current_dir(dir);
         }
 
-        // Detach from our process group
+        // Keep stdout/stderr null for now (TODO: per-service log files)
         cmd.stdout(std::process::Stdio::null());
         cmd.stderr(std::process::Stdio::null());
 
-        let child = cmd.spawn()?;
-        let pid = child.id();
+        // Spawn the wrapper (it will wait in background)
+        let mut _child = cmd.spawn()?;
 
-        trace!(pid = pid, "Process started");
+        // Give shell time to write PID file (200ms should be plenty)
+        std::thread::sleep(std::time::Duration::from_millis(200));
+
+        // Read the actual service PID from file
+        let pid = if pid_file.exists() {
+            match std::fs::read_to_string(&pid_file) {
+                Ok(contents) => {
+                    let _ = std::fs::remove_file(&pid_file); // Clean up
+                    contents.trim().parse::<u32>()
+                        .map_err(|e| anyhow::anyhow!("Failed to parse PID: {}", e))?
+                }
+                Err(e) => {
+                    warn!("Failed to read PID file: {}", e);
+                    anyhow::bail!("Process may have failed - cannot read PID file");
+                }
+            }
+        } else {
+            warn!("PID file not created after 200ms");
+            anyhow::bail!("Process failed to start - no PID file created");
+        };
+
+        // Verify process is actually running
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        if !self.is_running(pid) {
+            anyhow::bail!("Process {} started but immediately died", pid);
+        }
+
+        trace!(pid = pid, "Process started and verified running");
         Ok(pid)
     }
 
@@ -209,8 +249,8 @@ mod tests {
         // Find some common system process
         let results = monitor.find_by_name("kernel");
 
-        // Should find at least one process
-        // (kernel_task on macOS)
-        assert!(!results.is_empty() || true); // Don't fail if not found
+        // Should find at least one process (kernel_task on macOS)
+        // Don't fail if not found since this is environment-dependent
+        let _ = results; // Acknowledge we're not asserting on the results
     }
 }

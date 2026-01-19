@@ -21,7 +21,7 @@ display_name = "Ollama LLM Server"
 description = "Local LLM inference server"
 default_port = 11434
 port_range = [11434, 11450]
-start_command = "OLLAMA_HOST=0.0.0.0:{port} ollama serve"
+start_command = "OLLAMA_HOST=0.0.0.0:{port} /opt/homebrew/bin/ollama serve"
 health_endpoint = "http://localhost:{port}/api/tags"
 health_timeout_ms = 10000
 category = "core"
@@ -32,29 +32,30 @@ display_name = "Next.js Web Server"
 description = "UnaMentis web frontend"
 default_port = 3000
 port_range = [3000, 3099]
-start_command = "cd {working_dir} && PORT={port} pnpm start"
+start_command = "cd {working_dir} && PORT={port} /opt/homebrew/bin/pnpm dev"
 health_endpoint = "http://localhost:{port}/api/health"
 health_timeout_ms = 5000
 category = "core"
 supports_multiple = true
 
-[templates.log-server]
-display_name = "Log Server"
-description = "Centralized logging server"
-default_port = 8765
-port_range = [8765, 8765]
-start_command = "python3 {working_dir}/log_server/server.py --port {port}"
-health_endpoint = "http://localhost:{port}/health"
-health_timeout_ms = 5000
-category = "core"
-supports_multiple = false
+# Log Server - DISABLED (not yet implemented)
+# [templates.log-server]
+# display_name = "Log Server"
+# description = "Centralized logging server"
+# default_port = 8765
+# port_range = [8765, 8765]
+# start_command = "python3 {working_dir}/log_server/server.py --port {port}"
+# health_endpoint = "http://localhost:{port}/health"
+# health_timeout_ms = 5000
+# category = "core"
+# supports_multiple = false
 
 [templates.web-client]
 display_name = "Web Client"
 description = "UnaMentis web client (Next.js)"
 default_port = 3001
 port_range = [3001, 3099]
-start_command = "cd {working_dir} && PORT={port} pnpm dev"
+start_command = "cd {working_dir} && PORT={port} /opt/homebrew/bin/pnpm dev"
 health_endpoint = "http://localhost:{port}/api/health"
 health_timeout_ms = 5000
 category = "core"
@@ -85,16 +86,17 @@ health_timeout_ms = 5000
 category = "database"
 supports_multiple = false
 
-[templates.operations-console]
-display_name = "Operations Console"
-description = "System operations and monitoring console"
-default_port = 8780
-port_range = [8780, 8789]
-start_command = "python3 {working_dir}/ops_console/server.py --port {port}"
-health_endpoint = "http://localhost:{port}/health"
-health_timeout_ms = 5000
-category = "core"
-supports_multiple = false
+# Operations Console - DISABLED (not yet implemented)
+# [templates.operations-console]
+# display_name = "Operations Console"
+# description = "System operations and monitoring console"
+# default_port = 8780
+# port_range = [8780, 8789]
+# start_command = "python3 {working_dir}/ops_console/server.py --port {port}"
+# health_endpoint = "http://localhost:{port}/health"
+# health_timeout_ms = 5000
+# category = "core"
+# supports_multiple = false
 
 # =============================================================================
 # DEFAULT INSTANCES - Created on first startup
@@ -121,12 +123,13 @@ working_dir = "${PROJECT_ROOT}/server/web"
 auto_start = false
 tags = ["core", "web"]
 
-[instances.log-server]
-template = "log-server"
-port = 8765
-working_dir = "${PROJECT_ROOT}/server"
-auto_start = true
-tags = ["core", "logging"]
+# DISABLED - template not yet implemented
+# [instances.log-server]
+# template = "log-server"
+# port = 8765
+# working_dir = "${PROJECT_ROOT}/server"
+# auto_start = true
+# tags = ["core", "logging"]
 
 [instances.web-client]
 template = "web-client"
@@ -149,9 +152,10 @@ working_dir = "${PROJECT_ROOT}/server"
 auto_start = false
 tags = ["database"]
 
-[instances.operations-console]
-template = "operations-console"
-port = 8780
-working_dir = "${PROJECT_ROOT}/server"
-auto_start = false
-tags = ["core", "ops"]
+# DISABLED - template not yet implemented
+# [instances.operations-console]
+# template = "operations-console"
+# port = 8780
+# working_dir = "${PROJECT_ROOT}/server"
+# auto_start = false
+# tags = ["core", "ops"]
