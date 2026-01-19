@@ -1,0 +1,856 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2025-01-17T00:00:00Z",
+  "questions": [
+    {
+      "id": "00000001-0001-0001-0001-000000000001",
+      "text": "What is the chemical symbol for gold?",
+      "answer": {
+        "primary": "Au",
+        "acceptable": ["AU", "au"],
+        "answerType": "scientific"
+      },
+      "domain": "science",
+      "subdomain": "chemistry",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Au", "Ag", "Fe", "Cu"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000002",
+      "text": "What planet is known as the Red Planet?",
+      "answer": {
+        "primary": "Mars",
+        "acceptable": null,
+        "answerType": "place"
+      },
+      "domain": "science",
+      "subdomain": "astronomy",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Mars", "Venus", "Jupiter", "Mercury"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000003",
+      "text": "What is the powerhouse of the cell?",
+      "answer": {
+        "primary": "Mitochondria",
+        "acceptable": ["The mitochondria", "Mitochondrion"],
+        "answerType": "scientific"
+      },
+      "domain": "science",
+      "subdomain": "biology",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Mitochondria", "Nucleus", "Ribosome", "Endoplasmic Reticulum"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000004",
+      "text": "What is the value of pi to two decimal places?",
+      "answer": {
+        "primary": "3.14",
+        "acceptable": ["3.14159", "pi"],
+        "answerType": "number"
+      },
+      "domain": "mathematics",
+      "subdomain": "geometry",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["3.14", "2.72", "1.62", "3.16"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000005",
+      "text": "What is the square root of 144?",
+      "answer": {
+        "primary": "12",
+        "acceptable": ["twelve"],
+        "answerType": "number"
+      },
+      "domain": "mathematics",
+      "subdomain": "arithmetic",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["12", "11", "13", "14"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000006",
+      "text": "In what year did World War II end?",
+      "answer": {
+        "primary": "1945",
+        "acceptable": ["nineteen forty-five"],
+        "answerType": "date"
+      },
+      "domain": "history",
+      "subdomain": "world history",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["1945", "1944", "1946", "1943"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000007",
+      "text": "Who was the first President of the United States?",
+      "answer": {
+        "primary": "George Washington",
+        "acceptable": ["Washington"],
+        "answerType": "person"
+      },
+      "domain": "history",
+      "subdomain": "US history",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["George Washington", "Thomas Jefferson", "John Adams", "Benjamin Franklin"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000008",
+      "text": "Who wrote Romeo and Juliet?",
+      "answer": {
+        "primary": "William Shakespeare",
+        "acceptable": ["Shakespeare"],
+        "answerType": "person"
+      },
+      "domain": "literature",
+      "subdomain": "drama",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["William Shakespeare", "Charles Dickens", "Jane Austen", "Mark Twain"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000009",
+      "text": "In what novel does the character Atticus Finch appear?",
+      "answer": {
+        "primary": "To Kill a Mockingbird",
+        "acceptable": ["To Kill A Mockingbird"],
+        "answerType": "title"
+      },
+      "domain": "literature",
+      "subdomain": "American literature",
+      "difficulty": "intermediate",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["To Kill a Mockingbird", "The Great Gatsby", "Of Mice and Men", "The Catcher in the Rye"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000010",
+      "text": "What is the capital of France?",
+      "answer": {
+        "primary": "Paris",
+        "acceptable": null,
+        "answerType": "place"
+      },
+      "domain": "socialStudies",
+      "subdomain": "geography",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Paris", "London", "Berlin", "Madrid"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000011",
+      "text": "What ocean is the largest on Earth?",
+      "answer": {
+        "primary": "Pacific Ocean",
+        "acceptable": ["Pacific", "The Pacific"],
+        "answerType": "place"
+      },
+      "domain": "socialStudies",
+      "subdomain": "geography",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000012",
+      "text": "Who painted the Mona Lisa?",
+      "answer": {
+        "primary": "Leonardo da Vinci",
+        "acceptable": ["Da Vinci", "Leonardo"],
+        "answerType": "person"
+      },
+      "domain": "arts",
+      "subdomain": "visual arts",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Leonardo da Vinci", "Michelangelo", "Raphael", "Vincent van Gogh"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000013",
+      "text": "What composer wrote the Four Seasons?",
+      "answer": {
+        "primary": "Antonio Vivaldi",
+        "acceptable": ["Vivaldi"],
+        "answerType": "person"
+      },
+      "domain": "arts",
+      "subdomain": "music",
+      "difficulty": "intermediate",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Antonio Vivaldi", "Johann Sebastian Bach", "Wolfgang Amadeus Mozart", "Ludwig van Beethoven"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000014",
+      "text": "What programming language was created by Guido van Rossum?",
+      "answer": {
+        "primary": "Python",
+        "acceptable": null,
+        "answerType": "text"
+      },
+      "domain": "technology",
+      "subdomain": "computer science",
+      "difficulty": "intermediate",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Python", "Java", "C++", "Ruby"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000015",
+      "text": "What does CPU stand for?",
+      "answer": {
+        "primary": "Central Processing Unit",
+        "acceptable": null,
+        "answerType": "text"
+      },
+      "domain": "technology",
+      "subdomain": "computer science",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Central Processing Unit", "Computer Personal Unit", "Central Program Utility", "Core Processing Unit"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000016",
+      "text": "What is the speed of light in a vacuum, approximately in miles per second?",
+      "answer": {
+        "primary": "186,000",
+        "acceptable": ["186000", "186,000 miles per second"],
+        "answerType": "number"
+      },
+      "domain": "science",
+      "subdomain": "physics",
+      "difficulty": "varsity",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["186,000", "93,000", "300,000", "150,000"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000017",
+      "text": "What is the derivative of x squared?",
+      "answer": {
+        "primary": "2x",
+        "acceptable": ["2*x", "two x"],
+        "answerType": "scientific"
+      },
+      "domain": "mathematics",
+      "subdomain": "calculus",
+      "difficulty": "varsity",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["2x", "x", "x²", "2"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000018",
+      "text": "The Pythagorean theorem relates to what type of triangle?",
+      "answer": {
+        "primary": "Right triangle",
+        "acceptable": ["Right", "Right-angled triangle"],
+        "answerType": "text"
+      },
+      "domain": "mathematics",
+      "subdomain": "geometry",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Right triangle", "Equilateral triangle", "Isosceles triangle", "Scalene triangle"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000019",
+      "text": "What ancient civilization built the pyramids at Giza?",
+      "answer": {
+        "primary": "Ancient Egypt",
+        "acceptable": ["Egypt", "Egyptians", "The Egyptians"],
+        "answerType": "text"
+      },
+      "domain": "history",
+      "subdomain": "ancient history",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Ancient Egypt", "Ancient Greece", "Ancient Rome", "Mesopotamia"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000020",
+      "text": "What document begins with 'We the People'?",
+      "answer": {
+        "primary": "The United States Constitution",
+        "acceptable": ["US Constitution", "Constitution", "The Constitution"],
+        "answerType": "title"
+      },
+      "domain": "history",
+      "subdomain": "US history",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["The United States Constitution", "The Declaration of Independence", "The Bill of Rights", "The Federalist Papers"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000021",
+      "text": "What Greek philosopher was the teacher of Alexander the Great?",
+      "answer": {
+        "primary": "Aristotle",
+        "acceptable": null,
+        "answerType": "person"
+      },
+      "domain": "history",
+      "subdomain": "ancient history",
+      "difficulty": "intermediate",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Aristotle", "Plato", "Socrates", "Pythagoras"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000022",
+      "text": "What is the longest river in the world?",
+      "answer": {
+        "primary": "Nile River",
+        "acceptable": ["Nile", "The Nile"],
+        "answerType": "place"
+      },
+      "domain": "socialStudies",
+      "subdomain": "geography",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Nile River", "Amazon River", "Mississippi River", "Yangtze River"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000023",
+      "text": "What novel by George Orwell depicts a dystopian future under Big Brother?",
+      "answer": {
+        "primary": "1984",
+        "acceptable": ["Nineteen Eighty-Four", "Nineteen Eighty Four"],
+        "answerType": "title"
+      },
+      "domain": "literature",
+      "subdomain": "British literature",
+      "difficulty": "intermediate",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["1984", "Animal Farm", "Brave New World", "Fahrenheit 451"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000024",
+      "text": "What element has the atomic number 1?",
+      "answer": {
+        "primary": "Hydrogen",
+        "acceptable": ["H"],
+        "answerType": "scientific"
+      },
+      "domain": "science",
+      "subdomain": "chemistry",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Hydrogen", "Helium", "Lithium", "Carbon"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000025",
+      "text": "What is the formula for water?",
+      "answer": {
+        "primary": "H2O",
+        "acceptable": ["H₂O"],
+        "answerType": "scientific"
+      },
+      "domain": "science",
+      "subdomain": "chemistry",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["H2O", "CO2", "NaCl", "O2"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000026",
+      "text": "What language is the origin of the word 'democracy'?",
+      "answer": {
+        "primary": "Greek",
+        "acceptable": ["Ancient Greek"],
+        "answerType": "text"
+      },
+      "domain": "language",
+      "subdomain": "etymology",
+      "difficulty": "intermediate",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Greek", "Latin", "French", "German"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000027",
+      "text": "What is a word that means the opposite of another word called?",
+      "answer": {
+        "primary": "Antonym",
+        "acceptable": null,
+        "answerType": "text"
+      },
+      "domain": "language",
+      "subdomain": "vocabulary",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Antonym", "Synonym", "Homonym", "Acronym"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000028",
+      "text": "In Greek mythology, who is the king of the gods?",
+      "answer": {
+        "primary": "Zeus",
+        "acceptable": null,
+        "answerType": "person"
+      },
+      "domain": "religionPhilosophy",
+      "subdomain": "mythology",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Zeus", "Poseidon", "Hades", "Apollo"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000029",
+      "text": "What philosophical school was founded by Zeno of Citium?",
+      "answer": {
+        "primary": "Stoicism",
+        "acceptable": ["The Stoics", "Stoic philosophy"],
+        "answerType": "text"
+      },
+      "domain": "religionPhilosophy",
+      "subdomain": "philosophy",
+      "difficulty": "varsity",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Stoicism", "Epicureanism", "Skepticism", "Cynicism"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000030",
+      "text": "What 1980s movie features a DeLorean time machine?",
+      "answer": {
+        "primary": "Back to the Future",
+        "acceptable": null,
+        "answerType": "title"
+      },
+      "domain": "popCulture",
+      "subdomain": "movies",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Back to the Future", "E.T.", "Ghostbusters", "The Terminator"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000031",
+      "text": "What sport does Michael Jordan primarily play?",
+      "answer": {
+        "primary": "Basketball",
+        "acceptable": null,
+        "answerType": "text"
+      },
+      "domain": "popCulture",
+      "subdomain": "sports",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Basketball", "Baseball", "Football", "Golf"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000032",
+      "text": "What board game involves buying properties like Boardwalk and Park Place?",
+      "answer": {
+        "primary": "Monopoly",
+        "acceptable": null,
+        "answerType": "title"
+      },
+      "domain": "miscellaneous",
+      "subdomain": "games",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Monopoly", "Scrabble", "Risk", "Clue"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000033",
+      "text": "What force keeps planets in orbit around the Sun?",
+      "answer": {
+        "primary": "Gravity",
+        "acceptable": ["Gravitational force", "Gravitational pull"],
+        "answerType": "scientific"
+      },
+      "domain": "science",
+      "subdomain": "physics",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Gravity", "Magnetism", "Friction", "Inertia"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000034",
+      "text": "What gas do plants absorb from the atmosphere during photosynthesis?",
+      "answer": {
+        "primary": "Carbon dioxide",
+        "acceptable": ["CO2", "Carbon Dioxide"],
+        "answerType": "scientific"
+      },
+      "domain": "science",
+      "subdomain": "biology",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Carbon dioxide", "Oxygen", "Nitrogen", "Hydrogen"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000035",
+      "text": "What is the largest organ in the human body?",
+      "answer": {
+        "primary": "Skin",
+        "acceptable": ["The skin"],
+        "answerType": "text"
+      },
+      "domain": "science",
+      "subdomain": "biology",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Skin", "Liver", "Brain", "Heart"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000036",
+      "text": "What war was fought between the North and South regions of the United States?",
+      "answer": {
+        "primary": "The Civil War",
+        "acceptable": ["Civil War", "American Civil War"],
+        "answerType": "text"
+      },
+      "domain": "history",
+      "subdomain": "US history",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["The Civil War", "The Revolutionary War", "World War I", "The War of 1812"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000037",
+      "text": "What amendment to the US Constitution abolished slavery?",
+      "answer": {
+        "primary": "13th Amendment",
+        "acceptable": ["Thirteenth Amendment", "The 13th", "13th"],
+        "answerType": "text"
+      },
+      "domain": "history",
+      "subdomain": "US history",
+      "difficulty": "intermediate",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["13th Amendment", "14th Amendment", "15th Amendment", "19th Amendment"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000038",
+      "text": "What continent is the country of Brazil located on?",
+      "answer": {
+        "primary": "South America",
+        "acceptable": null,
+        "answerType": "place"
+      },
+      "domain": "socialStudies",
+      "subdomain": "geography",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["South America", "North America", "Africa", "Europe"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000039",
+      "text": "What is the smallest prime number?",
+      "answer": {
+        "primary": "2",
+        "acceptable": ["two"],
+        "answerType": "number"
+      },
+      "domain": "mathematics",
+      "subdomain": "number theory",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["2", "1", "3", "0"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000040",
+      "text": "What is the sum of the angles in a triangle?",
+      "answer": {
+        "primary": "180 degrees",
+        "acceptable": ["180", "180°", "one hundred eighty degrees"],
+        "answerType": "number"
+      },
+      "domain": "mathematics",
+      "subdomain": "geometry",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["180 degrees", "90 degrees", "360 degrees", "270 degrees"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000041",
+      "text": "What author wrote The Odyssey?",
+      "answer": {
+        "primary": "Homer",
+        "acceptable": null,
+        "answerType": "person"
+      },
+      "domain": "literature",
+      "subdomain": "ancient literature",
+      "difficulty": "intermediate",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Homer", "Virgil", "Sophocles", "Plato"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000042",
+      "text": "What famous artist cut off part of his own ear?",
+      "answer": {
+        "primary": "Vincent van Gogh",
+        "acceptable": ["Van Gogh"],
+        "answerType": "person"
+      },
+      "domain": "arts",
+      "subdomain": "visual arts",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Vincent van Gogh", "Pablo Picasso", "Claude Monet", "Salvador Dalí"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000043",
+      "text": "Newton's first law of motion is also known as the law of what?",
+      "answer": {
+        "primary": "Inertia",
+        "acceptable": ["The law of inertia"],
+        "answerType": "scientific"
+      },
+      "domain": "science",
+      "subdomain": "physics",
+      "difficulty": "intermediate",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Inertia", "Motion", "Force", "Acceleration"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000044",
+      "text": "What type of blood vessel carries blood away from the heart?",
+      "answer": {
+        "primary": "Artery",
+        "acceptable": ["Arteries"],
+        "answerType": "scientific"
+      },
+      "domain": "science",
+      "subdomain": "biology",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Artery", "Vein", "Capillary", "Aorta"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000045",
+      "text": "What is the primary language spoken in Brazil?",
+      "answer": {
+        "primary": "Portuguese",
+        "acceptable": null,
+        "answerType": "text"
+      },
+      "domain": "socialStudies",
+      "subdomain": "geography",
+      "difficulty": "intermediate",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Portuguese", "Spanish", "English", "French"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000046",
+      "text": "What is the value of 2 to the power of 10?",
+      "answer": {
+        "primary": "1024",
+        "acceptable": ["one thousand twenty-four"],
+        "answerType": "number"
+      },
+      "domain": "mathematics",
+      "subdomain": "arithmetic",
+      "difficulty": "intermediate",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["1024", "512", "2048", "1000"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000047",
+      "text": "Who led the Continental Army during the American Revolutionary War?",
+      "answer": {
+        "primary": "George Washington",
+        "acceptable": ["Washington"],
+        "answerType": "person"
+      },
+      "domain": "history",
+      "subdomain": "US history",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["George Washington", "Thomas Jefferson", "Benjamin Franklin", "John Adams"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000048",
+      "text": "What is the freezing point of water in Fahrenheit?",
+      "answer": {
+        "primary": "32 degrees",
+        "acceptable": ["32", "32°F", "thirty-two degrees"],
+        "answerType": "number"
+      },
+      "domain": "science",
+      "subdomain": "physics",
+      "difficulty": "foundational",
+      "gradeLevel": "middleSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["32 degrees", "0 degrees", "100 degrees", "212 degrees"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000049",
+      "text": "What Shakespeare play features the characters Hamlet and Ophelia?",
+      "answer": {
+        "primary": "Hamlet",
+        "acceptable": null,
+        "answerType": "title"
+      },
+      "domain": "literature",
+      "subdomain": "drama",
+      "difficulty": "foundational",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Hamlet", "Macbeth", "Othello", "King Lear"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    },
+    {
+      "id": "00000001-0001-0001-0001-000000000050",
+      "text": "What is the SI unit of electric current?",
+      "answer": {
+        "primary": "Ampere",
+        "acceptable": ["Amp", "A"],
+        "answerType": "scientific"
+      },
+      "domain": "science",
+      "subdomain": "physics",
+      "difficulty": "intermediate",
+      "gradeLevel": "highSchool",
+      "suitability": { "forWritten": true, "forOral": true, "mcqPossible": true, "requiresVisual": false },
+      "mcqOptions": ["Ampere", "Volt", "Watt", "Ohm"],
+      "source": "Sample Questions",
+      "sourceAttribution": "Public Domain"
+    }
+  ]
+}

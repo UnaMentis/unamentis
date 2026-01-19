@@ -195,6 +195,19 @@ public struct TestResult: Codable, Sendable, Identifiable {
             errors: errors
         )
     }
+
+    /// Convert to dictionary for JSON serialization
+    public func toDictionary() -> [String: Any] {
+        do {
+            let data = try JSONEncoder().encode(self)
+            if let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                return dict
+            }
+        } catch {
+            // Fallback to empty dict on encoding failure
+        }
+        return [:]
+    }
 }
 
 // MARK: - Test Run
@@ -494,42 +507,6 @@ public struct Regression: Codable, Sendable {
 }
 
 // MARK: - Statistical Helpers
-
-extension Array where Element == Double {
-
-    /// Calculate median of the array
-    public var median: Double {
-        guard !isEmpty else { return 0 }
-        let sorted = self.sorted()
-        let mid = count / 2
-        if count % 2 == 0 {
-            return (sorted[mid - 1] + sorted[mid]) / 2.0
-        } else {
-            return sorted[mid]
-        }
-    }
-
-    /// Calculate percentile (0-100)
-    public func percentile(_ p: Int) -> Double {
-        guard !isEmpty else { return 0 }
-        let sorted = self.sorted()
-        let index = Double(p) / 100.0 * Double(count - 1)
-        let lower = Int(index)
-        let upper = lower + 1
-        let weight = index - Double(lower)
-
-        if upper >= count {
-            return sorted[lower]
-        }
-        return sorted[lower] * (1 - weight) + sorted[upper] * weight
-    }
-
-    /// Calculate standard deviation
-    public var standardDeviation: Double {
-        guard count > 1 else { return 0 }
-        let mean = self.reduce(0, +) / Double(count)
-        let squaredDiffs = self.map { ($0 - mean) * ($0 - mean) }
-        let variance = squaredDiffs.reduce(0, +) / Double(count - 1)
-        return variance.squareRoot()
-    }
-}
+// Array<Double> extensions (median, percentile, standardDeviation) are defined in
+// Core/Telemetry/TelemetryEngine.swift to avoid duplicate declarations.
+// TimeInterval is a typealias for Double, so the extensions work for both.

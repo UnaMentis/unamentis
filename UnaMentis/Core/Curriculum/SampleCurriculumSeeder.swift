@@ -257,4 +257,19 @@ public struct SampleCurriculumSeeder {
 
         try persistenceController.save()
     }
+
+    /// Delete ALL curricula (not just sample)
+    @MainActor
+    public func deleteAllCurricula() throws {
+        let context = persistenceController.viewContext
+
+        let request = Curriculum.fetchRequest()
+        let results = try context.fetch(request)
+
+        for curriculum in results {
+            context.delete(curriculum)
+        }
+
+        try persistenceController.save()
+    }
 }

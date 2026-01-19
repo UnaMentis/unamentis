@@ -271,8 +271,8 @@ public actor MetricsExporter {
         self.clientName = UserDefaults.standard.string(forKey: "MetricsExporterClientName")
             ?? "UnaMentis iOS"
 
-        // Load persisted queue
-        loadPersistedQueue()
+        // Load persisted queue asynchronously (actor-isolated method)
+        Task { await self.loadPersistedQueue() }
     }
 
     // MARK: - Configuration
@@ -487,7 +487,7 @@ public actor MetricsExporter {
                 llm: result.llmConfig.provider.identifier,
                 llmModel: result.llmConfig.model,
                 tts: result.ttsConfig.provider.identifier,
-                ttsVoice: result.ttsConfig.voice
+                ttsVoice: result.ttsConfig.voiceId
             ),
             resources: ResourceInfo(
                 cpuPercent: result.peakCPUPercent,
@@ -542,64 +542,6 @@ public enum MetricsExporterError: Error, LocalizedError {
 
 // MARK: - Provider Identifier Extensions
 
-extension STTProvider {
-    /// Identifier string for the unified format
-    public var identifier: String {
-        switch self {
-        case .deepgramNova3:
-            return "deepgram-nova3"
-        case .assemblyAI:
-            return "assemblyai"
-        case .openAIWhisper:
-            return "openai-whisper"
-        case .groqWhisper:
-            return "groq-whisper"
-        case .appleSpeech:
-            return "apple-speech"
-        case .glmASRNano:
-            return "glm-asr-nano"
-        case .glmASROnDevice:
-            return "glm-asr-ondevice"
-        }
-    }
-}
-
-extension LLMProvider {
-    /// Identifier string for the unified format
-    public var identifier: String {
-        switch self {
-        case .anthropic:
-            return "anthropic"
-        case .openAI:
-            return "openai"
-        case .selfHosted:
-            return "selfhosted"
-        case .localMLX:
-            return "local-mlx"
-        }
-    }
-}
-
-extension TTSProvider {
-    /// Identifier string for the unified format
-    public var identifier: String {
-        switch self {
-        case .chatterbox:
-            return "chatterbox"
-        case .elevenLabsFlash:
-            return "elevenlabs-flash"
-        case .elevenLabsTurbo:
-            return "elevenlabs-turbo"
-        case .deepgramAura2:
-            return "deepgram-aura2"
-        case .appleTTS:
-            return "apple-tts"
-        case .selfHosted:
-            return "selfhosted"
-        case .vibeVoice:
-            return "vibevoice"
-        case .playHT:
-            return "playht"
-        }
-    }
-}
+// Note: STTProvider.identifier is defined in STTService.swift
+// Note: LLMProvider.identifier is defined in LLMService.swift
+// Note: TTSProvider.identifier is defined in TTSService.swift

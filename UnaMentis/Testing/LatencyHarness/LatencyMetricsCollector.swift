@@ -76,7 +76,7 @@
 // - docs/LATENCY_TEST_HARNESS_GUIDE.md: Complete usage guide
 
 import Foundation
-import Darwin
+@preconcurrency import Darwin
 
 // MARK: - Mach Time Utilities
 

@@ -301,6 +301,26 @@ See `docs/quality/TOOL_TRUST_DOCTRINE.md` and the "Tool Trust Doctrine" section 
 
 Check `docs/TASK_STATUS.md` before starting work. Claim tasks before working to prevent conflicts with other AI agents.
 
+## Parallel Development with Worktrees
+
+Use `/worktree` skill to manage isolated development sessions for 2-4 parallel tasks:
+
+```
+/worktree create kb-feature    # Create worktree + auto-open VS Code
+/worktree list                 # List all worktrees with disk usage
+/worktree cleanup              # Clean DerivedData from inactive worktrees
+```
+
+Each worktree:
+- Has complete file isolation (no stashing/switching needed)
+- Runs an independent Claude Code session
+- Has its own MCP connections (run `/mcp-setup ios` in each)
+- Shares the same git history (lightweight, no repo duplication)
+
+Worktrees are created as siblings: `../unamentis-<name>/`
+
+See `.claude/skills/worktree/SKILL.md` for full documentation.
+
 ## Commit Convention
 
 Follow Conventional Commits: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `perf:`, `ci:`, `chore:`
@@ -489,6 +509,7 @@ Skills are focused workflows that provide consistency and predictability. Invoke
 | `/mcp-setup` | Configure MCP session defaults | Start of dev session |
 | `/read-external` | Cross-repo read access | Reference external repos |
 | `/comms` | Post to Slack/Trello with natural language | Team communication |
+| `/worktree` | Manage git worktrees for parallel development | Parallel task isolation |
 
 ### Key Skills
 
@@ -521,6 +542,14 @@ Skills are focused workflows that provide consistency and predictability. Invoke
 ```
 /mcp-setup ios       # Main iOS app
 /mcp-setup usm       # Server Manager app
+```
+
+**`/worktree`** - Parallel development with isolated worktrees
+```
+/worktree create kb-feature    # Create worktree (auto-opens VS Code)
+/worktree list                 # List all worktrees with disk usage
+/worktree cleanup              # Clean DerivedData from inactive worktrees
+/worktree remove kb-feature    # Remove worktree (with safety checks)
 ```
 
 See `.claude/skills/*/SKILL.md` for detailed documentation on each skill.

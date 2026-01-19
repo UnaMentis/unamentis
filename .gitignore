@@ -35,6 +35,9 @@ fastlane/test_output
 .coverage
 htmlcov/
 
+# Xcode test results
+*.xcresult/
+
 # macOS
 .DS_Store
 .AppleDouble

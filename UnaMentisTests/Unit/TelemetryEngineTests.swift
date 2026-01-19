@@ -195,10 +195,35 @@ final class TelemetryEngineTests: XCTestCase {
         await telemetry.startSession()
         await telemetry.recordLatency(.sttEmission, 0.150)
         await telemetry.recordCost(.stt, amount: 0.01, description: "test")
-        
+
         let snapshot = await telemetry.exportMetrics()
-        
+
         XCTAssertEqual(snapshot.latencies.sttMedianMs, 150)
         XCTAssertEqual(snapshot.costs.sttTotal, Decimal(string: "0.01")!)
+    }
+
+    // MARK: - Array Extension Tests
+
+    func testStandardDeviation_emptyArray_returnsZero() {
+        let values: [TimeInterval] = []
+        XCTAssertEqual(values.standardDeviation, 0)
+    }
+
+    func testStandardDeviation_singleValue_returnsZero() {
+        let values: [TimeInterval] = [5.0]
+        XCTAssertEqual(values.standardDeviation, 0)
+    }
+
+    func testStandardDeviation_uniformValues_returnsZero() {
+        let values: [TimeInterval] = [3.0, 3.0, 3.0, 3.0]
+        XCTAssertEqual(values.standardDeviation, 0, accuracy: 0.0001)
+    }
+
+    func testStandardDeviation_knownValues_calculatesCorrectly() {
+        // Values: 2, 4, 4, 4, 5, 5, 7, 9
+        // Mean = 5, Sample variance = 4.571, StdDev = 2.138
+        let values: [TimeInterval] = [2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]
+        let stdDev = values.standardDeviation
+        XCTAssertEqual(stdDev, 2.138, accuracy: 0.01)
     }
 }

@@ -17,6 +17,7 @@
 
 import Foundation
 import Logging
+import AVFoundation
 #if os(iOS)
 import UIKit
 #endif
@@ -176,7 +177,7 @@ public actor LatencyTestCoordinator {
             suiteName: suite.name,
             suiteId: suite.id,
             clientId: clientId,
-            clientDevice: getDeviceInfo(),
+            clientDevice: await getDeviceInfo(),
             totalConfigurations: configurations.count
         )
 
@@ -397,9 +398,11 @@ public actor LatencyTestCoordinator {
             }
 
             var error: NSError?
+            // Wrap sourceBuffer for Sendable closure (safe: synchronous use in converter)
+            nonisolated(unsafe) let capturedBuffer = sourceBuffer
             let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
                 outStatus.pointee = .haveData
-                return sourceBuffer
+                return capturedBuffer
             }
 
             let status = converter.convert(to: convertedBuffer, error: &error, withInputFrom: inputBlock)
@@ -414,7 +417,9 @@ public actor LatencyTestCoordinator {
         let sttPhase = TestPhaseTimer()
 
         // Start streaming with STT service
-        let resultStream = try await sttService.startStreaming(audioFormat: targetFormat)
+        // Safe: targetFormat is consumed synchronously by startStreaming for configuration
+        nonisolated(unsafe) let capturedFormat = targetFormat
+        let resultStream = try await sttService.startStreaming(audioFormat: capturedFormat)
 
         // Send audio in chunks (simulate real-time streaming)
         let chunkSize = AVAudioFrameCount(1600) // 100ms at 16kHz
@@ -437,7 +442,9 @@ public actor LatencyTestCoordinator {
                 chunkBuffer.frameLength = framesToSend
             }
 
-            try await sttService.sendAudio(chunkBuffer)
+            // Safe: buffer is consumed synchronously by sendAudio
+            nonisolated(unsafe) let sendBuffer = chunkBuffer
+            try await sttService.sendAudio(sendBuffer)
             offset += AVAudioFramePosition(framesToSend)
 
             // Small delay to simulate real-time audio (optional, can be removed for faster tests)
@@ -641,7 +648,7 @@ public actor LatencyTestCoordinator {
         case .selfHosted:
             // Get endpoint from ServerConfigManager
             if let endpoint = await ServerConfigManager.shared.getBestLLMEndpoint() {
-                return SelfHostedLLMService(baseURL: endpoint, model: config.model)
+                return SelfHostedLLMService(baseURL: endpoint, modelName: config.model)
             }
             throw TestCoordinatorError.providerCreationFailed("No healthy self-hosted LLM server available")
 
@@ -688,9 +695,9 @@ public actor LatencyTestCoordinator {
 
     // MARK: - Utilities
 
-    private func getDeviceInfo() -> String {
+    private func getDeviceInfo() async -> String {
         #if os(iOS)
-        return UIDevice.current.model
+        return await MainActor.run { UIDevice.current.model }
         #else
         return "Simulator"
         #endif

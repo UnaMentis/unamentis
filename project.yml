@@ -46,6 +46,8 @@ targets:
       - path: UnaMentis
         excludes:
           - "**/.DS_Store"
+          - "**/*.md"  # Exclude all markdown documentation files
+          - "**/Testing/LatencyHarness/TestHooks.swift"  # Has duplicate provider extensions
           # ManagedObjects included now - using manual classes with no auto-generation
           - "**/SelfHostedSTTService.swift"  # Has duplicate STTMetrics/STTError types
           - "**/OnDeviceLLMService.swift"  # Uses incompatible llama.cpp API, use SelfHostedLLMService instead
@@ -53,6 +55,9 @@ targets:
         excludes:
           - "**/.DS_Store"
       - path: models/llama-3.2-3b-instruct-q4_k_m.gguf
+        buildPhase: resources
+        type: file
+      - path: UnaMentis/Resources/kb-sample-questions.json
         buildPhase: resources
         type: file
     dependencies:

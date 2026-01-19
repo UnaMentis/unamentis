@@ -388,23 +388,10 @@ extension STTProvider {
     }
 }
 
-extension LLMProvider {
-    /// Whether this provider requires network
-    public var requiresNetwork: Bool {
-        self != .localMLX
-    }
-}
+// Note: LLMProvider.requiresNetwork is defined in LLMService.swift
 
 extension TTSProvider {
-    /// Whether this provider requires network
-    public var requiresNetwork: Bool {
-        switch self {
-        case .appleTTS:
-            return false
-        default:
-            return true
-        }
-    }
+    // Note: TTSProvider.requiresNetwork is defined in TTSService.swift
 
     /// Default voice for this provider
     public var defaultVoice: String {

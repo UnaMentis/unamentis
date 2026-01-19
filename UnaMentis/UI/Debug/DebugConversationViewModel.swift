@@ -34,7 +34,7 @@ struct ConversationEntry: Identifiable {
 }
 
 /// Pre-defined test scenarios for multi-turn conversation testing
-enum TestScenario: String, CaseIterable, Identifiable {
+enum ConversationTestScenario: String, CaseIterable, Identifiable {
     case greeting = "Greeting & Follow-up"
     case factualQA = "Factual Q&A Chain"
     case conceptExplain = "Concept Explanation"
@@ -308,7 +308,7 @@ class DebugConversationViewModel: ObservableObject {
     }
 
     /// Run a pre-defined test scenario
-    func runTestScenario(_ scenario: TestScenario) async {
+    func runConversationTestScenario(_ scenario: ConversationTestScenario) async {
         guard isSessionActive else {
             lastError = "No active session. Start a session first."
             return

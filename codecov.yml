@@ -57,3 +57,11 @@ comment:
 
 github_checks:
   annotations: true
+
+ignore:
+  # Debug-only code - development tools, not production critical
+  - "UnaMentis/UI/Debug/**"
+  # Test harness infrastructure - testing tests creates circular dependency
+  - "UnaMentis/Testing/**"
+  # App entry point - SwiftUI lifecycle, minimal testable logic
+  - "UnaMentis/UnaMentisApp.swift"

@@ -1,13 +1,16 @@
-// UnaMentis - Learning View
-// Container view with segmented control for Curriculum and Modules
 //
-// Part of the Learning tab that provides access to both structured
-// curriculum content and specialized training modules.
+//  LearningView.swift
+//  UnaMentis
+//
+//  Main learning hub with sections for Curriculum and Modules
+//
 
-import SwiftUI
-import Logging
 import CoreData
+import Logging
+import SwiftUI
 import UniformTypeIdentifiers
+
+// MARK: - Learning Section Enum
 
 /// Sections available in the Learning tab
 enum LearningSection: String, CaseIterable, Identifiable {
@@ -19,12 +22,14 @@ enum LearningSection: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .curriculum: return "book.fill"
-        case .modules: return "puzzlepiece.extension.fill"
+        case .modules: return "square.stack.3d.up.fill"
         }
     }
 }
 
-/// Main Learning tab view with segmented control navigation
+// MARK: - Learning View
+
+/// Main learning hub that provides access to Curriculum and Modules
 struct LearningView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedSection: LearningSection = .curriculum
@@ -117,6 +122,8 @@ struct LearningView: View {
         Self.logger.info("Specialized modules feature flag: \(enabled)")
     }
 }
+
+// MARK: - Curriculum Content View
 
 /// Wrapper for CurriculumView that removes its own NavigationStack
 /// since LearningView provides the navigation context
@@ -314,7 +321,7 @@ struct CurriculumContentView: View {
     private func deleteAllCurricula() async {
         do {
             let seeder = SampleCurriculumSeeder()
-            try seeder.deleteSampleCurriculum()
+            try seeder.deleteAllCurricula()
             curricula = []
         } catch {
             importError = error.localizedDescription
@@ -343,10 +350,13 @@ struct CurriculumContentView: View {
         await MainActor.run { isLoading = true }
 
         let backgroundContext = PersistenceController.shared.newBackgroundContext()
+
+        // Capture logger for use in detached task (avoid MainActor isolation issue)
         let detachedLogger = Logger(label: "com.unamentis.curriculum.content.detached")
 
+        // Use Task.detached to ensure we're truly off the MainActor
         let objectIDs: [NSManagedObjectID] = await Task.detached(priority: .userInitiated) {
-            await backgroundContext.perform {
+            let result = await backgroundContext.perform {
                 let request = Curriculum.fetchRequest()
                 request.sortDescriptors = [NSSortDescriptor(keyPath: \Curriculum.createdAt, ascending: false)]
                 request.relationshipKeyPathsForPrefetching = ["topics"]
@@ -359,6 +369,7 @@ struct CurriculumContentView: View {
                     return []
                 }
             }
+            return result
         }.value
 
         await MainActor.run {
@@ -368,6 +379,8 @@ struct CurriculumContentView: View {
         }
     }
 }
+
+// MARK: - Curriculum Row Compact
 
 /// Compact curriculum row for use within LearningView
 struct CurriculumRowCompact: View {
@@ -414,7 +427,144 @@ struct CurriculumRowCompact: View {
     }
 }
 
-#Preview {
-    LearningView()
-        .environmentObject(AppState())
+// MARK: - Modules View
+
+/// Grid view showing available learning modules like Knowledge Bowl
+struct ModulesView: View {
+    @EnvironmentObject var appState: AppState
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                // Header
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Learning Modules")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+
+                    Text("Interactive learning experiences beyond traditional curriculum")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal)
+
+                // Modules grid
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 16),
+                    GridItem(.flexible(), spacing: 16)
+                ], spacing: 16) {
+                    // Knowledge Bowl Module
+                    NavigationLink(destination: KBDashboardView()) {
+                        ModuleCard(
+                            title: "Knowledge Bowl",
+                            subtitle: "Academic competition training",
+                            icon: "brain.head.profile",
+                            color: .kbMastered,
+                            status: "Available"
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    // Future modules (placeholders)
+                    ModuleCard(
+                        title: "Flashcards",
+                        subtitle: "Spaced repetition study",
+                        icon: "rectangle.on.rectangle.angled",
+                        color: .blue,
+                        status: "Coming Soon"
+                    )
+                    .opacity(0.6)
+
+                    ModuleCard(
+                        title: "Practice Tests",
+                        subtitle: "Timed assessments",
+                        icon: "clock.badge.checkmark",
+                        color: .orange,
+                        status: "Coming Soon"
+                    )
+                    .opacity(0.6)
+
+                    ModuleCard(
+                        title: "Study Groups",
+                        subtitle: "Collaborative learning",
+                        icon: "person.3.fill",
+                        color: .purple,
+                        status: "Coming Soon"
+                    )
+                    .opacity(0.6)
+                }
+                .padding(.horizontal)
+            }
+            .padding(.vertical)
+        }
+        .background(Color(.systemGroupedBackground))
+    }
 }
+
+// MARK: - Module Card
+
+struct ModuleCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let color: Color
+    let status: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Icon
+            Image(systemName: icon)
+                .font(.system(size: 32))
+                .foregroundColor(color)
+
+            // Title and subtitle
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer()
+
+            // Status badge
+            Text(status)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundColor(status == "Available" ? .white : .secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(status == "Available" ? color : Color.secondary.opacity(0.2))
+                .cornerRadius(4)
+        }
+        .frame(maxWidth: .infinity, minHeight: 140, alignment: .topLeading)
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+    }
+}
+
+// MARK: - Preview
+
+#if DEBUG
+struct LearningView_Previews: PreviewProvider {
+    static var previews: some View {
+        LearningView()
+            .environmentObject(AppState())
+    }
+}
+
+struct ModulesView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationStack {
+            ModulesView()
+                .environmentObject(AppState())
+        }
+    }
+}
+#endif

@@ -404,7 +404,7 @@ struct ContentView: View {
 
             LearningView()
                 .tabItem {
-                    Label("Learning", systemImage: "graduationcap")
+                    Label("Learning", systemImage: "book")
                 }
                 .tag(AppTab.learning.rawValue)
 

@@ -10,7 +10,7 @@ import SwiftUI
 struct DebugConversationTestView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = DebugConversationViewModel()
-    @State private var selectedScenario: TestScenario?
+    @State private var selectedScenario: ConversationTestScenario?
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
@@ -236,9 +236,9 @@ struct DebugConversationTestView: View {
             // Test Scenario Picker
             HStack {
                 Menu {
-                    ForEach(TestScenario.allCases) { scenario in
+                    ForEach(ConversationTestScenario.allCases) { scenario in
                         Button {
-                            Task { await viewModel.runTestScenario(scenario) }
+                            Task { await viewModel.runConversationTestScenario(scenario) }
                         } label: {
                             VStack(alignment: .leading) {
                                 Text(scenario.rawValue)

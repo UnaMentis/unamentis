@@ -237,6 +237,26 @@ public struct SettingsView: View {
                     Text("Tools for testing subsystems and troubleshooting.")
                 }
 
+                // Practice Modules Section
+                Section {
+                    NavigationLink {
+                        KBDashboardView()
+                    } label: {
+                        HStack {
+                            Label("Knowledge Bowl", systemImage: "brain.head.profile")
+                            Spacer()
+                            Text("Practice")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .accessibilityHint("Academic competition practice for written and oral rounds")
+                } header: {
+                    Text("Practice Modules")
+                } footer: {
+                    Text("Specialized practice modes for academic competitions.")
+                }
+
                 // Help Section
                 Section {
                     NavigationLink {
