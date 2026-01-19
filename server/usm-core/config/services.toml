@@ -28,8 +28,8 @@ category = "core"
 supports_multiple = true
 
 [templates.web-server]
-display_name = "Next.js Web Server"
-description = "UnaMentis web frontend"
+display_name = "Management Console"
+description = "Management and monitoring web interface"
 default_port = 3000
 port_range = [3000, 3099]
 start_command = "cd {working_dir} && PORT={port} /opt/homebrew/bin/pnpm dev"
@@ -78,8 +78,8 @@ display_name = "PostgreSQL"
 description = "PostgreSQL database server (via Homebrew)"
 default_port = 5432
 port_range = [5432, 5499]
-start_command = "brew services start postgresql@14 || /opt/homebrew/opt/postgresql@14/bin/pg_ctl -D /opt/homebrew/var/postgresql@14 start"
-stop_command = "brew services stop postgresql@14 || /opt/homebrew/opt/postgresql@14/bin/pg_ctl -D /opt/homebrew/var/postgresql@14 stop"
+start_command = "/opt/homebrew/bin/brew services start postgresql@16"
+stop_command = "/opt/homebrew/bin/brew services stop postgresql@16"
 # Health check via pg_isready (port is fixed at 5432 for Homebrew installation)
 health_check_command = "pg_isready -h localhost -p {port}"
 health_timeout_ms = 5000

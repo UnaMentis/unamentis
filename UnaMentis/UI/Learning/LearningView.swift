@@ -321,7 +321,7 @@ struct CurriculumContentView: View {
     private func deleteAllCurricula() async {
         do {
             let seeder = SampleCurriculumSeeder()
-            try seeder.deleteSampleCurriculum()
+            try seeder.deleteAllCurricula()
             curricula = []
         } catch {
             importError = error.localizedDescription
@@ -350,10 +350,13 @@ struct CurriculumContentView: View {
         await MainActor.run { isLoading = true }
 
         let backgroundContext = PersistenceController.shared.newBackgroundContext()
+
+        // Capture logger for use in detached task (avoid MainActor isolation issue)
         let detachedLogger = Logger(label: "com.unamentis.curriculum.content.detached")
 
+        // Use Task.detached to ensure we're truly off the MainActor
         let objectIDs: [NSManagedObjectID] = await Task.detached(priority: .userInitiated) {
-            await backgroundContext.perform {
+            let result = await backgroundContext.perform {
                 let request = Curriculum.fetchRequest()
                 request.sortDescriptors = [NSSortDescriptor(keyPath: \Curriculum.createdAt, ascending: false)]
                 request.relationshipKeyPathsForPrefetching = ["topics"]
@@ -366,6 +369,7 @@ struct CurriculumContentView: View {
                     return []
                 }
             }
+            return result
         }.value
 
         await MainActor.run {

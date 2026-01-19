@@ -201,6 +201,13 @@ final class KBOnDeviceSTT: NSObject, ObservableObject {
         recognitionTask?.cancel()
         recognitionTask = nil
 
+        // Deactivate audio session
+        do {
+            try AVAudioSession.sharedInstance().setActive(false)
+        } catch {
+            logger.error("Failed to deactivate audio session: \(error.localizedDescription)")
+        }
+
         isListening = false
         logger.debug("Stopped listening")
     }

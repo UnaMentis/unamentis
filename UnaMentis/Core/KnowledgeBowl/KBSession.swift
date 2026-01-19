@@ -191,6 +191,15 @@ final class KBWrittenSessionViewModel: ObservableObject {
     @Published var timerState: KBTimerState = .normal
     private var timerTask: Task<Void, Never>?
 
+    // MARK: - Pause Tracking
+
+    private var pauseStart: Date?
+    private var accumulatedPausedTime: TimeInterval = 0
+
+    // MARK: - Question Timing
+
+    private var questionStartTime: Date?
+
     // MARK: - Configuration
 
     let config: KBSessionConfig
@@ -233,24 +242,30 @@ final class KBWrittenSessionViewModel: ObservableObject {
 
     func startSession() {
         state = .inProgress(questionIndex: 0)
+        questionStartTime = Date()
         startTimer()
     }
 
     func pauseSession() {
+        pauseStart = Date()
         state = .paused
         stopTimer()
     }
 
     func resumeSession() {
+        if let pauseStart = pauseStart {
+            accumulatedPausedTime += Date().timeIntervalSince(pauseStart)
+            self.pauseStart = nil
+        }
         state = .inProgress(questionIndex: currentQuestionIndex)
         startTimer()
     }
 
-    func endSession() {
+    func endSession(expired: Bool = false) {
         stopTimer()
         session.endTime = Date()
         session.isComplete = true
-        state = .completed
+        state = expired ? .expired : .completed
     }
 
     // MARK: - Timer
@@ -266,13 +281,14 @@ final class KBWrittenSessionViewModel: ObservableObject {
                     guard let self = self else { return }
                     guard case .inProgress = self.state else { return }
 
-                    if let remaining = self.session.timeRemaining() {
+                    if let timeLimit = self.config.timeLimit {
+                        let elapsed = Date().timeIntervalSince(self.session.startTime) - self.accumulatedPausedTime
+                        let remaining = max(0, timeLimit - elapsed)
                         self.remainingTime = remaining
                         self.timerState = self.session.timerState() ?? .normal
 
                         if remaining <= 0 {
-                            self.state = .expired
-                            self.endSession()
+                            self.endSession(expired: true)
                         }
                     }
                 }
@@ -294,9 +310,10 @@ final class KBWrittenSessionViewModel: ObservableObject {
 
     func submitAnswer() {
         guard let selectedAnswer = selectedAnswer,
-              let question = currentQuestion else { return }
+              let question = currentQuestion,
+              let questionStartTime = questionStartTime else { return }
 
-        let responseTime = Date().timeIntervalSince(session.startTime)  // Simplified
+        let responseTime = Date().timeIntervalSince(questionStartTime)
         let isCorrect = checkAnswer(selectedIndex: selectedAnswer, question: question)
         let points = isCorrect ? regionalConfig.writtenPointsPerCorrect : 0
 
@@ -314,13 +331,6 @@ final class KBWrittenSessionViewModel: ObservableObject {
         session.attempts.append(attempt)
         lastAnswerCorrect = isCorrect
         showingFeedback = true
-
-        // Haptic feedback
-        if isCorrect {
-            KBHapticFeedback.success()
-        } else {
-            KBHapticFeedback.error()
-        }
     }
 
     func nextQuestion() {
@@ -330,6 +340,7 @@ final class KBWrittenSessionViewModel: ObservableObject {
 
         if currentQuestionIndex < questions.count - 1 {
             currentQuestionIndex += 1
+            questionStartTime = Date()  // Reset for next question
             state = .inProgress(questionIndex: currentQuestionIndex)
         } else {
             endSession()
@@ -350,40 +361,3 @@ final class KBWrittenSessionViewModel: ObservableObject {
         KBSessionSummary(from: session)
     }
 }
-
-// MARK: - Haptic Feedback Helper
-
-@MainActor
-enum KBHapticFeedback {
-    static func success() {
-        #if os(iOS)
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
-        #endif
-    }
-
-    static func error() {
-        #if os(iOS)
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.error)
-        #endif
-    }
-
-    static func selection() {
-        #if os(iOS)
-        let generator = UISelectionFeedbackGenerator()
-        generator.selectionChanged()
-        #endif
-    }
-
-    static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
-        #if os(iOS)
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.impactOccurred()
-        #endif
-    }
-}
-
-#if os(iOS)
-import UIKit
-#endif

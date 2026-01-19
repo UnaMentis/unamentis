@@ -125,9 +125,11 @@ impl ProcessMonitor for MacOSMonitor {
             cmd.current_dir(dir);
         }
 
-        // Keep stdout/stderr null for now (TODO: per-service log files)
-        cmd.stdout(std::process::Stdio::null());
-        cmd.stderr(std::process::Stdio::null());
+        // Capture stdout/stderr to temp files for debugging
+        let stdout_file = std::env::temp_dir().join(format!("usm-{}-stdout.log", std::process::id()));
+        let stderr_file = std::env::temp_dir().join(format!("usm-{}-stderr.log", std::process::id()));
+        cmd.stdout(std::process::Stdio::from(std::fs::File::create(&stdout_file)?));
+        cmd.stderr(std::process::Stdio::from(std::fs::File::create(&stderr_file)?));
 
         // Spawn the wrapper (it will wait in background)
         let mut _child = cmd.spawn()?;
@@ -140,13 +142,15 @@ impl ProcessMonitor for MacOSMonitor {
             match std::fs::read_to_string(&pid_file) {
                 Ok(contents) => {
                     let _ = std::fs::remove_file(&pid_file); // Clean up
-                    contents.trim().parse::<u32>()
+                    contents
+                        .trim()
+                        .parse::<u32>()
                         .map_err(|e| anyhow::anyhow!("Failed to parse PID: {}", e))?
-                }
+                },
                 Err(e) => {
                     warn!("Failed to read PID file: {}", e);
                     anyhow::bail!("Process may have failed - cannot read PID file");
-                }
+                },
             }
         } else {
             warn!("PID file not created after 200ms");

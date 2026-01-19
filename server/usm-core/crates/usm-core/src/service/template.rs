@@ -496,7 +496,7 @@ mod property_tests {
                 display_name: display_name.clone(),
                 description: Some("Test description".to_string()),
                 default_port: port,
-                port_range: Some((port, port.saturating_add(100).min(65535))),
+                port_range: Some((port, port.saturating_add(100))),
                 start_command: "echo test".to_string(),
                 stop_command: None,
                 health_endpoint: Some(format!("http://localhost:{}/health", port)),

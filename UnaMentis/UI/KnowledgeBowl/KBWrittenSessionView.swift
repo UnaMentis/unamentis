@@ -264,7 +264,9 @@ struct KBWrittenSessionView: View {
             return isSelected ? .kbIntermediate : .kbBorder
         }()
 
-        let letter = ["A", "B", "C", "D"][index]
+        // Safe letter lookup supporting more than 4 options
+        let letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        let letter = index < letters.count ? String(letters[letters.index(letters.startIndex, offsetBy: index)]) : "?"
 
         return Button(action: {
             if !viewModel.showingFeedback {
@@ -340,6 +342,14 @@ struct KBWrittenSessionView: View {
                 } else {
                     Button(action: {
                         viewModel.submitAnswer()
+                        // Trigger haptic feedback based on answer correctness
+                        if let isCorrect = viewModel.lastAnswerCorrect {
+                            if isCorrect {
+                                KBHapticFeedback.success()
+                            } else {
+                                KBHapticFeedback.error()
+                            }
+                        }
                     }) {
                         Text("Submit Answer")
                             .font(.headline)
@@ -485,6 +495,35 @@ struct PulseModifier: ViewModifier {
 }
 
 // MARK: - Preview
+
+// MARK: - Haptic Feedback Helper
+
+#if os(iOS)
+import UIKit
+
+@MainActor
+private enum KBHapticFeedback {
+    static func success() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+
+    static func error() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
+    }
+
+    static func selection() {
+        let generator = UISelectionFeedbackGenerator()
+        generator.selectionChanged()
+    }
+
+    static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.impactOccurred()
+    }
+}
+#endif
 
 #if DEBUG
 struct KBWrittenSessionView_Previews: PreviewProvider {

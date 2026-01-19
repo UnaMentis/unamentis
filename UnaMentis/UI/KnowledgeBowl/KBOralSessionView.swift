@@ -882,6 +882,35 @@ enum KBOralSessionState: Equatable {
 
 // MARK: - Preview
 
+// MARK: - Haptic Feedback Helper
+
+#if os(iOS)
+import UIKit
+
+@MainActor
+private enum KBHapticFeedback {
+    static func success() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+
+    static func error() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
+    }
+
+    static func selection() {
+        let generator = UISelectionFeedbackGenerator()
+        generator.selectionChanged()
+    }
+
+    static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.impactOccurred()
+    }
+}
+#endif
+
 #if DEBUG
 struct KBOralSessionView_Previews: PreviewProvider {
     static var previews: some View {

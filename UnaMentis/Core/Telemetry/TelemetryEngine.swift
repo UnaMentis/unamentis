@@ -791,7 +791,13 @@ extension Array where Element == TimeInterval {
         return sorted[clampedIndex]
     }
 
-    /// Calculate standard deviation
+    /// Calculate sample standard deviation using Bessel's correction
+    ///
+    /// Returns the sample standard deviation of the time intervals in the collection.
+    /// Uses Bessel's correction (dividing by n-1) for unbiased estimation.
+    /// Returns 0 if the collection has fewer than 2 elements.
+    ///
+    /// - Returns: The standard deviation in seconds, or 0 if count <= 1
     public var standardDeviation: TimeInterval {
         guard count > 1 else { return 0 }
         let mean = self.reduce(0, +) / Double(count)
