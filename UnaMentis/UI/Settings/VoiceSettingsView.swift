@@ -280,6 +280,7 @@ public struct VoiceSettingsView: View {
     private var ttsSection: some View {
         Section {
             Picker("Provider", selection: $viewModel.ttsProvider) {
+                Text("Kyutai Pocket (On-Device)").tag(TTSProvider.kyutaiPocket)
                 Text("Apple TTS (On-Device)").tag(TTSProvider.appleTTS)
                 if viewModel.selfHostedEnabled {
                     Text("Piper (22kHz)").tag(TTSProvider.selfHosted)
@@ -300,6 +301,30 @@ public struct VoiceSettingsView: View {
                     }
                 }
                 .accessibilityHint("Select the AI tutor's voice")
+            }
+
+            // Kyutai Pocket TTS settings
+            if viewModel.ttsProvider == .kyutaiPocket {
+                NavigationLink {
+                    KyutaiPocketSettingsView()
+                } label: {
+                    HStack {
+                        Label("Kyutai Pocket Settings", systemImage: "cpu")
+                        Spacer()
+                        Text(viewModel.kyutaiPocketPresetName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // Model status indicator
+                HStack {
+                    Image(systemName: viewModel.kyutaiPocketModelLoaded ? "checkmark.circle.fill" : "arrow.down.circle")
+                        .foregroundStyle(viewModel.kyutaiPocketModelLoaded ? .green : .orange)
+                    Text(viewModel.kyutaiPocketModelLoaded ? "Model Ready" : "Download Required")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             // Chatterbox-specific settings
@@ -349,6 +374,24 @@ public struct VoiceSettingsView: View {
                 }
             }
 
+            // Show on-device TTS info
+            if viewModel.ttsProvider == .kyutaiPocket {
+                HStack {
+                    Text("Sample Rate")
+                    Spacer()
+                    Text("24 kHz")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                HStack {
+                    Text("Model Size")
+                    Spacer()
+                    Text("~100 MB")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("Speaking Rate: \(viewModel.speakingRate, specifier: "%.1f")x")
@@ -374,6 +417,7 @@ public struct VoiceSettingsView: View {
                     Text(viewModel.ttsProvider == .selfHosted ? "Uses Piper server - Free" :
                          viewModel.ttsProvider == .vibeVoice ? "Uses VibeVoice server - Free" :
                          viewModel.ttsProvider == .chatterbox ? "Uses Chatterbox server - Free" :
+                         viewModel.ttsProvider == .kyutaiPocket ? "On-device neural TTS - Free" :
                          "Works offline - Free")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -454,6 +498,10 @@ class VoiceSettingsViewModel: ObservableObject {
     @AppStorage("chatterbox_exaggeration") var chatterboxExaggeration: Double = 0.5
     @AppStorage("chatterbox_preset") var chatterboxPresetRaw: String = "default"
 
+    // Kyutai Pocket TTS settings
+    @AppStorage("kyutai_pocket_preset") var kyutaiPocketPresetRaw: String = "default"
+    @Published var kyutaiPocketModelLoaded: Bool = false
+
     // Self-hosted
     @AppStorage("selfHostedEnabled") var selfHostedEnabled: Bool = false
 
@@ -476,6 +524,11 @@ class VoiceSettingsViewModel: ObservableObject {
     /// Chatterbox preset display name
     var chatterboxPresetName: String {
         ChatterboxPreset(rawValue: chatterboxPresetRaw)?.displayName ?? "Default"
+    }
+
+    /// Kyutai Pocket preset display name
+    var kyutaiPocketPresetName: String {
+        KyutaiPocketPreset(rawValue: kyutaiPocketPresetRaw)?.displayName ?? "Default"
     }
 
     /// Get discovered voices for the currently selected TTS provider

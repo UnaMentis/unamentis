@@ -101,8 +101,8 @@ All components are **protocol-based and swappable**. The system supports multipl
 | Provider | Model | Type | Notes |
 |----------|-------|------|-------|
 | **Apple TTS** | AVSpeechSynthesizer | On-device | Zero cost, ~50ms TTFB, always available |
+| **Kyutai Pocket** | Pocket TTS (100M) | **On-device/CPU** | **Primary on-device TTS**, 8 voices, voice cloning, ~200ms TTFB, MIT license |
 | **Kyutai** | TTS 1.6B | Self-hosted | 40+ voices, emotion control, batch processing, CC-BY 4.0 |
-| **Kyutai** | Pocket TTS (100M) | On-device/CPU | 8 voices, voice cloning, sub-50ms latency, MIT license |
 | **Fish Speech** | V1.5 (~2B) | Self-hosted | Zero-shot voice cloning, 30+ languages, Apache 2.0 |
 | **Chatterbox** | Chatterbox-turbo (350M) | Self-hosted | Emotion control, voice cloning, paralinguistic tags |
 | **Chatterbox** | Chatterbox-multilingual (500M) | Self-hosted | 23 languages, expressive speech |
@@ -128,6 +128,44 @@ The iOS app includes a dedicated Chatterbox Settings view with voice cloning UI 
 - Select reference audio files from device storage
 - Record new reference audio directly (5+ seconds required)
 - Preview and manage reference audio samples
+
+#### Kyutai Pocket TTS (On-Device Neural TTS)
+
+**Kyutai Pocket TTS represents a paradigm shift in on-device text-to-speech.** Released January 13, 2026 under the MIT license, this 100-million parameter model delivers neural TTS quality that rivals cloud services while running entirely on-device, without requiring specialized hardware acceleration.
+
+**Why This Is Game-Changing:**
+
+Until now, on-device TTS meant a choice between robotic-sounding system voices (Apple TTS) or multi-gigabyte neural models requiring Neural Engine or GPU acceleration. Kyutai Pocket breaks this tradeoff entirely:
+
+- **100M Parameters (~100MB total):** Small enough to download once and always have available
+- **CPU-Only Execution:** Runs on ANY device, even older iPhones without Neural Engine optimization
+- **~200ms Time-to-First-Byte:** Comparable to cloud services, but with zero network dependency
+- **1.84% Word Error Rate:** Best-in-class accuracy for on-device TTS
+- **8 Built-in Voices:** Named after Les Misérables characters (Alba, Marius, Javert, Jean, Fantine, Cosette, Eponine, Azelma)
+- **5-Second Voice Cloning:** Create custom voices from just 5 seconds of reference audio
+- **24kHz Output:** High-quality audio matching cloud TTS services
+
+**Architecture:**
+- 6-layer transformer backbone (~70M params)
+- MLP sampler for consistency (~10M params)
+- Mimi VAE decoder for waveform generation (~20M params)
+- SentencePiece tokenizer (~500KB)
+- Voice embedding bank (~4MB)
+
+**iOS Integration:**
+
+The iOS app includes comprehensive Kyutai Pocket support with full "nerd knobs" configuration:
+
+- **Voice Selection:** All 8 built-in voices with preview
+- **Sampling Parameters:** Temperature (0.0-1.0), Top-P (0.1-1.0)
+- **Speed Control:** 0.5x to 2.0x playback speed
+- **Quality Settings:** Consistency steps (1-4) for quality vs. latency tradeoff
+- **Performance Toggles:** Neural Engine utilization, prefetch optimization
+- **Voice Cloning:** Record or import 5-second reference audio
+- **Presets:** Default, Low Latency, High Quality, Battery Saver
+- **Model Management:** Download, load, unload with state indicators
+
+Kyutai Pocket is the **primary on-device TTS option** in Voice Settings, positioned above Apple TTS, and is fully integrated with Knowledge Bowl voice practice sessions with automatic fallback to Apple TTS if models are not downloaded.
 
 ### Large Language Models (LLM)
 
@@ -159,12 +197,12 @@ The iOS app includes a dedicated Chatterbox Settings view with voice cloning UI 
 
 The app works on any device, even without API keys or servers:
 
-| Component | Built-in Fallback | Always Available |
-|-----------|-------------------|------------------|
-| **STT** | Apple Speech | Yes |
-| **TTS** | Apple TTS | Yes |
-| **LLM** | OnDeviceLLMService | Requires bundled models |
-| **VAD** | RMS-based detection | Yes |
+| Component | Primary On-Device | Fallback | Always Available |
+|-----------|-------------------|----------|------------------|
+| **STT** | Apple Speech | - | Yes |
+| **TTS** | **Kyutai Pocket** (100M neural) | Apple TTS | Kyutai requires ~100MB download; Apple TTS always available |
+| **LLM** | OnDeviceLLMService | - | Requires bundled models |
+| **VAD** | Silero VAD | RMS-based detection | Yes |
 
 ---
 
@@ -188,7 +226,7 @@ UnaMentis/
 ├── Services/
 │   ├── LLM/             # OpenAI, Anthropic, Self-Hosted, On-Device
 │   ├── STT/             # AssemblyAI, Deepgram, Groq, Apple, GLM-ASR, Router
-│   ├── TTS/             # Chatterbox, ElevenLabs, Deepgram, Apple, VibeVoice
+│   ├── TTS/             # Kyutai Pocket, Chatterbox, ElevenLabs, Deepgram, Apple, VibeVoice
 │   ├── VAD/             # SileroVADService (CoreML)
 │   ├── Embeddings/      # OpenAIEmbeddingService
 │   └── Curriculum/      # CurriculumService, VisualAssetCache
@@ -201,7 +239,7 @@ UnaMentis/
 └── UI/
     ├── Session/         # SessionView, VisualAssetView
     ├── Curriculum/      # CurriculumView
-    ├── Settings/        # SettingsView, ServerSettingsView, ChatterboxSettingsView
+    ├── Settings/        # SettingsView, ServerSettingsView, ChatterboxSettingsView, KyutaiPocketSettingsView
     ├── History/         # HistoryView
     ├── Analytics/       # AnalyticsView
     └── Debug/           # DeviceMetricsView, DebugConversationTestView
@@ -212,7 +250,7 @@ UnaMentis/
 | Category | Count | Providers |
 |----------|-------|-----------|
 | **STT Providers** | 9 | AssemblyAI, Deepgram, Groq, Apple, GLM-ASR server, GLM-ASR on-device, Self-Hosted, Router, Health Monitor |
-| **TTS Providers** | 7 | Chatterbox, VibeVoice, ElevenLabs, Deepgram, Apple, Self-Hosted, Pronunciation Processor |
+| **TTS Providers** | 8 | **Kyutai Pocket (on-device)**, Chatterbox, VibeVoice, ElevenLabs, Deepgram, Apple, Self-Hosted, Pronunciation Processor |
 | **LLM Providers** | 5 | OpenAI, Anthropic, Self-Hosted, On-Device, Mock |
 | **UI Views** | 11+ | Session, Curriculum, History, Analytics, Settings, Debug, and supporting views |
 | **Swift Files** | 80+ | Source files across Core, Services, UI |
@@ -1015,7 +1053,8 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 - **Knowledge Bowl test suite** (15+ test files covering all validation algorithms and services)
 - **Voice Lab** (AI model selection, TTS experimentation, batch profiles in Operations Console)
 - **TTS Lab** (model comparison, configuration tuning, batch processing pipeline)
-- **Kyutai TTS integration** (TTS 1.6B and Pocket TTS models for batch and on-device)
+- **Kyutai TTS 1.6B integration** (self-hosted batch processing with 40+ voices)
+- **Kyutai Pocket TTS integration** (100M on-device neural TTS with full settings UI, 8 voices, voice cloning, CoreML conversion scripts, Android ONNX spec)
 - **USM Core** (Rust cross-platform service manager, HTTP/WebSocket API, C FFI, 47 tests)
 - **USM-FFI** macOS menu bar app (Swift, real-time WebSocket, 16 tests)
 
@@ -1124,6 +1163,10 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 | `UnaMentis/Services/STT/STTProviderRouter.swift` | STT failover routing |
 | `UnaMentis/Services/STT/GroqSTTService.swift` | Groq Whisper integration |
 | `UnaMentis/Services/TTS/ChatterboxTTSService.swift` | Chatterbox TTS with emotion control |
+| `UnaMentis/Services/TTS/KyutaiPocketTTSService.swift` | **On-device neural TTS (100M params, CoreML)** |
+| `UnaMentis/Services/TTS/KyutaiPocketTTSConfig.swift` | Kyutai Pocket configuration with presets |
+| `UnaMentis/Services/TTS/KyutaiPocketModelManager.swift` | Model download and state management |
+| `UnaMentis/UI/Settings/KyutaiPocketSettingsView.swift` | Full configuration UI with nerd knobs |
 | `UnaMentis/Services/LLM/SelfHostedLLMService.swift` | Ollama/llama.cpp integration |
 | `UnaMentis/Services/STT/GLMASROnDeviceSTTService.swift` | On-device speech recognition |
 | `curriculum/spec/umcf-schema.json` | UMCF JSON Schema (1,905 lines) |

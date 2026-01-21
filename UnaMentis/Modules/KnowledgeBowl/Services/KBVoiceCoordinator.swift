@@ -68,9 +68,38 @@ final class KBVoiceCoordinator: ObservableObject {
     func setup() async throws {
         Self.logger.info("Setting up KB voice coordinator")
 
-        // Create on-device TTS service (no API key needed)
-        let tts = AppleTTSService()
-        self.ttsService = tts
+        // Check user's TTS provider preference
+        let ttsProviderRaw = UserDefaults.standard.string(forKey: "ttsProvider") ?? TTSProvider.appleTTS.rawValue
+        let ttsProvider = TTSProvider(rawValue: ttsProviderRaw) ?? .appleTTS
+
+        // Create TTS service based on user preference
+        switch ttsProvider {
+        case .kyutaiPocket:
+            // Use Kyutai Pocket on-device TTS
+            let config = KyutaiPocketTTSConfig.fromUserDefaults()
+            let kyutaiTTS = KyutaiPocketTTSService(config: config)
+
+            // Ensure models are loaded
+            do {
+                try await kyutaiTTS.ensureLoaded()
+                self.ttsService = kyutaiTTS
+                Self.logger.info("Using Kyutai Pocket TTS (on-device)")
+            } catch {
+                // Fall back to Apple TTS if Kyutai models not available
+                Self.logger.warning("Kyutai Pocket models not available, falling back to Apple TTS: \(error)")
+                self.ttsService = AppleTTSService()
+            }
+
+        case .appleTTS:
+            // Use Apple's built-in TTS
+            self.ttsService = AppleTTSService()
+            Self.logger.info("Using Apple TTS (on-device)")
+
+        default:
+            // For other providers, fall back to Apple TTS for KB (always on-device)
+            self.ttsService = AppleTTSService()
+            Self.logger.info("Using Apple TTS (fallback for KB)")
+        }
 
         // Create on-device STT service
         let stt = AppleSpeechSTTService()

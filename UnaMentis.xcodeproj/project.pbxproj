@@ -226,7 +226,12 @@
 		FB4536FB09E712F73760A143 /* llama-3.2-3b-instruct-q4_k_m.gguf in Resources */ = {isa = PBXBuildFile; fileRef = 9ADF33B783CB8AAF071997F6 /* llama-3.2-3b-instruct-q4_k_m.gguf */; };
 		FB59364BBC02872920BD0323 /* ref-botticelli-birth-venus.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 14F5F7B4594AB0DD6CE717E7 /* ref-botticelli-birth-venus.jpg */; };
 		FFF26AE98F6DDE371CA0B169 /* VADService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F889719749AE4061E8AD19F /* VADService.swift */; };
-/* End PBXBuildFile section */
+		110FEE1732F14898B126194B /* KyutaiPocketTTSConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7073D6D03D34940ACE481A4 /* KyutaiPocketTTSConfig.swift */; };
+			DFDB05C1D0EC42CFACE3D2DD /* KyutaiPocketModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E01C0C243B7B4609B082A10C /* KyutaiPocketModelManager.swift */; };
+			26B0781354444C9E82F1FB82 /* KyutaiPocketTTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05CCDA717A1E4B4D83A62CE4 /* KyutaiPocketTTSService.swift */; };
+			59312C74EA8543D8B7D29F21 /* KyutaiPocketSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD065C4AD184C53A0D44461 /* KyutaiPocketSettingsViewModel.swift */; };
+			1A737598C4754C0B8310D218 /* KyutaiPocketSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E821E3F7834C86BEA5B06B /* KyutaiPocketSettingsView.swift */; };
+	/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		6BFEF2F45E8E60FAE8C161FC /* PBXContainerItemProxy */ = {
@@ -478,7 +483,12 @@
 		FD17BD85661AA22279D27BA4 /* CurriculumEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurriculumEngineTests.swift; sourceTree = "<group>"; };
 		FEAAC040F0D5B735565FA7B1 /* AnalyticsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsViewModelTests.swift; sourceTree = "<group>"; };
 		FFA55B44CB97E17309115809 /* AudioSegmentCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSegmentCache.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+		C7073D6D03D34940ACE481A4 /* KyutaiPocketTTSConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KyutaiPocketTTSConfig.swift; sourceTree = "<group>"; };
+			E01C0C243B7B4609B082A10C /* KyutaiPocketModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KyutaiPocketModelManager.swift; sourceTree = "<group>"; };
+			05CCDA717A1E4B4D83A62CE4 /* KyutaiPocketTTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KyutaiPocketTTSService.swift; sourceTree = "<group>"; };
+			6FD065C4AD184C53A0D44461 /* KyutaiPocketSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KyutaiPocketSettingsViewModel.swift; sourceTree = "<group>"; };
+			22E821E3F7834C86BEA5B06B /* KyutaiPocketSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KyutaiPocketSettingsView.swift; sourceTree = "<group>"; };
+	/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		2DD653406B81371662B83699 /* Frameworks */ = {
@@ -1014,7 +1024,9 @@
 				9ED21B50524DB5FEFE3F9E99 /* SettingsView.swift */,
 				6C9AC9C2B8A9A0039CFA690B /* VoiceCloningViews.swift */,
 				ECECA1188C9F0BB6B441CEED /* VoiceSettingsView.swift */,
-			);
+			
+				6FD065C4AD184C53A0D44461 /* KyutaiPocketSettingsViewModel.swift */,
+				22E821E3F7834C86BEA5B06B /* KyutaiPocketSettingsView.swift */,);
 			path = Settings;
 			sourceTree = "<group>";
 		};
@@ -1154,7 +1166,10 @@
 				F7CFA41056359E384BDAB5DE /* ElevenLabsTTSService.swift */,
 				F0B5CEA1C6A76F74C78EE9C5 /* PronunciationProcessor.swift */,
 				A3BE5EA29C7D8C9D7CC12E45 /* SelfHostedTTSService.swift */,
-			);
+			
+				C7073D6D03D34940ACE481A4 /* KyutaiPocketTTSConfig.swift */,
+				E01C0C243B7B4609B082A10C /* KyutaiPocketModelManager.swift */,
+				05CCDA717A1E4B4D83A62CE4 /* KyutaiPocketTTSService.swift */,);
 			path = TTS;
 			sourceTree = "<group>";
 		};
@@ -1525,6 +1540,11 @@
 				ECFCAA1111A4A1984726B3A5 /* VisualAssetView.swift in Sources */,
 				33315C429938097CC895C095 /* VoiceCloningViews.swift in Sources */,
 				57674BAC19CFC9B1DA8F5E68 /* VoiceSettingsView.swift in Sources */,
+				110FEE1732F14898B126194B /* KyutaiPocketTTSConfig.swift in Sources */,
+				DFDB05C1D0EC42CFACE3D2DD /* KyutaiPocketModelManager.swift in Sources */,
+				26B0781354444C9E82F1FB82 /* KyutaiPocketTTSService.swift in Sources */,
+				59312C74EA8543D8B7D29F21 /* KyutaiPocketSettingsViewModel.swift in Sources */,
+				1A737598C4754C0B8310D218 /* KyutaiPocketSettingsView.swift in Sources */,
 				4F004B03096018168CA7BBCA /* WatchConnectivityService.swift in Sources */,
 				DDE334B6B4F142D0AED12E0A /* WatchSessionState.swift in Sources */,
 			);

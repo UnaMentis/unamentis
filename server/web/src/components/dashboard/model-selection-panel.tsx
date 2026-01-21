@@ -67,6 +67,34 @@ interface TTSModelInfo {
 
 const serverTTS: TTSModelInfo[] = [
   {
+    id: 'chatterbox-turbo',
+    name: 'Chatterbox Turbo',
+    version: '350M',
+    releaseDate: 'December 2025',
+    size: '~350MB',
+    parameters: '350 million',
+    performance: '75ms latency, 6x real-time',
+    license: 'MIT',
+    status: 'recommended',
+    hasSample: true,
+    benchmarks: [
+      { name: 'Latency', score: '75ms' },
+      { name: 'RTF', score: '0.16x' },
+      { name: 'VRAM', score: '2.5GB' },
+    ],
+    features: [
+      'Ultra-low latency (75ms)',
+      'Paralinguistic tags ([laugh], [sigh], [gasp])',
+      'Emotion control via exaggeration slider',
+      'CFG weight for generation fidelity',
+      'Zero-shot voice cloning (future)',
+      '23 languages (500M multilingual model)',
+      'OpenAI-compatible API',
+    ],
+    deployment: 'GPU server (CUDA/ROCm), CPU fallback available',
+    url: 'https://github.com/resemble-ai/chatterbox',
+  },
+  {
     id: 'fish-speech-v1.5',
     name: 'Fish Speech V1.5',
     version: 'V1.5',
@@ -125,7 +153,7 @@ const serverTTS: TTSModelInfo[] = [
     performance: 'Zero-shot with precise duration control',
     license: 'Apache 2.0',
     status: 'recommended',
-    hasSample: true,
+    hasSample: false, // TODO: Regenerate - checkpoint version mismatch
     features: [
       'Zero-shot voice synthesis',
       'Precise duration control',
