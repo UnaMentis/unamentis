@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 /// Voice information
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VoiceInfo {
+pub struct PocketVoiceInfo {
     pub index: u32,
     pub name: String,
     pub gender: String,

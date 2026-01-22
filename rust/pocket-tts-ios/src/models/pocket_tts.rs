@@ -42,8 +42,8 @@ impl PocketTTSModel {
                 .map_err(|e| PocketTTSError::ModelLoadFailed(e.to_string()))?
         };
 
-        // Load tokenizer
-        let tokenizer_path = model_dir.join("tokenizer.model");
+        // Load tokenizer (JSON vocab format)
+        let tokenizer_path = model_dir.join("tokenizer.json");
         let tokenizer = PocketTokenizer::from_file(&tokenizer_path)?;
 
         // Load voice embeddings

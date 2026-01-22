@@ -21,7 +21,7 @@ mod error_tests;
 #[cfg(test)]
 mod lib_tests;
 
-pub use config::{TTSConfig, VoiceInfo};
+pub use config::{TTSConfig, PocketVoiceInfo};
 pub use error::PocketTTSError;
 pub use engine::PocketTTSEngine;
 
@@ -34,16 +34,16 @@ pub fn version() -> String {
 }
 
 /// Get available voices
-pub fn available_voices() -> Vec<VoiceInfo> {
+pub fn available_voices() -> Vec<PocketVoiceInfo> {
     vec![
-        VoiceInfo { index: 0, name: "Alba".into(), gender: "female".into(), description: "Clear, neutral female voice".into() },
-        VoiceInfo { index: 1, name: "Marius".into(), gender: "male".into(), description: "Warm male voice".into() },
-        VoiceInfo { index: 2, name: "Javert".into(), gender: "male".into(), description: "Authoritative male voice".into() },
-        VoiceInfo { index: 3, name: "Jean".into(), gender: "male".into(), description: "Gentle male voice".into() },
-        VoiceInfo { index: 4, name: "Fantine".into(), gender: "female".into(), description: "Soft female voice".into() },
-        VoiceInfo { index: 5, name: "Cosette".into(), gender: "female".into(), description: "Young female voice".into() },
-        VoiceInfo { index: 6, name: "Eponine".into(), gender: "female".into(), description: "Expressive female voice".into() },
-        VoiceInfo { index: 7, name: "Azelma".into(), gender: "female".into(), description: "Bright female voice".into() },
+        PocketVoiceInfo { index: 0, name: "Alba".into(), gender: "female".into(), description: "Clear, neutral female voice".into() },
+        PocketVoiceInfo { index: 1, name: "Marius".into(), gender: "male".into(), description: "Warm male voice".into() },
+        PocketVoiceInfo { index: 2, name: "Javert".into(), gender: "male".into(), description: "Authoritative male voice".into() },
+        PocketVoiceInfo { index: 3, name: "Jean".into(), gender: "male".into(), description: "Gentle male voice".into() },
+        PocketVoiceInfo { index: 4, name: "Fantine".into(), gender: "female".into(), description: "Soft female voice".into() },
+        PocketVoiceInfo { index: 5, name: "Cosette".into(), gender: "female".into(), description: "Young female voice".into() },
+        PocketVoiceInfo { index: 6, name: "Eponine".into(), gender: "female".into(), description: "Expressive female voice".into() },
+        PocketVoiceInfo { index: 7, name: "Azelma".into(), gender: "female".into(), description: "Bright female voice".into() },
     ]
 }
 

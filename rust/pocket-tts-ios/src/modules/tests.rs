@@ -147,13 +147,15 @@ mod embedding_tests {
     #[test]
     fn test_voice_embedding_expand() {
         let device = Device::Cpu;
-        let embedding = Tensor::randn(0.0f32, 1.0, (256,), &device).unwrap();
+        // Voice embeddings are [seq_len, dim] - e.g., [125, 1024] for Kyutai
+        let embedding = Tensor::randn(0.0f32, 1.0, (10, 256), &device).unwrap();
         let voice = VoiceEmbedding::from_tensor(embedding).unwrap();
 
         let expanded = voice.expand_to_seq(2, 10);
         assert!(expanded.is_ok());
 
         let expanded = expanded.unwrap();
+        // Output should be [batch, prompt_seq, dim]
         assert_eq!(expanded.dims(), &[2, 10, 256]);
     }
 

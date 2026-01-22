@@ -2,7 +2,7 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::config::{TTSConfig, VoiceInfo, ModelManifest};
+    use crate::config::{TTSConfig, PocketVoiceInfo, ModelManifest};
 
     #[test]
     fn test_default_config() {
@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn test_voice_info_creation() {
-        let voice = VoiceInfo {
+        let voice = PocketVoiceInfo {
             index: 0,
             name: "Alba".to_string(),
             gender: "female".to_string(),

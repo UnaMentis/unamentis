@@ -101,7 +101,7 @@ All components are **protocol-based and swappable**. The system supports multipl
 | Provider | Model | Type | Notes |
 |----------|-------|------|-------|
 | **Apple TTS** | AVSpeechSynthesizer | On-device | Zero cost, ~50ms TTFB, always available |
-| **Kyutai Pocket** | Pocket TTS (100M) | **On-device/CPU** | **Primary on-device TTS**, 8 voices, voice cloning, ~200ms TTFB, MIT license |
+| **Kyutai Pocket** | Pocket TTS (100M) | **On-device (Rust/Candle)** | **Primary on-device TTS**, 8 voices, voice cloning, ~200ms TTFB, MIT license |
 | **Kyutai** | TTS 1.6B | Self-hosted | 40+ voices, emotion control, batch processing, CC-BY 4.0 |
 | **Fish Speech** | V1.5 (~2B) | Self-hosted | Zero-shot voice cloning, 30+ languages, Apache 2.0 |
 | **Chatterbox** | Chatterbox-turbo (350M) | Self-hosted | Emotion control, voice cloning, paralinguistic tags |
@@ -149,12 +149,18 @@ Until now, on-device TTS meant a choice between robotic-sounding system voices (
 - 6-layer transformer backbone (~70M params)
 - MLP sampler for consistency (~10M params)
 - Mimi VAE decoder for waveform generation (~20M params)
-- SentencePiece tokenizer (~500KB)
-- Voice embedding bank (~4MB)
+- JSON tokenizer with 4000-token vocabulary
+- Voice embedding bank (~4MB, 8 built-in voices)
+
+**Implementation:**
+- **Inference Engine:** Rust/Candle (native CPU inference)
+- **Why Not CoreML:** Kyutai Pocket uses a stateful streaming transformer (FlowLM) with dynamic KV cache that CoreML cannot support. Rust/Candle provides full control over model execution, proper KV cache management, and better compatibility with modern transformer architectures
+- **FFI:** UniFFI-generated Swift bindings for seamless iOS integration
+- **Size:** XCFramework is 7MB (device) + 6.9MB (simulator)
 
 **iOS Integration:**
 
-The iOS app includes comprehensive Kyutai Pocket support with full "nerd knobs" configuration:
+The iOS app includes comprehensive Kyutai Pocket support via native Rust/Candle inference with full "nerd knobs" configuration:
 
 - **Voice Selection:** All 8 built-in voices with preview
 - **Sampling Parameters:** Temperature (0.0-1.0), Top-P (0.1-1.0)
@@ -1054,7 +1060,7 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 - **Voice Lab** (AI model selection, TTS experimentation, batch profiles in Operations Console)
 - **TTS Lab** (model comparison, configuration tuning, batch processing pipeline)
 - **Kyutai TTS 1.6B integration** (self-hosted batch processing with 40+ voices)
-- **Kyutai Pocket TTS integration** (100M on-device neural TTS with full settings UI, 8 voices, voice cloning, CoreML conversion scripts, Android ONNX spec)
+- **Kyutai Pocket TTS integration** (100M on-device neural TTS with full settings UI, 8 voices, voice cloning, Rust/Candle inference engine, UniFFI Swift bindings)
 - **USM Core** (Rust cross-platform service manager, HTTP/WebSocket API, C FFI, 47 tests)
 - **USM-FFI** macOS menu bar app (Swift, real-time WebSocket, 16 tests)
 
@@ -1105,7 +1111,7 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 | Persistence | Core Data (SQLite) |
 | Audio | AVFoundation, Audio Toolbox |
 | Networking | LiveKit (WebRTC), URLSession |
-| Inference | llama.cpp, CoreML |
+| Inference | llama.cpp, CoreML, Rust/Candle |
 | Testing | XCTest (real > mock philosophy) |
 
 ### Web Client
@@ -1163,7 +1169,9 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 | `UnaMentis/Services/STT/STTProviderRouter.swift` | STT failover routing |
 | `UnaMentis/Services/STT/GroqSTTService.swift` | Groq Whisper integration |
 | `UnaMentis/Services/TTS/ChatterboxTTSService.swift` | Chatterbox TTS with emotion control |
-| `UnaMentis/Services/TTS/KyutaiPocketTTSService.swift` | **On-device neural TTS (100M params, CoreML)** |
+| `UnaMentis/Services/TTS/KyutaiPocketTTSService.swift` | **On-device neural TTS (100M params, Rust/Candle)** |
+| `UnaMentis/Services/TTS/PocketTTSBindings.swift` | UniFFI-generated Swift FFI bindings (1535 lines) |
+| `rust/pocket-tts-ios/` | Rust/Candle inference engine (87 tests passing) |
 | `UnaMentis/Services/TTS/KyutaiPocketTTSConfig.swift` | Kyutai Pocket configuration with presets |
 | `UnaMentis/Services/TTS/KyutaiPocketModelManager.swift` | Model download and state management |
 | `UnaMentis/UI/Settings/KyutaiPocketSettingsView.swift` | Full configuration UI with nerd knobs |

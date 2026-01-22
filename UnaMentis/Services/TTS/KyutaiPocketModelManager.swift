@@ -1,27 +1,23 @@
 // UnaMentis - Kyutai Pocket TTS Model Manager
-// Manages Kyutai Pocket TTS model information and server-side inference
+// Manages Kyutai Pocket TTS model files for Rust/Candle inference
 //
 // Part of Services/TTS
-//
-// Note: Kyutai Pocket TTS uses stateful streaming transformers that require
-// PyTorch/Python for inference. Native iOS CoreML conversion is not yet
-// available. Model files are bundled for future offline support, but current
-// inference uses server-side processing via the /api/tts/kyutai-pocket endpoint.
 
 import Foundation
 import OSLog
 
 // MARK: - Model Manager
 
-/// Manager for Kyutai Pocket TTS model information
+/// Manager for Kyutai Pocket TTS model files
 ///
-/// Model files (CC-BY-4.0 licensed, ~230MB total) are bundled for future
-/// offline support. Current inference uses server-side processing.
+/// Model files (~230MB total) are stored in Documents/models/kyutai-pocket-ios/
+/// and loaded by the Rust/Candle inference engine.
 ///
-/// Bundled Components:
-/// - Model Weights (model.safetensors) - 225MB
-/// - Tokenizer (tokenizer.model) - 60KB
-/// - Voice Embeddings (voices/*.safetensors) - 4.2MB total
+/// Directory structure expected by Rust engine:
+/// - model.safetensors - Main transformer weights (225MB)
+/// - tokenizer.json - Vocabulary for tokenization (JSON format)
+/// - voices/ - Voice embedding directory
+///   - alba.safetensors, marius.safetensors, etc. (8 voices)
 actor KyutaiPocketModelManager {
     private let logger = Logger(subsystem: "com.unamentis", category: "KyutaiPocketModelManager")
 
@@ -29,19 +25,21 @@ actor KyutaiPocketModelManager {
 
     /// Current state of the model
     enum ModelState: Sendable, Equatable {
-        case notBundled         // Models not found in app bundle
-        case available          // Models bundled, server inference ready
-        case loading(Float)     // Checking model files
-        case loaded             // Ready for server-side inference
+        case notDownloaded      // Models not present
+        case downloading(Float) // Download in progress
+        case available          // Models present, not loaded
+        case loading(Float)     // Loading into Rust engine
+        case loaded             // Ready for inference
         case error(String)      // Error occurred
 
         static func == (lhs: ModelState, rhs: ModelState) -> Bool {
             switch (lhs, rhs) {
-            case (.notBundled, .notBundled),
+            case (.notDownloaded, .notDownloaded),
                  (.available, .available),
                  (.loaded, .loaded):
                 return true
-            case let (.loading(p1), .loading(p2)):
+            case let (.downloading(p1), .downloading(p2)),
+                 let (.loading(p1), .loading(p2)):
                 return abs(p1 - p2) < 0.01
             case let (.error(e1), .error(e2)):
                 return e1 == e2
@@ -56,72 +54,44 @@ actor KyutaiPocketModelManager {
 
         var displayText: String {
             switch self {
-            case .notBundled: return "Models Not Bundled"
-            case .available: return "Ready"
+            case .notDownloaded: return "Not Downloaded"
+            case .downloading(let progress): return "Downloading \(Int(progress * 100))%"
+            case .available: return "Ready to Load"
             case .loading(let progress): return "Loading \(Int(progress * 100))%"
-            case .loaded: return "Ready (Server)"
+            case .loaded: return "Loaded"
             case .error(let message): return "Error: \(message)"
             }
         }
     }
 
-    private(set) var state: ModelState = .notBundled
+    private(set) var state: ModelState = .notDownloaded
 
-    // MARK: - Model Information
+    // MARK: - Model Paths
 
-    /// Information about bundled model files
-    struct ModelInfo: Sendable {
-        let modelPath: URL?
-        let tokenizerPath: URL?
-        let voicesDirectory: URL?
-        let totalSizeMB: Float
-
-        var hasAllFiles: Bool {
-            modelPath != nil && tokenizerPath != nil && voicesDirectory != nil
-        }
+    /// Base directory for Kyutai Pocket TTS models
+    private var modelDirectory: URL {
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return documentsPath.appendingPathComponent("models/kyutai-pocket-ios", isDirectory: true)
     }
 
-    private var modelInfo: ModelInfo?
+    /// Path to main model weights
+    private var modelPath: URL {
+        modelDirectory.appendingPathComponent("model.safetensors")
+    }
 
-    // MARK: - Configuration
+    /// Path to tokenizer (JSON vocab)
+    private var tokenizerPath: URL {
+        modelDirectory.appendingPathComponent("tokenizer.json")
+    }
 
-    /// Model component paths relative to bundle
-    private enum ModelComponent: String, CaseIterable {
-        case model = "kyutai-pocket-ios/model"
-        case tokenizer = "kyutai-pocket-ios/tokenizer"
-        case voices = "kyutai-pocket-ios/voices"
-
-        /// Bundle resource name (directory path)
-        var bundleResourceName: String {
-            rawValue
-        }
-
-        /// Bundle resource extension
-        var bundleExtension: String {
-            switch self {
-            case .model:
-                return "safetensors"
-            case .tokenizer:
-                return "model"
-            case .voices:
-                return ""  // Directory
-            }
-        }
-
-        /// Approximate size in MB
-        var approximateSizeMB: Float {
-            switch self {
-            case .model: return 225.0
-            case .tokenizer: return 0.06
-            case .voices: return 4.2
-            }
-        }
+    /// Path to voices directory
+    private var voicesDirectory: URL {
+        modelDirectory.appendingPathComponent("voices", isDirectory: true)
     }
 
     // MARK: - Initialization
 
     init() {
-        // Check model availability on init
         Task {
             await checkModelAvailability()
         }
@@ -134,63 +104,68 @@ actor KyutaiPocketModelManager {
         await state
     }
 
-    /// Check if models are available (bundled with the app)
-    func isAvailable() -> Bool {
-        modelInfo?.hasAllFiles ?? false
+    /// Get model directory path for Rust engine
+    func getModelPath() async throws -> String {
+        guard await isModelAvailable() else {
+            throw KyutaiPocketModelError.modelsNotDownloaded
+        }
+        return modelDirectory.path
     }
 
-    /// Legacy method for backwards compatibility
+    /// Check if models are available locally
+    func isModelAvailable() async -> Bool {
+        let fm = FileManager.default
+
+        // Check required files exist
+        let modelExists = fm.fileExists(atPath: modelPath.path)
+        let tokenizerExists = fm.fileExists(atPath: tokenizerPath.path)
+        let voicesExist = fm.fileExists(atPath: voicesDirectory.path)
+
+        return modelExists && tokenizerExists && voicesExist
+    }
+
+    /// Legacy compatibility
     func isDownloaded() -> Bool {
-        isAvailable()
+        let fm = FileManager.default
+        return fm.fileExists(atPath: modelPath.path)
     }
 
     /// Get total model size in MB
     func totalSizeMB() -> Float {
-        ModelComponent.allCases.reduce(0) { $0 + $1.approximateSizeMB }
+        229.3  // From manifest
     }
 
-    /// Legacy method - models are bundled, no download needed
-    func totalDownloadSizeMB() -> Float {
-        totalSizeMB()
-    }
-
-    /// Load model configuration (validates bundled files)
-    /// - Parameter config: Configuration (used for logging only, inference is server-side)
+    /// Load model configuration (validates files exist)
     func loadModels(config: KyutaiPocketTTSConfig) async throws {
-        logger.info("Validating Kyutai Pocket TTS model files")
+        logger.info("Validating Kyutai Pocket TTS model files for Rust/Candle")
         state = .loading(0.0)
 
-        // For now, models are available but inference happens server-side
-        // This validates that the bundled files are present for future offline support
-        guard isAvailable() else {
-            // Models not bundled, but server inference still works
-            logger.warning("Model files not bundled - server inference only")
-            state = .loaded  // Still usable via server
-            return
+        guard await isModelAvailable() else {
+            state = .error("Model files not found")
+            throw KyutaiPocketModelError.modelsNotDownloaded
         }
 
         state = .loading(0.5)
 
-        // Validate model files exist
-        if let info = modelInfo {
-            logger.info("Model file: \(info.modelPath?.path ?? "not found")")
-            logger.info("Tokenizer: \(info.tokenizerPath?.path ?? "not found")")
-            logger.info("Voices: \(info.voicesDirectory?.path ?? "not found")")
-        }
+        // Log file paths for debugging
+        logger.info("Model directory: \(self.modelDirectory.path)")
+        logger.info("Model weights: \(self.modelPath.path)")
+        logger.info("Tokenizer: \(self.tokenizerPath.path)")
+        logger.info("Voices: \(self.voicesDirectory.path)")
 
         state = .loaded
-        logger.info("Model validation complete - ready for server-side inference")
+        logger.info("Model files validated, ready for Rust/Candle inference")
     }
 
-    /// Unload models from memory (currently no-op since inference is server-side)
+    /// Mark model as loaded (called by TTS service after successful engine init)
+    func markLoaded() {
+        state = .loaded
+    }
+
+    /// Unload models (reset state)
     func unloadModels() {
         logger.info("Resetting Kyutai Pocket TTS state")
         state = .available
-    }
-
-    /// Get model info for server-side inference
-    func getModelInfo() -> ModelInfo? {
-        modelInfo
     }
 
     /// Get available voice names
@@ -198,48 +173,84 @@ actor KyutaiPocketModelManager {
         KyutaiPocketVoice.allCases.map { $0.displayName }
     }
 
+    // MARK: - Model Download
+
+    /// Copy models from bundle or download from server
+    func ensureModelsAvailable() async throws {
+        if await isModelAvailable() {
+            state = .available
+            return
+        }
+
+        // First, try to copy from app bundle
+        if await copyModelsFromBundle() {
+            state = .available
+            return
+        }
+
+        // Otherwise, download from server
+        try await downloadModels()
+    }
+
+    /// Copy models from app bundle if available
+    private func copyModelsFromBundle() async -> Bool {
+        let fm = FileManager.default
+
+        // Check if models are bundled
+        guard let bundleModelDir = Bundle.main.url(forResource: "kyutai-pocket-ios", withExtension: nil) else {
+            logger.info("Models not found in app bundle")
+            return false
+        }
+
+        do {
+            // Create destination directory
+            try fm.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+
+            // Copy model files
+            let bundleModel = bundleModelDir.appendingPathComponent("model.safetensors")
+            let bundleTokenizer = bundleModelDir.appendingPathComponent("tokenizer.json")
+            let bundleVoices = bundleModelDir.appendingPathComponent("voices")
+
+            if fm.fileExists(atPath: bundleModel.path) {
+                try fm.copyItem(at: bundleModel, to: modelPath)
+            }
+            if fm.fileExists(atPath: bundleTokenizer.path) {
+                try fm.copyItem(at: bundleTokenizer, to: tokenizerPath)
+            }
+            if fm.fileExists(atPath: bundleVoices.path) {
+                try fm.copyItem(at: bundleVoices, to: voicesDirectory)
+            }
+
+            logger.info("Models copied from app bundle")
+            return await isModelAvailable()
+
+        } catch {
+            logger.error("Failed to copy models from bundle: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    /// Download models from server
+    private func downloadModels() async throws {
+        state = .downloading(0.0)
+        logger.info("Downloading Kyutai Pocket TTS models...")
+
+        // TODO: Implement actual download from models.unamentis.com
+        // For now, throw error indicating models need to be copied manually
+
+        throw KyutaiPocketModelError.modelsNotDownloaded
+    }
+
     // MARK: - Private Helpers
 
-    private func checkModelAvailability() {
-        // Check for bundled model files
-        let modelPath = findBundledFile(name: "model", extension: "safetensors", inDirectory: "kyutai-pocket-ios")
-        let tokenizerPath = findBundledFile(name: "tokenizer", extension: "model", inDirectory: "kyutai-pocket-ios")
-        let voicesDir = findBundledDirectory(name: "voices", inDirectory: "kyutai-pocket-ios")
-
-        modelInfo = ModelInfo(
-            modelPath: modelPath,
-            tokenizerPath: tokenizerPath,
-            voicesDirectory: voicesDir,
-            totalSizeMB: totalSizeMB()
-        )
-
-        if modelInfo?.hasAllFiles == true {
+    private func checkModelAvailability() async {
+        if await isModelAvailable() {
             state = .available
-            logger.info("Bundled model files found")
+            logger.info("Model files found at: \(self.modelDirectory.path)")
         } else {
-            // Not an error - server inference still works without bundled models
-            state = .available
-            logger.info("Model files not bundled - using server-side inference")
+            state = .notDownloaded
+            logger.info("Model files not found, need to be installed")
         }
-    }
-
-    private func findBundledFile(name: String, extension ext: String, inDirectory directory: String) -> URL? {
-        // Try finding in models subdirectory first
-        if let url = Bundle.main.url(forResource: name, withExtension: ext, subdirectory: directory) {
-            return url
-        }
-        // Try at top level
-        return Bundle.main.url(forResource: name, withExtension: ext)
-    }
-
-    private func findBundledDirectory(name: String, inDirectory directory: String) -> URL? {
-        guard let baseURL = Bundle.main.resourceURL else { return nil }
-        let dirURL = baseURL.appendingPathComponent(directory).appendingPathComponent(name)
-        var isDirectory: ObjCBool = false
-        if FileManager.default.fileExists(atPath: dirURL.path, isDirectory: &isDirectory), isDirectory.boolValue {
-            return dirURL
-        }
-        return nil
     }
 }
 
@@ -247,7 +258,8 @@ actor KyutaiPocketModelManager {
 
 /// Errors for Kyutai Pocket model operations
 enum KyutaiPocketModelError: Error, LocalizedError {
-    case modelsNotBundled
+    case modelsNotDownloaded
+    case modelsNotLoaded
     case serverUnavailable
     case networkError(Error)
     case invalidVoice
@@ -255,10 +267,12 @@ enum KyutaiPocketModelError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .modelsNotBundled:
-            return "Kyutai Pocket TTS models are not bundled with the app."
+        case .modelsNotDownloaded:
+            return "Kyutai Pocket TTS models are not installed. Please copy models to Documents/models/kyutai-pocket-ios/"
+        case .modelsNotLoaded:
+            return "Kyutai Pocket TTS engine is not loaded."
         case .serverUnavailable:
-            return "TTS server is not available. Check your network connection."
+            return "Model download server is not available."
         case .networkError(let error):
             return "Network error: \(error.localizedDescription)"
         case .invalidVoice:
@@ -274,7 +288,7 @@ enum KyutaiPocketModelError: Error, LocalizedError {
 /// Observable wrapper for model state
 @MainActor
 final class KyutaiPocketModelStateObserver: ObservableObject {
-    @Published var state: KyutaiPocketModelManager.ModelState = .notBundled
+    @Published var state: KyutaiPocketModelManager.ModelState = .notDownloaded
 
     private let manager: KyutaiPocketModelManager
 

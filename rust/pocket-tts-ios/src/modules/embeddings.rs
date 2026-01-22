@@ -43,15 +43,17 @@ impl VoiceEmbedding {
     pub fn from_bytes(data: &[u8], device: &Device) -> Result<Self> {
         let tensors = safetensors::SafeTensors::deserialize(data)?;
 
-        // Find the embedding tensor (usually named "embedding" or "voice")
+        // Find the embedding tensor (Kyutai uses "audio_prompt")
         let embedding_data = tensors
-            .tensor("embedding")
+            .tensor("audio_prompt")
+            .or_else(|_| tensors.tensor("embedding"))
             .or_else(|_| tensors.tensor("voice"))
             .or_else(|_| tensors.tensor("speaker"))
             .map_err(|e| candle_core::Error::Msg(format!("Voice embedding not found: {}", e)))?;
 
         let shape = embedding_data.shape();
-        let voice_dim = shape.last().copied().unwrap_or(512);
+        // Kyutai voice embeddings are [1, seq_len, dim] where dim is typically 1024
+        let voice_dim = shape.last().copied().unwrap_or(1024);
 
         let candle_dtype = convert_safetensors_dtype(embedding_data.dtype())?;
         let embedding = Tensor::from_raw_buffer(
@@ -61,12 +63,26 @@ impl VoiceEmbedding {
             device,
         )?;
 
+        // Squeeze out batch dimension if present: [1, seq, dim] -> [seq, dim]
+        let embedding = if shape.len() == 3 && shape[0] == 1 {
+            embedding.squeeze(0)?
+        } else {
+            embedding
+        };
+
         Ok(Self { embedding, voice_dim })
     }
 
     /// Create voice embedding from raw tensor
+    /// Expects shape [seq, dim] or [dim]
     pub fn from_tensor(embedding: Tensor) -> Result<Self> {
         let voice_dim = embedding.dim(candle_core::D::Minus1)?;
+        // Ensure embedding is at least 2D: [seq, dim]
+        let embedding = if embedding.dims().len() == 1 {
+            embedding.unsqueeze(0)?  // [dim] -> [1, dim]
+        } else {
+            embedding
+        };
         Ok(Self { embedding, voice_dim })
     }
 
@@ -80,15 +96,23 @@ impl VoiceEmbedding {
         self.voice_dim
     }
 
-    /// Expand embedding to match sequence length
-    pub fn expand_to_seq(&self, batch_size: usize, seq_len: usize) -> Result<Tensor> {
-        // Reshape from [voice_dim] to [1, 1, voice_dim]
-        let expanded = self.embedding
-            .unsqueeze(0)?
-            .unsqueeze(0)?;
+    /// Expand embedding to match batch size
+    /// The embedding is [prompt_seq, dim], we need [batch, prompt_seq, dim]
+    pub fn expand_to_seq(&self, batch_size: usize, _seq_len: usize) -> Result<Tensor> {
+        // Voice embedding is [prompt_seq, dim], add batch dimension
+        let expanded = self.embedding.unsqueeze(0)?;
 
-        // Expand to [batch_size, seq_len, voice_dim]
-        expanded.expand(&[batch_size, seq_len, self.voice_dim])
+        // Repeat along batch dimension: [1, prompt_seq, dim] -> [batch, prompt_seq, dim]
+        if batch_size > 1 {
+            expanded.repeat(&[batch_size, 1, 1])
+        } else {
+            Ok(expanded)
+        }
+    }
+
+    /// Get the prompt sequence length (number of audio prompt frames)
+    pub fn prompt_seq_len(&self) -> Result<usize> {
+        self.embedding.dim(0)
     }
 }
 

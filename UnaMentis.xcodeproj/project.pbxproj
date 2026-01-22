@@ -231,6 +231,9 @@
 			26B0781354444C9E82F1FB82 /* KyutaiPocketTTSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05CCDA717A1E4B4D83A62CE4 /* KyutaiPocketTTSService.swift */; };
 			59312C74EA8543D8B7D29F21 /* KyutaiPocketSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD065C4AD184C53A0D44461 /* KyutaiPocketSettingsViewModel.swift */; };
 			1A737598C4754C0B8310D218 /* KyutaiPocketSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E821E3F7834C86BEA5B06B /* KyutaiPocketSettingsView.swift */; };
+			6F96319359894A028B8D59CE /* PocketTTSBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC348602247043E689EE832A /* PocketTTSBindings.swift */; };
+			C420B669D05E4A88BFF5EC68 /* PocketTTS.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 390D5514BCAF458C801D848C /* PocketTTS.xcframework */; };
+		KP0002MODELSBUILD000002 /* kyutai-pocket-ios in Resources */ = {isa = PBXBuildFile; fileRef = KP0001MODELSF0LD3R000001 /* kyutai-pocket-ios */; };
 	/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -488,6 +491,9 @@
 			05CCDA717A1E4B4D83A62CE4 /* KyutaiPocketTTSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KyutaiPocketTTSService.swift; sourceTree = "<group>"; };
 			6FD065C4AD184C53A0D44461 /* KyutaiPocketSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KyutaiPocketSettingsViewModel.swift; sourceTree = "<group>"; };
 			22E821E3F7834C86BEA5B06B /* KyutaiPocketSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KyutaiPocketSettingsView.swift; sourceTree = "<group>"; };
+		AC348602247043E689EE832A /* PocketTTSBindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketTTSBindings.swift; sourceTree = "<group>"; };
+		390D5514BCAF458C801D848C /* PocketTTS.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = PocketTTS.xcframework; path = UnaMentis/Frameworks/PocketTTS.xcframework; sourceTree = SOURCE_ROOT; };
+		KP0001MODELSF0LD3R000001 /* kyutai-pocket-ios */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "kyutai-pocket-ios"; sourceTree = "<group>"; };
 	/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -498,6 +504,7 @@
 				AFF84A9517C894E0C8AD9193 /* LiveKit in Frameworks */,
 				3252626A4F9A72151311B11E /* Logging in Frameworks */,
 				B193857C269BA7BCA353A047 /* Collections in Frameworks */,
+				C420B669D05E4A88BFF5EC68 /* PocketTTS.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -524,6 +531,7 @@
 			isa = PBXGroup;
 			children = (
 				9ADF33B783CB8AAF071997F6 /* llama-3.2-3b-instruct-q4_k_m.gguf */,
+				KP0001MODELSF0LD3R000001 /* kyutai-pocket-ios */,
 			);
 			path = models;
 			sourceTree = "<group>";
@@ -1166,10 +1174,11 @@
 				F7CFA41056359E384BDAB5DE /* ElevenLabsTTSService.swift */,
 				F0B5CEA1C6A76F74C78EE9C5 /* PronunciationProcessor.swift */,
 				A3BE5EA29C7D8C9D7CC12E45 /* SelfHostedTTSService.swift */,
-			
+
 				C7073D6D03D34940ACE481A4 /* KyutaiPocketTTSConfig.swift */,
 				E01C0C243B7B4609B082A10C /* KyutaiPocketModelManager.swift */,
-				05CCDA717A1E4B4D83A62CE4 /* KyutaiPocketTTSService.swift */,);
+				05CCDA717A1E4B4D83A62CE4 /* KyutaiPocketTTSService.swift */,
+				AC348602247043E689EE832A /* PocketTTSBindings.swift */,);
 			path = TTS;
 			sourceTree = "<group>";
 		};
@@ -1366,6 +1375,7 @@
 				3EE6A10EB470F1654EA8EE1C /* LaunchScreen.storyboard in Resources */,
 				4B12FB0AF2279C8F7769DCC8 /* Localizable.strings in Resources */,
 				E7D5B56D3826F4DFBAF1C353 /* PrivacyInfo.xcprivacy in Resources */,
+				KP0002MODELSBUILD000002 /* kyutai-pocket-ios in Resources */,
 				2211F59FFE4E0A1465945499 /* img-last-supper.jpg in Resources */,
 				F4A508577E57F700FFB44889 /* img-mona-lisa.jpg in Resources */,
 				A9068AC06F5ABAB0672F24F4 /* img-us-capitol.jpg in Resources */,
@@ -1543,6 +1553,7 @@
 				110FEE1732F14898B126194B /* KyutaiPocketTTSConfig.swift in Sources */,
 				DFDB05C1D0EC42CFACE3D2DD /* KyutaiPocketModelManager.swift in Sources */,
 				26B0781354444C9E82F1FB82 /* KyutaiPocketTTSService.swift in Sources */,
+				6F96319359894A028B8D59CE /* PocketTTSBindings.swift in Sources */,
 				59312C74EA8543D8B7D29F21 /* KyutaiPocketSettingsViewModel.swift in Sources */,
 				1A737598C4754C0B8310D218 /* KyutaiPocketSettingsView.swift in Sources */,
 				4F004B03096018168CA7BBCA /* WatchConnectivityService.swift in Sources */,
@@ -1670,6 +1681,10 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/UnaMentis/Frameworks",
+				);
 				INFOPLIST_FILE = UnaMentis/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1833,6 +1848,10 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = W7C9Y763AX;
 				GENERATE_INFOPLIST_FILE = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/UnaMentis/Frameworks",
+				);
 				INFOPLIST_FILE = UnaMentis/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (

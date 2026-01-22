@@ -14,7 +14,7 @@ final class KyutaiPocketSettingsViewModel: ObservableObject {
 
     // MARK: - Model State
 
-    @Published var modelState: KyutaiPocketModelManager.ModelState = .notBundled
+    @Published var modelState: KyutaiPocketModelManager.ModelState = .notDownloaded
     @Published var isLoading = false
 
     // MARK: - Preset Selection

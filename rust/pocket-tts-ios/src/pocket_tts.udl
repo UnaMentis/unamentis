@@ -6,11 +6,11 @@ namespace pocket_tts_ios {
     string version();
 
     // Available voices
-    sequence<VoiceInfo> available_voices();
+    sequence<PocketVoiceInfo> available_voices();
 };
 
 // Voice information
-dictionary VoiceInfo {
+dictionary PocketVoiceInfo {
     u32 index;
     string name;
     string gender;
