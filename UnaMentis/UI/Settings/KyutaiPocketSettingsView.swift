@@ -100,7 +100,7 @@ struct KyutaiPocketSettingsView: View {
 
             // Action buttons based on state
             switch viewModel.modelState {
-            case .notBundled:
+            case .notDownloaded:
                 // Models should be bundled; show error state
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -109,6 +109,9 @@ struct KyutaiPocketSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.red)
                 }
+
+            case .downloading:
+                EmptyView()
 
             case .available:
                 Button {
@@ -151,9 +154,12 @@ struct KyutaiPocketSettingsView: View {
     private var modelStatusIcon: some View {
         Group {
             switch viewModel.modelState {
-            case .notBundled:
+            case .notDownloaded:
                 Image(systemName: "exclamationmark.circle.fill")
                     .foregroundStyle(.red)
+            case .downloading:
+                Image(systemName: "arrow.down.circle")
+                    .foregroundStyle(.blue)
             case .available:
                 Image(systemName: "checkmark.circle")
                     .foregroundStyle(.green)
@@ -173,8 +179,10 @@ struct KyutaiPocketSettingsView: View {
 
     private var modelStatusSubtext: String {
         switch viewModel.modelState {
-        case .notBundled:
+        case .notDownloaded:
             return "Build configuration error"
+        case .downloading:
+            return "Downloading models..."
         case .available:
             return "Bundled models ready to load"
         case .loading:

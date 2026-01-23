@@ -1255,7 +1255,7 @@ fileprivate struct UniffiCallbackInterfaceTTSEventHandler {
 
     // Create the VTable using a series of closures.
     // Swift automatically converts these into C callback functions.
-    static var vtable: UniffiVTableCallbackInterfaceTtsEventHandler = UniffiVTableCallbackInterfaceTtsEventHandler(
+    nonisolated(unsafe) static var vtable: UniffiVTableCallbackInterfaceTtsEventHandler = UniffiVTableCallbackInterfaceTtsEventHandler(
         onAudioChunk: { (
             uniffiHandle: UInt64,
             chunk: RustBuffer,
@@ -1368,7 +1368,7 @@ private func uniffiCallbackInitTTSEventHandler() {
 @_documentation(visibility: private)
 #endif
 fileprivate struct FfiConverterCallbackInterfaceTtsEventHandler {
-    fileprivate static var handleMap = UniffiHandleMap<TtsEventHandler>()
+    nonisolated(unsafe) fileprivate static var handleMap = UniffiHandleMap<TtsEventHandler>()
 }
 
 #if swift(>=5.8)
@@ -1452,7 +1452,7 @@ private enum InitializationResult {
 }
 // Use a global variable to perform the versioning checks. Swift ensures that
 // the code inside is only computed once.
-private var initializationResult: InitializationResult = {
+private let initializationResult: InitializationResult = {
     // Get the bindings contract version from our ComponentInterface
     let bindings_contract_version = 26
     // Get the scaffolding contract version by calling the into the dylib

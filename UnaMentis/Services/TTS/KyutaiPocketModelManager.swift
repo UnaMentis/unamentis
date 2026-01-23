@@ -94,6 +94,9 @@ actor KyutaiPocketModelManager {
     init() {
         Task {
             await checkModelAvailability()
+            // Proactively copy models from bundle if needed
+            try? await ensureModelsAvailable()
+            await checkModelAvailability()  // Refresh state after copy
         }
     }
 
@@ -106,6 +109,9 @@ actor KyutaiPocketModelManager {
 
     /// Get model directory path for Rust engine
     func getModelPath() async throws -> String {
+        // Ensure models are available (copies from bundle if needed)
+        try await ensureModelsAvailable()
+
         guard await isModelAvailable() else {
             throw KyutaiPocketModelError.modelsNotDownloaded
         }
@@ -196,32 +202,48 @@ actor KyutaiPocketModelManager {
     private func copyModelsFromBundle() async -> Bool {
         let fm = FileManager.default
 
-        // Check if models are bundled
-        guard let bundleModelDir = Bundle.main.url(forResource: "kyutai-pocket-ios", withExtension: nil) else {
-            logger.info("Models not found in app bundle")
+        // Check if models are bundled (in app bundle root)
+        guard let bundleURL = Bundle.main.resourceURL else {
+            logger.error("Could not get bundle resource URL")
             return false
         }
+
+        let bundleModelDir = bundleURL.appendingPathComponent("kyutai-pocket-ios")
+        guard fm.fileExists(atPath: bundleModelDir.path) else {
+            logger.info("Models not found in app bundle at: \(bundleModelDir.path)")
+            return false
+        }
+
+        logger.info("Found bundled models at: \(bundleModelDir.path)")
 
         do {
             // Create destination directory
             try fm.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
 
-            // Copy model files
+            // Copy model files (only if they don't already exist)
             let bundleModel = bundleModelDir.appendingPathComponent("model.safetensors")
             let bundleTokenizer = bundleModelDir.appendingPathComponent("tokenizer.json")
             let bundleVoices = bundleModelDir.appendingPathComponent("voices")
 
-            if fm.fileExists(atPath: bundleModel.path) {
+            // Copy files if they don't already exist
+            let modelExists = fm.fileExists(atPath: modelPath.path)
+            let tokenizerExists = fm.fileExists(atPath: tokenizerPath.path)
+            let voicesExist = fm.fileExists(atPath: voicesDirectory.path)
+
+            if !modelExists && fm.fileExists(atPath: bundleModel.path) {
                 try fm.copyItem(at: bundleModel, to: modelPath)
+                logger.info("Copied model.safetensors")
             }
-            if fm.fileExists(atPath: bundleTokenizer.path) {
+            if !tokenizerExists && fm.fileExists(atPath: bundleTokenizer.path) {
                 try fm.copyItem(at: bundleTokenizer, to: tokenizerPath)
+                logger.info("Copied tokenizer.json")
             }
-            if fm.fileExists(atPath: bundleVoices.path) {
+            if !voicesExist && fm.fileExists(atPath: bundleVoices.path) {
                 try fm.copyItem(at: bundleVoices, to: voicesDirectory)
+                logger.info("Copied voices directory")
             }
 
-            logger.info("Models copied from app bundle")
+            logger.info("Models ready in Documents directory")
             return await isModelAvailable()
 
         } catch {
