@@ -234,7 +234,11 @@
 			6F96319359894A028B8D59CE /* PocketTTSBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC348602247043E689EE832A /* PocketTTSBindings.swift */; };
 			C420B669D05E4A88BFF5EC68 /* PocketTTS.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 390D5514BCAF458C801D848C /* PocketTTS.xcframework */; };
 		KP0002MODELSBUILD000002 /* kyutai-pocket-ios in Resources */ = {isa = PBXBuildFile; fileRef = KP0001MODELSF0LD3R000001 /* kyutai-pocket-ios */; };
-	/* End PBXBuildFile section */
+			95452C702CF0D672103151EB /* CanonicalQuestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13618044503818C4BAC20093 /* CanonicalQuestion.swift */; };
+		10EC7AA4610DF3E7F0EAA507 /* QuestionTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891B073E3B6DF1CE69BE4E4F /* QuestionTransformer.swift */; };
+		754D7B09298D4B778740DA6F /* KBTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 361D8F08CCF08396B36EC0B3 /* KBTransformer.swift */; };
+		07270938C643A648A0FD595B /* KBTransformerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CF21F44D4464689D2FF90F /* KBTransformerTests.swift */; };
+/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		6BFEF2F45E8E60FAE8C161FC /* PBXContainerItemProxy */ = {
@@ -494,7 +498,11 @@
 		AC348602247043E689EE832A /* PocketTTSBindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PocketTTSBindings.swift; sourceTree = "<group>"; };
 		390D5514BCAF458C801D848C /* PocketTTS.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = PocketTTS.xcframework; path = UnaMentis/Frameworks/PocketTTS.xcframework; sourceTree = SOURCE_ROOT; };
 		KP0001MODELSF0LD3R000001 /* kyutai-pocket-ios */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "kyutai-pocket-ios"; sourceTree = "<group>"; };
-	/* End PBXFileReference section */
+			13618044503818C4BAC20093 /* CanonicalQuestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanonicalQuestion.swift; sourceTree = "<group>"; };
+		891B073E3B6DF1CE69BE4E4F /* QuestionTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionTransformer.swift; sourceTree = "<group>"; };
+		361D8F08CCF08396B36EC0B3 /* KBTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KBTransformer.swift; sourceTree = "<group>"; };
+		B4CF21F44D4464689D2FF90F /* KBTransformerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnaMentisTests/Unit/KnowledgeBowl/KBTransformerTests.swift"; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		2DD653406B81371662B83699 /* Frameworks */ = {
@@ -646,6 +654,7 @@
 				F9E589A80045C1FA9898E8A7 /* Context */,
 				511AA855EB65917327CDEBD5 /* Curriculum */,
 				DCAA4C0E571DBB3E7D93EB69 /* KnowledgeBowl */,
+				7666288CDDD8367CBC701B9C /* Questions */,
 				45089E1511914D07CD9E7EE8 /* Logging */,
 				4B7167BB7A6155B251FC3670 /* Persistence */,
 				3E79CF804E394D15FE010518 /* Routing */,
@@ -1102,7 +1111,8 @@
 				01EA2717A830F8B961C5766A /* KBOnDeviceSTT.swift */,
 				19627423210F57757F40CCFF /* KBOnDeviceTTS.swift */,
 				D35FF2EB7DEFC6C36E775126 /* KBQuestionEngine.swift */,
-			);
+				361D8F08CCF08396B36EC0B3 /* KBTransformer.swift */,
+				B4CF21F44D4464689D2FF90F /* KBTransformerTests.swift */,);
 			path = KnowledgeBowl;
 			sourceTree = "<group>";
 		};
@@ -1264,6 +1274,15 @@
 			path = "e5f6a7b8-c9d0-1234-ef56-789012345678";
 			sourceTree = "<group>";
 		};
+		7666288CDDD8367CBC701B9C /* Questions */ = {
+			isa = PBXGroup;
+			children = (
+				13618044503818C4BAC20093 /* CanonicalQuestion.swift */,
+				891B073E3B6DF1CE69BE4E4F /* QuestionTransformer.swift */,
+			);
+			path = Questions;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1422,6 +1441,7 @@
 				B0DD2ADC603D9E1B6985C93D /* ChatterboxSettingsView.swift in Sources */,
 				C1742421F88171C3F46D4DCD /* ChatterboxSettingsViewModel.swift in Sources */,
 				253518C61D123D8F0885A43C /* ChatterboxTTSService.swift in Sources */,
+				95452C702CF0D672103151EB /* CanonicalQuestion.swift in Sources */,
 				B0CD31D5D22369148591CBB2 /* ConfidenceMonitor.swift in Sources */,
 				7DD09A028901452470F27164 /* ContextExpansionTool.swift in Sources */,
 				1136959C235900711879C291 /* ContextSummarizer.swift in Sources */,
@@ -1454,6 +1474,7 @@
 				A0569F0FAEBFCCBEA2B1A1AA /* HelpView.swift in Sources */,
 				4D5B79F40271572EDF52AF45 /* HistoryView.swift in Sources */,
 				D96BA7FFBE340819A8180767 /* KBAnswerValidator.swift in Sources */,
+				754D7B09298D4B778740DA6F /* KBTransformer.swift in Sources */,
 				422ECD51744B4069BA0A8850 /* KBEnhancedValidationSetupView.swift in Sources */,
 				B144663557414AF8A3896213 /* KBLLMValidator.swift in Sources */,
 				2BA7DF4A00F14AC69189EBD8 /* KBEmbeddingsService.swift in Sources */,
@@ -1495,6 +1516,7 @@
 				4B78B623D73A6D9177CCECD5 /* PatchPanelService.swift in Sources */,
 				AD2CE07D742EAF10859E996B /* PersistenceController.swift in Sources */,
 				A3D8AE762F11E3A2C5525541 /* ProgressTracker.swift in Sources */,
+				10EC7AA4610DF3E7F0EAA507 /* QuestionTransformer.swift in Sources */,
 				2EEEEB5DB12A23BDB9B21EFE /* PronunciationProcessor.swift in Sources */,
 				61E7CE41E111FA95E68BF60A /* RemoteLogHandler.swift in Sources */,
 				AE123965A6720387F943FA95 /* ResumeLearningIntent.swift in Sources */,
@@ -1624,7 +1646,7 @@
 				C5E305ECAC6D723230AABEDC /* VoiceSessionIntegrationTests.swift in Sources */,
 				C3902188850609E414EB2A66 /* WatchSessionState.swift in Sources */,
 				06C5A936CA172811A9D0D671 /* WatchSessionStateTests.swift in Sources */,
-			);
+				07270938C643A648A0FD595B /* KBTransformerTests.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
