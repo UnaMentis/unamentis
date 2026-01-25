@@ -32,7 +32,10 @@ export async function GET(request: Request, { params }: RouteParams) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching question:', error);
-    return NextResponse.json({ success: false, error: 'Failed to fetch question' }, { status: 503 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch question' },
+      { status: 503 }
+    );
   }
 }
 
@@ -65,7 +68,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error updating question:', error);
-    return NextResponse.json({ success: false, error: 'Failed to update question' }, { status: 503 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to update question' },
+      { status: 503 }
+    );
   }
 }
 
@@ -95,6 +101,9 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error deleting question:', error);
-    return NextResponse.json({ success: false, error: 'Failed to delete question' }, { status: 503 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete question' },
+      { status: 503 }
+    );
   }
 }

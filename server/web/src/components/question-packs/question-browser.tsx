@@ -133,10 +133,7 @@ export function QuestionBrowser({
   };
 
   const hasActiveFilters =
-    filterDifficulty !== null ||
-    filterType !== null ||
-    filterAudio !== 'all' ||
-    searchQuery !== '';
+    filterDifficulty !== null || filterType !== null || filterAudio !== 'all' || searchQuery !== '';
 
   return (
     <div className="bg-slate-900/80 border border-slate-700 rounded-lg overflow-hidden">
@@ -179,9 +176,7 @@ export function QuestionBrowser({
           >
             <Filter className="w-4 h-4" />
             Filters
-            {hasActiveFilters && (
-              <span className="w-2 h-2 rounded-full bg-purple-400" />
-            )}
+            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-purple-400" />}
           </button>
         </div>
 
@@ -195,9 +190,7 @@ export function QuestionBrowser({
                 {[1, 2, 3, 4, 5].map((level) => (
                   <button
                     key={level}
-                    onClick={() =>
-                      setFilterDifficulty(filterDifficulty === level ? null : level)
-                    }
+                    onClick={() => setFilterDifficulty(filterDifficulty === level ? null : level)}
                     className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
                       filterDifficulty === level
                         ? 'bg-purple-500 text-white'
@@ -234,9 +227,7 @@ export function QuestionBrowser({
               <span className="text-xs text-slate-400">Audio:</span>
               <select
                 value={filterAudio}
-                onChange={(e) =>
-                  setFilterAudio(e.target.value as 'all' | 'has' | 'missing')
-                }
+                onChange={(e) => setFilterAudio(e.target.value as 'all' | 'has' | 'missing')}
                 className="px-2 py-1 bg-slate-700 border border-slate-600 rounded text-sm text-slate-300 focus:outline-none"
               >
                 <option value="all">All</option>
@@ -260,9 +251,7 @@ export function QuestionBrowser({
       {/* Bulk Actions (when items selected) */}
       {selectedQuestions.size > 0 && !isSystemPack && (
         <div className="flex items-center justify-between px-4 py-2 bg-purple-500/10 border-b border-purple-500/30">
-          <span className="text-sm text-purple-300">
-            {selectedQuestions.size} selected
-          </span>
+          <span className="text-sm text-purple-300">{selectedQuestions.size} selected</span>
           <div className="flex items-center gap-2">
             <button className="px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-700 hover:bg-slate-600 rounded transition-colors">
               Change Difficulty
@@ -318,10 +307,7 @@ export function QuestionBrowser({
 
             {/* Questions */}
             {filteredQuestions.map((question) => (
-              <div
-                key={question.id}
-                className="px-4 py-3 hover:bg-slate-800/30 transition-colors"
-              >
+              <div key={question.id} className="px-4 py-3 hover:bg-slate-800/30 transition-colors">
                 <div className="flex items-start gap-3">
                   {/* Checkbox */}
                   {!isSystemPack && (
@@ -352,7 +338,9 @@ export function QuestionBrowser({
 
                     {/* Badges */}
                     <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <Badge className={DIFFICULTY_COLORS[question.difficulty] || DIFFICULTY_COLORS[3]}>
+                      <Badge
+                        className={DIFFICULTY_COLORS[question.difficulty] || DIFFICULTY_COLORS[3]}
+                      >
                         Diff: {question.difficulty}
                       </Badge>
                       <Badge className="bg-slate-700/50 text-slate-300 border-slate-600">
@@ -417,8 +405,8 @@ export function QuestionBrowser({
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-slate-700 bg-slate-800/30">
           <span className="text-sm text-slate-400">
-            Showing {(currentPage - 1) * pageSize + 1}-
-            {Math.min(currentPage * pageSize, total)} of {total}
+            Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, total)} of{' '}
+            {total}
           </span>
           <div className="flex items-center gap-2">
             <button

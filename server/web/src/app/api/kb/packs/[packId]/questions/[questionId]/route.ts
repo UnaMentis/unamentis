@@ -32,6 +32,9 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error removing question from pack:', error);
-    return NextResponse.json({ success: false, error: 'Failed to remove question' }, { status: 503 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to remove question' },
+      { status: 503 }
+    );
   }
 }

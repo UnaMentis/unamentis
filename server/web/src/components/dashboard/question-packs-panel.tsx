@@ -21,12 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip } from '@/components/ui/tooltip';
 import { HelpButton } from '@/components/ui/help-button';
 import { useMainScrollRestoration } from '@/hooks/useScrollRestoration';
-import type {
-  QuestionPack,
-  PackType,
-  DifficultyTier,
-  EntityStatus,
-} from '@/types/question-packs';
+import type { QuestionPack, PackType, DifficultyTier, EntityStatus } from '@/types/question-packs';
 
 // API response type
 interface PacksResponse {
@@ -97,8 +92,8 @@ export const questionPacksHelpSections = [
             your specific needs. Fully editable.
           </li>
           <li>
-            <span className="text-orange-400 font-medium">Bundle Packs:</span> Combine multiple packs
-            into one larger collection with deduplication.
+            <span className="text-orange-400 font-medium">Bundle Packs:</span> Combine multiple
+            packs into one larger collection with deduplication.
           </li>
           <li>
             <span className="text-blue-400 font-medium">System Packs:</span> Pre-built packs from
@@ -114,12 +109,24 @@ export const questionPacksHelpSections = [
       <div className="space-y-3">
         <p>Packs are organized by competition level to match your students:</p>
         <ul className="space-y-1 text-slate-400">
-          <li><span className="text-slate-300">Elementary:</span> Grades 3-5</li>
-          <li><span className="text-slate-300">Middle School:</span> Grades 6-8</li>
-          <li><span className="text-slate-300">JV (Junior Varsity):</span> Grades 9-10</li>
-          <li><span className="text-slate-300">Varsity:</span> Grades 11-12</li>
-          <li><span className="text-slate-300">Championship:</span> State/national competitions</li>
-          <li><span className="text-slate-300">College:</span> Undergraduate level</li>
+          <li>
+            <span className="text-slate-300">Elementary:</span> Grades 3-5
+          </li>
+          <li>
+            <span className="text-slate-300">Middle School:</span> Grades 6-8
+          </li>
+          <li>
+            <span className="text-slate-300">JV (Junior Varsity):</span> Grades 9-10
+          </li>
+          <li>
+            <span className="text-slate-300">Varsity:</span> Grades 11-12
+          </li>
+          <li>
+            <span className="text-slate-300">Championship:</span> State/national competitions
+          </li>
+          <li>
+            <span className="text-slate-300">College:</span> Undergraduate level
+          </li>
         </ul>
       </div>
     ),
@@ -151,13 +158,20 @@ export const questionPacksHelpSections = [
     content: (
       <div className="space-y-2">
         <p>
-          The audio percentage shows how many questions have pre-generated audio files.
-          Higher coverage means faster, more consistent practice sessions.
+          The audio percentage shows how many questions have pre-generated audio files. Higher
+          coverage means faster, more consistent practice sessions.
         </p>
         <ul className="space-y-1 text-slate-400 mt-2">
-          <li><span className="text-emerald-400">90%+:</span> Excellent coverage</li>
-          <li><span className="text-amber-400">50-89%:</span> Partial coverage, some on-demand generation</li>
-          <li><span className="text-red-400">&lt;50%:</span> Low coverage, consider batch generation</li>
+          <li>
+            <span className="text-emerald-400">90%+:</span> Excellent coverage
+          </li>
+          <li>
+            <span className="text-amber-400">50-89%:</span> Partial coverage, some on-demand
+            generation
+          </li>
+          <li>
+            <span className="text-red-400">&lt;50%:</span> Low coverage, consider batch generation
+          </li>
         </ul>
         <p className="text-slate-400 mt-2">
           Use the Voice Lab to generate missing audio files in bulk.
@@ -170,8 +184,8 @@ export const questionPacksHelpSections = [
     content: (
       <div className="space-y-2">
         <p>
-          Click on a pack to view its questions organized by topic or difficulty.
-          From the pack detail view you can:
+          Click on a pack to view its questions organized by topic or difficulty. From the pack
+          detail view you can:
         </p>
         <ul className="list-disc list-inside space-y-1 text-slate-400 mt-2">
           <li>Browse questions by domain or difficulty level</li>

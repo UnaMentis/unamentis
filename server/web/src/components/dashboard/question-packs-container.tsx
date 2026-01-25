@@ -3,11 +3,7 @@
 import { useState } from 'react';
 import { useQueryState, parseAsString } from 'nuqs';
 import { QuestionPacksPanel } from './question-packs-panel';
-import {
-  PackDetail,
-  AddQuestionsModal,
-  BundlePacksModal,
-} from '@/components/question-packs';
+import { PackDetail, AddQuestionsModal, BundlePacksModal } from '@/components/question-packs';
 
 type ViewMode = 'list' | 'detail';
 

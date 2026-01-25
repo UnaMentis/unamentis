@@ -82,10 +82,7 @@ async function createQuestion(input: CreateQuestionData): Promise<KBQuestion> {
 
 // Note: addQuestionsToPackApi will be used in the "Copy from Pack" flow
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function addQuestionsToPackApi(
-  packId: string,
-  questionIds: string[]
-): Promise<void> {
+async function addQuestionsToPackApi(packId: string, questionIds: string[]): Promise<void> {
   const response = await fetch(`/api/kb/packs/${packId}/questions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -265,7 +262,9 @@ export function AddQuestionsModal({
               </div>
               <div className="flex-1">
                 <div className="font-medium text-slate-200">Add Single Question</div>
-                <div className="text-sm text-slate-400">Create a new question with full metadata</div>
+                <div className="text-sm text-slate-400">
+                  Create a new question with full metadata
+                </div>
               </div>
               <ChevronRight className="w-5 h-5 text-slate-500" />
             </button>

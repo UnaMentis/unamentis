@@ -17,12 +17,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip } from '@/components/ui/tooltip';
-import type {
-  QuestionPack,
-  KBQuestion,
-  DifficultyTier,
-  DomainId,
-} from '@/types/question-packs';
+import type { QuestionPack, KBQuestion, DifficultyTier, DomainId } from '@/types/question-packs';
 import { QuestionBrowser } from './question-browser';
 
 // Domain labels
@@ -421,13 +416,19 @@ export function PackDetail({
           </Tooltip>
           <Tooltip content="Competition level this pack is designed for">
             <div className="bg-slate-800 rounded-lg px-4 py-3 text-center min-w-[100px]">
-              <div className="text-2xl font-bold text-white">{TIER_LABELS[pack.difficulty_tier]}</div>
+              <div className="text-2xl font-bold text-white">
+                {TIER_LABELS[pack.difficulty_tier]}
+              </div>
               <div className="text-xs text-slate-400">Level</div>
             </div>
           </Tooltip>
-          <Tooltip content={`${pack.audio_coverage_percent}% of questions have pre-generated audio. ${pack.missing_audio_count > 0 ? `${pack.missing_audio_count} need audio.` : ''}`}>
+          <Tooltip
+            content={`${pack.audio_coverage_percent}% of questions have pre-generated audio. ${pack.missing_audio_count > 0 ? `${pack.missing_audio_count} need audio.` : ''}`}
+          >
             <div className="bg-slate-800 rounded-lg px-4 py-3 text-center min-w-[100px]">
-              <div className={`text-2xl font-bold ${getAudioStatusColor(pack.audio_coverage_percent)}`}>
+              <div
+                className={`text-2xl font-bold ${getAudioStatusColor(pack.audio_coverage_percent)}`}
+              >
                 {pack.audio_coverage_percent}%
               </div>
               <div className="text-xs text-slate-400">Audio</div>
@@ -579,7 +580,9 @@ export function PackDetail({
                 onClick={() => count > 0 && handleSelectDifficulty(level)}
                 disabled={count === 0}
                 className={`bg-slate-900/50 border border-slate-800 rounded-lg p-4 text-center transition-colors ${
-                  count > 0 ? 'hover:border-purple-500 cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                  count > 0
+                    ? 'hover:border-purple-500 cursor-pointer'
+                    : 'opacity-50 cursor-not-allowed'
                 }`}
               >
                 <div className="text-2xl font-bold text-white mb-1">Level {level}</div>

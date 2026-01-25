@@ -31,7 +31,10 @@ export async function GET(request: Request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching packs:', error);
-    return NextResponse.json({ success: false, packs: [], total: 0, error: 'Failed to fetch packs' }, { status: 503 });
+    return NextResponse.json(
+      { success: false, packs: [], total: 0, error: 'Failed to fetch packs' },
+      { status: 503 }
+    );
   }
 }
 

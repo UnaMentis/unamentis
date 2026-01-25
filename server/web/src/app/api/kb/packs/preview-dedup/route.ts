@@ -30,6 +30,9 @@ export async function POST(request: Request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error previewing deduplication:', error);
-    return NextResponse.json({ success: false, error: 'Failed to preview deduplication' }, { status: 503 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to preview deduplication' },
+      { status: 503 }
+    );
   }
 }

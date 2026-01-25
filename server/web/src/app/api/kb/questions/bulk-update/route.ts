@@ -30,6 +30,9 @@ export async function POST(request: Request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error bulk updating questions:', error);
-    return NextResponse.json({ success: false, error: 'Failed to bulk update questions' }, { status: 503 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to bulk update questions' },
+      { status: 503 }
+    );
   }
 }

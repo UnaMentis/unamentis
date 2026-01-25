@@ -66,6 +66,9 @@ export async function POST(request: Request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error creating question:', error);
-    return NextResponse.json({ success: false, error: 'Failed to create question' }, { status: 503 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to create question' },
+      { status: 503 }
+    );
   }
 }

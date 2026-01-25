@@ -13,10 +13,7 @@ import {
   Package,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type {
-  QuestionPack,
-  DifficultyTier,
-} from '@/types/question-packs';
+import type { QuestionPack, DifficultyTier } from '@/types/question-packs';
 
 // Local type for dedup preview (simplified from API response)
 interface DedupPreview {
@@ -86,11 +83,7 @@ interface BundlePacksModalProps {
 
 type Step = 'select' | 'dedup' | 'settings';
 
-export function BundlePacksModal({
-  onClose,
-  onSuccess,
-  preselectedPackId,
-}: BundlePacksModalProps) {
+export function BundlePacksModal({ onClose, onSuccess, preselectedPackId }: BundlePacksModalProps) {
   const [step, setStep] = useState<Step>('select');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -272,9 +265,7 @@ export function BundlePacksModal({
                           : 'border-slate-600'
                       }`}
                     >
-                      {selectedPackIds.has(pack.id) && (
-                        <Check className="w-3 h-3 text-white" />
-                      )}
+                      {selectedPackIds.has(pack.id) && <Check className="w-3 h-3 text-white" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-slate-200 truncate">{pack.name}</div>
@@ -389,9 +380,7 @@ export function BundlePacksModal({
                   </div>
                 </div>
 
-                <p className="text-slate-400 text-sm mb-4">
-                  How should we handle duplicates?
-                </p>
+                <p className="text-slate-400 text-sm mb-4">How should we handle duplicates?</p>
 
                 <div className="space-y-3">
                   <button
@@ -409,9 +398,7 @@ export function BundlePacksModal({
                           : 'border-slate-600'
                       }`}
                     >
-                      {dedupStrategy === 'keep_first' && (
-                        <Check className="w-3 h-3 text-white" />
-                      )}
+                      {dedupStrategy === 'keep_first' && <Check className="w-3 h-3 text-white" />}
                     </div>
                     <div>
                       <div className="font-medium text-slate-200">
@@ -441,12 +428,12 @@ export function BundlePacksModal({
                           : 'border-slate-600'
                       }`}
                     >
-                      {dedupStrategy === 'keep_all' && (
-                        <Check className="w-3 h-3 text-white" />
-                      )}
+                      {dedupStrategy === 'keep_all' && <Check className="w-3 h-3 text-white" />}
                     </div>
                     <div>
-                      <div className="font-medium text-slate-200">Keep all (include duplicates)</div>
+                      <div className="font-medium text-slate-200">
+                        Keep all (include duplicates)
+                      </div>
                       <p className="text-sm text-slate-400 mt-1">
                         Results in {dedupPreview?.total_count || 0} total questions
                       </p>
@@ -558,9 +545,7 @@ export function BundlePacksModal({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">
-              Description
-            </label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Description</label>
             <textarea
               value={bundleDescription}
               onChange={(e) => setBundleDescription(e.target.value)}
@@ -590,9 +575,7 @@ export function BundlePacksModal({
 
           {/* Bundle Type */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-3">
-              Bundle Type
-            </label>
+            <label className="block text-sm font-medium text-slate-300 mb-3">Bundle Type</label>
             <div className="space-y-3">
               <button
                 onClick={() => setIsReferenceBundle(false)}
