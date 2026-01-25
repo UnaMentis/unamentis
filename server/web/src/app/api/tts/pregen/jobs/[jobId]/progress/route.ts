@@ -28,7 +28,9 @@ export async function GET(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: `Backend returned ${response.status}` }));
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: `Backend returned ${response.status}` }));
       return NextResponse.json(
         { success: false, error: errorData.error || `Job not found` },
         { status: response.status }

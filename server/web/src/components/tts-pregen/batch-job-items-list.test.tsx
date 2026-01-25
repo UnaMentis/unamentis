@@ -130,7 +130,7 @@ describe('BatchJobItemsList', () => {
 
     // Find the X button (last button with just an icon)
     const closeButtons = screen.getAllByRole('button');
-    const closeButton = closeButtons.find(btn => btn.querySelector('.lucide-x'));
+    const closeButton = closeButtons.find((btn) => btn.querySelector('.lucide-x'));
     expect(closeButton).toBeInTheDocument();
 
     fireEvent.click(closeButton!);

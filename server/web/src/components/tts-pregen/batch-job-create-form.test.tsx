@@ -179,9 +179,7 @@ describe('BatchJobCreateForm', () => {
     );
 
     // Find and click the close button
-    const closeButton = screen.getAllByRole('button').find(btn =>
-      btn.querySelector('.lucide-x')
-    );
+    const closeButton = screen.getAllByRole('button').find((btn) => btn.querySelector('.lucide-x'));
     expect(closeButton).toBeInTheDocument();
 
     fireEvent.click(closeButton!);
@@ -287,11 +285,7 @@ describe('BatchJobCreateForm', () => {
 
   it('shows message when no profiles available', () => {
     render(
-      <BatchJobCreateForm
-        profiles={[]}
-        onComplete={mockOnComplete}
-        onCancel={mockOnCancel}
-      />
+      <BatchJobCreateForm profiles={[]} onComplete={mockOnComplete} onCancel={mockOnCancel} />
     );
 
     fireEvent.click(screen.getByRole('button', { name: /next/i }));
@@ -310,7 +304,7 @@ describe('BatchJobCreateForm', () => {
 
     // Uncheck all content types
     const checkboxes = screen.getAllByRole('checkbox');
-    checkboxes.forEach(cb => {
+    checkboxes.forEach((cb) => {
       if ((cb as HTMLInputElement).checked) {
         fireEvent.click(cb);
       }

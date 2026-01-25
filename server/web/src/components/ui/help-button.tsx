@@ -49,9 +49,7 @@ export function HelpButton({
                   <HelpCircle className="w-5 h-5 text-blue-400" />
                   {title}
                 </CardTitle>
-                {description && (
-                  <p className="text-sm text-slate-400 mt-1">{description}</p>
-                )}
+                {description && <p className="text-sm text-slate-400 mt-1">{description}</p>}
               </div>
               <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
                 <X className="w-5 h-5" />
@@ -61,19 +59,12 @@ export function HelpButton({
             <CardContent className="pt-4 overflow-y-auto flex-1">
               <div className="space-y-2">
                 {sections.map((section, index) => (
-                  <div
-                    key={index}
-                    className="border border-slate-800 rounded-lg overflow-hidden"
-                  >
+                  <div key={index} className="border border-slate-800 rounded-lg overflow-hidden">
                     <button
-                      onClick={() =>
-                        setExpandedSection(expandedSection === index ? null : index)
-                      }
+                      onClick={() => setExpandedSection(expandedSection === index ? null : index)}
                       className="w-full flex items-center justify-between p-3 text-left hover:bg-slate-800/50 transition-colors"
                     >
-                      <span className="font-medium text-slate-200">
-                        {section.title}
-                      </span>
+                      <span className="font-medium text-slate-200">{section.title}</span>
                       <ChevronRight
                         className={`w-4 h-4 text-slate-500 transition-transform ${
                           expandedSection === index ? 'rotate-90' : ''
@@ -117,9 +108,9 @@ export const batchJobsHelpSections: HelpSection[] = [
     content: (
       <div className="space-y-2">
         <p>
-          Batch jobs generate audio files for large content sets like Knowledge Bowl
-          questions. Instead of generating audio on-demand during sessions, batch jobs
-          pre-generate audio files that can be served instantly.
+          Batch jobs generate audio files for large content sets like Knowledge Bowl questions.
+          Instead of generating audio on-demand during sessions, batch jobs pre-generate audio files
+          that can be served instantly.
         </p>
         <p className="text-slate-400">
           This reduces latency during quiz sessions and ensures consistent audio quality.
@@ -134,20 +125,20 @@ export const batchJobsHelpSections: HelpSection[] = [
         <p>The job creation wizard has 4 steps:</p>
         <ol className="list-decimal list-inside space-y-2 text-slate-400">
           <li>
-            <span className="text-slate-300">Source:</span> Select content source
-            (Knowledge Bowl) and what content types to include
+            <span className="text-slate-300">Source:</span> Select content source (Knowledge Bowl)
+            and what content types to include
           </li>
           <li>
-            <span className="text-slate-300">Profile:</span> Choose a TTS voice profile
-            that defines voice settings
+            <span className="text-slate-300">Profile:</span> Choose a TTS voice profile that defines
+            voice settings
           </li>
           <li>
-            <span className="text-slate-300">Preview:</span> Review how many items will
-            be generated and sample the content
+            <span className="text-slate-300">Preview:</span> Review how many items will be generated
+            and sample the content
           </li>
           <li>
-            <span className="text-slate-300">Create:</span> Name your job, select output
-            format, and create
+            <span className="text-slate-300">Create:</span> Name your job, select output format, and
+            create
           </li>
         </ol>
       </div>
@@ -159,24 +150,24 @@ export const batchJobsHelpSections: HelpSection[] = [
       <div className="space-y-2">
         <ul className="space-y-2 text-slate-400">
           <li>
-            <span className="text-slate-300 font-medium">Pending:</span> Created but not
-            started. Click Start to begin.
+            <span className="text-slate-300 font-medium">Pending:</span> Created but not started.
+            Click Start to begin.
           </li>
           <li>
-            <span className="text-slate-300 font-medium">Running:</span> Actively
-            generating audio. Progress updates every 3 seconds.
+            <span className="text-slate-300 font-medium">Running:</span> Actively generating audio.
+            Progress updates every 3 seconds.
           </li>
           <li>
-            <span className="text-slate-300 font-medium">Paused:</span> Temporarily
-            stopped. Click Resume to continue.
+            <span className="text-slate-300 font-medium">Paused:</span> Temporarily stopped. Click
+            Resume to continue.
           </li>
           <li>
-            <span className="text-slate-300 font-medium">Completed:</span> All items
-            processed. Check for failed items.
+            <span className="text-slate-300 font-medium">Completed:</span> All items processed.
+            Check for failed items.
           </li>
           <li>
-            <span className="text-slate-300 font-medium">Failed:</span> Job stopped due
-            to repeated errors. Review and retry.
+            <span className="text-slate-300 font-medium">Failed:</span> Job stopped due to repeated
+            errors. Review and retry.
           </li>
         </ul>
       </div>
@@ -187,8 +178,8 @@ export const batchJobsHelpSections: HelpSection[] = [
     content: (
       <div className="space-y-2">
         <p>
-          Individual items can fail while the job continues. Failed items are tracked
-          and can be retried later.
+          Individual items can fail while the job continues. Failed items are tracked and can be
+          retried later.
         </p>
         <ul className="list-disc list-inside space-y-1 text-slate-400 mt-2">
           <li>Click the red &quot;X failed&quot; badge to see failed items</li>
@@ -205,15 +196,13 @@ export const batchJobsHelpSections: HelpSection[] = [
     title: 'Output Files',
     content: (
       <div className="space-y-2">
-        <p>
-          Generated audio files are saved to the server&apos;s data directory:
-        </p>
+        <p>Generated audio files are saved to the server&apos;s data directory:</p>
         <code className="block mt-2 p-2 bg-slate-800 rounded text-xs text-slate-300">
           data/tts-pregenerated/jobs/&#123;job_id&#125;/audio/
         </code>
         <p className="text-slate-400 mt-2">
-          Files are named with a hash of the source content for deduplication. The app
-          automatically uses these pre-generated files when available.
+          Files are named with a hash of the source content for deduplication. The app automatically
+          uses these pre-generated files when available.
         </p>
       </div>
     ),
@@ -223,20 +212,14 @@ export const batchJobsHelpSections: HelpSection[] = [
     content: (
       <ul className="list-disc list-inside space-y-2 text-slate-400">
         <li>
-          Start with a small test batch to verify audio quality before processing
-          thousands of items
+          Start with a small test batch to verify audio quality before processing thousands of items
         </li>
         <li>Use WAV format for highest quality, MP3 for smaller file sizes</li>
+        <li>Monitor the first few items of a running job to catch issues early</li>
         <li>
-          Monitor the first few items of a running job to catch issues early
+          Create separate jobs for different content types if you want different voice settings
         </li>
-        <li>
-          Create separate jobs for different content types if you want different voice
-          settings
-        </li>
-        <li>
-          Enable volume normalization when mixing audio from different sources
-        </li>
+        <li>Enable volume normalization when mixing audio from different sources</li>
       </ul>
     ),
   },

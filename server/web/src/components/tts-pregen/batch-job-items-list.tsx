@@ -23,10 +23,7 @@ interface BatchJobItemsListProps {
   onClose: () => void;
 }
 
-const statusConfig: Record<
-  ItemStatus,
-  { icon: typeof Clock; color: string; label: string }
-> = {
+const statusConfig: Record<ItemStatus, { icon: typeof Clock; color: string; label: string }> = {
   pending: {
     icon: Clock,
     color: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
@@ -128,12 +125,7 @@ export function BatchJobItemsList({ jobId, onClose }: BatchJobItemsListProps) {
               <option value="skipped">Skipped</option>
             </select>
             {failedCount > 0 && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleRetryFailed}
-                disabled={retrying}
-              >
+              <Button size="sm" variant="outline" onClick={handleRetryFailed} disabled={retrying}>
                 {retrying ? (
                   <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                 ) : (
@@ -160,7 +152,9 @@ export function BatchJobItemsList({ jobId, onClose }: BatchJobItemsListProps) {
           <div className="flex items-center gap-4 mb-4 text-sm text-slate-400">
             <span>Total: {total}</span>
             <span>Showing: {items.length}</span>
-            <span>Page: {page} / {totalPages || 1}</span>
+            <span>
+              Page: {page} / {totalPages || 1}
+            </span>
           </div>
 
           {/* Items List */}
@@ -170,9 +164,7 @@ export function BatchJobItemsList({ jobId, onClose }: BatchJobItemsListProps) {
                 <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
               </div>
             ) : items.length === 0 ? (
-              <div className="text-center py-12 text-slate-500">
-                No items found
-              </div>
+              <div className="text-center py-12 text-slate-500">No items found</div>
             ) : (
               <div className="space-y-2">
                 {items.map((item) => {
@@ -187,9 +179,7 @@ export function BatchJobItemsList({ jobId, onClose }: BatchJobItemsListProps) {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs text-slate-500">
-                              #{item.item_index}
-                            </span>
+                            <span className="text-xs text-slate-500">#{item.item_index}</span>
                             <Badge className={config.color}>
                               <StatusIcon
                                 className={`w-3 h-3 mr-1 ${
@@ -204,22 +194,14 @@ export function BatchJobItemsList({ jobId, onClose }: BatchJobItemsListProps) {
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-slate-300 line-clamp-2">
-                            {item.text_content}
-                          </p>
+                          <p className="text-sm text-slate-300 line-clamp-2">{item.text_content}</p>
                           {item.last_error && (
-                            <p className="text-xs text-red-400 mt-1">
-                              {item.last_error}
-                            </p>
+                            <p className="text-xs text-red-400 mt-1">{item.last_error}</p>
                           )}
                         </div>
                         <div className="text-xs text-slate-500 text-right flex-shrink-0">
-                          {item.duration_seconds && (
-                            <div>{item.duration_seconds.toFixed(1)}s</div>
-                          )}
-                          {item.attempt_count > 1 && (
-                            <div>Attempts: {item.attempt_count}</div>
-                          )}
+                          {item.duration_seconds && <div>{item.duration_seconds.toFixed(1)}s</div>}
+                          {item.attempt_count > 1 && <div>Attempts: {item.attempt_count}</div>}
                         </div>
                       </div>
                     </div>

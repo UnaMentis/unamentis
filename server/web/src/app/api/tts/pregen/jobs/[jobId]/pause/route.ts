@@ -18,7 +18,9 @@ export async function POST(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: `Backend returned ${response.status}` }));
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: `Backend returned ${response.status}` }));
       return NextResponse.json(
         { success: false, error: errorData.error || `Failed to pause job` },
         { status: response.status }

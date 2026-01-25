@@ -1,15 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  X,
-  ChevronRight,
-  ChevronLeft,
-  Zap,
-  FileAudio,
-  Eye,
-  Loader2,
-} from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Zap, FileAudio, Eye, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,11 +31,7 @@ interface FormData {
   normalizeVolume: boolean;
 }
 
-export function BatchJobCreateForm({
-  profiles,
-  onComplete,
-  onCancel,
-}: BatchJobCreateFormProps) {
+export function BatchJobCreateForm({ profiles, onComplete, onCancel }: BatchJobCreateFormProps) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -123,12 +111,11 @@ export function BatchJobCreateForm({
     }
   };
 
-  const canProceedStep1 = (
+  const canProceedStep1 =
     formData.includeQuestions ||
     formData.includeAnswers ||
     formData.includeHints ||
-    formData.includeExplanations
-  );
+    formData.includeExplanations;
 
   const canProceedStep2 = !!formData.profileId;
 
@@ -155,18 +142,14 @@ export function BatchJobCreateForm({
                     s === step
                       ? 'bg-amber-500 text-white'
                       : s < step
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-slate-700 text-slate-400'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-slate-700 text-slate-400'
                   }`}
                 >
                   {s}
                 </div>
                 {s < 4 && (
-                  <div
-                    className={`w-12 h-0.5 ${
-                      s < step ? 'bg-emerald-500' : 'bg-slate-700'
-                    }`}
-                  />
+                  <div className={`w-12 h-0.5 ${s < step ? 'bg-emerald-500' : 'bg-slate-700'}`} />
                 )}
               </div>
             ))}
@@ -199,39 +182,35 @@ export function BatchJobCreateForm({
                   />
                 </Label>
                 <div className="grid grid-cols-3 gap-3 mt-2">
-                  {(['knowledge-bowl', 'curriculum', 'custom'] as const).map(
-                    (type) => (
-                      <button
-                        key={type}
-                        onClick={() =>
-                          setFormData((prev) => ({ ...prev, sourceType: type }))
-                        }
-                        disabled={type !== 'knowledge-bowl'}
-                        className={`p-4 rounded-lg border text-left transition-colors ${
-                          formData.sourceType === type
-                            ? 'border-amber-500 bg-amber-500/10'
-                            : type === 'knowledge-bowl'
+                  {(['knowledge-bowl', 'curriculum', 'custom'] as const).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setFormData((prev) => ({ ...prev, sourceType: type }))}
+                      disabled={type !== 'knowledge-bowl'}
+                      className={`p-4 rounded-lg border text-left transition-colors ${
+                        formData.sourceType === type
+                          ? 'border-amber-500 bg-amber-500/10'
+                          : type === 'knowledge-bowl'
                             ? 'border-slate-700 hover:border-slate-600'
                             : 'border-slate-800 opacity-50 cursor-not-allowed'
-                        }`}
-                      >
-                        <div className="font-medium text-slate-200">
-                          {type === 'knowledge-bowl'
-                            ? 'Knowledge Bowl'
-                            : type === 'curriculum'
+                      }`}
+                    >
+                      <div className="font-medium text-slate-200">
+                        {type === 'knowledge-bowl'
+                          ? 'Knowledge Bowl'
+                          : type === 'curriculum'
                             ? 'Curriculum'
                             : 'Custom'}
-                        </div>
-                        <div className="text-xs text-slate-500 mt-1">
-                          {type === 'knowledge-bowl'
-                            ? 'Questions & answers'
-                            : type === 'curriculum'
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {type === 'knowledge-bowl'
+                          ? 'Questions & answers'
+                          : type === 'curriculum'
                             ? 'Coming soon'
                             : 'Coming soon'}
-                        </div>
-                      </button>
-                    )
-                  )}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -323,9 +302,7 @@ export function BatchJobCreateForm({
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-slate-200">
-                            {profile.name}
-                          </span>
+                          <span className="font-medium text-slate-200">{profile.name}</span>
                           {profile.is_default && (
                             <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
                               Default
@@ -338,8 +315,8 @@ export function BatchJobCreateForm({
                               profile.provider === 'chatterbox'
                                 ? 'bg-purple-500/20 text-purple-400'
                                 : profile.provider === 'vibevoice'
-                                ? 'bg-blue-500/20 text-blue-400'
-                                : 'bg-green-500/20 text-green-400'
+                                  ? 'bg-blue-500/20 text-blue-400'
+                                  : 'bg-green-500/20 text-green-400'
                             }`}
                           >
                             {profile.provider}
@@ -350,9 +327,7 @@ export function BatchJobCreateForm({
                           )}
                         </div>
                         {profile.description && (
-                          <p className="text-xs text-slate-500 mt-1">
-                            {profile.description}
-                          </p>
+                          <p className="text-xs text-slate-500 mt-1">{profile.description}</p>
                         )}
                       </button>
                     ))
@@ -413,16 +388,11 @@ export function BatchJobCreateForm({
                     <div className="mt-4">
                       <span className="text-slate-500 text-sm">By Type:</span>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {Object.entries(extractedContent.stats.type_counts).map(
-                          ([type, count]) => (
-                            <Badge
-                              key={type}
-                              className="bg-slate-700 text-slate-300"
-                            >
-                              {type}: {count}
-                            </Badge>
-                          )
-                        )}
+                        {Object.entries(extractedContent.stats.type_counts).map(([type, count]) => (
+                          <Badge key={type} className="bg-slate-700 text-slate-300">
+                            {type}: {count}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -431,16 +401,13 @@ export function BatchJobCreateForm({
                     <div className="mt-4">
                       <span className="text-slate-500 text-sm">By Domain:</span>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {Object.entries(
-                          extractedContent.stats.domain_counts
-                        ).map(([domain, count]) => (
-                          <Badge
-                            key={domain}
-                            className="bg-slate-700 text-slate-300"
-                          >
-                            {domain}: {count}
-                          </Badge>
-                        ))}
+                        {Object.entries(extractedContent.stats.domain_counts).map(
+                          ([domain, count]) => (
+                            <Badge key={domain} className="bg-slate-700 text-slate-300">
+                              {domain}: {count}
+                            </Badge>
+                          )
+                        )}
                       </div>
                     </div>
                   )}
@@ -451,13 +418,8 @@ export function BatchJobCreateForm({
                   <span className="text-slate-500 text-sm">Sample Items:</span>
                   <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
                     {extractedContent.items.slice(0, 5).map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2 bg-slate-800/30 rounded text-sm"
-                      >
-                        <span className="text-slate-500 text-xs">
-                          {item.source_ref}
-                        </span>
+                      <div key={idx} className="p-2 bg-slate-800/30 rounded text-sm">
+                        <span className="text-slate-500 text-xs">{item.source_ref}</span>
                         <p className="text-slate-300 truncate">{item.text}</p>
                       </div>
                     ))}
@@ -475,10 +437,7 @@ export function BatchJobCreateForm({
                   <ChevronLeft className="w-4 h-4 mr-1" />
                   Back
                 </Button>
-                <Button
-                  onClick={() => setStep(4)}
-                  className="bg-amber-600 hover:bg-amber-700"
-                >
+                <Button onClick={() => setStep(4)} className="bg-amber-600 hover:bg-amber-700">
                   Continue
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
@@ -500,9 +459,7 @@ export function BatchJobCreateForm({
                 <Input
                   id="jobName"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
-                  }
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g., KB Physics Questions Batch"
                   className="mt-2 bg-slate-800 border-slate-700"
                 />
@@ -520,9 +477,7 @@ export function BatchJobCreateForm({
                   {['wav', 'mp3', 'ogg'].map((format) => (
                     <button
                       key={format}
-                      onClick={() =>
-                        setFormData((prev) => ({ ...prev, outputFormat: format }))
-                      }
+                      onClick={() => setFormData((prev) => ({ ...prev, outputFormat: format }))}
                       className={`px-4 py-2 rounded-lg border transition-colors ${
                         formData.outputFormat === format
                           ? 'border-amber-500 bg-amber-500/10 text-amber-400'
@@ -560,9 +515,7 @@ export function BatchJobCreateForm({
 
               {/* Summary */}
               <div className="p-4 bg-slate-800/50 rounded-lg">
-                <h4 className="text-sm font-medium text-slate-300 mb-3">
-                  Summary
-                </h4>
+                <h4 className="text-sm font-medium text-slate-300 mb-3">Summary</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-500">Source:</span>
@@ -574,21 +527,15 @@ export function BatchJobCreateForm({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Profile:</span>
-                    <span className="text-slate-300">
-                      {selectedProfile?.name || 'None'}
-                    </span>
+                    <span className="text-slate-300">{selectedProfile?.name || 'None'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Items:</span>
-                    <span className="text-slate-300">
-                      {extractedContent?.total_count || 0}
-                    </span>
+                    <span className="text-slate-300">{extractedContent?.total_count || 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Format:</span>
-                    <span className="text-slate-300">
-                      {formData.outputFormat.toUpperCase()}
-                    </span>
+                    <span className="text-slate-300">{formData.outputFormat.toUpperCase()}</span>
                   </div>
                 </div>
               </div>

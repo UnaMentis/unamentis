@@ -40,9 +40,15 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: `Backend returned ${response.status}` }));
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: `Backend returned ${response.status}` }));
       return NextResponse.json(
-        { success: false, jobs: [], error: errorData.error || `Backend returned ${response.status}` },
+        {
+          success: false,
+          jobs: [],
+          error: errorData.error || `Backend returned ${response.status}`,
+        },
         { status: response.status }
       );
     }

@@ -36,7 +36,14 @@ describe('TTS Pregen Types', () => {
     });
 
     it('should support all job statuses', () => {
-      const statuses: JobStatus[] = ['pending', 'running', 'paused', 'completed', 'failed', 'cancelled'];
+      const statuses: JobStatus[] = [
+        'pending',
+        'running',
+        'paused',
+        'completed',
+        'failed',
+        'cancelled',
+      ];
 
       statuses.forEach((status) => {
         const job: Partial<TTSPregenJob> = { status };
@@ -106,8 +113,9 @@ describe('TTS Pregen Types', () => {
       };
 
       expect(progress.percentage).toBe(45.5);
-      expect(progress.completed_items + progress.failed_items + progress.pending_items)
-        .toBe(progress.total_items);
+      expect(progress.completed_items + progress.failed_items + progress.pending_items).toBe(
+        progress.total_items
+      );
     });
 
     it('should support estimated time remaining', () => {

@@ -63,13 +63,7 @@ describe('BatchJobCard', () => {
     const runningJob = createMockJob({ status: 'running' });
     const progress = createMockProgress();
 
-    render(
-      <BatchJobCard
-        {...defaultProps}
-        job={runningJob}
-        progress={progress}
-      />
-    );
+    render(<BatchJobCard {...defaultProps} job={runningJob} progress={progress} />);
 
     expect(screen.getByText('Running')).toBeInTheDocument();
     expect(screen.getByText('50 / 100 items')).toBeInTheDocument();
@@ -80,13 +74,7 @@ describe('BatchJobCard', () => {
     const runningJob = createMockJob({ status: 'running' });
     const progress = createMockProgress();
 
-    render(
-      <BatchJobCard
-        {...defaultProps}
-        job={runningJob}
-        progress={progress}
-      />
-    );
+    render(<BatchJobCard {...defaultProps} job={runningJob} progress={progress} />);
 
     expect(screen.getByText(/What is the speed of light/)).toBeInTheDocument();
   });

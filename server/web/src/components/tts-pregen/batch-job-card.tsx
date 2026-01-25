@@ -31,10 +31,7 @@ interface BatchJobCardProps {
   compact?: boolean;
 }
 
-const statusConfig: Record<
-  JobStatus,
-  { icon: typeof Clock; color: string; label: string }
-> = {
+const statusConfig: Record<JobStatus, { icon: typeof Clock; color: string; label: string }> = {
   pending: {
     icon: Clock,
     color: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
@@ -119,7 +116,8 @@ export function BatchJobCard({
   const isCompleted = job.status === 'completed';
   const isFailed = job.status === 'failed';
 
-  const percentage = progress?.percentage ??
+  const percentage =
+    progress?.percentage ??
     (job.total_items > 0 ? (job.completed_items / job.total_items) * 100 : 0);
   const completedItems = progress?.completed_items ?? job.completed_items;
   const failedItems = progress?.failed_items ?? job.failed_items;
@@ -132,9 +130,7 @@ export function BatchJobCard({
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h4 className="font-medium text-slate-100 truncate">
-                  {job.name}
-                </h4>
+                <h4 className="font-medium text-slate-100 truncate">{job.name}</h4>
                 <Badge className={config.color}>
                   <StatusIcon className="w-3 h-3 mr-1" />
                   {config.label}
@@ -148,9 +144,7 @@ export function BatchJobCard({
               </div>
 
               {job.last_error && isFailed && (
-                <p className="text-sm text-red-400 mt-1 truncate">
-                  {job.last_error}
-                </p>
+                <p className="text-sm text-red-400 mt-1 truncate">{job.last_error}</p>
               )}
 
               <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
@@ -159,30 +153,20 @@ export function BatchJobCard({
                 <span>
                   Items: {completedItems}/{totalItems}
                 </span>
-                <span>
-                  Duration: {formatDuration(job.started_at, job.completed_at)}
-                </span>
+                <span>Duration: {formatDuration(job.started_at, job.completed_at)}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-1">
               {failedItems > 0 && (
                 <Tooltip content="Reprocess all failed items" side="bottom">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onRetryFailed}
-                  >
+                  <Button variant="ghost" size="sm" onClick={onRetryFailed}>
                     <RotateCcw className="w-4 h-4" />
                   </Button>
                 </Tooltip>
               )}
               <Tooltip content="View individual items and their status" side="bottom">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onViewItems}
-                >
+                <Button variant="ghost" size="sm" onClick={onViewItems}>
                   <List className="w-4 h-4" />
                 </Button>
               </Tooltip>
@@ -211,9 +195,7 @@ export function BatchJobCard({
             <div className="flex items-center gap-2 mb-2">
               <h4 className="font-medium text-slate-100">{job.name}</h4>
               <Badge className={config.color}>
-                <StatusIcon
-                  className={`w-3 h-3 mr-1 ${isRunning ? 'animate-spin' : ''}`}
-                />
+                <StatusIcon className={`w-3 h-3 mr-1 ${isRunning ? 'animate-spin' : ''}`} />
                 {config.label}
               </Badge>
               {failedItems > 0 && (
@@ -254,8 +236,8 @@ export function BatchJobCard({
                       isFailed
                         ? 'bg-gradient-to-r from-red-500 to-red-600'
                         : isCompleted
-                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-600'
-                        : 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                          ? 'bg-gradient-to-r from-emerald-500 to-emerald-600'
+                          : 'bg-gradient-to-r from-blue-500 to-cyan-500'
                     }`}
                     style={{ width: `${percentage}%` }}
                   />
@@ -267,32 +249,20 @@ export function BatchJobCard({
             <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
               <span>Format: {job.output_format}</span>
               {job.started_at && (
-                <span>
-                  Duration: {formatDuration(job.started_at, job.completed_at)}
-                </span>
+                <span>Duration: {formatDuration(job.started_at, job.completed_at)}</span>
               )}
-              {job.created_at && (
-                <span>
-                  Created: {new Date(job.created_at).toLocaleString()}
-                </span>
-              )}
+              {job.created_at && <span>Created: {new Date(job.created_at).toLocaleString()}</span>}
             </div>
 
             {/* Error message */}
-            {job.last_error && (
-              <p className="text-sm text-red-400 mt-2">{job.last_error}</p>
-            )}
+            {job.last_error && <p className="text-sm text-red-400 mt-2">{job.last_error}</p>}
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-2">
             {isPending && (
               <Tooltip content="Begin processing this batch job" side="left">
-                <Button
-                  size="sm"
-                  onClick={onStart}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
+                <Button size="sm" onClick={onStart} className="bg-emerald-600 hover:bg-emerald-700">
                   <Play className="w-4 h-4 mr-1" />
                   Start
                 </Button>
@@ -300,11 +270,7 @@ export function BatchJobCard({
             )}
             {isRunning && (
               <Tooltip content="Temporarily pause processing (can be resumed)" side="left">
-                <Button
-                  size="sm"
-                  onClick={onPause}
-                  variant="outline"
-                >
+                <Button size="sm" onClick={onPause} variant="outline">
                   <Pause className="w-4 h-4 mr-1" />
                   Pause
                 </Button>
@@ -312,11 +278,7 @@ export function BatchJobCard({
             )}
             {isPaused && (
               <Tooltip content="Continue processing from where it left off" side="left">
-                <Button
-                  size="sm"
-                  onClick={onResume}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
+                <Button size="sm" onClick={onResume} className="bg-blue-600 hover:bg-blue-700">
                   <Play className="w-4 h-4 mr-1" />
                   Resume
                 </Button>

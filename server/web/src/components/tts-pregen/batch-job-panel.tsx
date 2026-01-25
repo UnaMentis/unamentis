@@ -1,14 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import {
-  Zap,
-  RefreshCw,
-  Plus,
-  CheckCircle,
-  Play,
-  AlertCircle,
-} from 'lucide-react';
+import { Zap, RefreshCw, Plus, CheckCircle, Play, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -62,9 +55,7 @@ export function BatchJobPanel() {
 
   // Poll progress for active jobs
   const fetchProgress = useCallback(async () => {
-    const activeJobs = jobs.filter((j) =>
-      ['pending', 'running', 'paused'].includes(j.status)
-    );
+    const activeJobs = jobs.filter((j) => ['pending', 'running', 'paused'].includes(j.status));
     if (activeJobs.length === 0) return;
 
     const progressUpdates: Record<string, JobProgress> = {};
@@ -89,9 +80,7 @@ export function BatchJobPanel() {
 
   // Poll for updates every 3 seconds when there are active jobs
   useEffect(() => {
-    const hasActiveJobs = jobs.some((job) =>
-      ['pending', 'running'].includes(job.status)
-    );
+    const hasActiveJobs = jobs.some((job) => ['pending', 'running'].includes(job.status));
     if (!hasActiveJobs) return;
 
     const interval = setInterval(() => {
@@ -164,12 +153,8 @@ export function BatchJobPanel() {
     fetchJobs();
   };
 
-  const activeJobs = jobs.filter((j) =>
-    ['pending', 'running', 'paused'].includes(j.status)
-  );
-  const completedJobs = jobs.filter((j) =>
-    ['completed', 'failed', 'cancelled'].includes(j.status)
-  );
+  const activeJobs = jobs.filter((j) => ['pending', 'running', 'paused'].includes(j.status));
+  const completedJobs = jobs.filter((j) => ['completed', 'failed', 'cancelled'].includes(j.status));
 
   const getProfileName = (profileId?: string) => {
     if (!profileId) return 'Inline Config';
@@ -191,9 +176,7 @@ export function BatchJobPanel() {
               sections={batchJobsHelpSections}
             />
           </h2>
-          <p className="text-slate-400 mt-1">
-            Generate audio for Knowledge Bowl questions
-          </p>
+          <p className="text-slate-400 mt-1">Generate audio for Knowledge Bowl questions</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -213,12 +196,7 @@ export function BatchJobPanel() {
           </Tooltip>
 
           <Tooltip content="Reload the job list from the server" side="bottom">
-            <Button
-              onClick={fetchJobs}
-              variant="outline"
-              size="sm"
-              className="text-slate-300"
-            >
+            <Button onClick={fetchJobs} variant="outline" size="sm" className="text-slate-300">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
@@ -254,12 +232,9 @@ export function BatchJobPanel() {
         <Card className="bg-slate-900/50 border-slate-800">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Zap className="w-12 h-12 text-slate-600 mb-4" />
-            <h3 className="text-lg font-medium text-slate-300 mb-2">
-              No batch jobs
-            </h3>
+            <h3 className="text-lg font-medium text-slate-300 mb-2">No batch jobs</h3>
             <p className="text-slate-500 max-w-md mb-4">
-              Create a batch job to generate audio files for Knowledge Bowl
-              questions
+              Create a batch job to generate audio files for Knowledge Bowl questions
             </p>
             <Button
               onClick={() => setCreateModalOpen(true)}
@@ -340,10 +315,7 @@ export function BatchJobPanel() {
 
       {/* Items List Modal */}
       {viewItemsJobId && (
-        <BatchJobItemsList
-          jobId={viewItemsJobId}
-          onClose={() => setViewItemsJobId(null)}
-        />
+        <BatchJobItemsList jobId={viewItemsJobId} onClose={() => setViewItemsJobId(null)} />
       )}
     </div>
   );

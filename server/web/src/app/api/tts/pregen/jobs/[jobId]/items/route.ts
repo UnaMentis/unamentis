@@ -37,7 +37,9 @@ export async function GET(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: `Backend returned ${response.status}` }));
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: `Backend returned ${response.status}` }));
       return NextResponse.json(
         { success: false, items: [], error: errorData.error || `Failed to fetch items` },
         { status: response.status }

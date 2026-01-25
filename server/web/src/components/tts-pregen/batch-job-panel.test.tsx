@@ -15,11 +15,7 @@ vi.mock('@/lib/api-client', () => ({
   getTTSProfiles: vi.fn(),
 }));
 
-import {
-  getBatchJobs,
-  getJobProgress,
-  getTTSProfiles,
-} from '@/lib/api-client';
+import { getBatchJobs, getJobProgress, getTTSProfiles } from '@/lib/api-client';
 
 const mockGetBatchJobs = vi.mocked(getBatchJobs);
 const mockGetJobProgress = vi.mocked(getJobProgress);
@@ -106,7 +102,13 @@ const mockProgress: JobProgress = {
 describe('BatchJobPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetBatchJobs.mockResolvedValue({ success: true, jobs: mockJobs, total: 2, limit: 50, offset: 0 });
+    mockGetBatchJobs.mockResolvedValue({
+      success: true,
+      jobs: mockJobs,
+      total: 2,
+      limit: 50,
+      offset: 0,
+    });
     mockGetTTSProfiles.mockResolvedValue({ profiles: mockProfiles, total: 2 });
     mockGetJobProgress.mockResolvedValue(mockProgress);
   });
