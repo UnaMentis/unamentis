@@ -6,6 +6,7 @@
 //  Determines support for embeddings and LLM validation
 //
 
+@preconcurrency import Darwin
 import Foundation
 import UIKit
 
