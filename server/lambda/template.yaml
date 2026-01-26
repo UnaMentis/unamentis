@@ -1,0 +1,396 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  UnaMentis Lambda Microservices
+
+  Serverless backend for UnaMentis voice tutoring platform.
+  Includes auth, KB, curriculum, and metrics services.
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Deployment environment
+
+  DatabaseUrl:
+    Type: String
+    Description: PostgreSQL connection string
+    Default: ""
+
+  JwtSecret:
+    Type: String
+    Description: Secret key for JWT signing
+    NoEcho: true
+    Default: ""
+
+  BetaTokens:
+    Type: String
+    Description: Comma-separated list of valid beta tokens
+    NoEcho: true
+    Default: ""
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 256
+    Architectures:
+      - arm64
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        DATABASE_URL: !Ref DatabaseUrl
+        JWT_SECRET: !Ref JwtSecret
+        BETA_TOKENS: !Ref BetaTokens
+        LOG_LEVEL: INFO
+    Tracing: Active
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Content-Type,Authorization,X-Client-Platform,X-Client-Version'"
+      AllowOrigin: "'*'"
+
+Resources:
+  # ============================================
+  # API Gateway
+  # ============================================
+  UnaMentisApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub "unamentis-api-${Environment}"
+      StageName: !Ref Environment
+      Description: UnaMentis API Gateway
+      Auth:
+        DefaultAuthorizer: NONE
+      AccessLogSetting:
+        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
+        Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","caller":"$context.identity.caller","user":"$context.identity.user","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/apigateway/unamentis-api-${Environment}"
+      RetentionInDays: 30
+
+  # ============================================
+  # Auth Service
+  # ============================================
+  AuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "unamentis-auth-${Environment}"
+      Handler: handler.lambda_handler
+      CodeUri: services/auth/
+      Description: Authentication service for UnaMentis
+      Events:
+        # Health check (public)
+        HealthCheck:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/health
+            Method: GET
+
+        # Auth endpoints
+        Register:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/auth/register
+            Method: POST
+        Login:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/auth/login
+            Method: POST
+        Refresh:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/auth/refresh
+            Method: POST
+        Logout:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/auth/logout
+            Method: POST
+        GetMe:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/auth/me
+            Method: GET
+        ForgotPassword:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/auth/forgot-password
+            Method: POST
+        ResetPassword:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/auth/reset-password
+            Method: POST
+        VerifyEmail:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/auth/verify-email
+            Method: GET
+        ResendVerification:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/auth/resend-verification
+            Method: POST
+        ListSessions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/auth/sessions
+            Method: GET
+        RevokeSession:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/auth/sessions/{sessionId}
+            Method: DELETE
+
+  AuthFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/unamentis-auth-${Environment}"
+      RetentionInDays: 30
+
+  # ============================================
+  # KB (Knowledge Base) Service
+  # ============================================
+  KBFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "unamentis-kb-${Environment}"
+      Handler: handler.lambda_handler
+      CodeUri: services/kb/
+      Description: Knowledge Base service for question packs and questions
+      Events:
+        # Packs
+        ListPacks:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/packs
+            Method: GET
+        CreatePack:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/packs
+            Method: POST
+        GetPack:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/packs/{packId}
+            Method: GET
+        UpdatePack:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/packs/{packId}
+            Method: PUT
+        DeletePack:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/packs/{packId}
+            Method: DELETE
+
+        # Pack Questions
+        ListPackQuestions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/packs/{packId}/questions
+            Method: GET
+        AddPackQuestion:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/packs/{packId}/questions
+            Method: POST
+
+        # Questions
+        ListQuestions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/questions
+            Method: GET
+        CreateQuestion:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/questions
+            Method: POST
+        GetQuestion:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/questions/{questionId}
+            Method: GET
+        UpdateQuestion:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/questions/{questionId}
+            Method: PUT
+        DeleteQuestion:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/questions/{questionId}
+            Method: DELETE
+
+        # Domains
+        ListDomains:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/domains
+            Method: GET
+        CreateDomain:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/kb/domains
+            Method: POST
+
+  KBFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/unamentis-kb-${Environment}"
+      RetentionInDays: 30
+
+  # ============================================
+  # Curriculum Service
+  # ============================================
+  CurriculumFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "unamentis-curriculum-${Environment}"
+      Handler: handler.lambda_handler
+      CodeUri: services/curriculum/
+      Description: Curriculum metadata service
+      Events:
+        ListCurricula:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/curricula
+            Method: GET
+        GetCurriculum:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/curricula/{curriculumId}
+            Method: GET
+        ListSubjects:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/curricula/{curriculumId}/subjects
+            Method: GET
+        ListTopics:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/curricula/{curriculumId}/topics
+            Method: GET
+        GetProgress:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/curricula/{curriculumId}/progress
+            Method: GET
+
+  CurriculumFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/unamentis-curriculum-${Environment}"
+      RetentionInDays: 30
+
+  # ============================================
+  # Metrics Service
+  # ============================================
+  MetricsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "unamentis-metrics-${Environment}"
+      Handler: handler.lambda_handler
+      CodeUri: services/metrics/
+      Description: System metrics and analytics service
+      Events:
+        SystemMetrics:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/metrics/system
+            Method: GET
+        SessionMetrics:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/metrics/sessions
+            Method: GET
+        UserMetrics:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/metrics/users
+            Method: GET
+        LatencyMetrics:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/metrics/latency
+            Method: GET
+        UsageMetrics:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UnaMentisApi
+            Path: /api/metrics/usage
+            Method: GET
+
+  MetricsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/unamentis-metrics-${Environment}"
+      RetentionInDays: 30
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${UnaMentisApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+
+  AuthFunctionArn:
+    Description: Auth Lambda Function ARN
+    Value: !GetAtt AuthFunction.Arn
+
+  KBFunctionArn:
+    Description: KB Lambda Function ARN
+    Value: !GetAtt KBFunction.Arn
+
+  CurriculumFunctionArn:
+    Description: Curriculum Lambda Function ARN
+    Value: !GetAtt CurriculumFunction.Arn
+
+  MetricsFunctionArn:
+    Description: Metrics Lambda Function ARN
+    Value: !GetAtt MetricsFunction.Arn

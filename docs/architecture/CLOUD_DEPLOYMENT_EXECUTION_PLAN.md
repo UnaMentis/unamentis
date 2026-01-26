@@ -14,7 +14,7 @@ This is the live tracking document for implementing the cloud architecture defin
 | Phase | Description | Timeline | Status |
 |-------|-------------|----------|--------|
 | **Phase 0** | Documentation Housekeeping | Immediate | **Complete** |
-| **Phase A** | Create SAM Project Structure | Week 1 | Not Started |
+| **Phase A** | Create SAM Project Structure | Week 1 | **In Progress** |
 | **Phase B** | Extract Auth Service to Lambda | Week 1-2 | Not Started |
 | **Phase C** | Extract KB Service to Lambda | Week 2-3 | Not Started |
 | **Phase D** | Extract Curriculum + Metrics Services | Week 3 | Not Started |
@@ -41,9 +41,10 @@ This is the live tracking document for implementing the cloud architecture defin
 
 ## Phase A: Create SAM Project Structure
 
-**Status**: Not Started
+**Status**: In Progress
 **Timeline**: Week 1
 **Estimated Cost**: $0 (local development only)
+**Started**: 2025-01-25
 
 ### Prerequisites
 
@@ -61,27 +62,35 @@ This is the live tracking document for implementing the cloud architecture defin
 - [ ] Test SAM: `sam init` (interactive, then delete test project)
 
 #### A.2: Create SAM Project Structure
-- [ ] Create `server/lambda/` directory
-- [ ] Create `server/lambda/template.yaml` (SAM template)
-- [ ] Create `server/lambda/samconfig.toml` (SAM config)
-- [ ] Create `server/lambda/services/` directory structure
+- [x] Create `server/lambda/` directory
+- [x] Create `server/lambda/template.yaml` (SAM template)
+- [x] Create `server/lambda/samconfig.toml` (SAM config)
+- [x] Create `server/lambda/services/` directory structure
+- [x] Create `server/lambda/README.md` (setup instructions)
 
 #### A.3: Create Shared Utilities
-- [ ] Create `server/lambda/services/shared/__init__.py`
-- [ ] Create `server/lambda/services/shared/db.py` (database connection pool)
-- [ ] Create `server/lambda/services/shared/auth.py` (JWT validation)
-- [ ] Create `server/lambda/services/shared/response.py` (standard API responses)
-- [ ] Create `server/lambda/services/shared/requirements.txt`
+- [x] Create `server/lambda/services/shared/__init__.py`
+- [x] Create `server/lambda/services/shared/db.py` (database connection pool)
+- [x] Create `server/lambda/services/shared/auth.py` (JWT validation)
+- [x] Create `server/lambda/services/shared/response.py` (standard API responses)
+- [x] Create `server/lambda/services/shared/requirements.txt`
 
-#### A.4: Test Local Development
+#### A.4: Create Service Placeholders
+- [x] Create `server/lambda/services/auth/handler.py` (full implementation)
+- [x] Create `server/lambda/services/kb/handler.py` (placeholder)
+- [x] Create `server/lambda/services/curriculum/handler.py` (placeholder)
+- [x] Create `server/lambda/services/metrics/handler.py` (placeholder)
+
+#### A.5: Test Local Development
 - [ ] Run `sam local start-api --port 8766`
 - [ ] Verify hot reload works
-- [ ] Test hello world endpoint
+- [ ] Test health endpoint
 
 ### Deliverables
-- SAM project structure in `server/lambda/`
-- Working local development environment
-- Shared utilities for all Lambda functions
+- [x] SAM project structure in `server/lambda/`
+- [x] Shared utilities for all Lambda functions
+- [x] Auth service with all 11 endpoints (placeholder logic)
+- [ ] Working local development environment (requires SAM CLI install)
 
 ---
 
@@ -411,7 +420,17 @@ This is the live tracking document for implementing the cloud architecture defin
 
 ## Notes and Decisions
 
-### 2025-01-25
+### 2025-01-25 (Evening)
+- Phase A structure complete:
+  - Created `server/lambda/` SAM project with full structure
+  - Created `template.yaml` with all 4 services (auth, kb, curriculum, metrics)
+  - Created shared utilities (db.py, auth.py, response.py)
+  - Auth service has full placeholder implementation with 11 endpoints
+  - Other services have placeholder handlers
+- **Blocker**: SAM CLI not installed. User needs to run `brew install aws-sam-cli`
+- Created README.md with setup instructions
+
+### 2025-01-25 (Earlier)
 - Architecture plan approved
 - Phase 0 complete: Documentation housekeeping done
 - Old docs archived to `docs/archive/`
@@ -421,6 +440,7 @@ This is the live tracking document for implementing the cloud architecture defin
 
 ## Next Steps
 
-1. **Immediate**: Begin Phase A - Set up AWS SAM CLI and create project structure
-2. **This Week**: Complete Phase A and start Phase B (Auth service extraction)
-3. **Decision Needed**: Confirm AWS account is ready for deployment
+1. **Immediate**: Install SAM CLI (`brew install aws-sam-cli`) to complete Phase A testing
+2. **After SAM Install**: Run `sam build && sam local start-api --port 8766` to test
+3. **Phase B**: Begin full auth service implementation with database integration
+4. **Decision Needed**: Confirm AWS account is ready for deployment

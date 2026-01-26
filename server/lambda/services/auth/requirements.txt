@@ -1,0 +1,11 @@
+# Auth service dependencies
+# Inherits from shared/requirements.txt
+
+# Include shared dependencies
+-r ../shared/requirements.txt
+
+# Password hashing
+bcrypt>=4.1.2
+
+# Email validation
+email-validator>=2.1.0

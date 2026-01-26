@@ -1,0 +1,62 @@
+# SAM CLI Configuration for UnaMentis Lambda Services
+# More information: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html
+
+version = 0.1
+
+[default]
+[default.global.parameters]
+stack_name = "unamentis-lambda"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.validate.parameters]
+lint = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+s3_prefix = "unamentis-lambda"
+region = "us-west-2"
+disable_rollback = false
+parameter_overrides = "Environment=\"dev\""
+
+[default.package.parameters]
+resolve_s3 = true
+
+[default.sync.parameters]
+watch = true
+
+[default.local_start_api.parameters]
+warm_containers = "EAGER"
+port = 8766
+
+[default.local_invoke.parameters]
+# No specific parameters needed
+
+# Development environment
+[dev]
+[dev.deploy.parameters]
+stack_name = "unamentis-lambda-dev"
+s3_prefix = "unamentis-lambda-dev"
+parameter_overrides = "Environment=\"dev\""
+confirm_changeset = false
+
+# Staging environment
+[staging]
+[staging.deploy.parameters]
+stack_name = "unamentis-lambda-staging"
+s3_prefix = "unamentis-lambda-staging"
+parameter_overrides = "Environment=\"staging\""
+confirm_changeset = true
+
+# Production environment
+[prod]
+[prod.deploy.parameters]
+stack_name = "unamentis-lambda-prod"
+s3_prefix = "unamentis-lambda-prod"
+parameter_overrides = "Environment=\"prod\""
+confirm_changeset = true
+disable_rollback = false

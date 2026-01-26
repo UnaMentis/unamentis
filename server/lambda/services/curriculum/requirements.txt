@@ -1,0 +1,2 @@
+# Curriculum service dependencies
+-r ../shared/requirements.txt
