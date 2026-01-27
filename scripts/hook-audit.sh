@@ -192,6 +192,112 @@ detect_bypasses() {
         echo ""
     fi
 
+    # Check for mock test violations in recent commits
+    echo -e "${YELLOW}Checking for mock test violations in recent commits...${NC}"
+
+    # Python mock violations
+    local python_test_files=$(git diff --name-only HEAD~10..HEAD 2>/dev/null | grep -E '^server/(management|importers)/.*tests?/.*\.py$' || true)
+    if [ -n "$python_test_files" ]; then
+        local mock_violations=0
+        for file in $python_test_files; do
+            if [ -f "$file" ]; then
+                # Check for class Mock* definitions (excluding # ALLOWED:)
+                local class_mocks=$(grep -c "^class Mock" "$file" 2>/dev/null || echo 0)
+                local allowed=$(grep -c "^class Mock.*# ALLOWED:" "$file" 2>/dev/null || echo 0)
+                mock_violations=$((mock_violations + class_mocks - allowed))
+
+                # Check for MagicMock/AsyncMock assignments (excluding # ALLOWED:)
+                local magic_mocks=$(grep -c "= \(MagicMock\|AsyncMock\)()" "$file" 2>/dev/null || echo 0)
+                local magic_allowed=$(grep -c "= \(MagicMock\|AsyncMock\)().*# ALLOWED:" "$file" 2>/dev/null || echo 0)
+                mock_violations=$((mock_violations + magic_mocks - magic_allowed))
+            fi
+        done
+        if [ "$mock_violations" -gt 0 ]; then
+            echo -e "  ${RED}Found $mock_violations Python mock violations in recently committed test files${NC}"
+            echo "  This may indicate hook bypasses or violations that should be remediated"
+            bypass_detected=1
+        else
+            echo -e "  ${GREEN}No Python mock violations found${NC}"
+        fi
+    else
+        echo "  No Python test files in recent commits"
+    fi
+
+    # Swift mock violations (outside MockServices.swift)
+    local swift_test_files=$(git diff --name-only HEAD~10..HEAD 2>/dev/null | grep -E '^UnaMentisTests/.*\.swift$' | grep -v 'MockServices\.swift$' || true)
+    if [ -n "$swift_test_files" ]; then
+        local swift_mock_violations=0
+        for file in $swift_test_files; do
+            if [ -f "$file" ]; then
+                local swift_mocks=$(grep -c "^\(class\|actor\|struct\) Mock" "$file" 2>/dev/null || echo 0)
+                local swift_allowed=$(grep -c "^\(class\|actor\|struct\) Mock.*// ALLOWED:" "$file" 2>/dev/null || echo 0)
+                swift_mock_violations=$((swift_mock_violations + swift_mocks - swift_allowed))
+            fi
+        done
+        if [ "$swift_mock_violations" -gt 0 ]; then
+            echo -e "  ${RED}Found $swift_mock_violations Swift mock violations outside MockServices.swift${NC}"
+            echo "  Mocks should be in UnaMentisTests/Helpers/MockServices.swift"
+            bypass_detected=1
+        else
+            echo -e "  ${GREEN}No Swift mock violations found${NC}"
+        fi
+    else
+        echo "  No Swift test files (excluding MockServices.swift) in recent commits"
+    fi
+
+    # TypeScript mock violations
+    local ts_test_files=$(git diff --name-only HEAD~10..HEAD 2>/dev/null | grep -E '^server/web/.*\.test\.(ts|tsx)$' || true)
+    if [ -n "$ts_test_files" ]; then
+        local ts_mock_violations=0
+        for file in $ts_test_files; do
+            if [ -f "$file" ]; then
+                local vi_mocks=$(grep -c "vi\.mock.*@/lib" "$file" 2>/dev/null || echo 0)
+                local vi_allowed=$(grep -c "vi\.mock.*@/lib.*// ALLOWED:" "$file" 2>/dev/null || echo 0)
+                ts_mock_violations=$((ts_mock_violations + vi_mocks - vi_allowed))
+            fi
+        done
+        if [ "$ts_mock_violations" -gt 0 ]; then
+            echo -e "  ${RED}Found $ts_mock_violations TypeScript vi.mock violations${NC}"
+            echo "  Should use MSW instead of vi.mock for internal modules"
+            bypass_detected=1
+        else
+            echo -e "  ${GREEN}No TypeScript mock violations found${NC}"
+        fi
+    else
+        echo "  No TypeScript test files in recent commits"
+    fi
+
+    # Rust mock violations
+    local rust_files=$(git diff --name-only HEAD~10..HEAD 2>/dev/null | grep -E '^server/usm-core/.*\.rs$' || true)
+    local cargo_files=$(git diff --name-only HEAD~10..HEAD 2>/dev/null | grep -E 'Cargo\.toml$' || true)
+    if [ -n "$rust_files" ] || [ -n "$cargo_files" ]; then
+        local rust_mock_violations=0
+        for file in $cargo_files; do
+            if [ -f "$file" ]; then
+                local mockall=$(grep -c "mockall" "$file" 2>/dev/null || echo 0)
+                local mockall_allowed=$(grep -c "mockall.*# ALLOWED:" "$file" 2>/dev/null || echo 0)
+                rust_mock_violations=$((rust_mock_violations + mockall - mockall_allowed))
+            fi
+        done
+        for file in $rust_files; do
+            if [ -f "$file" ]; then
+                local rust_mocks=$(grep -c "mock!\|struct Mock" "$file" 2>/dev/null || echo 0)
+                local rust_allowed=$(grep -c "\(mock!\|struct Mock\).*// ALLOWED:" "$file" 2>/dev/null || echo 0)
+                rust_mock_violations=$((rust_mock_violations + rust_mocks - rust_allowed))
+            fi
+        done
+        if [ "$rust_mock_violations" -gt 0 ]; then
+            echo -e "  ${RED}Found $rust_mock_violations Rust mock violations${NC}"
+            echo "  Rust should use real implementations, not mock frameworks"
+            bypass_detected=1
+        else
+            echo -e "  ${GREEN}No Rust mock violations found${NC}"
+        fi
+    else
+        echo "  No Rust files in recent commits"
+    fi
+    echo ""
+
     # Summary
     if [ $bypass_detected -eq 1 ]; then
         echo -e "${RED}=== Potential bypasses detected ===${NC}"

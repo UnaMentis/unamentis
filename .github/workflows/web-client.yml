@@ -126,9 +126,9 @@ jobs:
       - name: Check coverage threshold
         id: coverage-check
         run: |
-          # TODO: Increase threshold to 70% once tests are added
-          # See: https://github.com/UnaMentis/unamentis/issues/XXX
-          MIN_COVERAGE=1
+          # Target: 70% - incrementally increase as test coverage grows
+          # Current: 5% (increased from 1% after MSW test remediation)
+          MIN_COVERAGE=5
           if [ -f coverage/coverage-summary.json ]; then
             COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct // 0')
             echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT

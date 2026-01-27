@@ -710,11 +710,21 @@ final class KBOralSessionViewModel: ObservableObject {
     // MARK: - Service Setup
 
     func prepareServices() async {
+        let prepareStart = CFAbsoluteTimeGetCurrent()
+        NSLog("⏱️ [KBOralSession] prepareServices() START")
+
         // Set up TTS observation using Combine
         setupTTSObservation()
 
+        // Pre-warm TTS engine to avoid cold-start delay on first question
+        NSLog("⏱️ [KBOralSession] prepareServices() - pre-warming TTS...")
+        await tts.prewarm()
+
         // Check if STT is available
         hasPermissions = KBOnDeviceSTT.isAvailable
+
+        let prepareTime = (CFAbsoluteTimeGetCurrent() - prepareStart) * 1000
+        NSLog("⏱️ [KBOralSession] prepareServices() COMPLETE - took %.1fms", prepareTime)
     }
 
     private func setupTTSObservation() {
@@ -758,21 +768,26 @@ final class KBOralSessionViewModel: ObservableObject {
     // MARK: - Session Control
 
     func startSession() async {
-        print("[KB] Oral session: startSession() called")
+        let sessionStart = CFAbsoluteTimeGetCurrent()
+        NSLog("⏱️ [KBOralSession] startSession() START - USER TAPPED START")
 
         // Request permissions before starting
-        print("[KB] Oral session: requesting permissions...")
+        NSLog("⏱️ [KBOralSession] startSession() - requesting permissions...")
         let hasPerms = await requestPermissionsIfNeeded()
-        print("[KB] Oral session: permissions result = \(hasPerms)")
+        let permTime = (CFAbsoluteTimeGetCurrent() - sessionStart) * 1000
+        NSLog("⏱️ [KBOralSession] startSession() - permissions took %.1fms, result = \(hasPerms)", permTime)
 
         guard hasPerms else {
-            print("[KB] Oral session: permissions not granted, returning")
+            NSLog("⏱️ [KBOralSession] startSession() - permissions not granted, returning")
             return
         }
 
-        print("[KB] Oral session: starting reading question...")
+        NSLog("⏱️ [KBOralSession] startSession() - starting reading question...")
         state = .readingQuestion
         await readCurrentQuestion()
+
+        let totalTime = (CFAbsoluteTimeGetCurrent() - sessionStart) * 1000
+        NSLog("⏱️ [KBOralSession] startSession() COMPLETE - TOTAL TIME FROM TAP TO AUDIO: %.1fms", totalTime)
     }
 
     func endSession() async {
@@ -810,6 +825,8 @@ final class KBOralSessionViewModel: ObservableObject {
     // MARK: - Question Flow
 
     private func readCurrentQuestion() async {
+        let readStart = CFAbsoluteTimeGetCurrent()
+        NSLog("⏱️ [KBOralSession] readCurrentQuestion() START")
 
         guard let question = currentQuestion else {
             await endSession()
@@ -819,10 +836,11 @@ final class KBOralSessionViewModel: ObservableObject {
         state = .readingQuestion
 
         // Speak the question
-        NSLog("🔵🔵🔵 KBOralSessionViewModel: About to call tts.speakQuestion()")
+        NSLog("⏱️ [KBOralSession] readCurrentQuestion() - calling tts.speakQuestion()")
         NSLog("🔵 Question text: '\(question.text.prefix(50))...'")
         await tts.speakQuestion(question)
-        NSLog("🔵 KBOralSessionViewModel: tts.speakQuestion() returned")
+        let readTime = (CFAbsoluteTimeGetCurrent() - readStart) * 1000
+        NSLog("⏱️ [KBOralSession] readCurrentQuestion() COMPLETE - TOTAL TIME: %.1fms", readTime)
 
         // Start conference time
         await startConferenceTime()

@@ -7,6 +7,71 @@ import AVFoundation
 import Foundation
 import OSLog
 
+// MARK: - Streaming Event Handler
+
+/// Handler for streaming TTS events, bridging Rust callbacks to AsyncStream
+/// This class is NOT actor-isolated to allow callbacks from Rust threads
+private final class StreamingEventHandler: TtsEventHandler {
+    private let continuation: AsyncStream<TTSAudioChunk>.Continuation
+    private var sequenceNumber = 0
+    private var isFirst = true
+    private var ttfbRecorded = false
+    private let startTime: CFAbsoluteTime
+    private var ttfb: TimeInterval = 0
+
+    init(continuation: AsyncStream<TTSAudioChunk>.Continuation, startTime: CFAbsoluteTime) {
+        self.continuation = continuation
+        self.startTime = startTime
+    }
+
+    func onAudioChunk(chunk: AudioChunk) {
+        if !ttfbRecorded {
+            ttfb = CFAbsoluteTimeGetCurrent() - startTime
+            ttfbRecorded = true
+            NSLog("⏱️ [KyutaiPocket] STREAMING TTFB: %.3fs (%.0fms)", ttfb, ttfb * 1000)
+        }
+
+        // AudioChunk from Rust contains raw PCM data (not WAV)
+        let ttsChunk = TTSAudioChunk(
+            audioData: chunk.audioData,
+            format: .pcmFloat32(sampleRate: Double(chunk.sampleRate), channels: 1),
+            sequenceNumber: sequenceNumber,
+            isFirst: isFirst,
+            isLast: chunk.isFinal,
+            timeToFirstByte: isFirst ? ttfb : nil
+        )
+
+        continuation.yield(ttsChunk)
+
+        sequenceNumber += 1
+        isFirst = false
+
+        if chunk.isFinal {
+            NSLog("⏱️ [KyutaiPocket] Final chunk received, sequence: %d", sequenceNumber - 1)
+        }
+    }
+
+    func onProgress(progress: Float) {
+        // Progress updates for debugging (commented out to reduce noise)
+        // NSLog("⏱️ [KyutaiPocket] Streaming progress: %.1f%%", progress * 100)
+    }
+
+    func onComplete() {
+        let totalTime = CFAbsoluteTimeGetCurrent() - startTime
+        NSLog("⏱️ [KyutaiPocket] Streaming complete - total: %.3fs, TTFB: %.3fs", totalTime, ttfb)
+        continuation.finish()
+    }
+
+    func onError(message: String) {
+        NSLog("🔴 [KyutaiPocket] Streaming error: %@", message)
+        continuation.finish()
+    }
+
+    func getTimeToFirstByte() -> TimeInterval {
+        ttfb
+    }
+}
+
 // MARK: - Kyutai Pocket TTS Service
 
 /// On-device TTS service using Kyutai Pocket TTS with Rust/Candle inference
@@ -120,80 +185,45 @@ public actor KyutaiPocketTTSService: TTSService {
         logger.debug("Kyutai Pocket configured: voice=\(config.voiceIndex), temp=\(config.temperature)")
     }
 
-    /// Synthesize text to audio stream
+    /// Synthesize text to audio stream using streaming API for low latency
     public func synthesize(text: String) async throws -> AsyncStream<TTSAudioChunk> {
+        let synthesizeStart = CFAbsoluteTimeGetCurrent()
         logger.info("[KyutaiPocket] synthesize called - text length: \(text.count)")
+        NSLog("⏱️ [KyutaiPocket] synthesize() START (STREAMING) - text length: \(text.count)")
 
         // Ensure engine is loaded
+        let ensureStart = CFAbsoluteTimeGetCurrent()
         try await ensureLoaded()
+        let ensureTime = (CFAbsoluteTimeGetCurrent() - ensureStart) * 1000
+        NSLog("⏱️ [KyutaiPocket] synthesize: ensureLoaded took %.1fms", ensureTime)
 
         guard let engine = engine else {
             throw KyutaiPocketModelError.modelsNotLoaded
         }
 
-        let startTime = Date()
+        // Capture engine reference for the closure
+        let capturedEngine = engine
 
-        // Perform synchronous synthesis using Rust engine BEFORE creating the stream
-        // This allows errors to be thrown normally rather than swallowed inside AsyncStream
-        let result: SynthesisResult
-        do {
-            result = try engine.synthesize(text: text)
-        } catch let error as PocketTtsError {
-            print("🔴🔴🔴 [KyutaiPocket] PocketTtsError: \(error)")
-            logger.error("[KyutaiPocket] Synthesis failed: \(error.localizedDescription)")
-            throw error
-        } catch {
-            print("🔴🔴🔴 [KyutaiPocket] Error: \(error)")
-            logger.error("[KyutaiPocket] Synthesis failed: \(error.localizedDescription)")
-            throw error
-        }
-
-        let ttfb = Date().timeIntervalSince(startTime)
-        self.latencyValues.append(ttfb)
-        self.updateMetrics()
-        self.logger.info("[KyutaiPocket] TTFB: \(String(format: "%.3f", ttfb))s")
-
-        // Convert WAV data to raw PCM for streaming
-        let audioData = result.audioData
-        let sampleRate = result.sampleRate
-
-        // Skip WAV header (44 bytes) to get raw PCM
-        let pcmData = audioData.count > 44 ? audioData.dropFirst(44) : audioData
-
-        let totalTime = Date().timeIntervalSince(startTime)
-        self.logger.info("[KyutaiPocket] Synthesis complete: \(text.count) chars in \(String(format: "%.3f", totalTime))s, duration: \(String(format: "%.2f", result.durationSeconds))s")
-
-        // Return stream that emits chunks from already-synthesized audio
+        // Create AsyncStream with streaming handler
+        // The handler receives callbacks from Rust as audio chunks are generated
         return AsyncStream { continuation in
-            // Emit chunks for streaming compatibility
-            let chunkSize = Int(sampleRate) / 10 * 4  // ~100ms at 24kHz, 32-bit float
-            var offset = 0
-            var sequenceNumber = 0
+            let streamStart = CFAbsoluteTimeGetCurrent()
+            let handler = StreamingEventHandler(continuation: continuation, startTime: streamStart)
 
-            while offset < pcmData.count {
-                let remaining = pcmData.count - offset
-                let currentChunkSize = min(chunkSize, remaining)
-                let chunkData = Data(pcmData[pcmData.startIndex.advanced(by: offset)..<pcmData.startIndex.advanced(by: offset + currentChunkSize)])
+            NSLog("⏱️ [KyutaiPocket] Starting streaming synthesis...")
 
-                let isFirst = sequenceNumber == 0
-                let isLast = offset + currentChunkSize >= pcmData.count
-
-                let chunk = TTSAudioChunk(
-                    audioData: chunkData,
-                    format: .pcmFloat32(sampleRate: Double(sampleRate), channels: 1),
-                    sequenceNumber: sequenceNumber,
-                    isFirst: isFirst,
-                    isLast: isLast,
-                    timeToFirstByte: isFirst ? ttfb : nil
-                )
-
-                continuation.yield(chunk)
-
-                offset += currentChunkSize
-                sequenceNumber += 1
+            do {
+                // startStreaming is non-blocking - it kicks off synthesis and returns immediately
+                // The handler will receive onAudioChunk callbacks as audio is generated
+                try capturedEngine.startStreaming(text: text, handler: handler)
+                NSLog("⏱️ [KyutaiPocket] startStreaming() returned, waiting for callbacks...")
+            } catch let error as PocketTtsError {
+                NSLog("🔴 [KyutaiPocket] startStreaming failed: %@", error.localizedDescription)
+                continuation.finish()
+            } catch {
+                NSLog("🔴 [KyutaiPocket] startStreaming failed: %@", error.localizedDescription)
+                continuation.finish()
             }
-
-            continuation.finish()
         }
     }
 
@@ -217,26 +247,42 @@ public actor KyutaiPocketTTSService: TTSService {
 
     /// Ensure models are loaded
     public func ensureLoaded() async throws {
+        let overallStart = CFAbsoluteTimeGetCurrent()
+
         if engine != nil && engine!.isReady() {
+            NSLog("⏱️ [KyutaiPocket] ensureLoaded: already loaded (0ms)")
             return
         }
 
         logger.info("[KyutaiPocket] Loading Rust/Candle engine...")
+        NSLog("⏱️ [KyutaiPocket] ensureLoaded: COLD START - loading engine...")
 
         // Get model path
+        let pathStart = CFAbsoluteTimeGetCurrent()
         let modelPath = try await modelManager.getModelPath()
+        let pathTime = (CFAbsoluteTimeGetCurrent() - pathStart) * 1000
+        NSLog("⏱️ [KyutaiPocket] ensureLoaded: getModelPath took %.1fms", pathTime)
 
         do {
             // Create Rust engine with model path
+            let engineStart = CFAbsoluteTimeGetCurrent()
             engine = try PocketTtsEngine(modelPath: modelPath)
+            let engineTime = (CFAbsoluteTimeGetCurrent() - engineStart) * 1000
+            NSLog("⏱️ [KyutaiPocket] ensureLoaded: PocketTtsEngine() took %.1fms", engineTime)
 
             // Configure with current settings
+            let configStart = CFAbsoluteTimeGetCurrent()
             let rustConfig = createRustConfig()
             try engine?.configure(config: rustConfig)
+            let configTime = (CFAbsoluteTimeGetCurrent() - configStart) * 1000
+            NSLog("⏱️ [KyutaiPocket] ensureLoaded: configure() took %.1fms", configTime)
 
+            let totalTime = (CFAbsoluteTimeGetCurrent() - overallStart) * 1000
             logger.info("[KyutaiPocket] Engine loaded successfully")
             logger.info("[KyutaiPocket] Model version: \(self.engine?.modelVersion() ?? "unknown")")
             logger.info("[KyutaiPocket] Parameters: \(self.engine?.parameterCount() ?? 0)")
+            NSLog("⏱️ [KyutaiPocket] ensureLoaded: TOTAL COLD START = %.1fms (path: %.1fms, engine: %.1fms, config: %.1fms)",
+                  totalTime, pathTime, engineTime, configTime)
 
         } catch let error as PocketTtsError {
             logger.error("[KyutaiPocket] Failed to load engine: \(error.localizedDescription)")

@@ -238,6 +238,34 @@ Before marking any work "complete", run:
 
 See `.claude/skills/validate/SKILL.md` for the complete validation workflow.
 
+## Pre-Commit Hook: Quality Enforcement
+
+The pre-commit hook enforces code quality through multiple checks.
+
+### Mock Test Detection
+
+Enforces the "Real Over Mock" testing philosophy by blocking commits with forbidden mock patterns:
+
+| Language | Forbidden Patterns | Allowed Exceptions |
+|----------|-------------------|-------------------|
+| Python | `class Mock*`, `MagicMock()`, `AsyncMock()` | `# ALLOWED: <reason>` comment |
+| TypeScript | `vi.mock('@/lib/...')` | `// ALLOWED: <reason>` comment |
+| Swift | `class/actor/struct Mock*` outside `MockServices.swift` | `// ALLOWED: <reason>` comment |
+| Rust | `mockall` crate, `mock!` macro, `struct Mock*` | `// ALLOWED: <reason>` comment |
+
+**Swift exception:** Mocks for paid external APIs (LLM, STT, TTS, Embeddings) are allowed in `UnaMentisTests/Helpers/MockServices.swift`.
+
+**Remediation:** Use real implementations with fixtures. See `docs/testing/MOCK_VIOLATIONS_INVENTORY.md` for patterns.
+
+### Dependency Vulnerability Scanning
+
+When `requirements*.txt` or `package.json`/`pnpm-lock.yaml` are staged, the hook scans for known vulnerabilities:
+
+- **Python:** Uses `pip-audit` (install: `pip install pip-audit`)
+- **Node.js:** Uses `pnpm audit` or `npm audit`
+
+These checks are **warning-only** and won't block commits. CI enforces strictly.
+
 ## MANDATORY: Tool Trust Doctrine
 
 **All findings from security and quality tools are presumed legitimate until proven otherwise through rigorous analysis.**

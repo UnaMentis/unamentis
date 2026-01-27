@@ -223,8 +223,9 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           server/usm-core/target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('server/usm-core/**/Cargo.lock') }}
+        key: ${{ runner.os }}-cargo-tarpaulin-${{ hashFiles('server/usm-core/**/Cargo.lock') }}
         restore-keys: |
+          ${{ runner.os }}-cargo-tarpaulin-
           ${{ runner.os }}-cargo-
 
     - name: Check formatting
@@ -242,6 +243,32 @@ jobs:
         cd server/usm-core
         cargo test --verbose
 
+    - name: Install cargo-tarpaulin
+      run: |
+        cargo install cargo-tarpaulin --locked
+
+    - name: Run tests with coverage
+      run: |
+        cd server/usm-core
+        cargo tarpaulin --out Xml --out Html --output-dir coverage --skip-clean
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: server/usm-core/coverage/cobertura.xml
+        flags: rust
+        name: usm-core
+        fail_ci_if_error: false
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Upload coverage artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: rust-coverage-report
+        path: server/usm-core/coverage/
+        retention-days: 14
+
     - name: Summary
       if: always()
       run: |
@@ -252,6 +279,9 @@ jobs:
         echo "| Format | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Clippy | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Tests | ${{ job.status == 'success' && 'Passed' || 'Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Coverage | See artifacts |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Coverage report uploaded as artifact: rust-coverage-report" >> $GITHUB_STEP_SUMMARY
 
   summary:
     name: Server CI Summary

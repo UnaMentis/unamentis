@@ -81,6 +81,54 @@ if [ -n "$SWIFT_FILES" ]; then
 fi
 
 # =============================================================================
+# Swift Mock Test Violation Detection (Prevention)
+# =============================================================================
+# Enforces "Real Over Mock" philosophy for Swift tests
+# Approved mocks for paid external APIs must be in MockServices.swift only
+
+SWIFT_TEST_FILES=$(echo "$STAGED_FILES" | grep -E '^UnaMentisTests/.*\.swift$' || true)
+# Exclude MockServices.swift which is the approved location for external API mocks
+SWIFT_TEST_FILES_NO_MOCKS=$(echo "$SWIFT_TEST_FILES" | grep -v 'MockServices\.swift$' || true)
+
+if [ -n "$SWIFT_TEST_FILES_NO_MOCKS" ]; then
+    echo -e "\n${YELLOW}Checking for Swift mock test violations...${NC}"
+
+    SWIFT_MOCK_VIOLATIONS=""
+
+    for file in $SWIFT_TEST_FILES_NO_MOCKS; do
+        staged_content=$(git show ":$file" 2>/dev/null || true)
+
+        if [ -n "$staged_content" ]; then
+            # Detect class Mock*, actor Mock*, struct Mock* definitions
+            violations=$(echo "$staged_content" | grep -n "^\(class\|actor\|struct\) Mock" | grep -v "// ALLOWED:" || true)
+            if [ -n "$violations" ]; then
+                SWIFT_MOCK_VIOLATIONS="${SWIFT_MOCK_VIOLATIONS}\n${file}:\n${violations}"
+            fi
+        fi
+    done
+
+    if [ -n "$SWIFT_MOCK_VIOLATIONS" ]; then
+        echo -e "${RED}Swift mock test violations detected!${NC}"
+        echo -e "${YELLOW}Mock definitions found outside MockServices.swift:${NC}"
+        echo -e "$SWIFT_MOCK_VIOLATIONS"
+        echo ""
+        echo -e "${YELLOW}TESTING PHILOSOPHY: Real Over Mock${NC}"
+        echo "Mocks are only allowed for paid external APIs (LLM, STT, TTS, Embeddings)."
+        echo ""
+        echo "Options:"
+        echo "  1. Use real implementations (preferred)"
+        echo "  2. Add approved mock to UnaMentisTests/Helpers/MockServices.swift"
+        echo ""
+        echo "See: AGENTS.md for full testing philosophy"
+        echo ""
+        echo "If this is a legitimate exception, add '// ALLOWED: <reason>' comment on the same line"
+        FAILED=1
+    else
+        echo -e "${GREEN}No Swift mock violations detected.${NC}"
+    fi
+fi
+
+# =============================================================================
 # Python Checks (Server)
 # =============================================================================
 PYTHON_FILES=$(echo "$STAGED_FILES" | grep -E '\.py$' || true)
@@ -118,6 +166,61 @@ if [ -n "$PYTHON_FILES" ]; then
             echo -e "${RED}Bandit found security issues. Please fix them before committing.${NC}"
             FAILED=1
         }
+    fi
+fi
+
+# =============================================================================
+# Python Mock Test Violation Detection
+# =============================================================================
+# Enforces "Real Over Mock" philosophy - see AGENTS.md
+# Detects forbidden mock patterns in staged Python test files
+
+PYTHON_TEST_FILES=$(echo "$STAGED_FILES" | grep -E '^server/(management|importers)/.*tests?/.*\.py$' || true)
+
+if [ -n "$PYTHON_TEST_FILES" ]; then
+    echo -e "\n${YELLOW}Checking for Python mock test violations...${NC}"
+
+    MOCK_VIOLATIONS=""
+
+    for file in $PYTHON_TEST_FILES; do
+        # Use git show to get staged content (not working directory)
+        staged_content=$(git show ":$file" 2>/dev/null || true)
+
+        if [ -n "$staged_content" ]; then
+            # Pattern 1: Detect class Mock* definitions (except # ALLOWED: comments)
+            class_violations=$(echo "$staged_content" | grep -n "^class Mock" | grep -v "# ALLOWED:" || true)
+            if [ -n "$class_violations" ]; then
+                MOCK_VIOLATIONS="${MOCK_VIOLATIONS}\n${file} (Mock class definitions):\n${class_violations}"
+            fi
+
+            # Pattern 2: Detect MagicMock()/AsyncMock() variable assignments
+            mock_assignments=$(echo "$staged_content" | grep -n "= \(MagicMock\|AsyncMock\)()" | grep -v "# ALLOWED:" || true)
+            if [ -n "$mock_assignments" ]; then
+                MOCK_VIOLATIONS="${MOCK_VIOLATIONS}\n${file} (MagicMock/AsyncMock assignments):\n${mock_assignments}"
+            fi
+        fi
+    done
+
+    if [ -n "$MOCK_VIOLATIONS" ]; then
+        echo -e "${RED}Python mock test violations detected!${NC}"
+        echo -e "${YELLOW}The following forbidden mock patterns were found:${NC}"
+        echo -e "$MOCK_VIOLATIONS"
+        echo ""
+        echo -e "${YELLOW}TESTING PHILOSOPHY: Real Over Mock${NC}"
+        echo "Mocks are only allowed for paid external APIs (LLM, STT, TTS, Embeddings)."
+        echo ""
+        echo "Instead of mocking internal services:"
+        echo "  - Use real_tts_cache fixture with tmp_path"
+        echo "  - Use real_db or in_memory_db fixtures"
+        echo "  - Use real_resource_pool with aioresponses for HTTP"
+        echo ""
+        echo "See: AGENTS.md for full testing philosophy"
+        echo "See: docs/testing/MOCK_VIOLATIONS_INVENTORY.md for remediation patterns"
+        echo ""
+        echo "If this is a legitimate exception, add '# ALLOWED: <reason>' comment on the same line"
+        FAILED=1
+    else
+        echo -e "${GREEN}No Python mock violations detected.${NC}"
     fi
 fi
 
@@ -219,6 +322,185 @@ if [ -n "$WEB_JS_TS_FILES" ]; then
                 echo -e "${RED}Prettier found formatting issues. Run 'npm run format' to fix.${NC}"
                 FAILED=1
             }
+        fi
+
+        cd - > /dev/null
+    fi
+fi
+
+# =============================================================================
+# TypeScript Mock Test Violation Detection
+# =============================================================================
+# Enforces "Real Over Mock" philosophy for TypeScript tests
+# vi.mock for internal modules should be replaced with MSW
+
+WEB_TEST_FILES=$(echo "$STAGED_FILES" | grep -E '^server/web/.*\.test\.(ts|tsx)$' || true)
+
+if [ -n "$WEB_TEST_FILES" ]; then
+    echo -e "\n${YELLOW}Checking for TypeScript mock test violations...${NC}"
+
+    TS_MOCK_VIOLATIONS=""
+
+    for file in $WEB_TEST_FILES; do
+        staged_content=$(git show ":$file" 2>/dev/null || true)
+
+        if [ -n "$staged_content" ]; then
+            # Detect vi.mock('@/lib/...) pattern for internal modules
+            violations=$(echo "$staged_content" | grep -n "vi\.mock.*@/lib" | grep -v "// ALLOWED:" || true)
+            if [ -n "$violations" ]; then
+                TS_MOCK_VIOLATIONS="${TS_MOCK_VIOLATIONS}\n${file}:\n${violations}"
+            fi
+        fi
+    done
+
+    if [ -n "$TS_MOCK_VIOLATIONS" ]; then
+        echo -e "${RED}TypeScript mock test violations detected!${NC}"
+        echo -e "${YELLOW}The following vi.mock patterns should use MSW instead:${NC}"
+        echo -e "$TS_MOCK_VIOLATIONS"
+        echo ""
+        echo "Replace vi.mock with MSW (Mock Service Worker):"
+        echo "  import { setupServer } from 'msw/node';"
+        echo "  import { http, HttpResponse } from 'msw';"
+        echo ""
+        echo "See: docs/testing/MOCK_VIOLATIONS_INVENTORY.md for migration guide"
+        echo ""
+        echo "If this is a legitimate exception, add '// ALLOWED: <reason>' comment on the same line"
+        FAILED=1
+    else
+        echo -e "${GREEN}No TypeScript mock violations detected.${NC}"
+    fi
+fi
+
+# =============================================================================
+# Rust Mock Test Violation Detection (Prevention)
+# =============================================================================
+# Enforces "Real Over Mock" philosophy for Rust tests
+# No mock frameworks allowed - use real implementations
+
+RUST_FILES=$(echo "$STAGED_FILES" | grep -E '^server/usm-core/.*\.rs$' || true)
+CARGO_FILES=$(echo "$STAGED_FILES" | grep -E 'Cargo\.toml$' || true)
+
+if [ -n "$RUST_FILES" ] || [ -n "$CARGO_FILES" ]; then
+    echo -e "\n${YELLOW}Checking for Rust mock test violations...${NC}"
+
+    RUST_MOCK_VIOLATIONS=""
+
+    # Check Cargo.toml for mockall dependency
+    for file in $CARGO_FILES; do
+        staged_content=$(git show ":$file" 2>/dev/null || true)
+
+        if [ -n "$staged_content" ]; then
+            violations=$(echo "$staged_content" | grep -n "mockall" | grep -v "# ALLOWED:" || true)
+            if [ -n "$violations" ]; then
+                RUST_MOCK_VIOLATIONS="${RUST_MOCK_VIOLATIONS}\n${file} (mockall dependency):\n${violations}"
+            fi
+        fi
+    done
+
+    # Check Rust files for mock patterns
+    for file in $RUST_FILES; do
+        staged_content=$(git show ":$file" 2>/dev/null || true)
+
+        if [ -n "$staged_content" ]; then
+            # Detect mock! macro usage
+            mock_macro=$(echo "$staged_content" | grep -n "mock!" | grep -v "// ALLOWED:" || true)
+            if [ -n "$mock_macro" ]; then
+                RUST_MOCK_VIOLATIONS="${RUST_MOCK_VIOLATIONS}\n${file} (mock! macro):\n${mock_macro}"
+            fi
+
+            # Detect struct Mock* definitions
+            mock_struct=$(echo "$staged_content" | grep -n "struct Mock" | grep -v "// ALLOWED:" || true)
+            if [ -n "$mock_struct" ]; then
+                RUST_MOCK_VIOLATIONS="${RUST_MOCK_VIOLATIONS}\n${file} (Mock struct):\n${mock_struct}"
+            fi
+        fi
+    done
+
+    if [ -n "$RUST_MOCK_VIOLATIONS" ]; then
+        echo -e "${RED}Rust mock test violations detected!${NC}"
+        echo -e "${YELLOW}The following mock patterns were found:${NC}"
+        echo -e "$RUST_MOCK_VIOLATIONS"
+        echo ""
+        echo -e "${YELLOW}TESTING PHILOSOPHY: Real Over Mock${NC}"
+        echo "Rust tests should use real implementations, not mocking frameworks."
+        echo ""
+        echo "Alternatives to mocking:"
+        echo "  - Use trait objects with test implementations"
+        echo "  - Use conditional compilation (#[cfg(test)])"
+        echo "  - Use in-memory storage for database tests"
+        echo ""
+        echo "See: AGENTS.md for full testing philosophy"
+        echo ""
+        echo "If this is a legitimate exception, add '// ALLOWED: <reason>' comment on the same line"
+        FAILED=1
+    else
+        echo -e "${GREEN}No Rust mock violations detected.${NC}"
+    fi
+fi
+
+# =============================================================================
+# Dependency Vulnerability Check (Python)
+# =============================================================================
+# Quick check for known vulnerabilities when requirements files are staged
+# Warning only - CI enforces strictly
+
+REQ_FILES=$(echo "$STAGED_FILES" | grep -E 'requirements.*\.txt$' || true)
+
+if [ -n "$REQ_FILES" ]; then
+    if command -v pip-audit &> /dev/null; then
+        echo -e "\n${YELLOW}Checking Python dependencies for vulnerabilities...${NC}"
+
+        for req in $REQ_FILES; do
+            echo "  Scanning $req..."
+            vulnerabilities=$(pip-audit -r "$req" --desc 2>/dev/null | grep -c "^Name" || echo 0)
+            if [ "$vulnerabilities" -gt 0 ]; then
+                echo -e "  ${YELLOW}Warning: Potential vulnerabilities found in $req${NC}"
+                echo "  Run 'pip-audit -r $req' for details"
+                # Warning only - don't fail the commit
+            else
+                echo -e "  ${GREEN}No vulnerabilities found in $req${NC}"
+            fi
+        done
+    else
+        echo -e "\n${YELLOW}pip-audit not found, skipping Python vulnerability check.${NC}"
+        echo "  Install with: pip install pip-audit"
+    fi
+fi
+
+# =============================================================================
+# Dependency Vulnerability Check (Node.js)
+# =============================================================================
+# Quick check for known vulnerabilities when package files are staged
+# Warning only - CI enforces strictly
+
+PACKAGE_FILES=$(echo "$STAGED_FILES" | grep -E '^server/web/package(-lock)?\.json$' || true)
+PNPM_FILES=$(echo "$STAGED_FILES" | grep -E '^server/web/pnpm-lock\.yaml$' || true)
+
+if [ -n "$PACKAGE_FILES" ] || [ -n "$PNPM_FILES" ]; then
+    if [ -d "server/web" ]; then
+        echo -e "\n${YELLOW}Checking Node.js dependencies for vulnerabilities...${NC}"
+
+        cd server/web
+
+        # Try pnpm first (project uses pnpm), then npm
+        if command -v pnpm &> /dev/null && [ -f "pnpm-lock.yaml" ]; then
+            audit_output=$(pnpm audit --audit-level=high 2>&1 || true)
+            if echo "$audit_output" | grep -q "high\|critical"; then
+                echo -e "  ${YELLOW}Warning: High/critical vulnerabilities found${NC}"
+                echo "  Run 'cd server/web && pnpm audit' for details"
+            else
+                echo -e "  ${GREEN}No high/critical vulnerabilities found${NC}"
+            fi
+        elif command -v npm &> /dev/null; then
+            audit_output=$(npm audit --audit-level=high 2>&1 || true)
+            if echo "$audit_output" | grep -q "high\|critical"; then
+                echo -e "  ${YELLOW}Warning: High/critical vulnerabilities found${NC}"
+                echo "  Run 'cd server/web && npm audit' for details"
+            else
+                echo -e "  ${GREEN}No high/critical vulnerabilities found${NC}"
+            fi
+        else
+            echo -e "  ${YELLOW}pnpm/npm not found, skipping Node.js vulnerability check${NC}"
         fi
 
         cd - > /dev/null

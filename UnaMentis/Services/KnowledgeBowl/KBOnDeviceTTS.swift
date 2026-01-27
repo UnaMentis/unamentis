@@ -97,6 +97,30 @@ actor KBOnDeviceTTS {
 
     // MARK: - Public API
 
+    /// Pre-warm the TTS engine to avoid cold-start latency
+    /// Call this during session preparation, before the first speak() call
+    func prewarm() async {
+        let prewarmStart = CFAbsoluteTimeGetCurrent()
+        NSLog("⏱️ [KBOnDeviceTTS] prewarm() START")
+
+        // Configure the service (creates it if needed)
+        await ensureServiceConfigured()
+
+        // For Kyutai, also ensure the model is loaded
+        if let kyutaiService = ttsService as? KyutaiPocketTTSService {
+            NSLog("⏱️ [KBOnDeviceTTS] prewarm() - loading Kyutai engine...")
+            do {
+                try await kyutaiService.ensureLoaded()
+            } catch {
+                logger.error("Failed to prewarm Kyutai engine: \(error.localizedDescription)")
+                NSLog("⏱️ [KBOnDeviceTTS] prewarm() - Kyutai load FAILED: \(error.localizedDescription)")
+            }
+        }
+
+        let prewarmTime = (CFAbsoluteTimeGetCurrent() - prewarmStart) * 1000
+        NSLog("⏱️ [KBOnDeviceTTS] prewarm() COMPLETE - took %.1fms", prewarmTime)
+    }
+
     /// Speak text with default configuration
     func speak(_ text: String) async {
         await speak(text, config: .questionPace)
@@ -104,10 +128,14 @@ actor KBOnDeviceTTS {
 
     /// Speak text with custom configuration
     func speak(_ text: String, config: VoiceConfig) async {
-        NSLog("🟢 KBOnDeviceTTS.speak() START - text length: \(text.count)")
+        let speakStart = CFAbsoluteTimeGetCurrent()
+        NSLog("⏱️ [KBOnDeviceTTS] speak() START - text length: \(text.count)")
 
         // Ensure TTS service is configured
+        let configureStart = CFAbsoluteTimeGetCurrent()
         await ensureServiceConfigured()
+        let configureTime = (CFAbsoluteTimeGetCurrent() - configureStart) * 1000
+        NSLog("⏱️ [KBOnDeviceTTS] ensureServiceConfigured took %.1fms", configureTime)
 
         NSLog("🟢 KBOnDeviceTTS.speak() - after ensureServiceConfigured, ttsService exists: \(ttsService != nil)")
 
@@ -123,10 +151,12 @@ actor KBOnDeviceTTS {
         progress = 0
 
         do {
-            NSLog("🟢 KBOnDeviceTTS.speak() - calling service.synthesize()")
+            let synthesizeStart = CFAbsoluteTimeGetCurrent()
+            NSLog("⏱️ [KBOnDeviceTTS] calling service.synthesize()")
             // Use the configured TTS service (respects user's global setting)
             let audioStream = try await service.synthesize(text: text)
-            NSLog("🟢 KBOnDeviceTTS.speak() - synthesize() returned stream")
+            let synthesizeTime = (CFAbsoluteTimeGetCurrent() - synthesizeStart) * 1000
+            NSLog("⏱️ [KBOnDeviceTTS] synthesize() returned stream in %.1fms", synthesizeTime)
 
             // AppleTTSService plays audio internally, others need external playback
             if service is AppleTTSService {
@@ -176,7 +206,8 @@ actor KBOnDeviceTTS {
 
             isSpeaking = false
             progress = 1.0
-            NSLog("🟢 KBOnDeviceTTS.speak() COMPLETE")
+            let totalTime = (CFAbsoluteTimeGetCurrent() - speakStart) * 1000
+            NSLog("⏱️ [KBOnDeviceTTS] speak() COMPLETE - TOTAL TIME: %.1fms", totalTime)
 
         } catch {
             logger.error("TTS synthesis failed: \(error.localizedDescription)")
@@ -413,9 +444,10 @@ actor KBOnDeviceTTS {
 
         case .kyutaiPocket:
             // Use Kyutai Pocket TTS (on-device Rust/Candle inference)
-            logger.info("Using Kyutai Pocket TTS (on-device)")
-            NSLog("🔵 Creating KyutaiPocketTTSService")
-            ttsService = KyutaiPocketTTSService()
+            // Use lowLatency preset for KB sessions to minimize delay before audio
+            logger.info("Using Kyutai Pocket TTS (on-device) with lowLatency preset")
+            NSLog("🔵 Creating KyutaiPocketTTSService with lowLatency config")
+            ttsService = KyutaiPocketTTSService(config: .lowLatency)
 
         case .selfHosted, .vibeVoice, .chatterbox, .elevenLabsFlash, .elevenLabsTurbo, .deepgramAura2:
             // For server-based TTS, fall back to Apple TTS for Knowledge Bowl
