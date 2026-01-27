@@ -9,6 +9,24 @@ import Foundation
 
 extension ServerConfigManager {
 
+    // MARK: - Private Helpers
+
+    /// Create a ServerConfig from a DiscoveredServer
+    /// This is nonisolated as it doesn't access actor state, just creates a struct
+    private nonisolated func makeServerConfig(from discovered: DiscoveredServer) -> ServerConfig {
+        ServerConfig(
+            name: discovered.name,
+            host: discovered.host,
+            port: discovered.port,
+            serverType: .unamentisGateway,
+            discoveredServices: [],
+            discoveredModels: [],
+            discoveredVoices: []
+        )
+    }
+
+    // MARK: - Public API
+
     /// Connect using automatic discovery, falling back through all tiers
     /// This is the recommended way to establish initial server connection
     /// - Returns: The ServerConfig for the discovered server, or nil if all tiers fail
@@ -18,21 +36,13 @@ extension ServerConfigManager {
 
         // Start multi-tier discovery
         if let discovered = await discoveryManager.startDiscovery() {
-            // Convert DiscoveredServer to ServerConfig and add
-            let config = ServerConfig(
-                name: discovered.name,
-                host: discovered.host,
-                port: discovered.port,
-                serverType: .unamentisGateway,
-                discoveredServices: [],
-                discoveredModels: [],
-                discoveredVoices: []
-            )
+            let config = makeServerConfig(from: discovered)
 
             // Add to managed servers (actor-isolated, so use await)
             _ = await addServer(config)
 
-            // Trigger capability discovery in background
+            // Trigger capability discovery in background (fire-and-forget)
+            // discoverCapabilities handles errors internally and doesn't throw
             Task {
                 _ = await discoverCapabilities(host: discovered.host)
             }
@@ -56,12 +66,7 @@ extension ServerConfigManager {
             return nil
         }
 
-        return ServerConfig(
-            name: discovered.name,
-            host: discovered.host,
-            port: discovered.port,
-            serverType: .unamentisGateway
-        )
+        return makeServerConfig(from: discovered)
     }
 
     /// Retry automatic discovery
@@ -83,13 +88,7 @@ extension ServerConfigManager {
         let discoveryManager = DeviceDiscoveryManager.shared
 
         if let discovered = await discoveryManager.configureManually(host: host, port: port, name: name) {
-            let config = ServerConfig(
-                name: discovered.name,
-                host: discovered.host,
-                port: discovered.port,
-                serverType: .unamentisGateway
-            )
-
+            let config = makeServerConfig(from: discovered)
             _ = await addServer(config)
             return config
         }
@@ -105,13 +104,7 @@ extension ServerConfigManager {
         let discoveryManager = DeviceDiscoveryManager.shared
 
         if let discovered = await discoveryManager.configureFromQRCode(qrData) {
-            let config = ServerConfig(
-                name: discovered.name,
-                host: discovered.host,
-                port: discovered.port,
-                serverType: .unamentisGateway
-            )
-
+            let config = makeServerConfig(from: discovered)
             _ = await addServer(config)
             return config
         }

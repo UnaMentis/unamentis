@@ -276,6 +276,8 @@ struct TierIndicator: View {
                 .foregroundStyle(textColor)
         }
         .frame(width: 60)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityDescription)
     }
 
     private var iconColor: Color {
@@ -287,6 +289,11 @@ struct TierIndicator: View {
     private var textColor: Color {
         if isCurrent { return .primary }
         return .secondary
+    }
+
+    private var accessibilityDescription: String {
+        let status = isCurrent ? "Current" : (isPast ? "Completed" : "Pending")
+        return "\(tier.shortName) discovery: \(status)"
     }
 }
 
@@ -350,6 +357,8 @@ struct DiscoveryMethodBadge: View {
         .padding(.vertical, 4)
         .background(method.color.opacity(0.15))
         .clipShape(Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Discovered via \(method.displayName)")
     }
 }
 

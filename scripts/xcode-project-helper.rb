@@ -42,6 +42,9 @@ class XcodeProjectHelper
 
     # Look up target by name
     found = @project.targets.find { |t| t.name == target_option }
+    unless found
+      warn "Warning: Target '#{target_option}' not found; falling back to '#{@main_target.name}'"
+    end
     found || @main_target
   end
 

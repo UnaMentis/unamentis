@@ -7,7 +7,6 @@ allowing iOS and Android clients to automatically discover the server.
 Service type: _unamentis._tcp.local.
 """
 
-import asyncio
 import logging
 import socket
 from typing import Optional
@@ -157,12 +156,13 @@ class BonjourAdvertiser:
             # Create a UDP socket and connect to an external address
             # This doesn't actually send data, just determines the route
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(1.0)  # Prevent blocking event loop on slow networks
             try:
                 s.connect(("8.8.8.8", 80))
                 return s.getsockname()[0]
             finally:
                 s.close()
-        except Exception:
+        except (OSError, socket.timeout):
             pass
 
         # Fallback: try to find en0 interface

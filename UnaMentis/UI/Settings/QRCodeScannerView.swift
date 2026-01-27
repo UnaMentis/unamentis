@@ -51,6 +51,8 @@ struct QRCodeScannerView: View {
                                 .font(.subheadline)
                         }
                         .padding(.top, 8)
+                        .frame(minHeight: 44)
+                        .accessibilityLabel("Enter server address manually")
                     }
                     .padding()
                     .background(.ultraThinMaterial)
