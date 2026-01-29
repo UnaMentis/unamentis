@@ -62,6 +62,26 @@ class XcodeProjectHelper
     # Check if already added
     existing = find_file_reference(framework_path)
     if existing
+      # Framework exists - but check if we need to add embedding
+      if embed
+        # Check if already embedded
+        embed_phase = target.copy_files_build_phases.find { |p| p.symbol_dst_subfolder_spec == :frameworks }
+        already_embedded = embed_phase && embed_phase.files.any? { |f| f.file_ref == existing }
+
+        unless already_embedded
+          # Framework is linked but not embedded - add embedding
+          unless embed_phase
+            embed_phase = target.new_copy_files_build_phase('Embed Frameworks')
+            embed_phase.symbol_dst_subfolder_spec = :frameworks
+          end
+          embed_phase.add_file_reference(existing)
+          @project.save
+          return { success: true, path: framework_path, embedded: true, action: 'added_embedding' }
+        end
+
+        return { success: false, error: "Framework already in project and embedded: #{framework_path}" }
+      end
+
       return { success: false, error: "Framework already in project: #{framework_path}" }
     end
 
@@ -290,7 +310,8 @@ if __FILE__ == $0
     else
       if result[:success]
         embed_status = result[:embedded] ? ' (embedded)' : ''
-        puts "Added framework: #{result[:path]}#{embed_status}"
+        action = result[:action] == 'added_embedding' ? 'Added embedding to' : 'Added framework:'
+        puts "#{action} #{result[:path]}#{embed_status}"
       else
         puts "Failed: #{result[:error]}"
       end

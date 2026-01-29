@@ -93,7 +93,8 @@ public actor KBOnDeviceSTT: STTService {
         logger.info("Starting Apple Speech stream")
 
         isStreaming = true
-        sessionStartTime = Date()
+        let startTime = Date()
+        sessionStartTime = startTime
         latencyMeasurements = []
 
         // Create recognition request
@@ -117,83 +118,95 @@ public actor KBOnDeviceSTT: STTService {
         try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
 
-        // Create result stream
-        return AsyncStream<STTResult> { continuation in
-            self.resultContinuation = continuation
+        // Create result stream using AsyncStream.makeStream for proper actor isolation
+        let (stream, continuation) = AsyncStream<STTResult>.makeStream()
+        self.resultContinuation = continuation
 
-            // Start recognition task
-            self.recognitionTask = recognizer.recognitionTask(with: request) { result, error in
-                // Extract data synchronously to avoid concurrency issues
-                if let error = error {
-                    self.logger.error("Recognition error: \(error.localizedDescription)")
-                    continuation.finish()
-                    return
+        // Start recognition task
+        // The callback from SFSpeechRecognizer runs on an arbitrary thread, so we must
+        // dispatch results to avoid actor isolation violations
+        self.recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
+            // Handle error
+            if let error = error {
+                // Log errors asynchronously to avoid actor isolation issues
+                Task { [weak self] in
+                    await self?.logError("Recognition error: \(error.localizedDescription)")
                 }
-
-                guard let result = result else { return }
-
-                let transcript = result.bestTranscription.formattedString
-                let isFinal = result.isFinal
-                let confidence = result.bestTranscription.segments.last?.confidence ?? 0.0
-
-                // Calculate latency
-                let latency: TimeInterval
-                if let startTime = self.sessionStartTime {
-                    latency = Date().timeIntervalSince(startTime)
-                } else {
-                    latency = 0
-                }
-
-                let sttResult = STTResult(
-                    transcript: transcript,
-                    isFinal: isFinal,
-                    isEndOfUtterance: isFinal,
-                    confidence: confidence,
-                    timestamp: Date().timeIntervalSince1970,
-                    latency: latency,
-                    wordTimestamps: nil
-                )
-
-                continuation.yield(sttResult)
-
-                if isFinal {
-                    self.logger.info("Final transcript: \(transcript)")
-                    continuation.finish()
-                }
-            }
-
-            // Install tap on input node
-            let inputNode = audioEngine.inputNode
-            let recordingFormat = inputNode.outputFormat(forBus: 0)
-
-            guard recordingFormat.sampleRate > 0 && recordingFormat.channelCount > 0 else {
                 continuation.finish()
                 return
             }
 
-            inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
-                // Send buffer directly to recognition request
-                request.append(buffer)
-            }
+            guard let result = result else { return }
 
-            // Start audio engine
-            audioEngine.prepare()
-            do {
-                try audioEngine.start()
-                self.logger.info("Audio engine started")
-            } catch {
-                self.logger.error("Failed to start audio engine: \(error.localizedDescription)")
+            // Extract all data locally before yielding
+            let transcript = result.bestTranscription.formattedString
+            let isFinal = result.isFinal
+            let confidence = result.bestTranscription.segments.last?.confidence ?? 0.0
+            let latency = Date().timeIntervalSince(startTime)
+
+            let sttResult = STTResult(
+                transcript: transcript,
+                isFinal: isFinal,
+                isEndOfUtterance: isFinal,
+                confidence: confidence,
+                timestamp: Date().timeIntervalSince1970,
+                latency: latency,
+                wordTimestamps: nil
+            )
+
+            continuation.yield(sttResult)
+
+            if isFinal {
+                Task { [weak self] in
+                    await self?.logInfo("Final transcript: \(transcript)")
+                }
                 continuation.finish()
             }
+        }
 
-            // Handle cancellation
-            continuation.onTermination = { @Sendable [weak self] _ in
-                guard let self = self else { return }
-                Task {
-                    await self.cleanup()
-                }
+        // Install tap on input node
+        let inputNode = audioEngine.inputNode
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
+
+        guard recordingFormat.sampleRate > 0 && recordingFormat.channelCount > 0 else {
+            continuation.finish()
+            return stream
+        }
+
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
+            // Send buffer directly to recognition request
+            request.append(buffer)
+        }
+
+        // Start audio engine
+        audioEngine.prepare()
+        do {
+            try audioEngine.start()
+            logger.info("Audio engine started")
+        } catch {
+            logger.error("Failed to start audio engine: \(error.localizedDescription)")
+            continuation.finish()
+        }
+
+        // Handle cancellation
+        continuation.onTermination = { @Sendable [weak self] _ in
+            guard let self = self else { return }
+            Task {
+                await self.cleanup()
             }
         }
+
+        return stream
+    }
+
+    // MARK: - Logging Helpers (for safe access from callbacks)
+
+    private func logError(_ message: String) {
+        logger.error("\(message)")
+    }
+
+    private func logInfo(_ message: String) {
+        logger.info("\(message)")
     }
 
     public func sendAudio(_ buffer: sending AVAudioPCMBuffer) async throws {
