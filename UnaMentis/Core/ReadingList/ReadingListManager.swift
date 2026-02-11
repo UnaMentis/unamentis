@@ -161,15 +161,23 @@ public actor ReadingListManager {
             "Imported document with \(result.chunks.count) chunks: \(item.title ?? "Unknown")"
         )
 
-        // Pre-generate TTS audio for the first chunk in the background.
+        // Pre-generate TTS audio for the initial chunks in the background.
         // This runs asynchronously so it doesn't block the import flow.
-        // When the user hits play, the cached audio provides instant start.
-        if let itemId = item.id, let firstChunkText = result.chunks.first?.text {
+        // Generating chunks 0-2 ensures seamless playback start with no
+        // buffering during the first ~48 seconds of listening.
+        if let itemId = item.id, !result.chunks.isEmpty {
+            let preGenCount = min(
+                ReadingAudioPreGenerator.defaultPreGenCount,
+                result.chunks.count
+            )
+            let specs = result.chunks.prefix(preGenCount).map {
+                PreGenChunkSpec(index: Int32($0.index), text: $0.text)
+            }
             item.audioPreGenStatus = .generating
             try? persistenceController.save()
-            await ReadingAudioPreGenerator.shared.preGenerateFirstChunk(
+            await ReadingAudioPreGenerator.shared.preGenerateChunks(
                 itemId: itemId,
-                chunkText: firstChunkText,
+                chunks: specs,
                 persistenceController: persistenceController
             )
         }
@@ -256,13 +264,20 @@ public actor ReadingListManager {
             "Imported web article with \(result.chunks.count) chunks: \(item.title ?? "Unknown")"
         )
 
-        // Pre-generate TTS audio for the first chunk in the background
-        if let itemId = item.id, let firstChunkText = result.chunks.first?.text {
+        // Pre-generate TTS audio for the initial chunks in the background
+        if let itemId = item.id, !result.chunks.isEmpty {
+            let preGenCount = min(
+                ReadingAudioPreGenerator.defaultPreGenCount,
+                result.chunks.count
+            )
+            let specs = result.chunks.prefix(preGenCount).map {
+                PreGenChunkSpec(index: Int32($0.index), text: $0.text)
+            }
             item.audioPreGenStatus = .generating
             try? persistenceController.save()
-            await ReadingAudioPreGenerator.shared.preGenerateFirstChunk(
+            await ReadingAudioPreGenerator.shared.preGenerateChunks(
                 itemId: itemId,
-                chunkText: firstChunkText,
+                chunks: specs,
                 persistenceController: persistenceController
             )
         }
@@ -389,6 +404,31 @@ public actor ReadingListManager {
         item.updatePosition(chunkIndex: chunkIndex)
         try persistenceController.save()
         logger.debug("Updated position for '\(item.title ?? "Unknown")' to chunk \(chunkIndex)")
+    }
+
+    /// Save cached audio for a chunk (for cross-session caching).
+    /// Called by the playback service after synthesizing audio during playback,
+    /// so subsequent sessions can skip synthesis for this chunk.
+    @MainActor
+    public func saveCachedAudio(
+        itemId: UUID,
+        chunkIndex: Int32,
+        audioData: Data,
+        sampleRate: Double
+    ) throws {
+        guard let item = try fetchItem(id: itemId) else {
+            throw ReadingListError.itemNotFound
+        }
+        guard let chunk = item.chunksArray.first(where: { $0.index == chunkIndex }) else {
+            return
+        }
+        // Only save if not already cached (avoid overwriting)
+        guard !chunk.hasCachedAudio else { return }
+
+        chunk.cachedAudioData = audioData
+        chunk.cachedAudioSampleRate = sampleRate
+        try persistenceController.save()
+        logger.debug("Cached audio for '\(item.title ?? "Unknown")' chunk \(chunkIndex)")
     }
 
     /// Update item metadata

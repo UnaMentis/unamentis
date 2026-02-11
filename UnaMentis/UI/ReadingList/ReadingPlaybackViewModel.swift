@@ -51,6 +51,17 @@ public final class ReadingPlaybackViewModel: ObservableObject {
         state == .playing
     }
 
+    /// Whether playback is active (playing, paused, or buffering).
+    /// Controls should remain visible in all these states.
+    public var hasActivePlayback: Bool {
+        switch state {
+        case .playing, .paused, .buffering:
+            return true
+        default:
+            return false
+        }
+    }
+
     /// Whether can skip backward
     public var canSkipBackward: Bool {
         currentChunkIndex > 0 && state != .loading
@@ -251,8 +262,9 @@ public final class ReadingPlaybackViewModel: ObservableObject {
             storedAudioEngine = nil
         }
 
-        // Release TTS model memory
+        // Schedule deferred TTS release (keeps model warm for quick re-entry)
         storedTTSService = nil
+        await ReadingTTSCache.shared.scheduleRelease()
     }
 
     /// Skip forward
@@ -312,8 +324,11 @@ public final class ReadingPlaybackViewModel: ObservableObject {
     public func addBookmark(note: String? = nil, atChunk chunkIndex: Int32? = nil) async {
         let targetIndex = chunkIndex ?? currentChunkIndex
 
-        if let service = playbackService {
-            // Use service path if available (saves via service)
+        // When an explicit chunk index is provided (e.g., from reader scroll position),
+        // use the direct manager path to ensure the correct position is saved.
+        // The playback service path only uses its own currentChunkIndex and ignores
+        // any explicit index, so we reserve it for "bookmark at playback position" only.
+        if chunkIndex == nil, let service = playbackService {
             do {
                 try await service.addBookmark(note: note)
                 loadBookmarks()
@@ -322,7 +337,6 @@ public final class ReadingPlaybackViewModel: ObservableObject {
                 showError = true
             }
         } else if let manager = ReadingListManager.shared {
-            // Direct path when playback service isn't active (reader mode)
             do {
                 _ = try await manager.addBookmarkById(
                     itemId: item.id ?? UUID(),
@@ -371,6 +385,9 @@ public final class ReadingPlaybackViewModel: ObservableObject {
             onComplete: { [weak self] in
                 self?.state = .completed
             },
+            onBuffering: { [weak self] in
+                self?.state = .buffering
+            },
             onChunkChange: { [weak self] index, total in
                 self?.currentChunkIndex = index
                 self?.totalChunks = total
@@ -405,12 +422,13 @@ public final class ReadingPlaybackViewModel: ObservableObject {
         }
     }
 
-    /// Create or return cached on-device Pocket TTS for reading narration
+    /// Create or return cached TTS service for reading narration.
+    /// Uses the platform-wide TTS provider resolution for consistency
+    /// with curriculum modules and Knowledge Bowl.
     private func getTTSService() async -> (any TTSService)? {
         if let service = storedTTSService { return service }
 
-        // Use user's Pocket TTS settings (respects voice, speed, quality prefs)
-        let service = KyutaiPocketTTSService(config: .fromUserDefaults())
+        let service = await ReadingTTSCache.shared.getService()
         self.storedTTSService = service
         return service
     }

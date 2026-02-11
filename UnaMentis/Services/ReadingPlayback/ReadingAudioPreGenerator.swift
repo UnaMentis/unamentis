@@ -1,10 +1,11 @@
 // UnaMentis - Reading Audio Pre-Generator
-// Background TTS synthesis for first chunk at import time
+// Background TTS synthesis for initial chunks at import time
 //
-// Pre-generates audio for chunk 0 so playback starts instantly when
-// the user hits play. If the user starts playback while generation is
-// still in progress, the playback service waits for the in-progress
-// task rather than starting a duplicate synthesis.
+// Pre-generates audio for the first few chunks so playback starts
+// instantly and transitions between early chunks are seamless.
+// If the user starts playback while generation is still in progress,
+// the playback service waits for the in-progress task rather than
+// starting a duplicate synthesis.
 //
 // Part of Services/ReadingPlayback
 
@@ -12,9 +13,22 @@ import Foundation
 import CoreData
 import Logging
 
+// MARK: - Chunk Spec
+
+/// Lightweight descriptor for a chunk to pre-generate
+public struct PreGenChunkSpec: Sendable {
+    public let index: Int32
+    public let text: String
+
+    public init(index: Int32, text: String) {
+        self.index = index
+        self.text = text
+    }
+}
+
 // MARK: - Reading Audio Pre-Generator
 
-/// Actor that pre-generates TTS audio for the first chunk of reading list items.
+/// Actor that pre-generates TTS audio for the initial chunks of reading list items.
 ///
 /// Triggered after document import, runs in the background. The playback path
 /// checks for cached audio and coordinates with in-progress generation to avoid
@@ -29,83 +43,115 @@ public actor ReadingAudioPreGenerator {
 
     private let logger = Logger(label: "com.unamentis.reading.audio.pregen")
 
+    /// Number of chunks to pre-generate at import time
+    public static let defaultPreGenCount = 3
+
     /// In-progress generation tasks keyed by item ID.
     /// Callers can await the task value to wait for completion.
-    private var inProgressTasks: [UUID: Task<Data?, Never>] = [:]
+    private var inProgressTasks: [UUID: Task<Void, Never>] = [:]
 
     private init() {}
 
     // MARK: - Pre-generation
 
-    /// Pre-generate TTS audio for the first chunk of a reading item.
-    /// Runs in the background and stores the result on the Core Data entity.
+    /// Pre-generate TTS audio for the initial chunks of a reading item.
+    /// Runs in the background and stores results on the Core Data entities.
+    ///
+    /// Generates chunks sequentially (on-device TTS is single-threaded).
+    /// Each chunk's audio is saved to Core Data as soon as it completes,
+    /// so partial results are available even if generation is interrupted.
     ///
     /// - Parameters:
     ///   - itemId: The reading item's UUID
-    ///   - chunkText: The text of chunk 0 to synthesize
-    ///   - persistenceController: Core Data persistence for saving the result
-    public func preGenerateFirstChunk(
+    ///   - chunks: The chunks to pre-generate (index + text)
+    ///   - persistenceController: Core Data persistence for saving results
+    public func preGenerateChunks(
         itemId: UUID,
-        chunkText: String,
+        chunks: [PreGenChunkSpec],
         persistenceController: PersistenceController
     ) {
+        guard !chunks.isEmpty else { return }
+
         // Don't duplicate if already generating
         guard inProgressTasks[itemId] == nil else {
             logger.debug("Pre-generation already in progress for \(itemId)")
             return
         }
 
-        logger.info("Starting pre-generation for item \(itemId)")
+        logger.info("Starting pre-generation for item \(itemId), \(chunks.count) chunks")
 
-        let task = Task<Data?, Never> { [weak self] in
-            guard let self else { return nil }
+        let task = Task<Void, Never> { [weak self] in
+            guard let self else { return }
 
-            do {
-                let audioData = await self.synthesizeChunk(text: chunkText)
+            var successCount = 0
+
+            for chunk in chunks {
+                guard !Task.isCancelled else { break }
+
+                let audioData = await self.synthesizeChunk(text: chunk.text)
 
                 if let audioData {
-                    // Store on the Core Data entity
-                    await self.storeCachedAudio(
+                    await self.storeCachedAudioForChunk(
                         audioData,
                         itemId: itemId,
+                        chunkIndex: chunk.index,
                         persistenceController: persistenceController
                     )
-                    await self.logger.info(
-                        "Pre-generation complete for \(itemId), \(audioData.count) bytes"
+                    successCount += 1
+                    await self.logger.debug(
+                        "Pre-generated chunk \(chunk.index) for \(itemId), \(audioData.count) bytes"
                     )
                 } else {
-                    await self.markPreGenFailed(
-                        itemId: itemId,
-                        persistenceController: persistenceController
+                    await self.logger.warning(
+                        "Pre-generation failed for chunk \(chunk.index) of \(itemId)"
                     )
-                    await self.logger.warning("Pre-generation failed for \(itemId)")
                 }
+            }
 
-                // Clean up tracking
-                await self.removeTask(itemId: itemId)
-                return audioData
-
-            } catch {
+            // Mark overall status based on results
+            if successCount > 0 {
+                await self.markPreGenReady(
+                    itemId: itemId,
+                    persistenceController: persistenceController
+                )
+                await self.logger.info(
+                    "Pre-generation complete for \(itemId): \(successCount)/\(chunks.count) chunks"
+                )
+            } else {
                 await self.markPreGenFailed(
                     itemId: itemId,
                     persistenceController: persistenceController
                 )
-                await self.removeTask(itemId: itemId)
-                return nil
+                await self.logger.warning("Pre-generation failed for all chunks of \(itemId)")
             }
+
+            await self.removeTask(itemId: itemId)
         }
 
         inProgressTasks[itemId] = task
     }
 
+    /// Convenience: Pre-generate the first chunk only (backward compatibility).
+    public func preGenerateFirstChunk(
+        itemId: UUID,
+        chunkText: String,
+        persistenceController: PersistenceController
+    ) {
+        preGenerateChunks(
+            itemId: itemId,
+            chunks: [PreGenChunkSpec(index: 0, text: chunkText)],
+            persistenceController: persistenceController
+        )
+    }
+
     /// Wait for an in-progress pre-generation to complete.
-    /// Returns the audio data if generation succeeds, nil otherwise.
     /// Returns nil immediately if no generation is in progress.
     public func waitForPreGeneration(itemId: UUID) async -> Data? {
         guard let task = inProgressTasks[itemId] else {
             return nil
         }
-        return await task.value
+        await task.value
+        return nil
     }
 
     /// Check if pre-generation is currently in progress for an item
@@ -119,27 +165,25 @@ public actor ReadingAudioPreGenerator {
         inProgressTasks.removeValue(forKey: itemId)
     }
 
-    /// Synthesize audio for a chunk of text using the on-device TTS
+    /// Synthesize audio for a chunk of text using the configured TTS provider
     private func synthesizeChunk(text: String) async -> Data? {
-        // Use Pocket TTS with user's settings for consistency with playback
-        let ttsService = KyutaiPocketTTSService(config: .fromUserDefaults())
+        // Use the platform-wide TTS provider for consistency with playback
+        let ttsService = await MainActor.run {
+            TTSProvider.resolveConfiguredService()
+        }
 
         do {
-            // Ensure the model is loaded
-            try await ttsService.ensureLoaded()
+            // Pre-warm the model if it's Pocket TTS
+            if let pocketService = ttsService as? KyutaiPocketTTSService {
+                try await pocketService.ensureLoaded()
+            }
 
             // Synthesize and collect all audio segments
             let audioStream = try await ttsService.synthesize(text: text)
             var allAudioData = Data()
-            var sampleRate: Double = 24000 // Default Pocket TTS rate
 
             for await audioChunk in audioStream {
                 allAudioData.append(audioChunk.audioData)
-
-                // Capture sample rate from the format
-                if case .pcmFloat32(let rate, _) = audioChunk.format {
-                    sampleRate = rate
-                }
             }
 
             guard !allAudioData.isEmpty else {
@@ -147,7 +191,7 @@ public actor ReadingAudioPreGenerator {
                 return nil
             }
 
-            logger.debug("Synthesized \(allAudioData.count) bytes at \(sampleRate)Hz")
+            logger.debug("Synthesized \(allAudioData.count) bytes")
             return allAudioData
         } catch {
             logger.error("TTS synthesis failed: \(error.localizedDescription)")
@@ -155,16 +199,16 @@ public actor ReadingAudioPreGenerator {
         }
     }
 
-    /// Store pre-generated audio data on the ReadingChunk entity
-    private func storeCachedAudio(
+    /// Store pre-generated audio data on a specific ReadingChunk entity
+    private func storeCachedAudioForChunk(
         _ audioData: Data,
         itemId: UUID,
+        chunkIndex: Int32,
         persistenceController: PersistenceController
     ) async {
         await MainActor.run {
             let context = persistenceController.viewContext
 
-            // Find the reading item and its first chunk
             let request = ReadingListItem.fetchRequest()
             request.predicate = NSPredicate(format: "id == %@", itemId as CVarArg)
             request.fetchLimit = 1
@@ -173,18 +217,33 @@ public actor ReadingAudioPreGenerator {
                 return
             }
 
-            // Get chunk 0
-            guard let firstChunk = item.chunksArray.first, firstChunk.index == 0 else {
+            guard let chunk = item.chunksArray.first(where: { $0.index == chunkIndex }) else {
                 return
             }
 
-            // Store the audio data
-            firstChunk.cachedAudioData = audioData
-            firstChunk.cachedAudioSampleRate = 24000 // Pocket TTS output rate
+            // Only write if not already cached (avoid overwriting)
+            guard !chunk.hasCachedAudio else { return }
 
-            // Update item status
+            chunk.cachedAudioData = audioData
+            chunk.cachedAudioSampleRate = 24000 // Pocket TTS / platform TTS output rate
+
+            try? persistenceController.save()
+        }
+    }
+
+    /// Mark pre-generation as ready on the item
+    private func markPreGenReady(
+        itemId: UUID,
+        persistenceController: PersistenceController
+    ) async {
+        await MainActor.run {
+            let context = persistenceController.viewContext
+            let request = ReadingListItem.fetchRequest()
+            request.predicate = NSPredicate(format: "id == %@", itemId as CVarArg)
+            request.fetchLimit = 1
+
+            guard let item = try? context.fetch(request).first else { return }
             item.audioPreGenStatus = .ready
-
             try? persistenceController.save()
         }
     }
