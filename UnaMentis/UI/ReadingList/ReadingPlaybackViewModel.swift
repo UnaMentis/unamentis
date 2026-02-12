@@ -7,6 +7,7 @@ import Foundation
 import SwiftUI
 import Combine
 import Logging
+import OSLog
 
 // MARK: - Visual Asset Data Transfer Object
 
@@ -81,6 +82,13 @@ public final class ReadingPlaybackViewModel: ObservableObject {
     private var allVisualAssets: [ReadingVisualAssetData] = []
     private var storedAudioEngine: AudioEngine?
     private var storedTTSService: (any TTSService)?
+
+    // Voice command support
+    private let voiceCommandRecognizer = VoiceCommandRecognizer()
+    private let voiceBookmarkService = VoiceBookmarkService()
+    private let voiceFeedback = VoiceActivityFeedback()
+    private var voiceMonitoringTask: Task<Void, Never>?
+    private var lastProcessedTranscript: String = ""
 
     // MARK: - Initialization
 
@@ -431,5 +439,136 @@ public final class ReadingPlaybackViewModel: ObservableObject {
         let service = await ReadingTTSCache.shared.getService()
         self.storedTTSService = service
         return service
+    }
+
+    // MARK: - Voice Command Monitoring
+
+    /// Valid voice commands for the current playback state
+    private func validCommandsForState() -> Set<VoiceCommand>? {
+        switch state {
+        case .playing:
+            return [.bookmark, .flag]
+        default:
+            return nil
+        }
+    }
+
+    /// Start monitoring for voice commands during playback.
+    /// Called when playback starts or resumes.
+    public func startVoiceCommandMonitoring() {
+        stopVoiceCommandMonitoring()
+
+        guard let engine = storedAudioEngine else { return }
+
+        voiceMonitoringTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(200))
+                guard !Task.isCancelled else { return }
+
+                guard let self else { return }
+                guard let validCommands = self.validCommandsForState() else { continue }
+
+                // Get the latest transcript from the audio engine
+                let transcript = await engine.lastTranscript
+                guard !transcript.isEmpty, transcript != self.lastProcessedTranscript else { continue }
+                self.lastProcessedTranscript = transcript
+
+                // Check for voice commands
+                if let result = await self.voiceCommandRecognizer.recognize(
+                    transcript: transcript,
+                    validCommands: validCommands
+                ), result.shouldExecute {
+                    await self.handleVoiceCommand(result.command)
+                    self.lastProcessedTranscript = ""
+                }
+            }
+        }
+    }
+
+    /// Stop voice command monitoring
+    public func stopVoiceCommandMonitoring() {
+        voiceMonitoringTask?.cancel()
+        voiceMonitoringTask = nil
+    }
+
+    /// Handle a recognized voice command
+    private func handleVoiceCommand(_ command: VoiceCommand) async {
+        switch command {
+        case .bookmark:
+            await voiceBookmarkService.performBookmark(
+                activity: self,
+                feedback: voiceFeedback
+            )
+            loadBookmarks()
+        case .flag:
+            await voiceBookmarkService.performFlag(
+                activity: self,
+                feedback: voiceFeedback
+            )
+            loadBookmarks()
+        default:
+            break
+        }
+    }
+}
+
+// MARK: - FlaggableActivity Conformance
+
+extension ReadingPlaybackViewModel: FlaggableActivity {
+
+    public var currentSegmentIndex: Int32 {
+        currentChunkIndex
+    }
+
+    public var totalSegments: Int32 {
+        Int32(totalChunks)
+    }
+
+    public var currentSegmentText: String? {
+        currentChunkText
+    }
+
+    public var previousSegmentText: String? {
+        let prevIndex = Int(currentChunkIndex) - 1
+        guard prevIndex >= 0, prevIndex < chunks.count else { return nil }
+        return chunks[prevIndex].text
+    }
+
+    public var sourceTitle: String {
+        item.title ?? "Reading List Item"
+    }
+
+    public var sourceType: ReinforcementSourceType {
+        .readingList
+    }
+
+    public var sourceId: UUID? {
+        item.id
+    }
+
+    public func createBookmark(note: String?) async -> UUID? {
+        guard let manager = ReadingListManager.shared else { return nil }
+
+        do {
+            let result = try await manager.addBookmarkById(
+                itemId: item.id ?? UUID(),
+                chunkIndex: currentChunkIndex,
+                note: note
+            )
+            return result.id
+        } catch {
+            logger.error("Failed to create bookmark: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    public func pausePlayback() async {
+        guard let service = playbackService, state == .playing else { return }
+        await service.pause()
+    }
+
+    public func resumePlayback() async {
+        guard let service = playbackService, state == .paused else { return }
+        await service.resume()
     }
 }

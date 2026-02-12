@@ -11,6 +11,7 @@ import SwiftUI
 public enum AssistantSegment: String, CaseIterable, Identifiable {
     case todo = "To-Do"
     case readingList = "Reading"
+    case review = "Review"
 
     public var id: String { rawValue }
 
@@ -19,6 +20,7 @@ public enum AssistantSegment: String, CaseIterable, Identifiable {
         switch self {
         case .todo: return "checklist"
         case .readingList: return "book.pages"
+        case .review: return "arrow.triangle.2.circlepath"
         }
     }
 }
@@ -84,6 +86,11 @@ public struct AssistantTabView: View {
                     .sheet(isPresented: $showURLImportSheet) {
                         URLImportSheet(viewModel: readingViewModel)
                     }
+                }
+            case .review:
+                NavigationStack {
+                    ReviewListView()
+                        .navigationTitle("Review")
                 }
             }
         }

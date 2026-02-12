@@ -21,6 +21,8 @@ public enum FeedbackTone: Sendable {
     case correct              // Success chime
     case incorrect            // Failure tone
     case attention            // Get user's attention
+    case bookmarkSaved        // Bookmark created confirmation
+    case flaggedForReview     // Flagged for review confirmation
 }
 
 // MARK: - Voice Activity Feedback
@@ -127,6 +129,18 @@ public final class VoiceActivityFeedback: ObservableObject {
         playTone(.commandRecognized)
         selectionHaptic()
         // Don't TTS the command name - the action itself confirms it
+    }
+
+    /// Announce bookmark was saved (quick, non-disruptive)
+    public func announceBookmarkSaved() {
+        playTone(.bookmarkSaved)
+        selectionHaptic()
+    }
+
+    /// Announce item was flagged for review (slightly more prominent)
+    public func announceFlaggedForReview() {
+        playTone(.flaggedForReview)
+        impactHaptic(style: .medium)
     }
 
     /// Announce that answer was received
@@ -318,6 +332,8 @@ public final class VoiceActivityFeedback: ObservableObject {
         soundIDs[.correct] = 1025            // New mail
         soundIDs[.incorrect] = 1073          // Voicemail
         soundIDs[.attention] = 1007          // SMS received
+        soundIDs[.bookmarkSaved] = 1054      // Subtle pop
+        soundIDs[.flaggedForReview] = 1001   // Bloom (slightly more prominent)
     }
 
     private func prepareHaptics() {
@@ -342,6 +358,10 @@ public final class VoiceActivityFeedback: ObservableObject {
             soundID = 1073
         case .attention:
             soundID = 1007
+        case .bookmarkSaved:
+            soundID = 1054
+        case .flaggedForReview:
+            soundID = 1001
         }
         AudioServicesPlaySystemSound(soundID)
     }
@@ -362,6 +382,10 @@ public final class VoiceActivityFeedback: ObservableObject {
             notificationGenerator.notificationOccurred(.error)
         case .attention:
             impactGenerator.impactOccurred(intensity: 1.0)
+        case .bookmarkSaved:
+            selectionGenerator.selectionChanged()
+        case .flaggedForReview:
+            impactGenerator.impactOccurred(intensity: 0.7)
         }
     }
 }

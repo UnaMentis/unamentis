@@ -152,4 +152,19 @@
         <attribute name="width" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="readingItem" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ReadingListItem" inverseName="visualAssets" inverseEntity="ReadingListItem"/>
     </entity>
+    <entity name="ReinforcementItem" representedClassName="ReinforcementItem" syncable="YES">
+        <attribute name="bookmarkId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="currentSegmentText" attributeType="String"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="previousSegmentText" optional="YES" attributeType="String"/>
+        <attribute name="reviewedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="segmentIndex" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="snippetPreview" optional="YES" attributeType="String"/>
+        <attribute name="sourceId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="sourceTitle" attributeType="String"/>
+        <attribute name="sourceTypeRaw" attributeType="String" defaultValueString="reading_list"/>
+        <attribute name="statusRaw" attributeType="String" defaultValueString="pending"/>
+        <attribute name="totalSegments" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+    </entity>
 </model>
