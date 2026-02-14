@@ -44,7 +44,7 @@ def validate_module_id(module_id: str) -> bool:
     """
     if not module_id:
         return False
-    return bool(re.match(r'^[a-zA-Z0-9_-]+$', module_id))
+    return bool(re.match(r"^[a-zA-Z0-9_-]+$", module_id))
 
 
 def get_module_content_path(module_id: str) -> Path:
@@ -113,7 +113,9 @@ def save_modules_registry(registry: dict[str, Any]):
     try:
         with open(registry_path, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=2)
-        logger.info(f"Saved modules registry with {len(registry.get('modules', []))} modules")
+        logger.info(
+            f"Saved modules registry with {len(registry.get('modules', []))} modules"
+        )
     except Exception as e:
         logger.error(f"Failed to save modules registry: {e}")
 
@@ -158,9 +160,12 @@ def resolve_feature_flags(module: dict) -> dict:
     """
     overrides = module.get("feature_overrides", {})
     return {
-        "supports_team_mode": module.get("supports_team_mode", False) and overrides.get("team_mode", True),
-        "supports_speed_training": module.get("supports_speed_training", False) and overrides.get("speed_training", True),
-        "supports_competition_sim": module.get("supports_competition_sim", False) and overrides.get("competition_sim", True),
+        "supports_team_mode": module.get("supports_team_mode", False)
+        and overrides.get("team_mode", True),
+        "supports_speed_training": module.get("supports_speed_training", False)
+        and overrides.get("speed_training", True),
+        "supports_competition_sim": module.get("supports_competition_sim", False)
+        and overrides.get("competition_sim", True),
     }
 
 
@@ -207,24 +212,28 @@ async def handle_list_modules(request: web.Request) -> web.Response:
             # Resolve effective feature flags
             features = resolve_feature_flags(module)
 
-            modules_summary.append({
-                "id": module["id"],
-                "name": module["name"],
-                "description": module["description"],
-                "icon_name": module["icon_name"],
-                "theme_color_hex": module["theme_color_hex"],
-                "version": module["version"],
-                "enabled": is_enabled,
-                "supports_team_mode": features["supports_team_mode"],
-                "supports_speed_training": features["supports_speed_training"],
-                "supports_competition_sim": features["supports_competition_sim"],
-                "download_size": module.get("download_size"),
-            })
+            modules_summary.append(
+                {
+                    "id": module["id"],
+                    "name": module["name"],
+                    "description": module["description"],
+                    "icon_name": module["icon_name"],
+                    "theme_color_hex": module["theme_color_hex"],
+                    "version": module["version"],
+                    "enabled": is_enabled,
+                    "supports_team_mode": features["supports_team_mode"],
+                    "supports_speed_training": features["supports_speed_training"],
+                    "supports_competition_sim": features["supports_competition_sim"],
+                    "download_size": module.get("download_size"),
+                }
+            )
 
-        return web.json_response({
-            "modules": modules_summary,
-            "server_version": registry.get("version", "1.0.0"),
-        })
+        return web.json_response(
+            {
+                "modules": modules_summary,
+                "server_version": registry.get("version", "1.0.0"),
+            }
+        )
 
     except Exception:
         logger.exception("Error listing modules")
@@ -242,8 +251,7 @@ async def handle_get_module(request: web.Request) -> web.Response:
 
     if not validate_module_id(module_id):
         return web.json_response(
-            {"error": f"Invalid module_id: {module_id}"},
-            status=400
+            {"error": f"Invalid module_id: {module_id}"}, status=400
         )
 
     try:
@@ -258,8 +266,7 @@ async def handle_get_module(request: web.Request) -> web.Response:
 
         if not module:
             return web.json_response(
-                {"error": f"Module not found: {module_id}"},
-                status=404
+                {"error": f"Module not found: {module_id}"}, status=404
             )
 
         # Load full content to get domain details
@@ -283,8 +290,12 @@ async def handle_get_module(request: web.Request) -> web.Response:
             "supports_competition_sim": features["supports_competition_sim"],
             # Include raw flags for admin UI to show base capabilities vs overrides
             "base_supports_team_mode": module.get("supports_team_mode", False),
-            "base_supports_speed_training": module.get("supports_speed_training", False),
-            "base_supports_competition_sim": module.get("supports_competition_sim", False),
+            "base_supports_speed_training": module.get(
+                "supports_speed_training", False
+            ),
+            "base_supports_competition_sim": module.get(
+                "supports_competition_sim", False
+            ),
             "feature_overrides": module.get("feature_overrides", {}),
         }
 
@@ -292,16 +303,22 @@ async def handle_get_module(request: web.Request) -> web.Response:
             # Add domain summaries (without questions)
             domains = []
             for domain in content.get("domains", []):
-                domains.append({
-                    "id": domain["id"],
-                    "name": domain["name"],
-                    "weight": domain["weight"],
-                    "icon_name": domain["icon_name"],
-                    "question_count": len(domain.get("questions", [])),
-                })
+                domains.append(
+                    {
+                        "id": domain["id"],
+                        "name": domain["name"],
+                        "weight": domain["weight"],
+                        "icon_name": domain["icon_name"],
+                        "question_count": len(domain.get("questions", [])),
+                    }
+                )
             response["domains"] = domains
-            response["study_modes"] = [m["name"] for m in content.get("study_modes", [])]
-            response["total_questions"] = sum(len(d.get("questions", [])) for d in content.get("domains", []))
+            response["study_modes"] = [
+                m["name"] for m in content.get("study_modes", [])
+            ]
+            response["total_questions"] = sum(
+                len(d.get("questions", [])) for d in content.get("domains", [])
+            )
             response["estimated_study_hours"] = content.get("estimated_study_hours")
 
         return web.json_response(response)
@@ -325,8 +342,7 @@ async def handle_download_module(request: web.Request) -> web.Response:
 
     if not validate_module_id(module_id):
         return web.json_response(
-            {"error": f"Invalid module_id: {module_id}"},
-            status=400
+            {"error": f"Invalid module_id: {module_id}"}, status=400
         )
 
     try:
@@ -341,23 +357,23 @@ async def handle_download_module(request: web.Request) -> web.Response:
 
         if not module:
             return web.json_response(
-                {"error": f"Module not found: {module_id}"},
-                status=404
+                {"error": f"Module not found: {module_id}"}, status=404
             )
 
         # Load full content
         content = load_module_content(module_id)
         if not content:
             return web.json_response(
-                {"error": f"Module content not available: {module_id}"},
-                status=404
+                {"error": f"Module content not available: {module_id}"}, status=404
             )
 
         # Resolve effective feature flags
         features = resolve_feature_flags(module)
 
         # Build full download response
-        total_questions = sum(len(d.get("questions", [])) for d in content.get("domains", []))
+        total_questions = sum(
+            len(d.get("questions", [])) for d in content.get("domains", [])
+        )
 
         response = {
             "id": module["id"],
@@ -403,15 +419,16 @@ async def handle_create_module(request: web.Request) -> web.Response:
         for field in required_fields:
             if field not in data:
                 return web.json_response(
-                    {"error": f"Missing required field: {field}"},
-                    status=400
+                    {"error": f"Missing required field: {field}"}, status=400
                 )
 
         # Validate module_id to prevent path traversal attacks
         if not validate_module_id(data["id"]):
             return web.json_response(
-                {"error": f"Invalid module_id: {data['id']}. Must be alphanumeric with hyphens and underscores only."},
-                status=400
+                {
+                    "error": f"Invalid module_id: {data['id']}. Must be alphanumeric with hyphens and underscores only."
+                },
+                status=400,
             )
 
         registry = load_modules_registry()
@@ -454,11 +471,13 @@ async def handle_create_module(request: web.Request) -> web.Response:
         if "content" in data:
             save_module_content(data["id"], data["content"])
 
-        return web.json_response({
-            "success": True,
-            "module_id": data["id"],
-            "created": existing_idx is None,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "module_id": data["id"],
+                "created": existing_idx is None,
+            }
+        )
 
     except json.JSONDecodeError:
         return web.json_response({"error": "Invalid JSON"}, status=400)
@@ -477,8 +496,7 @@ async def handle_delete_module(request: web.Request) -> web.Response:
 
     if not validate_module_id(module_id):
         return web.json_response(
-            {"error": f"Invalid module_id: {module_id}"},
-            status=400
+            {"error": f"Invalid module_id: {module_id}"}, status=400
         )
 
     try:
@@ -486,12 +504,13 @@ async def handle_delete_module(request: web.Request) -> web.Response:
 
         # Find and remove module
         original_count = len(registry.get("modules", []))
-        registry["modules"] = [m for m in registry.get("modules", []) if m["id"] != module_id]
+        registry["modules"] = [
+            m for m in registry.get("modules", []) if m["id"] != module_id
+        ]
 
         if len(registry["modules"]) == original_count:
             return web.json_response(
-                {"error": f"Module not found: {module_id}"},
-                status=404
+                {"error": f"Module not found: {module_id}"}, status=404
             )
 
         save_modules_registry(registry)
@@ -542,8 +561,7 @@ async def handle_update_module_settings(request: web.Request) -> web.Response:
 
     if not validate_module_id(module_id):
         return web.json_response(
-            {"error": f"Invalid module_id: {module_id}"},
-            status=400
+            {"error": f"Invalid module_id: {module_id}"}, status=400
         )
 
     try:
@@ -559,8 +577,7 @@ async def handle_update_module_settings(request: web.Request) -> web.Response:
 
         if module_idx is None:
             return web.json_response(
-                {"error": f"Module not found: {module_id}"},
-                status=404
+                {"error": f"Module not found: {module_id}"}, status=404
             )
 
         module = registry["modules"][module_idx]
@@ -575,8 +592,7 @@ async def handle_update_module_settings(request: web.Request) -> web.Response:
             overrides = data["feature_overrides"]
             if not isinstance(overrides, dict):
                 return web.json_response(
-                    {"error": "feature_overrides must be an object"},
-                    status=400
+                    {"error": "feature_overrides must be an object"}, status=400
                 )
 
             # Validate override keys
@@ -584,20 +600,24 @@ async def handle_update_module_settings(request: web.Request) -> web.Response:
             for key in overrides:
                 if key not in valid_keys:
                     return web.json_response(
-                        {"error": f"Invalid feature override key: {key}. Valid keys: {valid_keys}"},
-                        status=400
+                        {
+                            "error": f"Invalid feature override key: {key}. Valid keys: {valid_keys}"
+                        },
+                        status=400,
                     )
                 if not isinstance(overrides[key], bool):
                     return web.json_response(
                         {"error": f"Feature override value must be boolean: {key}"},
-                        status=400
+                        status=400,
                     )
 
             # Merge with existing overrides
             existing_overrides = module.get("feature_overrides", {})
             existing_overrides.update(overrides)
             module["feature_overrides"] = existing_overrides
-            logger.info(f"Module {module_id} feature_overrides={module['feature_overrides']}")
+            logger.info(
+                f"Module {module_id} feature_overrides={module['feature_overrides']}"
+            )
 
         # Save changes
         registry["modules"][module_idx] = module
@@ -606,13 +626,15 @@ async def handle_update_module_settings(request: web.Request) -> web.Response:
         # Resolve effective features for response
         features = resolve_feature_flags(module)
 
-        return web.json_response({
-            "success": True,
-            "module_id": module_id,
-            "enabled": module.get("enabled", True),
-            "feature_overrides": module.get("feature_overrides", {}),
-            "effective_features": features,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "module_id": module_id,
+                "enabled": module.get("enabled", True),
+                "feature_overrides": module.get("feature_overrides", {}),
+                "effective_features": features,
+            }
+        )
 
     except json.JSONDecodeError:
         return web.json_response({"error": "Invalid JSON"}, status=400)
@@ -791,7 +813,13 @@ def create_science_domain() -> dict[str, Any]:
         "name": "Science",
         "icon_name": "atom",
         "weight": 0.20,
-        "subcategories": ["Physics", "Chemistry", "Biology", "Earth Science", "Astronomy"],
+        "subcategories": [
+            "Physics",
+            "Chemistry",
+            "Biology",
+            "Earth Science",
+            "Astronomy",
+        ],
         "questions": [
             # Physics
             {
@@ -894,7 +922,11 @@ def create_science_domain() -> dict[str, Any]:
                 "subcategory": "Earth Science",
                 "question_text": "What scale measures the intensity of earthquakes based on observed effects?",
                 "answer_text": "Mercalli scale",
-                "acceptable_answers": ["Mercalli", "Mercalli scale", "Modified Mercalli"],
+                "acceptable_answers": [
+                    "Mercalli",
+                    "Mercalli scale",
+                    "Modified Mercalli",
+                ],
                 "difficulty": 3,
                 "speed_target_seconds": 8.0,
                 "question_type": "toss-up",
@@ -939,7 +971,13 @@ def create_mathematics_domain() -> dict[str, Any]:
         "name": "Mathematics",
         "icon_name": "function",
         "weight": 0.15,
-        "subcategories": ["Algebra", "Geometry", "Calculus", "Statistics", "Number Theory"],
+        "subcategories": [
+            "Algebra",
+            "Geometry",
+            "Calculus",
+            "Statistics",
+            "Number Theory",
+        ],
         "questions": [
             {
                 "id": "math-alg-001",
@@ -947,7 +985,9 @@ def create_mathematics_domain() -> dict[str, Any]:
                 "subcategory": "Algebra",
                 "question_text": "What is the quadratic formula?",
                 "answer_text": "x = (-b ± √(b²-4ac)) / 2a",
-                "acceptable_answers": ["negative b plus or minus square root of b squared minus 4ac all over 2a"],
+                "acceptable_answers": [
+                    "negative b plus or minus square root of b squared minus 4ac all over 2a"
+                ],
                 "difficulty": 2,
                 "speed_target_seconds": 8.0,
                 "question_type": "toss-up",
@@ -1030,7 +1070,13 @@ def create_literature_domain() -> dict[str, Any]:
         "name": "Literature",
         "icon_name": "book.closed",
         "weight": 0.12,
-        "subcategories": ["American Literature", "British Literature", "World Literature", "Poetry", "Drama"],
+        "subcategories": [
+            "American Literature",
+            "British Literature",
+            "World Literature",
+            "Poetry",
+            "Drama",
+        ],
         "questions": [
             {
                 "id": "lit-am-001",
@@ -1038,7 +1084,11 @@ def create_literature_domain() -> dict[str, Any]:
                 "subcategory": "American Literature",
                 "question_text": "Who wrote 'The Great Gatsby'?",
                 "answer_text": "F. Scott Fitzgerald",
-                "acceptable_answers": ["F. Scott Fitzgerald", "Fitzgerald", "Scott Fitzgerald"],
+                "acceptable_answers": [
+                    "F. Scott Fitzgerald",
+                    "Fitzgerald",
+                    "Scott Fitzgerald",
+                ],
                 "difficulty": 1,
                 "speed_target_seconds": 4.0,
                 "question_type": "toss-up",
@@ -1108,7 +1158,13 @@ def create_history_domain() -> dict[str, Any]:
         "name": "History",
         "icon_name": "clock.arrow.circlepath",
         "weight": 0.12,
-        "subcategories": ["US History", "World History", "Ancient History", "Modern History", "Military History"],
+        "subcategories": [
+            "US History",
+            "World History",
+            "Ancient History",
+            "Modern History",
+            "Military History",
+        ],
         "questions": [
             {
                 "id": "hist-us-001",
@@ -1155,7 +1211,11 @@ def create_history_domain() -> dict[str, Any]:
                 "subcategory": "Ancient History",
                 "question_text": "What ancient wonder was located in Alexandria, Egypt?",
                 "answer_text": "The Lighthouse of Alexandria",
-                "acceptable_answers": ["Lighthouse of Alexandria", "Pharos of Alexandria", "Pharos"],
+                "acceptable_answers": [
+                    "Lighthouse of Alexandria",
+                    "Pharos of Alexandria",
+                    "Pharos",
+                ],
                 "difficulty": 3,
                 "speed_target_seconds": 8.0,
                 "question_type": "toss-up",
@@ -1455,7 +1515,11 @@ def create_pop_culture_domain() -> dict[str, Any]:
                 "subcategory": "Movies",
                 "question_text": "What 1977 film introduced audiences to Luke Skywalker?",
                 "answer_text": "Star Wars",
-                "acceptable_answers": ["Star Wars", "Star Wars: A New Hope", "A New Hope"],
+                "acceptable_answers": [
+                    "Star Wars",
+                    "Star Wars: A New Hope",
+                    "A New Hope",
+                ],
                 "difficulty": 1,
                 "speed_target_seconds": 4.0,
                 "question_type": "toss-up",
@@ -1624,7 +1688,9 @@ async def check_and_prefetch_kb_audio(
     # Load module content
     content = load_module_content(module_id)
     if not content:
-        logger.warning(f"KB module content not found for {module_id}, cannot prefetch audio")
+        logger.warning(
+            f"KB module content not found for {module_id}, cannot prefetch audio"
+        )
         return None
 
     # Check current coverage

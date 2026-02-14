@@ -103,7 +103,11 @@ async def handle_tts_request(request: web.Request) -> web.Response:
     # If no cache, generate directly with LIVE priority
     if not cache:
         try:
-            audio_data, sample_rate, duration = await resource_pool.generate_with_priority(
+            (
+                audio_data,
+                sample_rate,
+                duration,
+            ) = await resource_pool.generate_with_priority(
                 text=text,
                 voice_id=voice_id,
                 provider=provider,
@@ -145,7 +149,9 @@ async def handle_tts_request(request: web.Request) -> web.Response:
             hash_key = key.to_hash()
             async with cache._lock:
                 entry = cache.index.get(hash_key)
-                sample_rate = entry.sample_rate if entry else SAMPLE_RATES.get(provider, 24000)
+                sample_rate = (
+                    entry.sample_rate if entry else SAMPLE_RATES.get(provider, 24000)
+                )
                 duration = entry.duration_seconds if entry else 0
 
             return web.Response(
@@ -175,9 +181,7 @@ async def handle_tts_request(request: web.Request) -> web.Response:
         )
 
     # Store in cache (fire and forget)
-    asyncio.create_task(
-        cache.put(key, audio_data, sample_rate, duration)
-    )
+    asyncio.create_task(cache.put(key, audio_data, sample_rate, duration))
 
     return web.Response(
         body=audio_data,
@@ -249,10 +253,12 @@ async def handle_clear_cache(request: web.Request) -> web.Response:
         )
 
     count = await cache.clear()
-    return web.json_response({
-        "status": "ok",
-        "entries_removed": count,
-    })
+    return web.json_response(
+        {
+            "status": "ok",
+            "entries_removed": count,
+        }
+    )
 
 
 async def handle_evict_expired(request: web.Request) -> web.Response:
@@ -269,10 +275,12 @@ async def handle_evict_expired(request: web.Request) -> web.Response:
         )
 
     count = await cache.evict_expired()
-    return web.json_response({
-        "status": "ok",
-        "entries_removed": count,
-    })
+    return web.json_response(
+        {
+            "status": "ok",
+            "entries_removed": count,
+        }
+    )
 
 
 async def handle_evict_lru(request: web.Request) -> web.Response:
@@ -310,10 +318,12 @@ async def handle_evict_lru(request: web.Request) -> web.Response:
 
     target_bytes = int(target_mb * 1024 * 1024)
     count = await cache.evict_lru(target_bytes)
-    return web.json_response({
-        "status": "ok",
-        "entries_removed": count,
-    })
+    return web.json_response(
+        {
+            "status": "ok",
+            "entries_removed": count,
+        }
+    )
 
 
 async def handle_put_cache_entry(request: web.Request) -> web.Response:
@@ -398,11 +408,13 @@ async def handle_put_cache_entry(request: web.Request) -> web.Response:
     # Store in cache
     await cache.put(key, audio_data, sample_rate, duration)
 
-    return web.json_response({
-        "status": "ok",
-        "hash": key.to_hash()[:16],
-        "size_bytes": len(audio_data),
-    })
+    return web.json_response(
+        {
+            "status": "ok",
+            "hash": key.to_hash()[:16],
+            "size_bytes": len(audio_data),
+        }
+    )
 
 
 async def handle_get_cache_entry(request: web.Request) -> web.Response:
@@ -593,11 +605,13 @@ async def handle_prefetch_topic(request: web.Request) -> web.Response:
         provider=provider,
     )
 
-    return web.json_response({
-        "status": "started",
-        "job_id": job_id,
-        "total_segments": len(segments),
-    })
+    return web.json_response(
+        {
+            "status": "started",
+            "job_id": job_id,
+            "total_segments": len(segments),
+        }
+    )
 
 
 async def handle_prefetch_status(request: web.Request) -> web.Response:
@@ -627,11 +641,13 @@ async def handle_prefetch_status(request: web.Request) -> web.Response:
             status=404,
         )
 
-    return web.json_response({
-        "job_id": job_id,
-        "status": progress["status"],
-        "progress": progress,
-    })
+    return web.json_response(
+        {
+            "job_id": job_id,
+            "status": progress["status"],
+            "progress": progress,
+        }
+    )
 
 
 async def handle_cancel_prefetch(request: web.Request) -> web.Response:
@@ -655,10 +671,12 @@ async def handle_cancel_prefetch(request: web.Request) -> web.Response:
         )
 
     cancelled = await prefetcher.cancel(job_id)
-    return web.json_response({
-        "status": "cancelled" if cancelled else "not_found",
-        "job_id": job_id,
-    })
+    return web.json_response(
+        {
+            "status": "cancelled" if cancelled else "not_found",
+            "job_id": job_id,
+        }
+    )
 
 
 # =============================================================================
@@ -739,7 +757,11 @@ async def handle_kb_audio_get(request: web.Request) -> web.Response:
 
     if audio is None:
         return web.json_response(
-            {"error": "Audio not found", "question_id": question_id, "segment": segment},
+            {
+                "error": "Audio not found",
+                "question_id": question_id,
+                "segment": segment,
+            },
             status=404,
         )
 
@@ -936,12 +958,14 @@ async def handle_kb_prefetch(request: web.Request) -> web.Response:
         force_regenerate=force_regenerate,
     )
 
-    return web.json_response({
-        "status": "started",
-        "job_id": job_id,
-        "total_segments": len(segments),
-        "module_id": module_id,
-    })
+    return web.json_response(
+        {
+            "status": "started",
+            "job_id": job_id,
+            "total_segments": len(segments),
+            "module_id": module_id,
+        }
+    )
 
 
 async def handle_kb_prefetch_status(request: web.Request) -> web.Response:

@@ -19,6 +19,7 @@ from aiohttp import web
 
 # Import the importer package
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from importers.core.registry import SourceRegistry, discover_handlers
@@ -26,7 +27,7 @@ from importers.core.orchestrator import ImportOrchestrator
 from importers.core.models import ImportConfig, ImportStatus
 
 # Import diagnostic logging
-from diagnostic_logging import diag_logger, TimingContext
+from diagnostic_logging import diag_logger
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +121,7 @@ def init_import_system():
 # Source Routes
 # =============================================================================
 
+
 async def handle_get_sources(request: web.Request) -> web.Response:
     """
     GET /api/import/sources
@@ -128,16 +130,21 @@ async def handle_get_sources(request: web.Request) -> web.Response:
     """
     try:
         sources = SourceRegistry.get_all_sources()
-        return web.json_response({
-            "success": True,
-            "sources": [s.to_dict() for s in sources],
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "sources": [s.to_dict() for s in sources],
+            }
+        )
     except Exception as e:
         logger.exception("Error getting sources")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 async def handle_get_source(request: web.Request) -> web.Response:
@@ -151,26 +158,35 @@ async def handle_get_source(request: web.Request) -> web.Response:
     try:
         handler = SourceRegistry.get_handler(source_id)
         if not handler:
-            return web.json_response({
-                "success": False,
-                "error": f"Source not found: {source_id}",
-            }, status=404)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Source not found: {source_id}",
+                },
+                status=404,
+            )
 
-        return web.json_response({
-            "success": True,
-            "source": handler.source_info.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "source": handler.source_info.to_dict(),
+            }
+        )
     except Exception as e:
         logger.exception(f"Error getting source {source_id}")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 # =============================================================================
 # Course Catalog Routes
 # =============================================================================
+
 
 async def handle_get_courses(request: web.Request) -> web.Response:
     """
@@ -193,10 +209,13 @@ async def handle_get_courses(request: web.Request) -> web.Response:
     try:
         handler = SourceRegistry.get_handler(source_id)
         if not handler:
-            return web.json_response({
-                "success": False,
-                "error": f"Source not found: {source_id}",
-            }, status=404)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Source not found: {source_id}",
+                },
+                status=404,
+            )
 
         # Parse query parameters
         page = int(request.query.get("page", "1"))
@@ -225,39 +244,52 @@ async def handle_get_courses(request: web.Request) -> web.Response:
         if courses and sort_by != "relevance":
             reverse = sort_order == "desc"
             if sort_by == "title":
-                courses = sorted(courses, key=lambda c: c.title.lower(), reverse=reverse)
+                courses = sorted(
+                    courses, key=lambda c: c.title.lower(), reverse=reverse
+                )
             elif sort_by == "level":
                 # Sort by level with a defined order
                 level_order = {
-                    "undergraduate": 1, "graduate": 2, "high school": 0,
-                    "introductory": 1, "intermediate": 2, "advanced": 3,
+                    "undergraduate": 1,
+                    "graduate": 2,
+                    "high school": 0,
+                    "introductory": 1,
+                    "intermediate": 2,
+                    "advanced": 3,
                 }
                 courses = sorted(
                     courses,
-                    key=lambda c: level_order.get(c.level.lower() if c.level else "", 99),
-                    reverse=reverse
+                    key=lambda c: level_order.get(
+                        c.level.lower() if c.level else "", 99
+                    ),
+                    reverse=reverse,
                 )
             elif sort_by == "date":
                 # Sort by ID as a proxy for date (newer courses have higher IDs typically)
                 courses = sorted(courses, key=lambda c: c.id, reverse=reverse)
 
-        return web.json_response({
-            "success": True,
-            "courses": [c.to_dict() for c in courses],
-            "pagination": {
-                "page": page,
-                "pageSize": page_size,
-                "total": total,
-                "totalPages": (total + page_size - 1) // page_size,
-            },
-            "filters": filter_options,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "courses": [c.to_dict() for c in courses],
+                "pagination": {
+                    "page": page,
+                    "pageSize": page_size,
+                    "total": total,
+                    "totalPages": (total + page_size - 1) // page_size,
+                },
+                "filters": filter_options,
+            }
+        )
     except Exception as e:
         logger.exception(f"Error getting courses for {source_id}")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 async def handle_search_courses(request: web.Request) -> web.Response:
@@ -275,33 +307,44 @@ async def handle_search_courses(request: web.Request) -> web.Response:
     try:
         handler = SourceRegistry.get_handler(source_id)
         if not handler:
-            return web.json_response({
-                "success": False,
-                "error": f"Source not found: {source_id}",
-            }, status=404)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Source not found: {source_id}",
+                },
+                status=404,
+            )
 
         query = request.query.get("q", "")
         limit = int(request.query.get("limit", "20"))
 
         if not query:
-            return web.json_response({
-                "success": False,
-                "error": "Search query required",
-            }, status=400)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": "Search query required",
+                },
+                status=400,
+            )
 
         courses = await handler.search_courses(query=query, limit=limit)
 
-        return web.json_response({
-            "success": True,
-            "courses": [c.to_dict() for c in courses],
-            "query": query,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "courses": [c.to_dict() for c in courses],
+                "query": query,
+            }
+        )
     except Exception as e:
         logger.exception(f"Error searching courses for {source_id}")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 async def handle_get_course_detail(request: web.Request) -> web.Response:
@@ -316,10 +359,13 @@ async def handle_get_course_detail(request: web.Request) -> web.Response:
     try:
         handler = SourceRegistry.get_handler(source_id)
         if not handler:
-            return web.json_response({
-                "success": False,
-                "error": f"Source not found: {source_id}",
-            }, status=404)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Source not found: {source_id}",
+                },
+                status=404,
+            )
 
         # Validate license first
         license_result = handler.validate_license(course_id)
@@ -328,29 +374,38 @@ async def handle_get_course_detail(request: web.Request) -> web.Response:
         try:
             detail = await handler.get_course_detail(course_id)
         except ValueError as e:
-            return web.json_response({
-                "success": False,
-                "error": str(e),
-            }, status=404)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": str(e),
+                },
+                status=404,
+            )
 
-        return web.json_response({
-            "success": True,
-            "course": detail.to_dict(),
-            "canImport": license_result.can_import,
-            "licenseWarnings": license_result.warnings,
-            "attribution": license_result.attribution_text,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "course": detail.to_dict(),
+                "canImport": license_result.can_import,
+                "licenseWarnings": license_result.warnings,
+                "attribution": license_result.attribution_text,
+            }
+        )
     except Exception as e:
         logger.exception(f"Error getting course detail {source_id}/{course_id}")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 # =============================================================================
 # Import Job Routes
 # =============================================================================
+
 
 async def handle_start_import(request: web.Request) -> web.Response:
     """
@@ -381,46 +436,61 @@ async def handle_start_import(request: web.Request) -> web.Response:
 
     try:
         data = await request.json()
-        diag_logger.info("Import request received", context={
-            "sourceId": data.get("sourceId"),
-            "courseId": data.get("courseId"),
-            "selectedLectures": data.get("selectedLectures", []),
-            "client_ip": request.remote
-        })
+        diag_logger.info(
+            "Import request received",
+            context={
+                "sourceId": data.get("sourceId"),
+                "courseId": data.get("courseId"),
+                "selectedLectures": data.get("selectedLectures", []),
+                "client_ip": request.remote,
+            },
+        )
 
         # Parse config
         config = ImportConfig.from_dict(data)
-        diag_logger.debug("ImportConfig parsed successfully", context={
-            "source_id": config.source_id,
-            "course_id": config.course_id,
-            "selected_lectures_count": len(config.selected_lectures),
-            "include_transcripts": config.include_transcripts,
-            "include_videos": config.include_videos
-        })
+        diag_logger.debug(
+            "ImportConfig parsed successfully",
+            context={
+                "source_id": config.source_id,
+                "course_id": config.course_id,
+                "selected_lectures_count": len(config.selected_lectures),
+                "include_transcripts": config.include_transcripts,
+                "include_videos": config.include_videos,
+            },
+        )
 
         # Validate source exists
         handler = SourceRegistry.get_handler(config.source_id)
         if not handler:
             diag_logger.warning(f"Source not found: {config.source_id}")
-            return web.json_response({
-                "success": False,
-                "error": f"Source not found: {config.source_id}",
-            }, status=404)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Source not found: {config.source_id}",
+                },
+                status=404,
+            )
 
         diag_logger.debug(f"Source handler found: {handler.source_info.name}")
 
         # Validate license
         license_result = handler.validate_license(config.course_id)
         if not license_result.can_import:
-            diag_logger.warning("License validation failed", context={
-                "course_id": config.course_id,
-                "warnings": license_result.warnings
-            })
-            return web.json_response({
-                "success": False,
-                "error": f"Cannot import: {license_result.warnings[0]}",
-                "licenseRestriction": True,
-            }, status=403)
+            diag_logger.warning(
+                "License validation failed",
+                context={
+                    "course_id": config.course_id,
+                    "warnings": license_result.warnings,
+                },
+            )
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Cannot import: {license_result.warnings[0]}",
+                    "licenseRestriction": True,
+                },
+                status=403,
+            )
 
         diag_logger.debug("License validation passed")
 
@@ -429,27 +499,32 @@ async def handle_start_import(request: web.Request) -> web.Response:
         job_id = await orchestrator.start_import(config)
 
         duration_ms = (time.time() - start_time) * 1000
-        diag_logger.info("Import job started successfully", context={
-            "job_id": job_id,
-            "duration_ms": round(duration_ms, 2)
-        })
+        diag_logger.info(
+            "Import job started successfully",
+            context={"job_id": job_id, "duration_ms": round(duration_ms, 2)},
+        )
 
-        return web.json_response({
-            "success": True,
-            "jobId": job_id,
-            "status": "queued",
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "jobId": job_id,
+                "status": "queued",
+            }
+        )
     except Exception as e:
         duration_ms = (time.time() - start_time) * 1000
-        diag_logger.exception("Error starting import", context={
-            "error": str(e),
-            "duration_ms": round(duration_ms, 2)
-        })
+        diag_logger.exception(
+            "Error starting import",
+            context={"error": str(e), "duration_ms": round(duration_ms, 2)},
+        )
         logger.exception("Error starting import")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 async def handle_get_import_progress(request: web.Request) -> web.Response:
@@ -465,21 +540,29 @@ async def handle_get_import_progress(request: web.Request) -> web.Response:
         progress = orchestrator.get_progress(job_id)
 
         if not progress:
-            return web.json_response({
-                "success": False,
-                "error": f"Job not found: {job_id}",
-            }, status=404)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Job not found: {job_id}",
+                },
+                status=404,
+            )
 
-        return web.json_response({
-            "success": True,
-            "progress": progress.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "progress": progress.to_dict(),
+            }
+        )
     except Exception as e:
         logger.exception(f"Error getting import progress {job_id}")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 async def handle_list_imports(request: web.Request) -> web.Response:
@@ -499,24 +582,32 @@ async def handle_list_imports(request: web.Request) -> web.Response:
             try:
                 status = ImportStatus(status_filter)
             except ValueError:
-                return web.json_response({
-                    "success": False,
-                    "error": f"Invalid status: {status_filter}",
-                }, status=400)
+                return web.json_response(
+                    {
+                        "success": False,
+                        "error": f"Invalid status: {status_filter}",
+                    },
+                    status=400,
+                )
             jobs = orchestrator.list_jobs(status=status)
         else:
             jobs = orchestrator.list_jobs()
 
-        return web.json_response({
-            "success": True,
-            "jobs": [j.to_dict() for j in jobs],
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "jobs": [j.to_dict() for j in jobs],
+            }
+        )
     except Exception as e:
         logger.exception("Error listing imports")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 async def handle_cancel_import(request: web.Request) -> web.Response:
@@ -532,26 +623,35 @@ async def handle_cancel_import(request: web.Request) -> web.Response:
         cancelled = await orchestrator.cancel_import(job_id)
 
         if not cancelled:
-            return web.json_response({
-                "success": False,
-                "error": f"Could not cancel job: {job_id}",
-            }, status=400)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Could not cancel job: {job_id}",
+                },
+                status=400,
+            )
 
-        return web.json_response({
-            "success": True,
-            "cancelled": True,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "cancelled": True,
+            }
+        )
     except Exception as e:
         logger.exception(f"Error cancelling import {job_id}")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 # =============================================================================
 # Import Status Routes
 # =============================================================================
+
 
 async def handle_get_import_status(request: web.Request) -> web.Response:
     """
@@ -570,18 +670,24 @@ async def handle_get_import_status(request: web.Request) -> web.Response:
         course_ids_param = request.query.get("course_ids", "")
 
         if not source_id:
-            return web.json_response({
-                "success": False,
-                "error": "source_id is required",
-            }, status=400)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": "source_id is required",
+                },
+                status=400,
+            )
 
         course_ids = [c.strip() for c in course_ids_param.split(",") if c.strip()]
 
         if "db_pool" not in request.app:
-            return web.json_response({
-                "success": False,
-                "error": "Database not available",
-            }, status=503)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": "Database not available",
+                },
+                status=503,
+            )
 
         pool = request.app["db_pool"]
         async with pool.acquire() as conn:
@@ -612,8 +718,12 @@ async def handle_get_import_status(request: web.Request) -> web.Response:
         for row in rows:
             courses[row["course_id"]] = {
                 "imported": True,
-                "curriculumId": str(row["curriculum_id"]) if row["curriculum_id"] else None,
-                "importedAt": row["imported_at"].isoformat() if row["imported_at"] else None,
+                "curriculumId": str(row["curriculum_id"])
+                if row["curriculum_id"]
+                else None,
+                "importedAt": row["imported_at"].isoformat()
+                if row["imported_at"]
+                else None,
             }
 
         # Add entries for requested courses that aren't imported
@@ -621,22 +731,28 @@ async def handle_get_import_status(request: web.Request) -> web.Response:
             if course_id not in courses:
                 courses[course_id] = {"imported": False}
 
-        return web.json_response({
-            "success": True,
-            "courses": courses,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "courses": courses,
+            }
+        )
 
     except Exception as e:
         logger.exception("Error querying import status")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 # =============================================================================
 # Route Registration
 # =============================================================================
+
 
 def register_import_routes(app: web.Application):
     """Register all import-related routes on the application."""
@@ -658,7 +774,9 @@ def register_import_routes(app: web.Application):
     # Course catalog
     router.add_get("/api/import/sources/{source_id}/courses", handle_get_courses)
     router.add_get("/api/import/sources/{source_id}/search", handle_search_courses)
-    router.add_get("/api/import/sources/{source_id}/courses/{course_id}", handle_get_course_detail)
+    router.add_get(
+        "/api/import/sources/{source_id}/courses/{course_id}", handle_get_course_detail
+    )
 
     # Import jobs
     router.add_post("/api/import/jobs", handle_start_import)

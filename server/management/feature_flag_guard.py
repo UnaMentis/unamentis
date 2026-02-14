@@ -6,6 +6,8 @@ corresponding feature flag is disabled in Unleash. When Unleash is unavailable,
 falls back to the defaults defined in feature_flag_keys.FLAG_DEFAULTS.
 """
 
+from __future__ import annotations
+
 import functools
 import logging
 from typing import Callable
@@ -26,6 +28,7 @@ def _get_is_flag_enabled() -> Callable:
     global _is_flag_enabled
     if _is_flag_enabled is None:
         from server import is_flag_enabled
+
         _is_flag_enabled = is_flag_enabled
     return _is_flag_enabled
 
@@ -50,7 +53,10 @@ def flag_guard(flag_name: str) -> Callable:
             app.router.add_get("/api/foo", guard(handle_list))
             app.router.add_post("/api/foo", guard(handle_create))
     """
-    default = FLAG_DEFAULTS.get(flag_name, True)
+    default = FLAG_DEFAULTS.get(flag_name)
+    if default is None:
+        logger.warning("Unknown feature flag %s; defaulting to disabled", flag_name)
+        default = False
 
     def decorator(handler: Callable) -> Callable:
         @functools.wraps(handler)
@@ -59,7 +65,9 @@ def flag_guard(flag_name: str) -> Callable:
             if not check(flag_name, default=default):
                 logger.info(
                     "Request blocked by feature flag %s: %s %s",
-                    flag_name, request.method, request.path,
+                    flag_name,
+                    request.method,
+                    request.path,
                 )
                 return web.json_response(
                     {
@@ -69,7 +77,9 @@ def flag_guard(flag_name: str) -> Callable:
                     status=503,
                 )
             return await handler(request)
+
         return wrapper
+
     return decorator
 
 

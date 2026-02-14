@@ -10,7 +10,7 @@ server now actively wired up:
 - Web SDK (React hooks, localStorage caching)
 - **Management server: 13 API modules gated by `guarded_routes`** (completed)
 - **`GET /api/feature-flags` endpoint for clients** (completed)
-- **26 flags defined in `feature_flag_keys.py` with safe defaults** (completed)
+- **24 flags defined in `feature_flag_keys.py` with safe defaults** (completed)
 - Audit tooling and CI workflow
 
 **Completed:** Management server feature flag integration with route-level guards.

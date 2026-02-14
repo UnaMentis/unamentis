@@ -38,6 +38,10 @@ filterwarnings = [
     "ignore::DeprecationWarning",
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# _load_env_file() must run before local imports that depend on env vars
+"server.py" = ["E402"]
+
 [tool.coverage.run]
 branch = true
 source = ["."]

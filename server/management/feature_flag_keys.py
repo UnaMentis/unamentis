@@ -11,6 +11,8 @@ Categories:
   feature_*   Feature flags (gradual rollout of new capabilities)
 """
 
+from __future__ import annotations
+
 
 class FlagKeys:
     """All feature flag keys used by the management server."""
@@ -74,10 +76,11 @@ class FlagKeys:
 
 
 # Default values when Unleash is unavailable.
-# ops kill switches default OFF (safe). Service/feature flags default ON
-# (don't break existing functionality when Unleash is down).
+# Blocking kill switches (MAINTENANCE_MODE, BUDGET_CAP_REACHED) default OFF.
+# Enablement flags default ON so existing functionality is preserved when
+# Unleash is down.
 FLAG_DEFAULTS: dict[str, bool] = {
-    # Ops: kill switches default OFF
+    # Ops: blocking kill switches default OFF, enablement flags default ON
     FlagKeys.MAINTENANCE_MODE: False,
     FlagKeys.VERBOSE_LOGGING: True,
     FlagKeys.ANALYTICS_ENABLED: True,

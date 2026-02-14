@@ -112,8 +112,16 @@ find_python_flags() {
 
         for pattern in "${PYTHON_PATTERNS[@]}"; do
             grep -oE "$pattern" "$file" 2>/dev/null | while read -r match; do
-                # Extract flag name from match
+                # Extract flag name: try quoted string first, then FlagKeys.CONST
                 flag_name=$(echo "$match" | grep -oE "['\"][^'\"]+['\"]" | head -1 | tr -d "'" | tr -d '"')
+                if [ -z "$flag_name" ]; then
+                    # Extract FlagKeys.CONST and resolve to actual flag string
+                    const_name=$(echo "$match" | grep -oE 'FlagKeys\.[A-Z_]+' | head -1 | sed 's/FlagKeys\.//')
+                    if [ -n "$const_name" ]; then
+                        flag_name=$(grep -E "^\s+${const_name}\s*=" server/management/feature_flag_keys.py 2>/dev/null \
+                            | grep -oE "['\"][^'\"]+['\"]" | tr -d "'" | tr -d '"')
+                    fi
+                fi
                 if [ -n "$flag_name" ]; then
                     echo "$flag_name" >> "$FOUND_FLAGS"
                     echo "$flag_name|$file" >> "$FLAG_LOCATIONS"

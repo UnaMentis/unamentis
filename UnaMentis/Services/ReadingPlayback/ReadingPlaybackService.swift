@@ -197,6 +197,9 @@ public actor ReadingPlaybackService {
 
         logger.info("Starting playback for item \(itemId), \(chunks.count) chunks, starting at \(startIndex)")
 
+        // TTFA: mark activation for reading list playback
+        await TTFAInstrumentation.shared.markActivation(.readingPlay)
+
         // Clean up any existing playback
         await stopPlayback()
 
@@ -249,6 +252,9 @@ public actor ReadingPlaybackService {
         guard state == .paused else { return }
 
         logger.debug("Resuming playback from chunk \(currentChunkIndex)")
+
+        // TTFA: mark activation for resume (audio resumes from paused state)
+        await TTFAInstrumentation.shared.markActivation(.readingResume)
 
         // Resume audio
         if let audioEngine {
@@ -489,6 +495,9 @@ public actor ReadingPlaybackService {
 
                 logger.debug("Playing cached audio for chunk \(currentChunkIndex) (instant)")
 
+                // TTFA: cached audio path (instant playback)
+                await TTFAInstrumentation.shared.markCachedHit()
+
                 if let audioData = chunk.cachedAudioData {
                     let ttsChunk = TTSAudioChunk(
                         audioData: audioData,
@@ -521,8 +530,14 @@ public actor ReadingPlaybackService {
 
                 do {
                     let audioStream = try await ttsService.synthesize(text: chunk.text)
+                    var isFirstStreamChunk = true
                     for await audioChunk in audioStream {
                         if Task.isCancelled || state != .playing { break }
+                        // TTFA: mark first TTS chunk received (streaming path)
+                        if isFirstStreamChunk {
+                            isFirstStreamChunk = false
+                            await TTFAInstrumentation.shared.markTTSFirstChunk()
+                        }
                         try await audioEngine.playAudio(audioChunk)
                     }
                 } catch {

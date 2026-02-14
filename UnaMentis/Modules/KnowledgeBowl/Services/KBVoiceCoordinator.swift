@@ -232,7 +232,13 @@ final class KBVoiceCoordinator: ObservableObject {
         do {
             let stream = try await ttsService.synthesize(text: text)
 
+            var isFirstChunk = true
             for await chunk in stream {
+                // TTFA: mark first TTS chunk received
+                if isFirstChunk {
+                    isFirstChunk = false
+                    await TTFAInstrumentation.shared.markTTSFirstChunk()
+                }
                 try await audioEngine.playAudio(chunk)
                 if chunk.isLast {
                     break
@@ -248,6 +254,9 @@ final class KBVoiceCoordinator: ObservableObject {
 
     /// Speak a question with proper pacing for competition style
     func speakQuestion(_ question: KBQuestion) async {
+        // TTFA: mark activation for KB question
+        await TTFAInstrumentation.shared.markActivation(.kbOral)
+
         // Try server cache first if available
         if useServerTTS, let cache = audioCache {
             do {
@@ -343,6 +352,9 @@ final class KBVoiceCoordinator: ObservableObject {
 
     /// Play pre-cached audio from server
     private func playCachedAudio(_ cached: KBCachedAudio) async throws {
+        // TTFA: cached audio path
+        await TTFAInstrumentation.shared.markCachedHit()
+
         guard let audioEngine = audioEngine else {
             throw VoiceCoordinatorError.notConfigured
         }

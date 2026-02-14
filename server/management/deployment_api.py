@@ -5,7 +5,7 @@ import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class DeploymentStatus(str, Enum):
     """Status of a scheduled deployment."""
+
     SCHEDULED = "scheduled"
     GENERATING = "generating"
     COMPLETED = "completed"
@@ -34,6 +35,7 @@ class ScheduledDeployment:
     Represents an admin-scheduled training deployment where TTS audio
     should be pre-generated before the target date.
     """
+
     id: str
     name: str
     curriculum_id: str
@@ -44,8 +46,8 @@ class ScheduledDeployment:
     status: DeploymentStatus = DeploymentStatus.SCHEDULED
     total_segments: int = 0
     completed_segments: int = 0
-    cached_segments: int = 0      # Already in cache (free!)
-    generated_segments: int = 0   # Newly generated
+    cached_segments: int = 0  # Already in cache (free!)
+    generated_segments: int = 0  # Newly generated
     failed_segments: int = 0
 
     # Timing
@@ -85,8 +87,12 @@ class ScheduledDeployment:
             "percent_complete": round(self.percent_complete, 1),
             "is_ready": self.is_ready,
             "created_at": self.created_at.isoformat(),
-            "generation_started_at": self.generation_started_at.isoformat() if self.generation_started_at else None,
-            "generation_completed_at": self.generation_completed_at.isoformat() if self.generation_completed_at else None,
+            "generation_started_at": self.generation_started_at.isoformat()
+            if self.generation_started_at
+            else None,
+            "generation_completed_at": self.generation_completed_at.isoformat()
+            if self.generation_completed_at
+            else None,
             "error": self.error,
         }
 
@@ -137,7 +143,9 @@ class ScheduledDeploymentManager:
         self.auto_start_hours = auto_start_hours_before
 
         # Deployments: id -> (deployment, task)
-        self._deployments: Dict[str, tuple[ScheduledDeployment, Optional[asyncio.Task]]] = {}
+        self._deployments: Dict[
+            str, tuple[ScheduledDeployment, Optional[asyncio.Task]]
+        ] = {}
 
         # Curriculum segment loader (set by server.py)
         self._segment_loader: Optional[callable] = None
@@ -207,7 +215,10 @@ class ScheduledDeploymentManager:
             logger.warning(f"Deployment {deployment_id} already running")
             return False
 
-        if deployment.status in (DeploymentStatus.COMPLETED, DeploymentStatus.COMPLETED_WITH_ERRORS):
+        if deployment.status in (
+            DeploymentStatus.COMPLETED,
+            DeploymentStatus.COMPLETED_WITH_ERRORS,
+        ):
             logger.warning(f"Deployment {deployment_id} already completed")
             return False
 
@@ -311,7 +322,9 @@ class ScheduledDeploymentManager:
             # Load segments
             segments = await self._segment_loader(deployment.curriculum_id)
             if not segments:
-                raise ValueError(f"No segments found for curriculum {deployment.curriculum_id}")
+                raise ValueError(
+                    f"No segments found for curriculum {deployment.curriculum_id}"
+                )
 
             deployment.total_segments = len(segments)
             voice_config = deployment.voice_config
@@ -344,7 +357,11 @@ class ScheduledDeploymentManager:
 
                 # Generate with SCHEDULED priority (low, won't starve live users)
                 try:
-                    audio_data, sample_rate, duration = await self.resource_pool.generate_with_priority(
+                    (
+                        audio_data,
+                        sample_rate,
+                        duration,
+                    ) = await self.resource_pool.generate_with_priority(
                         text=text,
                         voice_id=voice_config.voice_id,
                         provider=voice_config.tts_provider,
@@ -361,7 +378,9 @@ class ScheduledDeploymentManager:
                     deployment.status = DeploymentStatus.CANCELLED
                     break
                 except Exception as e:
-                    logger.warning(f"Failed to generate segment {i} for deployment {deployment.id}: {e}")
+                    logger.warning(
+                        f"Failed to generate segment {i} for deployment {deployment.id}: {e}"
+                    )
                     deployment.failed_segments += 1
                     deployment.completed_segments += 1
                     deployment.failed_segment_indices.append(i)
@@ -476,7 +495,9 @@ async def handle_create_deployment(request: web.Request) -> web.Response:
 
     manager: ScheduledDeploymentManager = request.app.get("deployment_manager")
     if not manager:
-        return web.json_response({"error": "Deployment manager not initialized"}, status=503)
+        return web.json_response(
+            {"error": "Deployment manager not initialized"}, status=503
+        )
 
     deployment = await manager.schedule_deployment(
         name=name,
@@ -485,10 +506,12 @@ async def handle_create_deployment(request: web.Request) -> web.Response:
         voice_config=voice_config,
     )
 
-    return web.json_response({
-        "status": "scheduled",
-        "deployment": deployment.to_dict(),
-    })
+    return web.json_response(
+        {
+            "status": "scheduled",
+            "deployment": deployment.to_dict(),
+        }
+    )
 
 
 async def handle_list_deployments(request: web.Request) -> web.Response:
@@ -499,12 +522,16 @@ async def handle_list_deployments(request: web.Request) -> web.Response:
     """
     manager: ScheduledDeploymentManager = request.app.get("deployment_manager")
     if not manager:
-        return web.json_response({"error": "Deployment manager not initialized"}, status=503)
+        return web.json_response(
+            {"error": "Deployment manager not initialized"}, status=503
+        )
 
     deployments = manager.list_deployments()
-    return web.json_response({
-        "deployments": [d.to_dict() for d in deployments],
-    })
+    return web.json_response(
+        {
+            "deployments": [d.to_dict() for d in deployments],
+        }
+    )
 
 
 async def handle_get_deployment(request: web.Request) -> web.Response:
@@ -519,11 +546,15 @@ async def handle_get_deployment(request: web.Request) -> web.Response:
 
     manager: ScheduledDeploymentManager = request.app.get("deployment_manager")
     if not manager:
-        return web.json_response({"error": "Deployment manager not initialized"}, status=503)
+        return web.json_response(
+            {"error": "Deployment manager not initialized"}, status=503
+        )
 
     deployment = manager.get_deployment(deployment_id)
     if not deployment:
-        return web.json_response({"error": f"Deployment not found: {deployment_id}"}, status=404)
+        return web.json_response(
+            {"error": f"Deployment not found: {deployment_id}"}, status=404
+        )
 
     return web.json_response({"deployment": deployment.to_dict()})
 
@@ -540,7 +571,9 @@ async def handle_start_deployment(request: web.Request) -> web.Response:
 
     manager: ScheduledDeploymentManager = request.app.get("deployment_manager")
     if not manager:
-        return web.json_response({"error": "Deployment manager not initialized"}, status=503)
+        return web.json_response(
+            {"error": "Deployment manager not initialized"}, status=503
+        )
 
     started = await manager.start_generation(deployment_id)
     if not started:
@@ -564,7 +597,9 @@ async def handle_cancel_deployment(request: web.Request) -> web.Response:
 
     manager: ScheduledDeploymentManager = request.app.get("deployment_manager")
     if not manager:
-        return web.json_response({"error": "Deployment manager not initialized"}, status=503)
+        return web.json_response(
+            {"error": "Deployment manager not initialized"}, status=503
+        )
 
     cancelled = await manager.cancel_deployment(deployment_id)
     if not cancelled:
@@ -588,7 +623,9 @@ async def handle_get_deployment_cache(request: web.Request) -> web.Response:
 
     manager: ScheduledDeploymentManager = request.app.get("deployment_manager")
     if not manager:
-        return web.json_response({"error": "Deployment manager not initialized"}, status=503)
+        return web.json_response(
+            {"error": "Deployment manager not initialized"}, status=503
+        )
 
     coverage = await manager.get_cache_coverage(deployment_id)
     if not coverage:

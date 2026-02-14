@@ -992,10 +992,18 @@ Self-hosted Unleash infrastructure with SDKs for all platforms:
 | Unleash Proxy | 3063 | Client SDK endpoint |
 | PostgreSQL | 5432 | Data persistence |
 
+**Management Server Integration:**
+- Route-level guards via `guarded_routes()` on 13 API modules
+- `GET /api/feature-flags` public endpoint for client flag queries
+- 24 centralized flag constants in `feature_flag_keys.py` with safe defaults
+- Three categories: ops (kill switches), service (subsystem control), feature (gradual rollout)
+- Unknown flags default to disabled for safety
+
 **SDK Support:**
 - iOS: Actor-based service with SwiftUI view modifier
 - Web: React context, hooks (`useFlag`, `useFlagVariant`)
 - Lifecycle: Automated stale flag detection + cleanup issues
+- CI: Feature flag audit workflow validates flag usage and detects stale flags
 
 ### DORA Metrics (DevLake)
 

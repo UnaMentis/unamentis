@@ -10,7 +10,6 @@ management dashboard, enabling users to:
 """
 
 import logging
-import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 from uuid import UUID
@@ -18,10 +17,8 @@ from uuid import UUID
 from aiohttp import web
 
 from tts_pregen import (
-    TTSProfile,
     TTSProfileManager,
     TTSPregenRepository,
-    JobStatus,
     SessionStatus,
 )
 from tts_pregen.comparison_manager import TTSComparisonManager
@@ -98,11 +95,17 @@ async def handle_create_profile(request: web.Request) -> web.Response:
         voice_id = data.get("voice_id")
 
         if not name:
-            return web.json_response({"success": False, "error": "name is required"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "name is required"}, status=400
+            )
         if not provider:
-            return web.json_response({"success": False, "error": "provider is required"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "provider is required"}, status=400
+            )
         if not voice_id:
-            return web.json_response({"success": False, "error": "voice_id is required"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "voice_id is required"}, status=400
+            )
 
         profile = await manager.create_profile(
             name=name,
@@ -117,10 +120,12 @@ async def handle_create_profile(request: web.Request) -> web.Response:
             sample_text=data.get("sample_text"),
         )
 
-        return web.json_response({
-            "success": True,
-            "profile": profile.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "profile": profile.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -164,13 +169,15 @@ async def handle_list_profiles(request: web.Request) -> web.Response:
             offset=offset,
         )
 
-        return web.json_response({
-            "success": True,
-            "profiles": [p.to_dict() for p in profiles],
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "profiles": [p.to_dict() for p in profiles],
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+            }
+        )
 
     except Exception as e:
         logger.exception("Error listing profiles")
@@ -189,12 +196,16 @@ async def handle_get_profile(request: web.Request) -> web.Response:
 
         profile = await manager.get_profile(profile_id)
         if not profile:
-            return web.json_response({"success": False, "error": "Profile not found"}, status=404)
+            return web.json_response(
+                {"success": False, "error": "Profile not found"}, status=404
+            )
 
-        return web.json_response({
-            "success": True,
-            "profile": profile.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "profile": profile.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -240,10 +251,12 @@ async def handle_update_profile(request: web.Request) -> web.Response:
             sample_text=data.get("sample_text"),
         )
 
-        return web.json_response({
-            "success": True,
-            "profile": profile.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "profile": profile.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -269,13 +282,17 @@ async def handle_delete_profile(request: web.Request) -> web.Response:
         deleted = await manager.delete_profile(profile_id, soft=not hard)
 
         if not deleted:
-            return web.json_response({"success": False, "error": "Profile not found"}, status=404)
+            return web.json_response(
+                {"success": False, "error": "Profile not found"}, status=404
+            )
 
-        return web.json_response({
-            "success": True,
-            "deleted": True,
-            "permanent": hard,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "deleted": True,
+                "permanent": hard,
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -296,10 +313,12 @@ async def handle_set_default_profile(request: web.Request) -> web.Response:
 
         await manager.set_default_profile(profile_id)
 
-        return web.json_response({
-            "success": True,
-            "default_profile_id": str(profile_id),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "default_profile_id": str(profile_id),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -330,11 +349,13 @@ async def handle_preview_profile(request: web.Request) -> web.Response:
         sample_text = data.get("sample_text")
         profile = await manager.regenerate_sample(profile_id, sample_text=sample_text)
 
-        return web.json_response({
-            "success": True,
-            "profile": profile.to_dict(),
-            "sample_audio_path": profile.sample_audio_path,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "profile": profile.to_dict(),
+                "sample_audio_path": profile.sample_audio_path,
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -355,14 +376,20 @@ async def handle_get_profile_audio(request: web.Request) -> web.Response:
 
         profile = await manager.get_profile(profile_id)
         if not profile:
-            return web.json_response({"success": False, "error": "Profile not found"}, status=404)
+            return web.json_response(
+                {"success": False, "error": "Profile not found"}, status=404
+            )
 
         if not profile.sample_audio_path:
-            return web.json_response({"success": False, "error": "No sample audio available"}, status=404)
+            return web.json_response(
+                {"success": False, "error": "No sample audio available"}, status=404
+            )
 
         audio_path = Path(profile.sample_audio_path)
         if not audio_path.exists():
-            return web.json_response({"success": False, "error": "Sample audio file not found"}, status=404)
+            return web.json_response(
+                {"success": False, "error": "Sample audio file not found"}, status=404
+            )
 
         return web.FileResponse(
             audio_path,
@@ -395,7 +422,9 @@ async def handle_duplicate_profile(request: web.Request) -> web.Response:
 
         name = data.get("name")
         if not name:
-            return web.json_response({"success": False, "error": "name is required"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "name is required"}, status=400
+            )
 
         profile = await manager.duplicate_profile(
             profile_id=profile_id,
@@ -403,10 +432,12 @@ async def handle_duplicate_profile(request: web.Request) -> web.Response:
             description=data.get("description"),
         )
 
-        return web.json_response({
-            "success": True,
-            "profile": profile.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "profile": profile.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -427,10 +458,12 @@ async def handle_export_profile(request: web.Request) -> web.Response:
 
         export_data = await manager.export_profile(profile_id)
 
-        return web.json_response({
-            "success": True,
-            "export": export_data,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "export": export_data,
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -457,17 +490,21 @@ async def handle_import_profile(request: web.Request) -> web.Response:
 
         export_data = data.get("export")
         if not export_data:
-            return web.json_response({"success": False, "error": "export data is required"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "export data is required"}, status=400
+            )
 
         profile = await manager.import_profile(
             data=export_data,
             name_override=data.get("name"),
         )
 
-        return web.json_response({
-            "success": True,
-            "profile": profile.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "profile": profile.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -497,22 +534,24 @@ async def handle_get_module_profiles(request: web.Request) -> web.Response:
 
         results = await manager.get_module_profiles(module_id, context)
 
-        return web.json_response({
-            "success": True,
-            "module_id": module_id,
-            "profiles": [
-                {
-                    "association": {
-                        "id": str(assoc.id),
-                        "context": assoc.context,
-                        "priority": assoc.priority,
-                        "created_at": assoc.created_at.isoformat(),
-                    },
-                    "profile": profile.to_dict(),
-                }
-                for assoc, profile in results
-            ],
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "module_id": module_id,
+                "profiles": [
+                    {
+                        "association": {
+                            "id": str(assoc.id),
+                            "context": assoc.context,
+                            "priority": assoc.priority,
+                            "created_at": assoc.created_at.isoformat(),
+                        },
+                        "profile": profile.to_dict(),
+                    }
+                    for assoc, profile in results
+                ],
+            }
+        )
 
     except Exception as e:
         logger.exception("Error getting module profiles")
@@ -539,7 +578,9 @@ async def handle_assign_module_profile(request: web.Request) -> web.Response:
 
         profile_id_str = data.get("profile_id")
         if not profile_id_str:
-            return web.json_response({"success": False, "error": "profile_id is required"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "profile_id is required"}, status=400
+            )
 
         profile_id = _parse_uuid(profile_id_str, "profile_id")
 
@@ -550,16 +591,18 @@ async def handle_assign_module_profile(request: web.Request) -> web.Response:
             priority=data.get("priority", 0),
         )
 
-        return web.json_response({
-            "success": True,
-            "association": {
-                "id": str(assoc.id),
-                "module_id": assoc.module_id,
-                "profile_id": str(assoc.profile_id),
-                "context": assoc.context,
-                "priority": assoc.priority,
-            },
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "association": {
+                    "id": str(assoc.id),
+                    "module_id": assoc.module_id,
+                    "profile_id": str(assoc.profile_id),
+                    "context": assoc.context,
+                    "priority": assoc.priority,
+                },
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -582,12 +625,16 @@ async def handle_remove_module_profile(request: web.Request) -> web.Response:
         removed = await manager.remove_from_module(profile_id, module_id)
 
         if not removed:
-            return web.json_response({"success": False, "error": "Assignment not found"}, status=404)
+            return web.json_response(
+                {"success": False, "error": "Assignment not found"}, status=404
+            )
 
-        return web.json_response({
-            "success": True,
-            "removed": True,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "removed": True,
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -613,16 +660,20 @@ async def handle_get_best_module_profile(request: web.Request) -> web.Response:
         profile = await manager.get_best_profile_for_module(module_id, context)
 
         if not profile:
-            return web.json_response({
-                "success": True,
-                "profile": None,
-                "message": "No profile found for this module",
-            })
+            return web.json_response(
+                {
+                    "success": True,
+                    "profile": None,
+                    "message": "No profile found for this module",
+                }
+            )
 
-        return web.json_response({
-            "success": True,
-            "profile": profile.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "profile": profile.to_dict(),
+            }
+        )
 
     except Exception as e:
         logger.exception("Error getting best profile")
@@ -655,7 +706,9 @@ async def handle_create_profile_from_variant(request: web.Request) -> web.Respon
 
         name = data.get("name")
         if not name:
-            return web.json_response({"success": False, "error": "name is required"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "name is required"}, status=400
+            )
 
         profile = await manager.create_from_variant(
             variant_id=variant_id,
@@ -665,10 +718,12 @@ async def handle_create_profile_from_variant(request: web.Request) -> web.Respon
             use_case=data.get("use_case"),
         )
 
-        return web.json_response({
-            "success": True,
-            "profile": profile.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "profile": profile.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -713,10 +768,12 @@ async def handle_create_session(request: web.Request) -> web.Response:
             description=data.get("description"),
         )
 
-        return web.json_response({
-            "success": True,
-            "session": session.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "session": session.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -742,13 +799,15 @@ async def handle_list_sessions(request: web.Request) -> web.Response:
             offset=offset,
         )
 
-        return web.json_response({
-            "success": True,
-            "sessions": [s.to_dict() for s in sessions],
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "sessions": [s.to_dict() for s in sessions],
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+            }
+        )
 
     except Exception as e:
         logger.exception("Error listing comparison sessions")
@@ -769,16 +828,16 @@ async def handle_get_session(request: web.Request) -> web.Response:
             )
 
         # Convert ratings dict to be JSON-serializable
-        ratings_dict = {
-            str(k): v.to_dict() for k, v in ratings.items()
-        }
+        ratings_dict = {str(k): v.to_dict() for k, v in ratings.items()}
 
-        return web.json_response({
-            "success": True,
-            "session": session.to_dict(),
-            "variants": [v.to_dict() for v in variants],
-            "ratings": ratings_dict,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "session": session.to_dict(),
+                "variants": [v.to_dict() for v in variants],
+                "ratings": ratings_dict,
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -820,10 +879,12 @@ async def handle_generate_session_variants(request: web.Request) -> web.Response
 
         session = await manager.generate_variants(session_id, regenerate=regenerate)
 
-        return web.json_response({
-            "success": True,
-            "session": session.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "session": session.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -845,10 +906,12 @@ async def handle_get_session_summary(request: web.Request) -> web.Response:
                 {"success": False, "error": "Session not found"}, status=404
             )
 
-        return web.json_response({
-            "success": True,
-            "summary": summary,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "summary": summary,
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -876,10 +939,12 @@ async def handle_rate_variant(request: web.Request) -> web.Response:
             notes=data.get("notes"),
         )
 
-        return web.json_response({
-            "success": True,
-            "rating": rating.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "rating": rating.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -902,10 +967,13 @@ async def handle_get_variant_audio(request: web.Request) -> web.Response:
             )
 
         # Stream the file
-        return web.FileResponse(audio_path, headers={
-            "Content-Type": "audio/wav",
-            "Cache-Control": "max-age=3600",
-        })
+        return web.FileResponse(
+            audio_path,
+            headers={
+                "Content-Type": "audio/wav",
+                "Cache-Control": "max-age=3600",
+            },
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -921,14 +989,12 @@ async def handle_get_variant_audio(request: web.Request) -> web.Response:
 
 def _get_job_manager():
     """Get the job manager from the app context."""
-    from tts_pregen import JobManager
     # Get from app context (will be set during init)
     return _app_ref.get("job_manager")
 
 
 def _get_orchestrator():
     """Get the orchestrator from the app context."""
-    from tts_pregen import TTSPregenOrchestrator
     return _app_ref.get("orchestrator")
 
 
@@ -964,6 +1030,7 @@ async def handle_create_job(request: web.Request) -> web.Response:
         # If source_type is knowledge-bowl, extract items
         if source_type == "knowledge-bowl" and not items:
             from tts_pregen import KnowledgeBowlExtractor
+
             extractor = KnowledgeBowlExtractor(
                 include_questions=data.get("include_questions", True),
                 include_answers=data.get("include_answers", True),
@@ -994,10 +1061,12 @@ async def handle_create_job(request: web.Request) -> web.Response:
             normalize_volume=normalize_volume,
         )
 
-        return web.json_response({
-            "success": True,
-            "job": job.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "job": job.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -1025,6 +1094,7 @@ async def handle_list_jobs(request: web.Request) -> web.Response:
         status_enum = None
         if status:
             from tts_pregen import JobStatus
+
             try:
                 status_enum = JobStatus(status)
             except ValueError:
@@ -1040,10 +1110,12 @@ async def handle_list_jobs(request: web.Request) -> web.Response:
             offset=offset,
         )
 
-        return web.json_response({
-            "success": True,
-            "jobs": [j.to_dict() for j in jobs],
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "jobs": [j.to_dict() for j in jobs],
+            }
+        )
 
     except Exception as e:
         logger.exception("Error listing jobs")
@@ -1067,10 +1139,12 @@ async def handle_get_job(request: web.Request) -> web.Response:
                 {"success": False, "error": "Job not found"}, status=404
             )
 
-        return web.json_response({
-            "success": True,
-            "job": job.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "job": job.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -1096,10 +1170,12 @@ async def handle_get_job_progress(request: web.Request) -> web.Response:
                 {"success": False, "error": "Job not found"}, status=404
             )
 
-        return web.json_response({
-            "success": True,
-            "progress": progress,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "progress": progress,
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -1154,7 +1230,11 @@ async def handle_start_job(request: web.Request) -> web.Response:
                     {"success": False, "error": "Job not found"}, status=404
                 )
             return web.json_response(
-                {"success": False, "error": f"Cannot start job in status {job.status.value}"}, status=400
+                {
+                    "success": False,
+                    "error": f"Cannot start job in status {job.status.value}",
+                },
+                status=400,
             )
 
         return web.json_response({"success": True})
@@ -1189,10 +1269,12 @@ async def handle_pause_job(request: web.Request) -> web.Response:
                 {"success": False, "error": "Job not found"}, status=404
             )
 
-        return web.json_response({
-            "success": True,
-            "job": job.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "job": job.to_dict(),
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -1239,10 +1321,12 @@ async def handle_retry_failed_items(request: web.Request) -> web.Response:
         job_id = _parse_uuid(request.match_info["job_id"], "job_id")
         count = await manager.retry_failed_items(job_id)
 
-        return web.json_response({
-            "success": True,
-            "reset_count": count,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "reset_count": count,
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -1270,6 +1354,7 @@ async def handle_get_job_items(request: web.Request) -> web.Response:
         status_enum = None
         if status:
             from tts_pregen import ItemStatus
+
             try:
                 status_enum = ItemStatus(status)
             except ValueError:
@@ -1284,10 +1369,12 @@ async def handle_get_job_items(request: web.Request) -> web.Response:
             offset=offset,
         )
 
-        return web.json_response({
-            "success": True,
-            "items": [i.to_dict() for i in items],
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "items": [i.to_dict() for i in items],
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"success": False, "error": str(e)}, status=400)
@@ -1305,6 +1392,7 @@ async def handle_extract_content(request: web.Request) -> web.Response:
 
         if source_type == "knowledge-bowl":
             from tts_pregen import KnowledgeBowlExtractor
+
             extractor = KnowledgeBowlExtractor(
                 include_questions=data.get("include_questions", True),
                 include_answers=data.get("include_answers", True),
@@ -1315,27 +1403,33 @@ async def handle_extract_content(request: web.Request) -> web.Response:
             )
             items = extractor.extract()
             stats = extractor.get_stats()
-            return web.json_response({
-                "success": True,
-                "items": items[:100],  # Return first 100 for preview
-                "total_count": len(items),
-                "stats": stats,
-            })
+            return web.json_response(
+                {
+                    "success": True,
+                    "items": items[:100],  # Return first 100 for preview
+                    "total_count": len(items),
+                    "stats": stats,
+                }
+            )
 
         elif source_type == "custom":
             texts = data.get("texts", [])
             from tts_pregen import CustomTextExtractor
+
             extractor = CustomTextExtractor(texts=texts)
             items = extractor.extract()
-            return web.json_response({
-                "success": True,
-                "items": items,
-                "total_count": len(items),
-            })
+            return web.json_response(
+                {
+                    "success": True,
+                    "items": items,
+                    "total_count": len(items),
+                }
+            )
 
         else:
             return web.json_response(
-                {"success": False, "error": f"Unsupported source type: {source_type}"}, status=400
+                {"success": False, "error": f"Unsupported source type: {source_type}"},
+                status=400,
             )
 
     except Exception as e:
@@ -1384,6 +1478,7 @@ def init_tts_pregen_system(app: web.Application):
 
     # Initialize job manager and orchestrator
     from tts_pregen import JobManager, TTSPregenOrchestrator
+
     job_manager = JobManager(
         repository=repo,
         base_output_dir=str(PREGEN_OUTPUT_DIR),
@@ -1421,33 +1516,54 @@ def register_tts_pregen_routes(app: web.Application):
     router.add_delete("/api/tts/profiles/{profile_id}", handle_delete_profile)
 
     # Profile actions
-    router.add_post("/api/tts/profiles/{profile_id}/set-default", handle_set_default_profile)
+    router.add_post(
+        "/api/tts/profiles/{profile_id}/set-default", handle_set_default_profile
+    )
     router.add_post("/api/tts/profiles/{profile_id}/preview", handle_preview_profile)
     router.add_get("/api/tts/profiles/{profile_id}/audio", handle_get_profile_audio)
-    router.add_post("/api/tts/profiles/{profile_id}/duplicate", handle_duplicate_profile)
+    router.add_post(
+        "/api/tts/profiles/{profile_id}/duplicate", handle_duplicate_profile
+    )
     router.add_get("/api/tts/profiles/{profile_id}/export", handle_export_profile)
 
     # Profile import
     router.add_post("/api/tts/profiles/import", handle_import_profile)
 
     # Profile from variant
-    router.add_post("/api/tts/profiles/from-variant/{variant_id}", handle_create_profile_from_variant)
+    router.add_post(
+        "/api/tts/profiles/from-variant/{variant_id}",
+        handle_create_profile_from_variant,
+    )
 
     # Module profile associations
     router.add_get("/api/tts/modules/{module_id}/profiles", handle_get_module_profiles)
-    router.add_post("/api/tts/modules/{module_id}/profiles", handle_assign_module_profile)
-    router.add_delete("/api/tts/modules/{module_id}/profiles/{profile_id}", handle_remove_module_profile)
-    router.add_get("/api/tts/modules/{module_id}/best-profile", handle_get_best_module_profile)
+    router.add_post(
+        "/api/tts/modules/{module_id}/profiles", handle_assign_module_profile
+    )
+    router.add_delete(
+        "/api/tts/modules/{module_id}/profiles/{profile_id}",
+        handle_remove_module_profile,
+    )
+    router.add_get(
+        "/api/tts/modules/{module_id}/best-profile", handle_get_best_module_profile
+    )
 
     # Comparison session routes
     router.add_post("/api/tts/pregen/sessions", handle_create_session)
     router.add_get("/api/tts/pregen/sessions", handle_list_sessions)
     router.add_get("/api/tts/pregen/sessions/{session_id}", handle_get_session)
     router.add_delete("/api/tts/pregen/sessions/{session_id}", handle_delete_session)
-    router.add_post("/api/tts/pregen/sessions/{session_id}/generate", handle_generate_session_variants)
-    router.add_get("/api/tts/pregen/sessions/{session_id}/summary", handle_get_session_summary)
+    router.add_post(
+        "/api/tts/pregen/sessions/{session_id}/generate",
+        handle_generate_session_variants,
+    )
+    router.add_get(
+        "/api/tts/pregen/sessions/{session_id}/summary", handle_get_session_summary
+    )
     router.add_post("/api/tts/pregen/variants/{variant_id}/rate", handle_rate_variant)
-    router.add_get("/api/tts/pregen/variants/{variant_id}/audio", handle_get_variant_audio)
+    router.add_get(
+        "/api/tts/pregen/variants/{variant_id}/audio", handle_get_variant_audio
+    )
 
     # Batch job routes
     router.add_post("/api/tts/pregen/jobs", handle_create_job)
@@ -1458,7 +1574,9 @@ def register_tts_pregen_routes(app: web.Application):
     router.add_post("/api/tts/pregen/jobs/{job_id}/start", handle_start_job)
     router.add_post("/api/tts/pregen/jobs/{job_id}/pause", handle_pause_job)
     router.add_post("/api/tts/pregen/jobs/{job_id}/resume", handle_resume_job)
-    router.add_post("/api/tts/pregen/jobs/{job_id}/retry-failed", handle_retry_failed_items)
+    router.add_post(
+        "/api/tts/pregen/jobs/{job_id}/retry-failed", handle_retry_failed_items
+    )
     router.add_get("/api/tts/pregen/jobs/{job_id}/items", handle_get_job_items)
 
     # Content extraction (preview)

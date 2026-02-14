@@ -254,7 +254,7 @@ SUPPORTED_MODELS = {
 }
 
 # Reference text for TTS model samples - designed to test various TTS capabilities
-TTS_REFERENCE_TEXT = '''The quick mathematician, Dr. Sarah Chen, carefully examined the peculiar equation. "Could this really be correct?" she wondered aloud, her eyes widening with excitement. After seventeen years of research, breakthrough discoveries still thrilled her. Numbers, equations, and the elegant beauty of mathematics had always been her true passion.'''
+TTS_REFERENCE_TEXT = """The quick mathematician, Dr. Sarah Chen, carefully examined the peculiar equation. "Could this really be correct?" she wondered aloud, her eyes widening with excitement. After seventeen years of research, breakthrough discoveries still thrilled her. Numbers, equations, and the elegant beauty of mathematics had always been her true passion."""
 
 # Directory for generated samples
 SAMPLES_DIR = Path(__file__).parent.parent / "web" / "public" / "audio" / "tts-samples"
@@ -342,9 +342,7 @@ async def handle_generate_test_audio(request: web.Request) -> web.Response:
 
     text = data.get("text")
     if not text or not text.strip():
-        return web.json_response(
-            {"error": "Missing or empty 'text' field"}, status=400
-        )
+        return web.json_response({"error": "Missing or empty 'text' field"}, status=400)
 
     config_data = data.get("config")
     if not config_data:
@@ -543,7 +541,9 @@ async def handle_delete_config(request: web.Request) -> web.Response:
         return web.json_response({"success": True, "deleted_id": config_id})
     except Exception as e:
         logger.error(f"Failed to delete config {config_id}: {e}")
-        return web.json_response({"error": "Failed to delete configuration"}, status=500)
+        return web.json_response(
+            {"error": "Failed to delete configuration"}, status=500
+        )
 
 
 async def handle_validate_config(request: web.Request) -> web.Response:
@@ -713,7 +713,11 @@ async def handle_generate_samples(request: web.Request) -> web.Response:
                 f"Generating sample for {model_id} with voice {voice_id} using {provider}"
             )
 
-            audio_data, sample_rate, duration = await resource_pool.generate_with_priority(
+            (
+                audio_data,
+                sample_rate,
+                duration,
+            ) = await resource_pool.generate_with_priority(
                 text=TTS_REFERENCE_TEXT,
                 voice_id=voice_id,
                 provider=provider,

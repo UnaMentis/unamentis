@@ -18,7 +18,7 @@ from unittest.mock import patch, MagicMock  # ALLOWED: UnleashClient is external
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from aiohttp import web
-from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop, make_mocked_request
+from aiohttp.test_utils import make_mocked_request
 
 from feature_flag_keys import FlagKeys, FLAG_DEFAULTS
 from feature_flag_guard import flag_guard, guarded_routes, GuardedRouter
@@ -35,7 +35,8 @@ class TestFlagKeys:
     def test_all_flag_keys_have_defaults(self):
         """Every key in FlagKeys should appear in FLAG_DEFAULTS."""
         flag_attrs = [
-            attr for attr in dir(FlagKeys)
+            attr
+            for attr in dir(FlagKeys)
             if not attr.startswith("_") and isinstance(getattr(FlagKeys, attr), str)
         ]
         for attr in flag_attrs:
@@ -105,8 +106,10 @@ class TestFlagGuard:
     @pytest.fixture
     def mock_handler(self):
         """Create a simple async handler."""
+
         async def handler(request):
             return web.json_response({"ok": True})
+
         return handler
 
     def test_allows_when_flag_enabled(self, mock_handler):
@@ -117,7 +120,9 @@ class TestFlagGuard:
 
         with patch("feature_flag_guard._is_flag_enabled", None):
             with patch("feature_flag_guard._get_is_flag_enabled") as mock_get:
-                mock_fn = MagicMock(return_value=True)  # ALLOWED: external config service
+                mock_fn = MagicMock(
+                    return_value=True
+                )  # ALLOWED: external config service
                 mock_get.return_value = mock_fn
 
                 request = make_mocked_request("GET", "/api/test")
@@ -132,7 +137,9 @@ class TestFlagGuard:
 
         with patch("feature_flag_guard._is_flag_enabled", None):
             with patch("feature_flag_guard._get_is_flag_enabled") as mock_get:
-                mock_fn = MagicMock(return_value=False)  # ALLOWED: external config service
+                mock_fn = MagicMock(
+                    return_value=False
+                )  # ALLOWED: external config service
                 mock_get.return_value = mock_fn
 
                 request = make_mocked_request("GET", "/api/test")
@@ -148,7 +155,9 @@ class TestFlagGuard:
 
         with patch("feature_flag_guard._is_flag_enabled", None):
             with patch("feature_flag_guard._get_is_flag_enabled") as mock_get:
-                mock_fn = MagicMock(return_value=False)  # ALLOWED: external config service
+                mock_fn = MagicMock(
+                    return_value=False
+                )  # ALLOWED: external config service
                 mock_get.return_value = mock_fn
 
                 request = make_mocked_request("GET", "/api/tts-lab/models")
@@ -169,9 +178,28 @@ class TestFlagGuard:
                 # Simulate is_flag_enabled returning the default
                 def check(name, default=False):
                     return default
+
                 mock_get.return_value = check
 
                 request = make_mocked_request("GET", "/api/tts-lab/models")
+                response = asyncio.get_event_loop().run_until_complete(guarded(request))
+                assert response.status == 503
+
+    def test_unknown_flag_defaults_to_disabled(self, mock_handler):
+        """Unknown flags not in FLAG_DEFAULTS should block requests."""
+        import asyncio
+
+        guarded = flag_guard("nonexistent_flag_xyz")(mock_handler)
+
+        with patch("feature_flag_guard._is_flag_enabled", None):
+            with patch("feature_flag_guard._get_is_flag_enabled") as mock_get:
+                # Simulate is_flag_enabled returning the default
+                def check(name, default=False):
+                    return default
+
+                mock_get.return_value = check
+
+                request = make_mocked_request("GET", "/api/test")
                 response = asyncio.get_event_loop().run_until_complete(guarded(request))
                 assert response.status == 503
 
@@ -200,7 +228,6 @@ class TestGuardedRouter:
         router.add_get("/test", handler)
 
         # Route should be registered
-        resource = app.router.named_resources()
         routes = [r for r in app.router.routes() if r.method == "GET"]
         assert len(routes) >= 1
 
@@ -237,6 +264,7 @@ class TestGuardedRouter:
 # are skipped when the server module cannot be imported.
 try:
     from server import is_flag_enabled, handle_get_feature_flags
+
     _server_available = True
 except BaseException:
     _server_available = False
