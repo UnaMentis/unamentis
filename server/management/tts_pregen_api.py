@@ -1405,58 +1405,63 @@ def init_tts_pregen_system(app: web.Application):
 
 def register_tts_pregen_routes(app: web.Application):
     """Register all TTS pre-generation routes on the application."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
     # Initialize the system
     init_tts_pregen_system(app)
 
+    router = guarded_routes(app, FlagKeys.TTS_PREGEN)
+
     # Profile CRUD routes
-    app.router.add_post("/api/tts/profiles", handle_create_profile)
-    app.router.add_get("/api/tts/profiles", handle_list_profiles)
-    app.router.add_get("/api/tts/profiles/{profile_id}", handle_get_profile)
-    app.router.add_put("/api/tts/profiles/{profile_id}", handle_update_profile)
-    app.router.add_delete("/api/tts/profiles/{profile_id}", handle_delete_profile)
+    router.add_post("/api/tts/profiles", handle_create_profile)
+    router.add_get("/api/tts/profiles", handle_list_profiles)
+    router.add_get("/api/tts/profiles/{profile_id}", handle_get_profile)
+    router.add_put("/api/tts/profiles/{profile_id}", handle_update_profile)
+    router.add_delete("/api/tts/profiles/{profile_id}", handle_delete_profile)
 
     # Profile actions
-    app.router.add_post("/api/tts/profiles/{profile_id}/set-default", handle_set_default_profile)
-    app.router.add_post("/api/tts/profiles/{profile_id}/preview", handle_preview_profile)
-    app.router.add_get("/api/tts/profiles/{profile_id}/audio", handle_get_profile_audio)
-    app.router.add_post("/api/tts/profiles/{profile_id}/duplicate", handle_duplicate_profile)
-    app.router.add_get("/api/tts/profiles/{profile_id}/export", handle_export_profile)
+    router.add_post("/api/tts/profiles/{profile_id}/set-default", handle_set_default_profile)
+    router.add_post("/api/tts/profiles/{profile_id}/preview", handle_preview_profile)
+    router.add_get("/api/tts/profiles/{profile_id}/audio", handle_get_profile_audio)
+    router.add_post("/api/tts/profiles/{profile_id}/duplicate", handle_duplicate_profile)
+    router.add_get("/api/tts/profiles/{profile_id}/export", handle_export_profile)
 
     # Profile import
-    app.router.add_post("/api/tts/profiles/import", handle_import_profile)
+    router.add_post("/api/tts/profiles/import", handle_import_profile)
 
     # Profile from variant
-    app.router.add_post("/api/tts/profiles/from-variant/{variant_id}", handle_create_profile_from_variant)
+    router.add_post("/api/tts/profiles/from-variant/{variant_id}", handle_create_profile_from_variant)
 
     # Module profile associations
-    app.router.add_get("/api/tts/modules/{module_id}/profiles", handle_get_module_profiles)
-    app.router.add_post("/api/tts/modules/{module_id}/profiles", handle_assign_module_profile)
-    app.router.add_delete("/api/tts/modules/{module_id}/profiles/{profile_id}", handle_remove_module_profile)
-    app.router.add_get("/api/tts/modules/{module_id}/best-profile", handle_get_best_module_profile)
+    router.add_get("/api/tts/modules/{module_id}/profiles", handle_get_module_profiles)
+    router.add_post("/api/tts/modules/{module_id}/profiles", handle_assign_module_profile)
+    router.add_delete("/api/tts/modules/{module_id}/profiles/{profile_id}", handle_remove_module_profile)
+    router.add_get("/api/tts/modules/{module_id}/best-profile", handle_get_best_module_profile)
 
     # Comparison session routes
-    app.router.add_post("/api/tts/pregen/sessions", handle_create_session)
-    app.router.add_get("/api/tts/pregen/sessions", handle_list_sessions)
-    app.router.add_get("/api/tts/pregen/sessions/{session_id}", handle_get_session)
-    app.router.add_delete("/api/tts/pregen/sessions/{session_id}", handle_delete_session)
-    app.router.add_post("/api/tts/pregen/sessions/{session_id}/generate", handle_generate_session_variants)
-    app.router.add_get("/api/tts/pregen/sessions/{session_id}/summary", handle_get_session_summary)
-    app.router.add_post("/api/tts/pregen/variants/{variant_id}/rate", handle_rate_variant)
-    app.router.add_get("/api/tts/pregen/variants/{variant_id}/audio", handle_get_variant_audio)
+    router.add_post("/api/tts/pregen/sessions", handle_create_session)
+    router.add_get("/api/tts/pregen/sessions", handle_list_sessions)
+    router.add_get("/api/tts/pregen/sessions/{session_id}", handle_get_session)
+    router.add_delete("/api/tts/pregen/sessions/{session_id}", handle_delete_session)
+    router.add_post("/api/tts/pregen/sessions/{session_id}/generate", handle_generate_session_variants)
+    router.add_get("/api/tts/pregen/sessions/{session_id}/summary", handle_get_session_summary)
+    router.add_post("/api/tts/pregen/variants/{variant_id}/rate", handle_rate_variant)
+    router.add_get("/api/tts/pregen/variants/{variant_id}/audio", handle_get_variant_audio)
 
     # Batch job routes
-    app.router.add_post("/api/tts/pregen/jobs", handle_create_job)
-    app.router.add_get("/api/tts/pregen/jobs", handle_list_jobs)
-    app.router.add_get("/api/tts/pregen/jobs/{job_id}", handle_get_job)
-    app.router.add_get("/api/tts/pregen/jobs/{job_id}/progress", handle_get_job_progress)
-    app.router.add_delete("/api/tts/pregen/jobs/{job_id}", handle_delete_job)
-    app.router.add_post("/api/tts/pregen/jobs/{job_id}/start", handle_start_job)
-    app.router.add_post("/api/tts/pregen/jobs/{job_id}/pause", handle_pause_job)
-    app.router.add_post("/api/tts/pregen/jobs/{job_id}/resume", handle_resume_job)
-    app.router.add_post("/api/tts/pregen/jobs/{job_id}/retry-failed", handle_retry_failed_items)
-    app.router.add_get("/api/tts/pregen/jobs/{job_id}/items", handle_get_job_items)
+    router.add_post("/api/tts/pregen/jobs", handle_create_job)
+    router.add_get("/api/tts/pregen/jobs", handle_list_jobs)
+    router.add_get("/api/tts/pregen/jobs/{job_id}", handle_get_job)
+    router.add_get("/api/tts/pregen/jobs/{job_id}/progress", handle_get_job_progress)
+    router.add_delete("/api/tts/pregen/jobs/{job_id}", handle_delete_job)
+    router.add_post("/api/tts/pregen/jobs/{job_id}/start", handle_start_job)
+    router.add_post("/api/tts/pregen/jobs/{job_id}/pause", handle_pause_job)
+    router.add_post("/api/tts/pregen/jobs/{job_id}/resume", handle_resume_job)
+    router.add_post("/api/tts/pregen/jobs/{job_id}/retry-failed", handle_retry_failed_items)
+    router.add_get("/api/tts/pregen/jobs/{job_id}/items", handle_get_job_items)
 
     # Content extraction (preview)
-    app.router.add_post("/api/tts/pregen/extract", handle_extract_content)
+    router.add_post("/api/tts/pregen/extract", handle_extract_content)
 
     logger.info("TTS pre-generation API routes registered")

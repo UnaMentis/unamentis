@@ -396,18 +396,22 @@ async def handle_preview(request: web.Request) -> web.Response:
 
 def register_reprocess_routes(app: web.Application):
     """Register reprocessing API routes."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
+    router = guarded_routes(app, FlagKeys.REPROCESSING_ENABLED)
 
     # Analysis routes
-    app.router.add_post("/api/reprocess/analyze/{curriculum_id}", handle_analyze_curriculum)
-    app.router.add_get("/api/reprocess/analysis/{curriculum_id}", handle_get_analysis)
+    router.add_post("/api/reprocess/analyze/{curriculum_id}", handle_analyze_curriculum)
+    router.add_get("/api/reprocess/analysis/{curriculum_id}", handle_get_analysis)
 
     # Job routes
-    app.router.add_post("/api/reprocess/jobs", handle_start_job)
-    app.router.add_get("/api/reprocess/jobs", handle_list_jobs)
-    app.router.add_get("/api/reprocess/jobs/{job_id}", handle_get_job)
-    app.router.add_delete("/api/reprocess/jobs/{job_id}", handle_cancel_job)
+    router.add_post("/api/reprocess/jobs", handle_start_job)
+    router.add_get("/api/reprocess/jobs", handle_list_jobs)
+    router.add_get("/api/reprocess/jobs/{job_id}", handle_get_job)
+    router.add_delete("/api/reprocess/jobs/{job_id}", handle_cancel_job)
 
     # Preview route
-    app.router.add_post("/api/reprocess/preview/{curriculum_id}", handle_preview)
+    router.add_post("/api/reprocess/preview/{curriculum_id}", handle_preview)
 
     logger.info("Registered reprocessing API routes")

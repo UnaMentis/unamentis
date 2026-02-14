@@ -36,43 +36,49 @@ def get_session_manager() -> SessionManager:
 
 def setup_fov_context_routes(app: web.Application) -> None:
     """Register FOV context API routes."""
-    app.router.add_post("/api/sessions", handle_create_session)
-    app.router.add_get("/api/sessions", handle_list_sessions)
-    app.router.add_get("/api/sessions/{session_id}", handle_get_session)
-    app.router.add_post("/api/sessions/{session_id}/start", handle_start_session)
-    app.router.add_post("/api/sessions/{session_id}/pause", handle_pause_session)
-    app.router.add_post("/api/sessions/{session_id}/resume", handle_resume_session)
-    app.router.add_post("/api/sessions/{session_id}/end", handle_end_session)
-    app.router.add_delete("/api/sessions/{session_id}", handle_delete_session)
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
+    router = guarded_routes(app, FlagKeys.FOV_CONTEXT)
+
+    router.add_post("/api/sessions", handle_create_session)
+    router.add_get("/api/sessions", handle_list_sessions)
+    router.add_get("/api/sessions/{session_id}", handle_get_session)
+    router.add_post("/api/sessions/{session_id}/start", handle_start_session)
+    router.add_post("/api/sessions/{session_id}/pause", handle_pause_session)
+    router.add_post("/api/sessions/{session_id}/resume", handle_resume_session)
+    router.add_post("/api/sessions/{session_id}/end", handle_end_session)
+    router.add_delete("/api/sessions/{session_id}", handle_delete_session)
 
     # Context updates
-    app.router.add_put("/api/sessions/{session_id}/topic", handle_set_topic)
-    app.router.add_put("/api/sessions/{session_id}/position", handle_set_position)
-    app.router.add_put("/api/sessions/{session_id}/segment", handle_set_segment)
+    router.add_put("/api/sessions/{session_id}/topic", handle_set_topic)
+    router.add_put("/api/sessions/{session_id}/position", handle_set_position)
+    router.add_put("/api/sessions/{session_id}/segment", handle_set_segment)
 
     # Conversation
-    app.router.add_post("/api/sessions/{session_id}/turns", handle_add_turn)
-    app.router.add_post("/api/sessions/{session_id}/barge-in", handle_barge_in)
+    router.add_post("/api/sessions/{session_id}/turns", handle_add_turn)
+    router.add_post("/api/sessions/{session_id}/barge-in", handle_barge_in)
 
     # Context building
-    app.router.add_get("/api/sessions/{session_id}/context", handle_get_context)
-    app.router.add_post("/api/sessions/{session_id}/context/build", handle_build_context)
-    app.router.add_get("/api/sessions/{session_id}/messages", handle_get_messages)
+    router.add_get("/api/sessions/{session_id}/context", handle_get_context)
+    router.add_post("/api/sessions/{session_id}/context/build", handle_build_context)
+    router.add_get("/api/sessions/{session_id}/messages", handle_get_messages)
 
     # Confidence analysis
-    app.router.add_post(
+    router.add_post(
         "/api/sessions/{session_id}/analyze-response",
         handle_analyze_response
     )
 
     # Learner signals
-    app.router.add_post("/api/sessions/{session_id}/signals", handle_record_signal)
+    router.add_post("/api/sessions/{session_id}/signals", handle_record_signal)
 
     # Events
-    app.router.add_get("/api/sessions/{session_id}/events", handle_get_events)
+    router.add_get("/api/sessions/{session_id}/events", handle_get_events)
 
     # Debug and observability
-    app.router.add_get("/api/sessions/{session_id}/debug", handle_debug_session)
+    router.add_get("/api/sessions/{session_id}/debug", handle_debug_session)
+    # Health check is always available, not behind the flag
     app.router.add_get("/api/fov/health", handle_fov_health)
 
     logger.info("FOV context API routes registered")

@@ -611,27 +611,31 @@ async def handle_import_course(request: web.Request) -> web.Response:
 
 def register_plugin_routes(app: web.Application):
     """Register all plugin-related routes on the application."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
 
     # Initialize plugin system
     init_plugin_system()
 
+    router = guarded_routes(app, FlagKeys.PLUGIN_SYSTEM)
+
     # Plugin listing
-    app.router.add_get("/api/plugins", handle_get_plugins)
-    app.router.add_get("/api/plugins/first-run", handle_get_first_run_status)
-    app.router.add_post("/api/plugins/initialize", handle_initialize_plugins)
+    router.add_get("/api/plugins", handle_get_plugins)
+    router.add_get("/api/plugins/first-run", handle_get_first_run_status)
+    router.add_post("/api/plugins/initialize", handle_initialize_plugins)
 
     # Individual plugin operations
-    app.router.add_get("/api/plugins/{plugin_id}", handle_get_plugin)
-    app.router.add_post("/api/plugins/{plugin_id}/enable", handle_enable_plugin)
-    app.router.add_post("/api/plugins/{plugin_id}/disable", handle_disable_plugin)
-    app.router.add_post("/api/plugins/{plugin_id}/configure", handle_configure_plugin)
-    app.router.add_get("/api/plugins/{plugin_id}/config-schema", handle_get_plugin_config_schema)
-    app.router.add_post("/api/plugins/{plugin_id}/test", handle_test_plugin)
+    router.add_get("/api/plugins/{plugin_id}", handle_get_plugin)
+    router.add_post("/api/plugins/{plugin_id}/enable", handle_enable_plugin)
+    router.add_post("/api/plugins/{plugin_id}/disable", handle_disable_plugin)
+    router.add_post("/api/plugins/{plugin_id}/configure", handle_configure_plugin)
+    router.add_get("/api/plugins/{plugin_id}/config-schema", handle_get_plugin_config_schema)
+    router.add_post("/api/plugins/{plugin_id}/test", handle_test_plugin)
 
     # Source Browser API (Generic Plugin UI)
-    app.router.add_get("/api/sources", handle_get_enabled_sources)
-    app.router.add_get("/api/sources/{source_id}/courses", handle_get_source_courses)
-    app.router.add_get("/api/sources/{source_id}/courses/{course_id}", handle_get_course_detail)
-    app.router.add_post("/api/sources/{source_id}/courses/{course_id}/import", handle_import_course)
+    router.add_get("/api/sources", handle_get_enabled_sources)
+    router.add_get("/api/sources/{source_id}/courses", handle_get_source_courses)
+    router.add_get("/api/sources/{source_id}/courses/{course_id}", handle_get_course_detail)
+    router.add_post("/api/sources/{source_id}/courses/{course_id}/import", handle_import_course)
 
     logger.info("Plugin API routes registered")

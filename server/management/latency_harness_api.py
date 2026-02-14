@@ -1797,51 +1797,55 @@ async def handle_get_client_metrics(request: web.Request) -> web.Response:
 
 def register_latency_harness_routes(app: web.Application):
     """Register all latency harness routes."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
+    router = guarded_routes(app, FlagKeys.LATENCY_TESTING)
 
     # Test Suites
-    app.router.add_get("/api/latency-tests/suites", handle_list_suites)
-    app.router.add_get("/api/latency-tests/suites/{suite_id}", handle_get_suite)
-    app.router.add_post("/api/latency-tests/suites", handle_upload_suite)
-    app.router.add_delete("/api/latency-tests/suites/{suite_id}", handle_delete_suite)
+    router.add_get("/api/latency-tests/suites", handle_list_suites)
+    router.add_get("/api/latency-tests/suites/{suite_id}", handle_get_suite)
+    router.add_post("/api/latency-tests/suites", handle_upload_suite)
+    router.add_delete("/api/latency-tests/suites/{suite_id}", handle_delete_suite)
 
     # Test Runs
-    app.router.add_post("/api/latency-tests/runs", handle_start_run)
-    app.router.add_get("/api/latency-tests/runs", handle_list_runs)
-    app.router.add_get("/api/latency-tests/runs/{run_id}", handle_get_run)
-    app.router.add_get("/api/latency-tests/runs/{run_id}/results", handle_get_run_results)
-    app.router.add_delete("/api/latency-tests/runs/{run_id}", handle_cancel_run)
+    router.add_post("/api/latency-tests/runs", handle_start_run)
+    router.add_get("/api/latency-tests/runs", handle_list_runs)
+    router.add_get("/api/latency-tests/runs/{run_id}", handle_get_run)
+    router.add_get("/api/latency-tests/runs/{run_id}/results", handle_get_run_results)
+    router.add_delete("/api/latency-tests/runs/{run_id}", handle_cancel_run)
 
     # Analysis
-    app.router.add_get("/api/latency-tests/runs/{run_id}/analysis", handle_get_analysis)
-    app.router.add_post("/api/latency-tests/compare", handle_compare_runs)
-    app.router.add_get("/api/latency-tests/runs/{run_id}/export", handle_export_results)
+    router.add_get("/api/latency-tests/runs/{run_id}/analysis", handle_get_analysis)
+    router.add_post("/api/latency-tests/compare", handle_compare_runs)
+    router.add_get("/api/latency-tests/runs/{run_id}/export", handle_export_results)
 
     # Test Targets (available simulators and devices)
-    app.router.add_get("/api/latency-tests/targets", handle_list_test_targets)
+    router.add_get("/api/latency-tests/targets", handle_list_test_targets)
 
     # Clients (connected/registered clients)
-    app.router.add_get("/api/latency-tests/clients", handle_list_test_clients)
-    app.router.add_post("/api/latency-tests/heartbeat", handle_client_heartbeat_latency)
-    app.router.add_post("/api/latency-tests/results", handle_submit_result)
+    router.add_get("/api/latency-tests/clients", handle_list_test_clients)
+    router.add_post("/api/latency-tests/heartbeat", handle_client_heartbeat_latency)
+    router.add_post("/api/latency-tests/results", handle_submit_result)
 
     # Baselines
-    app.router.add_get("/api/latency-tests/baselines", handle_list_baselines)
-    app.router.add_post("/api/latency-tests/baselines", handle_create_baseline)
-    app.router.add_get("/api/latency-tests/baselines/{baseline_id}/check", handle_check_baseline)
+    router.add_get("/api/latency-tests/baselines", handle_list_baselines)
+    router.add_post("/api/latency-tests/baselines", handle_create_baseline)
+    router.add_get("/api/latency-tests/baselines/{baseline_id}/check", handle_check_baseline)
 
     # WebSocket for real-time updates
-    app.router.add_get("/api/latency-tests/ws", handle_latency_websocket)
+    router.add_get("/api/latency-tests/ws", handle_latency_websocket)
 
     # Mass Test Orchestrator
-    app.router.add_post("/api/test-orchestrator/start", handle_start_mass_test)
-    app.router.add_get("/api/test-orchestrator/status/{run_id}", handle_get_mass_test_status)
-    app.router.add_post("/api/test-orchestrator/stop/{run_id}", handle_stop_mass_test)
-    app.router.add_get("/api/test-orchestrator/runs", handle_list_mass_tests)
+    router.add_post("/api/test-orchestrator/start", handle_start_mass_test)
+    router.add_get("/api/test-orchestrator/status/{run_id}", handle_get_mass_test_status)
+    router.add_post("/api/test-orchestrator/stop/{run_id}", handle_stop_mass_test)
+    router.add_get("/api/test-orchestrator/runs", handle_list_mass_tests)
 
     # Unified Metrics Ingestion (iOS/Web clients)
-    app.router.add_post("/api/metrics/ingest", handle_ingest_metrics)
-    app.router.add_get("/api/metrics/sessions", handle_list_metric_sessions)
-    app.router.add_get("/api/metrics/summary", handle_get_metrics_summary)
-    app.router.add_get("/api/metrics/clients/{client_id}", handle_get_client_metrics)
+    router.add_post("/api/metrics/ingest", handle_ingest_metrics)
+    router.add_get("/api/metrics/sessions", handle_list_metric_sessions)
+    router.add_get("/api/metrics/summary", handle_get_metrics_summary)
+    router.add_get("/api/metrics/clients/{client_id}", handle_get_client_metrics)
 
     logger.info("Latency harness API routes registered")

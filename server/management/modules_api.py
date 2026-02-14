@@ -623,15 +623,20 @@ async def handle_update_module_settings(request: web.Request) -> web.Response:
 
 def register_modules_routes(app: web.Application):
     """Register all module management routes."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
+    router = guarded_routes(app, FlagKeys.SPECIALIZED_MODULES)
+
     # Public endpoints (for clients)
-    app.router.add_get("/api/modules", handle_list_modules)
-    app.router.add_get("/api/modules/{module_id}", handle_get_module)
-    app.router.add_post("/api/modules/{module_id}/download", handle_download_module)
+    router.add_get("/api/modules", handle_list_modules)
+    router.add_get("/api/modules/{module_id}", handle_get_module)
+    router.add_post("/api/modules/{module_id}/download", handle_download_module)
 
     # Admin endpoints (for managing modules)
-    app.router.add_post("/api/modules", handle_create_module)
-    app.router.add_patch("/api/modules/{module_id}/settings", handle_update_module_settings)
-    app.router.add_delete("/api/modules/{module_id}", handle_delete_module)
+    router.add_post("/api/modules", handle_create_module)
+    router.add_patch("/api/modules/{module_id}/settings", handle_update_module_settings)
+    router.add_delete("/api/modules/{module_id}", handle_delete_module)
 
     # Ensure modules directory exists
     ensure_modules_directory()

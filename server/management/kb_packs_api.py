@@ -1746,36 +1746,41 @@ async def handle_database_status(request: web.Request) -> web.Response:
 
 def register_kb_packs_routes(app: web.Application):
     """Register all KB packs management routes."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
+    router = guarded_routes(app, FlagKeys.KB_PACKS)
+
     # Database status and sync
-    app.router.add_get("/api/kb/database-status", handle_database_status)
-    app.router.add_post("/api/kb/sync-to-database", handle_sync_to_database)
-    app.router.add_get("/api/kb/domains", handle_list_domains)
+    router.add_get("/api/kb/database-status", handle_database_status)
+    router.add_post("/api/kb/sync-to-database", handle_sync_to_database)
+    router.add_get("/api/kb/domains", handle_list_domains)
 
     # Pack management
-    app.router.add_get("/api/kb/packs", handle_list_packs)
-    app.router.add_post("/api/kb/packs", handle_create_pack)
-    app.router.add_get("/api/kb/packs/{pack_id}", handle_get_pack)
-    app.router.add_patch("/api/kb/packs/{pack_id}", handle_update_pack)
-    app.router.add_delete("/api/kb/packs/{pack_id}", handle_delete_pack)
+    router.add_get("/api/kb/packs", handle_list_packs)
+    router.add_post("/api/kb/packs", handle_create_pack)
+    router.add_get("/api/kb/packs/{pack_id}", handle_get_pack)
+    router.add_patch("/api/kb/packs/{pack_id}", handle_update_pack)
+    router.add_delete("/api/kb/packs/{pack_id}", handle_delete_pack)
 
     # Pack question management
-    app.router.add_post("/api/kb/packs/{pack_id}/questions", handle_add_questions_to_pack)
-    app.router.add_delete("/api/kb/packs/{pack_id}/questions/{question_id}", handle_remove_question_from_pack)
+    router.add_post("/api/kb/packs/{pack_id}/questions", handle_add_questions_to_pack)
+    router.add_delete("/api/kb/packs/{pack_id}/questions/{question_id}", handle_remove_question_from_pack)
 
     # Bundle operations
-    app.router.add_post("/api/kb/packs/bundle", handle_create_bundle)
-    app.router.add_post("/api/kb/packs/preview-dedup", handle_preview_deduplication)
+    router.add_post("/api/kb/packs/bundle", handle_create_bundle)
+    router.add_post("/api/kb/packs/preview-dedup", handle_preview_deduplication)
 
     # Question management
-    app.router.add_get("/api/kb/questions", handle_list_questions)
-    app.router.add_post("/api/kb/questions", handle_create_question)
-    app.router.add_get("/api/kb/questions/{question_id}", handle_get_question)
-    app.router.add_patch("/api/kb/questions/{question_id}", handle_update_question)
-    app.router.add_delete("/api/kb/questions/{question_id}", handle_delete_question)
-    app.router.add_post("/api/kb/questions/bulk-update", handle_bulk_update_questions)
+    router.add_get("/api/kb/questions", handle_list_questions)
+    router.add_post("/api/kb/questions", handle_create_question)
+    router.add_get("/api/kb/questions/{question_id}", handle_get_question)
+    router.add_patch("/api/kb/questions/{question_id}", handle_update_question)
+    router.add_delete("/api/kb/questions/{question_id}", handle_delete_question)
+    router.add_post("/api/kb/questions/bulk-update", handle_bulk_update_questions)
 
     # Import
-    app.router.add_post("/api/kb/import-from-module", handle_import_from_module)
+    router.add_post("/api/kb/import-from-module", handle_import_from_module)
 
     # Ensure directory exists
     ensure_packs_directory()

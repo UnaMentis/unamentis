@@ -640,28 +640,33 @@ async def handle_get_import_status(request: web.Request) -> web.Response:
 
 def register_import_routes(app: web.Application):
     """Register all import-related routes on the application."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
     global _app
     _app = app  # Store app reference for database access in callbacks
 
     # Initialize import system
     init_import_system()
 
+    router = guarded_routes(app, FlagKeys.IMPORT_ENABLED)
+
     # Sources
-    app.router.add_get("/api/import/sources", handle_get_sources)
-    app.router.add_get("/api/import/sources/{source_id}", handle_get_source)
+    router.add_get("/api/import/sources", handle_get_sources)
+    router.add_get("/api/import/sources/{source_id}", handle_get_source)
 
     # Course catalog
-    app.router.add_get("/api/import/sources/{source_id}/courses", handle_get_courses)
-    app.router.add_get("/api/import/sources/{source_id}/search", handle_search_courses)
-    app.router.add_get("/api/import/sources/{source_id}/courses/{course_id}", handle_get_course_detail)
+    router.add_get("/api/import/sources/{source_id}/courses", handle_get_courses)
+    router.add_get("/api/import/sources/{source_id}/search", handle_search_courses)
+    router.add_get("/api/import/sources/{source_id}/courses/{course_id}", handle_get_course_detail)
 
     # Import jobs
-    app.router.add_post("/api/import/jobs", handle_start_import)
-    app.router.add_get("/api/import/jobs", handle_list_imports)
-    app.router.add_get("/api/import/jobs/{job_id}", handle_get_import_progress)
-    app.router.add_delete("/api/import/jobs/{job_id}", handle_cancel_import)
+    router.add_post("/api/import/jobs", handle_start_import)
+    router.add_get("/api/import/jobs", handle_list_imports)
+    router.add_get("/api/import/jobs/{job_id}", handle_get_import_progress)
+    router.add_delete("/api/import/jobs/{job_id}", handle_cancel_import)
 
     # Import status (tracking which courses have been imported)
-    app.router.add_get("/api/import/status", handle_get_import_status)
+    router.add_get("/api/import/status", handle_get_import_status)
 
     logger.info("Import API routes registered")

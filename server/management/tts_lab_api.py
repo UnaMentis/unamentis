@@ -802,16 +802,20 @@ async def handle_get_sample_status(request: web.Request) -> web.Response:
 
 def register_tts_lab_routes(app: web.Application) -> None:
     """Register TTS Lab API routes."""
-    app.router.add_get("/api/tts-lab/models", handle_list_models)
-    app.router.add_post("/api/tts-lab/generate", handle_generate_test_audio)
-    app.router.add_post("/api/tts-lab/config", handle_save_config)
-    app.router.add_get("/api/tts-lab/configs", handle_list_configs)
-    app.router.add_get("/api/tts-lab/config/{config_id}", handle_get_config)
-    app.router.add_delete("/api/tts-lab/config/{config_id}", handle_delete_config)
-    app.router.add_post("/api/tts-lab/validate", handle_validate_config)
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
+    router = guarded_routes(app, FlagKeys.TTS_LAB)
+    router.add_get("/api/tts-lab/models", handle_list_models)
+    router.add_post("/api/tts-lab/generate", handle_generate_test_audio)
+    router.add_post("/api/tts-lab/config", handle_save_config)
+    router.add_get("/api/tts-lab/configs", handle_list_configs)
+    router.add_get("/api/tts-lab/config/{config_id}", handle_get_config)
+    router.add_delete("/api/tts-lab/config/{config_id}", handle_delete_config)
+    router.add_post("/api/tts-lab/validate", handle_validate_config)
 
     # Sample generation endpoints
-    app.router.add_get("/api/tts-lab/samples", handle_get_sample_status)
-    app.router.add_post("/api/tts-lab/samples/generate", handle_generate_samples)
+    router.add_get("/api/tts-lab/samples", handle_get_sample_status)
+    router.add_post("/api/tts-lab/samples/generate", handle_generate_samples)
 
     logger.info("Registered TTS Lab API routes")

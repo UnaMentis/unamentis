@@ -605,13 +605,17 @@ async def handle_get_deployment_cache(request: web.Request) -> web.Response:
 
 def register_deployment_routes(app: web.Application) -> None:
     """Register deployment API routes."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
     logger.info("Registering deployment API routes...")
 
-    app.router.add_post("/api/deployments", handle_create_deployment)
-    app.router.add_get("/api/deployments", handle_list_deployments)
-    app.router.add_get("/api/deployments/{id}", handle_get_deployment)
-    app.router.add_post("/api/deployments/{id}/start", handle_start_deployment)
-    app.router.add_delete("/api/deployments/{id}", handle_cancel_deployment)
-    app.router.add_get("/api/deployments/{id}/cache", handle_get_deployment_cache)
+    router = guarded_routes(app, FlagKeys.DEPLOYMENT)
+    router.add_post("/api/deployments", handle_create_deployment)
+    router.add_get("/api/deployments", handle_list_deployments)
+    router.add_get("/api/deployments/{id}", handle_get_deployment)
+    router.add_post("/api/deployments/{id}/start", handle_start_deployment)
+    router.add_delete("/api/deployments/{id}", handle_cancel_deployment)
+    router.add_get("/api/deployments/{id}/cache", handle_get_deployment_cache)
 
     logger.info("Deployment API routes registered")

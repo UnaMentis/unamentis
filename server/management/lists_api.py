@@ -369,21 +369,26 @@ async def handle_get_list_memberships(request: web.Request) -> web.Response:
 
 def register_lists_routes(app: web.Application):
     """Register all list-related routes on the application."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
     global _app
     _app = app
 
+    router = guarded_routes(app, FlagKeys.LISTS)
+
     # Lists CRUD
-    app.router.add_get("/api/lists", handle_get_lists)
-    app.router.add_post("/api/lists", handle_create_list)
-    app.router.add_get("/api/lists/{id}", handle_get_list)
-    app.router.add_put("/api/lists/{id}", handle_update_list)
-    app.router.add_delete("/api/lists/{id}", handle_delete_list)
+    router.add_get("/api/lists", handle_get_lists)
+    router.add_post("/api/lists", handle_create_list)
+    router.add_get("/api/lists/{id}", handle_get_list)
+    router.add_put("/api/lists/{id}", handle_update_list)
+    router.add_delete("/api/lists/{id}", handle_delete_list)
 
     # List items
-    app.router.add_post("/api/lists/{id}/items", handle_add_items_to_list)
-    app.router.add_delete("/api/lists/{id}/items/{item_id}", handle_remove_item_from_list)
+    router.add_post("/api/lists/{id}/items", handle_add_items_to_list)
+    router.add_delete("/api/lists/{id}/items/{item_id}", handle_remove_item_from_list)
 
     # Memberships query
-    app.router.add_get("/api/lists/memberships", handle_get_list_memberships)
+    router.add_get("/api/lists/memberships", handle_get_list_memberships)
 
     logger.info("Lists API routes registered")

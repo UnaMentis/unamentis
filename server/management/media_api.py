@@ -499,22 +499,26 @@ async def handle_get_map_styles(request: web.Request) -> web.Response:
 
 def register_media_routes(app: web.Application):
     """Register all media generation routes on the application."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
 
     logger.info("Registering media generation API routes...")
 
+    router = guarded_routes(app, FlagKeys.MEDIA_GENERATION_ENABLED)
+
     # Capabilities
-    app.router.add_get("/api/media/capabilities", handle_get_capabilities)
+    router.add_get("/api/media/capabilities", handle_get_capabilities)
 
     # Diagrams
-    app.router.add_post("/api/media/diagrams/validate", handle_validate_diagram)
-    app.router.add_post("/api/media/diagrams/render", handle_render_diagram)
+    router.add_post("/api/media/diagrams/validate", handle_validate_diagram)
+    router.add_post("/api/media/diagrams/render", handle_render_diagram)
 
     # Formulas
-    app.router.add_post("/api/media/formulas/validate", handle_validate_formula)
-    app.router.add_post("/api/media/formulas/render", handle_render_formula)
+    router.add_post("/api/media/formulas/validate", handle_validate_formula)
+    router.add_post("/api/media/formulas/render", handle_render_formula)
 
     # Maps
-    app.router.add_post("/api/media/maps/render", handle_render_map)
-    app.router.add_get("/api/media/maps/styles", handle_get_map_styles)
+    router.add_post("/api/media/maps/render", handle_render_map)
+    router.add_get("/api/media/maps/styles", handle_get_map_styles)
 
     logger.info("Media API routes registered")

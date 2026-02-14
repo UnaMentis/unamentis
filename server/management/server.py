@@ -162,6 +162,8 @@ try:
 except ImportError:
     logger.warning("UnleashClient not installed. Install with: pip install UnleashClient")
 
+from feature_flag_keys import FLAG_DEFAULTS
+
 
 def validate_path_in_directory(file_path: Path, base_directory: Path) -> Path:
     """Validate that a file path is within the expected directory.
@@ -334,22 +336,45 @@ def safe_error_response(error: Exception, context: str = "operation") -> web.Res
     )
 
 
-def is_flag_enabled(flag_name: str, default: bool = False) -> bool:
+def is_flag_enabled(flag_name: str, default: bool | None = None) -> bool:
     """Check if a feature flag is enabled.
+
+    When Unleash is unavailable, falls back to the default from
+    FLAG_DEFAULTS (if the flag is registered there) or the explicit
+    ``default`` parameter.
 
     Args:
         flag_name: Name of the feature flag (e.g., 'ops_maintenance_mode')
-        default: Default value if flag system is unavailable
+        default: Explicit fallback. When None, FLAG_DEFAULTS is consulted.
 
     Returns:
         True if flag is enabled, False otherwise
     """
+    if default is None:
+        default = FLAG_DEFAULTS.get(flag_name, False)
     if feature_flags is None:
         return default
     try:
         return feature_flags.is_enabled(flag_name)
     except Exception:
         return default
+
+
+async def handle_get_feature_flags(request: web.Request) -> web.Response:
+    """GET /api/feature-flags
+
+    Return the current evaluated state of all registered feature flags.
+    Clients can use this to adapt their behaviour without needing their
+    own Unleash SDK connection.
+    """
+    flags = {
+        name: is_flag_enabled(name)
+        for name in FLAG_DEFAULTS
+    }
+    return web.json_response({
+        "flags": flags,
+        "source": "unleash" if feature_flags is not None else "defaults",
+    })
 
 
 @dataclass
@@ -4600,6 +4625,9 @@ def create_app() -> web.Application:
     # API Routes
     app.router.add_get("/health", handle_health)
     app.router.add_get("/api/stats", handle_get_stats)
+
+    # Feature Flags
+    app.router.add_get("/api/feature-flags", handle_get_feature_flags)
 
     # Logs
     app.router.add_post("/api/logs", handle_receive_log)

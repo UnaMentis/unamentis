@@ -1108,32 +1108,36 @@ async def handle_kb_feedback_audio(request: web.Request) -> web.Response:
 
 def register_tts_routes(app: web.Application):
     """Register all TTS API routes on the application."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
 
     logger.info("Registering TTS API routes...")
 
+    router = guarded_routes(app, FlagKeys.TTS_GENERATION_ENABLED)
+
     # TTS generation
-    app.router.add_post("/api/tts", handle_tts_request)
+    router.add_post("/api/tts", handle_tts_request)
 
     # Cache management
-    app.router.add_get("/api/tts/cache/stats", handle_get_cache_stats)
-    app.router.add_get("/api/tts/cache", handle_get_cache_entry)
-    app.router.add_put("/api/tts/cache", handle_put_cache_entry)
-    app.router.add_delete("/api/tts/cache", handle_clear_cache)
-    app.router.add_delete("/api/tts/cache/expired", handle_evict_expired)
-    app.router.add_post("/api/tts/cache/evict", handle_evict_lru)
+    router.add_get("/api/tts/cache/stats", handle_get_cache_stats)
+    router.add_get("/api/tts/cache", handle_get_cache_entry)
+    router.add_put("/api/tts/cache", handle_put_cache_entry)
+    router.add_delete("/api/tts/cache", handle_clear_cache)
+    router.add_delete("/api/tts/cache/expired", handle_evict_expired)
+    router.add_post("/api/tts/cache/evict", handle_evict_lru)
 
     # Prefetch
-    app.router.add_post("/api/tts/prefetch/topic", handle_prefetch_topic)
-    app.router.add_get("/api/tts/prefetch/status/{job_id}", handle_prefetch_status)
-    app.router.add_delete("/api/tts/prefetch/{job_id}", handle_cancel_prefetch)
+    router.add_post("/api/tts/prefetch/topic", handle_prefetch_topic)
+    router.add_get("/api/tts/prefetch/status/{job_id}", handle_prefetch_status)
+    router.add_delete("/api/tts/prefetch/{job_id}", handle_cancel_prefetch)
 
     # Knowledge Bowl audio endpoints
-    app.router.add_get("/api/kb/audio/{question_id}/{segment}", handle_kb_audio_get)
-    app.router.add_post("/api/kb/audio/batch", handle_kb_audio_batch)
-    app.router.add_post("/api/kb/prefetch", handle_kb_prefetch)
-    app.router.add_get("/api/kb/prefetch/{job_id}", handle_kb_prefetch_status)
-    app.router.add_get("/api/kb/manifest/{module_id}", handle_kb_manifest)
-    app.router.add_get("/api/kb/coverage/{module_id}", handle_kb_coverage)
-    app.router.add_get("/api/kb/feedback/{feedback_type}", handle_kb_feedback_audio)
+    router.add_get("/api/kb/audio/{question_id}/{segment}", handle_kb_audio_get)
+    router.add_post("/api/kb/audio/batch", handle_kb_audio_batch)
+    router.add_post("/api/kb/prefetch", handle_kb_prefetch)
+    router.add_get("/api/kb/prefetch/{job_id}", handle_kb_prefetch_status)
+    router.add_get("/api/kb/manifest/{module_id}", handle_kb_manifest)
+    router.add_get("/api/kb/coverage/{module_id}", handle_kb_coverage)
+    router.add_get("/api/kb/feedback/{feedback_type}", handle_kb_feedback_audio)
 
     logger.info("TTS API routes registered")
