@@ -35,12 +35,10 @@ GREEN='\033[92m'
 RED='\033[91m'
 YELLOW='\033[93m'
 CYAN='\033[96m'
-BOLD='\033[1m'
 RESET='\033[0m'
 
 info() { echo -e "${CYAN}[TTFA]${RESET} $*"; }
 success() { echo -e "${GREEN}[TTFA]${RESET} $*"; }
-warn() { echo -e "${YELLOW}[TTFA]${RESET} $*"; }
 error() { echo -e "${RED}[TTFA]${RESET} $*"; }
 
 # Parse arguments
@@ -110,13 +108,16 @@ if [[ "$SKIP_BUILD" != "true" ]]; then
     # Find a matching simulator for the destination
     DESTINATION="platform=iOS Simulator,name=$SIMULATOR"
 
+    set +e
     xcodebuild -project "$PROJECT_DIR/UnaMentis.xcodeproj" \
         -scheme UnaMentis \
         -destination "$DESTINATION" \
         -configuration Debug \
         build 2>&1 | tail -5
+    rc=${PIPESTATUS[0]}
+    set -e
 
-    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+    if [[ $rc -ne 0 ]]; then
         error "Build failed!"
         exit 1
     fi
@@ -168,8 +169,10 @@ CLI_ARGS+=("${EXTRA_ARGS[@]}")
 info "Running TTFA tests (suite: $TTFA_SUITE)..."
 cd "$SERVER_DIR"
 
+set +e
 "${CLI_ARGS[@]}"
 EXIT_CODE=$?
+set -e
 
 if [[ $EXIT_CODE -eq 0 ]]; then
     success "TTFA tests passed!"

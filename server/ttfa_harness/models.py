@@ -5,11 +5,12 @@ Dataclass models for test scenarios, events, results, and baselines.
 Follows the latency_harness pattern: dataclass + to_dict/from_dict.
 """
 
+import statistics
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Optional, Dict, List, Any
-import uuid
 
 
 # ============================================================================
@@ -196,6 +197,19 @@ class TTFAEvent:
             d["wall_timestamp"] = self.wall_timestamp.isoformat()
         return d
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TTFAEvent":
+        wall_ts = None
+        if "wall_timestamp" in data:
+            wall_ts = datetime.fromisoformat(data["wall_timestamp"])
+        return cls(
+            event_type=TTFAEventType(data["event_type"]),
+            feature_id=data["feature_id"],
+            elapsed_ms=data["elapsed_ms"],
+            metadata=data.get("metadata", ""),
+            wall_timestamp=wall_ts,
+        )
+
 
 # ============================================================================
 # Results
@@ -318,22 +332,19 @@ class TTFARun:
             )
             return
 
-        ttfa_values = sorted(
-            [r.ttfa_ms for r in valid_results if r.ttfa_ms is not None]
-        )
+        ttfa_values = sorted([r.ttfa_ms for r in valid_results])
         passed = [r for r in valid_results if r.passes_target]
         failed = [r for r in valid_results if not r.passes_target]
 
         # Find worst scenario (by median across repetitions)
         scenario_medians: Dict[str, List[float]] = {}
         for r in valid_results:
-            if r.ttfa_ms is not None:
-                scenario_medians.setdefault(r.scenario_id, []).append(r.ttfa_ms)
+            scenario_medians.setdefault(r.scenario_id, []).append(r.ttfa_ms)
 
         worst_id = ""
         worst_median = 0.0
         for sid, values in scenario_medians.items():
-            median = sorted(values)[len(values) // 2]
+            median = statistics.median(values)
             if median > worst_median:
                 worst_median = median
                 worst_id = sid
@@ -344,7 +355,7 @@ class TTFARun:
             passed_scenarios=len(passed),
             failed_scenarios=len(failed),
             error_scenarios=len(error_results),
-            median_ttfa_ms=ttfa_values[n // 2] if n > 0 else 0.0,
+            median_ttfa_ms=statistics.median(ttfa_values) if n > 0 else 0.0,
             p99_ttfa_ms=ttfa_values[int(n * 0.99)] if n > 0 else 0.0,
             worst_scenario=worst_id,
             worst_ttfa_ms=worst_median,
@@ -459,6 +470,17 @@ class TTFARegression:
             "change_percent": self.change_percent,
             "severity": self.severity.value,
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TTFARegression":
+        return cls(
+            scenario_id=data["scenario_id"],
+            metric=data["metric"],
+            baseline_value=data["baseline_value"],
+            current_value=data["current_value"],
+            change_percent=data["change_percent"],
+            severity=RegressionSeverity(data["severity"]),
+        )
 
 
 # ============================================================================

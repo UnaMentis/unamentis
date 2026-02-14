@@ -1,4 +1,4 @@
-"""Allow running as: python -m ttfa_harness.cli"""
+"""Allow running as: python -m ttfa_harness"""
 
 import sys
 

@@ -76,9 +76,12 @@ class FlagKeys:
 
 
 # Default values when Unleash is unavailable.
-# Blocking kill switches (MAINTENANCE_MODE, BUDGET_CAP_REACHED) default OFF.
-# Enablement flags default ON so existing functionality is preserved when
-# Unleash is down.
+# Two patterns:
+#   - Blocking kill switches (MAINTENANCE_MODE, BUDGET_CAP_REACHED) default OFF
+#     so they only activate when explicitly enabled in Unleash.
+#   - Enablement/service flags (VERBOSE_LOGGING, ANALYTICS_ENABLED, IMPORT_ENABLED,
+#     REPROCESSING_ENABLED, TTS_GENERATION_ENABLED, MEDIA_GENERATION_ENABLED, etc.)
+#     default ON so existing functionality is preserved when Unleash is down.
 FLAG_DEFAULTS: dict[str, bool] = {
     # Ops: blocking kill switches default OFF, enablement flags default ON
     FlagKeys.MAINTENANCE_MODE: False,

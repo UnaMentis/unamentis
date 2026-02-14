@@ -7,6 +7,7 @@ Baselines are stored as JSON files in the baselines/ directory.
 
 import json
 import logging
+import statistics
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -53,7 +54,14 @@ class BaselineManager:
 
     def load_baseline(self, name: str) -> Optional[TTFABaseline]:
         """Load a baseline by name."""
+        # Sanitize name to prevent path traversal
+        if "/" in name or "\\" in name or ".." in name:
+            logger.error("Invalid baseline name (path traversal rejected): %s", name)
+            return None
         path = self.baselines_dir / f"{name}.json"
+        if not path.resolve().is_relative_to(self.baselines_dir.resolve()):
+            logger.error("Baseline path escapes baselines directory: %s", path)
+            return None
         if not path.exists():
             logger.warning("Baseline '%s' not found at %s", name, path)
             return None
@@ -85,7 +93,7 @@ class BaselineManager:
         for scenario_id, values in scenario_results.items():
             sorted_values = sorted(values)
             n = len(sorted_values)
-            median = sorted_values[n // 2] if n > 0 else 0.0
+            median = statistics.median(sorted_values) if n > 0 else 0.0
             p99 = sorted_values[int(n * 0.99)] if n > 0 else 0.0
             scenario_metrics[scenario_id] = ScenarioBaseline(
                 median_ttfa_ms=median,
@@ -138,7 +146,9 @@ class BaselineManager:
         for scenario_id, values in scenario_results.items():
             sorted_values = sorted(values)
             n = len(sorted_values)
-            current_medians[scenario_id] = sorted_values[n // 2] if n > 0 else 0.0
+            current_medians[scenario_id] = (
+                statistics.median(sorted_values) if n > 0 else 0.0
+            )
             current_p99s[scenario_id] = sorted_values[int(n * 0.99)] if n > 0 else 0.0
 
         # Compare against baseline

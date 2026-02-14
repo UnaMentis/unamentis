@@ -105,8 +105,8 @@ public actor TTFAInstrumentation {
     /// Call this at the exact moment the user triggers audio (tap play, start session, etc.)
     public func markActivation(_ feature: TTFAFeature, metadata: String = "") {
         // If a previous measurement is still active, auto-close it
-        if activeFeature != nil {
-            emit(.error, feature: activeFeature!, elapsedMs: 0, metadata: "superseded by \(feature.rawValue)")
+        if let current = activeFeature {
+            emit(.error, feature: current, elapsedMs: 0, metadata: "superseded by \(feature.rawValue)")
         }
 
         activeFeature = feature

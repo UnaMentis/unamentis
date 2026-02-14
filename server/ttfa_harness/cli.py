@@ -113,7 +113,7 @@ async def run_scenario(
                     timeout=1.0,
                 )
                 if not line_bytes:
-                    continue
+                    break  # EOF: log stream process ended
                 line = line_bytes.decode("utf-8", errors="replace").strip()
                 if not line:
                     continue
@@ -176,6 +176,7 @@ async def run_suite(
     sim = Simulator(device_name=device_name)
     run = TTFARun(device=device_name)
     all_events: List[TTFAEvent] = []
+    log_proc: Optional[asyncio.subprocess.Process] = None
 
     try:
         # Boot simulator
@@ -213,10 +214,6 @@ async def run_suite(
             # Brief pause between scenarios
             await asyncio.sleep(2.0)
 
-        # Clean up
-        log_proc.terminate()
-        await sim.terminate_app()
-
     except SimulatorError as e:
         logger.error("Simulator error: %s", e)
         run.results.append(
@@ -228,6 +225,11 @@ async def run_suite(
                 errors=[str(e)],
             )
         )
+    finally:
+        # Always clean up log_proc and app
+        if log_proc is not None and log_proc.returncode is None:
+            log_proc.terminate()
+        await sim.terminate_app()
 
     run.compute_summary()
     return run

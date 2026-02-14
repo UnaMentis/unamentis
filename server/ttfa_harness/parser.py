@@ -22,7 +22,7 @@ logger = logging.getLogger("ttfa_harness.parser")
 TTFA_PATTERN = re.compile(
     r"\[TTFA\]\s*"
     r"(?P<event>[A-Z_]+)\|"
-    r"(?P<feature>[a-z._]+)\|"
+    r"(?P<feature>[a-z0-9._-]+)\|"
     r"(?P<elapsed>[0-9.]+)\|"
     r"(?P<metadata>.*)"
 )
@@ -35,12 +35,13 @@ def parse_log_line(line: str) -> Optional[TTFAEvent]:
     Handles both raw text lines and ndjson-formatted log output.
     """
     message = line
+    ndjson_data = None
 
     # Try to extract eventMessage from ndjson format
     if line.startswith("{"):
         try:
-            data = json.loads(line)
-            message = data.get("eventMessage", "")
+            ndjson_data = json.loads(line)
+            message = ndjson_data.get("eventMessage", "")
         except json.JSONDecodeError:
             return None
 
@@ -55,16 +56,15 @@ def parse_log_line(line: str) -> Optional[TTFAEvent]:
         logger.warning("Unknown TTFA event type: %s", event_str)
         return None
 
-    # Parse wall timestamp from ndjson if available
+    # Parse wall timestamp from ndjson if available (reuses already-parsed data)
     wall_timestamp = None
-    if line.startswith("{"):
+    if ndjson_data is not None:
         try:
-            data = json.loads(line)
-            ts_str = data.get("timestamp", "")
+            ts_str = ndjson_data.get("timestamp", "")
             if ts_str:
                 # macOS log timestamps are ISO-ish: "2024-01-15 10:30:00.123456-0800"
                 wall_timestamp = datetime.fromisoformat(ts_str.replace(" ", "T"))
-        except (json.JSONDecodeError, ValueError):
+        except ValueError:
             pass
 
     return TTFAEvent(
@@ -116,20 +116,24 @@ def group_events_by_activation(events: List[TTFAEvent]) -> List[List[TTFAEvent]]
     Group events into activation cycles.
 
     Each ACTIVATE event starts a new group. All subsequent events until the
-    next ACTIVATE (or end of list) belong to that group.
+    next ACTIVATE (or end of list) belong to that group. Events arriving
+    before the first ACTIVATE are discarded as orphans.
     """
     groups: List[List[TTFAEvent]] = []
     current_group: List[TTFAEvent] = []
+    seen_activate = False
 
     for event in events:
         if event.event_type == TTFAEventType.ACTIVATE:
             if current_group:
                 groups.append(current_group)
             current_group = [event]
-        else:
+            seen_activate = True
+        elif seen_activate:
             current_group.append(event)
+        # else: discard orphan events before first ACTIVATE
 
-    if current_group:
+    if current_group and seen_activate:
         groups.append(current_group)
 
     return groups

@@ -96,6 +96,10 @@ class Simulator:
         """Tap at a coordinate on the simulator."""
         if not self.udid:
             raise SimulatorError("Simulator not booted")
+        # Validate coordinates are integers to prevent AppleScript injection
+        x, y = int(x), int(y)
+        if x < 0 or y < 0:
+            raise SimulatorError(f"Invalid tap coordinates: ({x}, {y})")
         logger.debug("Tapping at (%d, %d)", x, y)
         # simctl does not have a native tap command; use idb or the MCP tools.
         # For CI, we rely on deep links and accessibility-based taps via

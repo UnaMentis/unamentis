@@ -120,12 +120,12 @@ async def handle_get_capabilities(request: web.Request) -> web.Response:
                 "capabilities": capabilities,
             }
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Error getting media capabilities")
         return web.json_response(
             {
                 "success": False,
-                "error": str(e),
+                "error": "Failed to get media capabilities",
             },
             status=500,
         )
@@ -182,12 +182,12 @@ async def handle_validate_diagram(request: web.Request) -> web.Response:
                 "errors": errors,
             }
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Error validating diagram")
         return web.json_response(
             {
                 "success": False,
-                "error": str(e),
+                "error": "Failed to validate diagram",
             },
             status=500,
         )
@@ -266,12 +266,12 @@ async def handle_render_diagram(request: web.Request) -> web.Response:
                 },
                 status=400,
             )
-    except Exception as e:
+    except Exception:
         logger.exception("Error rendering diagram")
         return web.json_response(
             {
                 "success": False,
-                "error": str(e),
+                "error": "Failed to render diagram",
             },
             status=500,
         )
@@ -308,12 +308,12 @@ async def handle_validate_formula(request: web.Request) -> web.Response:
                 "warnings": warnings,
             }
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Error validating formula")
         return web.json_response(
             {
                 "success": False,
-                "error": str(e),
+                "error": "Failed to validate formula",
             },
             status=500,
         )
@@ -377,12 +377,12 @@ async def handle_render_formula(request: web.Request) -> web.Response:
                 },
                 status=400,
             )
-    except Exception as e:
+    except Exception:
         logger.exception("Error rendering formula")
         return web.json_response(
             {
                 "success": False,
-                "error": str(e),
+                "error": "Failed to render formula",
             },
             status=500,
         )
@@ -451,7 +451,11 @@ async def handle_render_map(request: web.Request) -> web.Response:
         # Parse routes
         routes = []
         for r in data.get("routes", []):
-            points = [(p[0], p[1]) for p in r.get("points", [])]
+            points = [
+                (float(p[0]), float(p[1]))
+                for p in r.get("points", [])
+                if isinstance(p, (list, tuple)) and len(p) >= 2
+            ]
             routes.append(
                 MapRoute(
                     points=points,
@@ -465,7 +469,11 @@ async def handle_render_map(request: web.Request) -> web.Response:
         # Parse regions
         regions = []
         for reg in data.get("regions", []):
-            points = [(p[0], p[1]) for p in reg.get("points", [])]
+            points = [
+                (float(p[0]), float(p[1]))
+                for p in reg.get("points", [])
+                if isinstance(p, (list, tuple)) and len(p) >= 2
+            ]
             regions.append(
                 MapRegion(
                     points=points,
@@ -520,12 +528,12 @@ async def handle_render_map(request: web.Request) -> web.Response:
                 },
                 status=400,
             )
-    except Exception as e:
+    except Exception:
         logger.exception("Error rendering map")
         return web.json_response(
             {
                 "success": False,
-                "error": str(e),
+                "error": "Failed to render map",
             },
             status=500,
         )

@@ -212,21 +212,32 @@ async def handle_list_modules(request: web.Request) -> web.Response:
             # Resolve effective feature flags
             features = resolve_feature_flags(module)
 
-            modules_summary.append(
-                {
-                    "id": module["id"],
-                    "name": module["name"],
-                    "description": module["description"],
-                    "icon_name": module["icon_name"],
-                    "theme_color_hex": module["theme_color_hex"],
-                    "version": module["version"],
-                    "enabled": is_enabled,
-                    "supports_team_mode": features["supports_team_mode"],
-                    "supports_speed_training": features["supports_speed_training"],
-                    "supports_competition_sim": features["supports_competition_sim"],
-                    "download_size": module.get("download_size"),
-                }
-            )
+            try:
+                modules_summary.append(
+                    {
+                        "id": module["id"],
+                        "name": module["name"],
+                        "description": module.get("description", ""),
+                        "icon_name": module.get("icon_name", "book"),
+                        "theme_color_hex": module.get("theme_color_hex", "#4A90D9"),
+                        "version": module.get("version", "1.0.0"),
+                        "enabled": is_enabled,
+                        "supports_team_mode": features.get("supports_team_mode", False),
+                        "supports_speed_training": features.get(
+                            "supports_speed_training", False
+                        ),
+                        "supports_competition_sim": features.get(
+                            "supports_competition_sim", False
+                        ),
+                        "download_size": module.get("download_size"),
+                    }
+                )
+            except KeyError as ke:
+                logger.warning(
+                    "Skipping malformed module entry (missing %s): %s",
+                    ke,
+                    module.get("id", "unknown"),
+                )
 
         return web.json_response(
             {

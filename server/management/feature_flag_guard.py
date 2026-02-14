@@ -27,9 +27,20 @@ def _get_is_flag_enabled() -> Callable:
     """Lazily resolve is_flag_enabled from server module."""
     global _is_flag_enabled
     if _is_flag_enabled is None:
-        from server import is_flag_enabled
+        try:
+            from server import is_flag_enabled
 
-        _is_flag_enabled = is_flag_enabled
+            _is_flag_enabled = is_flag_enabled
+        except ImportError:
+            logger.error(
+                "Failed to import is_flag_enabled from server module. "
+                "All feature flag checks will use defaults from FLAG_DEFAULTS."
+            )
+
+            def _fallback(flag_name: str, default: bool = False) -> bool:
+                return FLAG_DEFAULTS.get(flag_name, default)
+
+            _is_flag_enabled = _fallback
     return _is_flag_enabled
 
 
