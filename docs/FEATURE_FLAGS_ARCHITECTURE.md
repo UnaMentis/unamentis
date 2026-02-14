@@ -277,15 +277,75 @@ curl -X POST "http://localhost:4242/api/admin/projects/default/features/ops_budg
 
 ---
 
+## Management Server Route Guards
+
+The management API uses `guarded_routes` to gate entire API modules behind
+feature flags at the route level. When a flag is disabled, all endpoints in
+that module return HTTP 503 with the flag name in the response body.
+
+### Guarded Modules
+
+| Module | Flag | Default | Guarded Routes |
+|--------|------|---------|----------------|
+| Import pipeline | `ops_import_enabled` | ON | `/api/import/*` |
+| Reprocessing | `ops_reprocessing_enabled` | ON | `/api/reprocess/*` |
+| TTS generation | `ops_tts_generation_enabled` | ON | `/api/tts/*` |
+| Media rendering | `ops_media_generation_enabled` | ON | `/api/media/*` |
+| TTS pre-generation | `service_tts_pregen` | ON | `/api/tts/profiles/*`, `/api/tts/pregen/*` |
+| TTS Lab | `service_tts_lab` | OFF | `/api/tts-lab/*` |
+| Latency testing | `service_latency_testing` | OFF | `/api/latency-tests/*`, `/api/test-orchestrator/*` |
+| KB packs | `service_kb_packs` | ON | `/api/kb/*` |
+| Deployments | `service_deployment` | ON | `/api/deployments/*` |
+| Lists | `service_lists` | ON | `/api/lists/*` |
+| FOV context | `service_fov_context` | ON | `/api/sessions/*` |
+| Plugins | `feature_plugin_system` | ON | `/api/plugins/*`, `/api/sources/*` |
+| Modules | `feature_specialized_modules` | ON | `/api/modules/*` |
+
+### Feature Flags API
+
+```bash
+# Get current state of all flags
+GET /api/feature-flags
+
+# Response
+{
+  "flags": {
+    "ops_maintenance_mode": false,
+    "ops_import_enabled": true,
+    "service_tts_lab": false,
+    ...
+  },
+  "source": "unleash"  // or "defaults" when Unleash is unavailable
+}
+```
+
+---
+
 ## Current Flag Status
 
-| Flag | Status | Category |
-|------|--------|----------|
-| `ops_maintenance_mode` | OFF | ops |
-| `ops_verbose_logging` | ON | ops |
-| `ops_analytics_enabled` | ON | ops |
-| `ops_budget_cap_reached` | OFF | ops |
-| `service_llm_interaction` | ON | service |
-| `service_curriculum_delivery` | ON | service |
-| `service_source_dedicated_server` | ON | service |
-| `service_source_cloud_apis` | ON | service |
+| Flag | Default | Category | Guarded Module |
+|------|---------|----------|----------------|
+| `ops_maintenance_mode` | OFF | ops | (global) |
+| `ops_verbose_logging` | ON | ops | (logging) |
+| `ops_analytics_enabled` | ON | ops | (telemetry) |
+| `ops_budget_cap_reached` | OFF | ops | (cost control) |
+| `ops_import_enabled` | ON | ops | Import pipeline |
+| `ops_reprocessing_enabled` | ON | ops | Reprocessing |
+| `ops_tts_generation_enabled` | ON | ops | TTS generation |
+| `ops_media_generation_enabled` | ON | ops | Media rendering |
+| `service_llm_interaction` | ON | service | (experience tier) |
+| `service_curriculum_delivery` | ON | service | (experience tier) |
+| `service_source_dedicated_server` | ON | service | (routing) |
+| `service_source_cloud_apis` | ON | service | (routing) |
+| `service_tts_pregen` | ON | service | TTS pre-generation |
+| `service_tts_lab` | OFF | service | TTS Lab |
+| `service_latency_testing` | OFF | service | Latency harness |
+| `service_kb_packs` | ON | service | KB packs |
+| `service_deployment` | ON | service | Deployments |
+| `service_model_management` | ON | service | (models) |
+| `service_lists` | ON | service | Lists |
+| `service_fov_context` | ON | service | FOV context |
+| `feature_plugin_system` | ON | feature | Plugins |
+| `feature_specialized_modules` | ON | feature | Modules |
+| `feature_team_mode` | ON | feature | (module-level) |
+| `feature_competition_sim` | ON | feature | (module-level) |

@@ -35,7 +35,10 @@ TS_PATTERNS=(
 
 PYTHON_PATTERNS=(
     'is_enabled\s*\(\s*['"'"'"][^'"'"'"]+['"'"'"]\s*\)'
+    'is_flag_enabled\s*\(\s*['"'"'"][^'"'"'"]+['"'"'"]\s*\)'
     'feature_flags.*is_enabled'
+    'guarded_routes\s*\(\s*app\s*,\s*FlagKeys\.[A-Z_]+'
+    'flag_guard\s*\(\s*FlagKeys\.[A-Z_]+'
 )
 
 # Temporary files
