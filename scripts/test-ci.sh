@@ -7,7 +7,7 @@
 #
 # Environment Variables:
 #   TEST_TYPE           - "unit", "integration", or "all" (default: unit)
-#   SIMULATOR           - Simulator name (default: iPhone 16 Pro)
+#   SIMULATOR           - Simulator name (default: iPhone 17 Pro)
 #   COVERAGE_THRESHOLD  - Minimum coverage percentage (default: 80)
 #   ENABLE_COVERAGE     - "true" or "false" (default: true)
 #   ENFORCE_COVERAGE    - "true" or "false" (default: true in CI)

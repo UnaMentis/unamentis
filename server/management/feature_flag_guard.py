@@ -83,7 +83,6 @@ def flag_guard(flag_name: str) -> Callable:
                 return web.json_response(
                     {
                         "error": "This feature is currently disabled",
-                        "flag": flag_name,
                     },
                     status=503,
                 )

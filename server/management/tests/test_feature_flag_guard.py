@@ -163,7 +163,7 @@ class TestFlagGuard:
                 request = make_mocked_request("GET", "/api/tts-lab/models")
                 response = asyncio.get_event_loop().run_until_complete(guarded(request))
                 body = json.loads(response.body)
-                assert body["flag"] == "service_tts_lab"
+                assert "flag" not in body  # Internal flag names must not leak
                 assert "disabled" in body["error"].lower()
 
     def test_uses_flag_defaults(self, mock_handler):
