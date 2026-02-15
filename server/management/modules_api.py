@@ -15,6 +15,7 @@ Modules are server-controlled:
 import asyncio
 import json
 import logging
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -83,7 +84,15 @@ def get_module_content_path(module_id: str) -> Path:
     except ValueError:
         raise ValueError("Invalid module path")
 
-    return result_path
+    # CodeQL-recognized sanitizer: os.path.realpath() + str.startswith()
+    real_path = os.path.realpath(str(result_path))
+    real_base = os.path.realpath(str(modules_resolved))
+    if not real_base.endswith(os.sep):
+        real_base += os.sep
+    if not real_path.startswith(real_base) and real_path != real_base.rstrip(os.sep):
+        raise ValueError("Invalid module path")
+
+    return Path(real_path)
 
 
 def ensure_modules_directory():

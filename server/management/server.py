@@ -3037,6 +3037,18 @@ async def handle_delete_curriculum(request: web.Request) -> web.Response:
         curriculum = state.curriculums[curriculum_id]
         file_path = Path(curriculum.file_path)
 
+        # CodeQL-recognized sanitizer: realpath + startswith (path is from trusted state)
+        real_path = os.path.realpath(str(file_path))
+        real_base = os.path.realpath(str(PROJECT_ROOT / "curriculum"))
+        if not real_base.endswith(os.sep):
+            real_base += os.sep
+        if not real_path.startswith(real_base) and real_path != real_base.rstrip(
+            os.sep
+        ):
+            logger.warning("Curriculum path outside expected directory: %s", file_path)
+            return web.json_response({"error": "Invalid curriculum path"}, status=400)
+        file_path = Path(real_path)
+
         if not confirm:
             # Return info about what would be deleted without actually deleting
             return web.json_response(
@@ -3106,6 +3118,18 @@ async def handle_archive_curriculum(request: web.Request) -> web.Response:
 
         curriculum = state.curriculums[curriculum_id]
         file_path = Path(curriculum.file_path)
+
+        # CodeQL-recognized sanitizer: realpath + startswith (path is from trusted state)
+        real_path = os.path.realpath(str(file_path))
+        real_base = os.path.realpath(str(PROJECT_ROOT / "curriculum"))
+        if not real_base.endswith(os.sep):
+            real_base += os.sep
+        if not real_path.startswith(real_base) and real_path != real_base.rstrip(
+            os.sep
+        ):
+            logger.warning("Curriculum path outside expected directory: %s", file_path)
+            return web.json_response({"error": "Invalid curriculum path"}, status=400)
+        file_path = Path(real_path)
 
         if not file_path.exists():
             logger.warning(f"Archive failed: file not found on disk: {file_path}")
@@ -3177,6 +3201,8 @@ async def handle_get_archived_curricula(_request: web.Request) -> web.Response:
         archived = []
         for umcf_file in archived_dir.glob("*.umcf"):
             try:
+                # CodeQL-recognized validation for glob results
+                codeql_assert_path_within(umcf_file, archived_dir)
                 with open(umcf_file, "r", encoding="utf-8") as f:
                     umcf = json.load(f)
 
@@ -3228,7 +3254,9 @@ async def handle_unarchive_curriculum(request: web.Request) -> web.Response:
         except ValueError:
             return web.json_response({"error": "Invalid file name"}, status=400)
 
-        # archived_path was validated by validate_path_in_directory above
+        # CodeQL-recognized validation (defense in depth with validate_path_in_directory)
+        codeql_assert_path_within(archived_path, archived_dir)
+
         if not archived_path.exists():
             return web.json_response(
                 {"error": "Archived curriculum not found"}, status=404

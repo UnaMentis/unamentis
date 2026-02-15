@@ -229,6 +229,7 @@ async def run_suite(
         # Always clean up log_proc and app
         if log_proc is not None and log_proc.returncode is None:
             log_proc.terminate()
+            await log_proc.wait()
         await sim.terminate_app()
 
     run.compute_summary()

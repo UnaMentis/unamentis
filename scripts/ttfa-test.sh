@@ -143,7 +143,7 @@ info "Using app: $APP_PATH"
 
 # Construct CLI command
 CLI_ARGS=(
-    python -m ttfa_harness.cli
+    python3 -m ttfa_harness.cli
     --suite "$TTFA_SUITE"
     --device "$SIMULATOR"
     --app-path "$APP_PATH"

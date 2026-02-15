@@ -72,12 +72,21 @@ class BaselineManager:
             logger.error("Failed to parse baseline '%s': %s", name, e)
             return None
 
-    def create_baseline(self, run: TTFARun, name: str) -> TTFABaseline:
+    def create_baseline(self, run: TTFARun, name: str) -> Optional[TTFABaseline]:
         """
         Create a baseline from a completed test run.
 
         Computes per-scenario median and P99 from the run results.
         """
+        # Sanitize name to prevent path traversal
+        if "/" in name or "\\" in name or ".." in name:
+            logger.error("Invalid baseline name (path traversal rejected): %s", name)
+            return None
+        target = (self.baselines_dir / f"{name}.json").resolve()
+        if not target.is_relative_to(self.baselines_dir.resolve()):
+            logger.error("Baseline path escapes baselines directory: %s", target)
+            return None
+
         # Group results by scenario
         scenario_results: Dict[str, List[float]] = {}
         scenario_paths: Dict[str, str] = {}

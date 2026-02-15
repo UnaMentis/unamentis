@@ -16,6 +16,7 @@ Supports all Kyutai models:
 import asyncio
 import json
 import logging
+import os
 import time
 import uuid
 from pathlib import Path
@@ -33,6 +34,18 @@ logger = logging.getLogger(__name__)
 
 TTS_LAB_DIR = Path(__file__).parent / "tts_lab_configs"
 TTS_LAB_DIR.mkdir(exist_ok=True)
+
+
+def _safe_path(filename: str, base_dir: Path) -> Path:
+    """Validate a file path is within base_dir (CodeQL-recognized sanitizer)."""
+    candidate = base_dir / filename
+    real_path = os.path.realpath(str(candidate))
+    real_base = os.path.realpath(str(base_dir))
+    if not real_base.endswith(os.sep):
+        real_base += os.sep
+    if not real_path.startswith(real_base) and real_path != real_base.rstrip(os.sep):
+        raise ValueError("Path escapes allowed directory")
+    return Path(real_path)
 
 
 class TTSLabConfig:
@@ -502,7 +515,10 @@ async def handle_get_config(request: web.Request) -> web.Response:
     }
     """
     config_id = request.match_info["config_id"]
-    config_file = TTS_LAB_DIR / f"{config_id}.json"
+    try:
+        config_file = _safe_path(f"{config_id}.json", TTS_LAB_DIR)
+    except ValueError:
+        return web.json_response({"error": "Invalid config_id"}, status=400)
 
     if not config_file.exists():
         return web.json_response({"error": "Configuration not found"}, status=404)
@@ -530,7 +546,10 @@ async def handle_delete_config(request: web.Request) -> web.Response:
     }
     """
     config_id = request.match_info["config_id"]
-    config_file = TTS_LAB_DIR / f"{config_id}.json"
+    try:
+        config_file = _safe_path(f"{config_id}.json", TTS_LAB_DIR)
+    except ValueError:
+        return web.json_response({"error": "Invalid config_id"}, status=400)
 
     if not config_file.exists():
         return web.json_response({"error": "Configuration not found"}, status=404)
@@ -687,7 +706,11 @@ async def handle_generate_samples(request: web.Request) -> web.Response:
             continue
 
         model_info = SUPPORTED_MODELS[model_id]
-        sample_path = SAMPLES_DIR / f"{model_id}.opus"
+        try:
+            sample_path = _safe_path(f"{model_id}.opus", SAMPLES_DIR)
+        except ValueError:
+            errors[model_id] = f"Invalid model_id: {model_id}"
+            continue
 
         # Skip if exists and not forcing
         if sample_path.exists() and not force:
