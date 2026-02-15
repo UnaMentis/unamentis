@@ -41,7 +41,7 @@ fi
 
 # Configuration with defaults
 TEST_TYPE="${TEST_TYPE:-unit}"
-SIMULATOR="${SIMULATOR:-iPhone 16 Pro}"
+SIMULATOR="${SIMULATOR:-iPhone 17 Pro}"
 COVERAGE_THRESHOLD="${COVERAGE_THRESHOLD:-80}"
 ENABLE_COVERAGE="${ENABLE_COVERAGE:-true}"
 ENFORCE_COVERAGE="${ENFORCE_COVERAGE:-${CI:-false}}"  # Default to CI value if set
@@ -72,12 +72,23 @@ log_error() {
     echo -e "${RED}[FAIL]${NC} $1" >&2
 }
 
+# Resolve simulator name to UUID (more reliable than name-based destination matching)
+get_simulator_udid() {
+    local name="$1"
+    xcrun simctl list devices available 2>/dev/null \
+        | grep "$name" \
+        | head -1 \
+        | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}'
+}
+
 # Check simulator availability and find fallback if needed
 get_simulator() {
     local requested="$1"
 
     # Check if requested simulator exists
-    if xcrun simctl list devices available 2>/dev/null | grep -q "$requested"; then
+    local udid
+    udid=$(get_simulator_udid "$requested")
+    if [ -n "$udid" ]; then
         echo "$requested"
         return 0
     fi
@@ -85,9 +96,10 @@ get_simulator() {
     log_warning "Simulator '$requested' not found, searching for alternative..."
 
     # Try common alternatives in order of preference
-    local alternatives=("iPhone 16 Pro" "iPhone 17 Pro" "iPhone 15 Pro" "iPhone 14 Pro")
+    local alternatives=("iPhone 17 Pro" "iPhone 16 Pro" "iPhone 15 Pro" "iPhone 14 Pro")
     for alt in "${alternatives[@]}"; do
-        if xcrun simctl list devices available 2>/dev/null | grep -q "$alt"; then
+        udid=$(get_simulator_udid "$alt")
+        if [ -n "$udid" ]; then
             log_warning "Using fallback simulator: $alt"
             echo "$alt"
             return 0
@@ -204,8 +216,14 @@ main() {
     SIMULATOR=$(get_simulator "$SIMULATOR")
     log_info "Simulator: $SIMULATOR"
 
-    # Build destination string
-    DESTINATION="platform=iOS Simulator,name=$SIMULATOR"
+    # Resolve to UUID for reliable destination matching (name-based can fail in Xcode 26+)
+    local sim_udid
+    sim_udid=$(get_simulator_udid "$SIMULATOR")
+    if [ -n "$sim_udid" ]; then
+        DESTINATION="platform=iOS Simulator,id=$sim_udid"
+    else
+        DESTINATION="platform=iOS Simulator,name=$SIMULATOR"
+    fi
 
     # Determine test target(s)
     local test_targets=""
@@ -249,8 +267,12 @@ main() {
     local beautify_cmd
     beautify_cmd=$(get_xcbeautify_cmd)
 
-    # Remove old result bundle
+    # Remove old result bundle (xcodebuild refuses to overwrite)
     rm -rf "$result_bundle"
+    if [ -e "$result_bundle" ]; then
+        sleep 1
+        rm -rf "$result_bundle"
+    fi
 
     # Run tests
     log_info "Running $TEST_TYPE tests..."

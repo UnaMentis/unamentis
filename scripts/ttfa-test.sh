@@ -105,8 +105,15 @@ find_app_path() {
 if [[ "$SKIP_BUILD" != "true" ]]; then
     info "Building UnaMentis for simulator ($SIMULATOR)..."
 
-    # Find a matching simulator for the destination
-    DESTINATION="platform=iOS Simulator,name=$SIMULATOR"
+    # Resolve simulator to UUID for reliable destination matching
+    SIM_UDID=$(xcrun simctl list devices available 2>/dev/null \
+        | grep "$SIMULATOR" | head -1 \
+        | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
+    if [[ -n "$SIM_UDID" ]]; then
+        DESTINATION="platform=iOS Simulator,id=$SIM_UDID"
+    else
+        DESTINATION="platform=iOS Simulator,name=$SIMULATOR"
+    fi
 
     set +e
     xcodebuild -project "$PROJECT_DIR/UnaMentis.xcodeproj" \

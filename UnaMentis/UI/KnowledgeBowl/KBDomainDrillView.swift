@@ -716,6 +716,9 @@ final class KBDomainDrillViewModel {
 
         isSpeaking = true
 
+        // TTFA: mark activation for drill mode audio
+        await TTFAInstrumentation.shared.markActivation(.kbDrill)
+
         let ttsService = TTSProvider.resolveConfiguredService()
 
         do {
@@ -723,12 +726,18 @@ final class KBDomainDrillViewModel {
 
             // Collect all audio chunks
             var audioData = Data()
+            var isFirstChunk = true
             for await chunk in stream {
                 guard !Task.isCancelled else {
                     isSpeaking = false
                     return
                 }
                 audioData.append(chunk.audioData)
+                if isFirstChunk {
+                    // TTFA: mark first TTS chunk received
+                    await TTFAInstrumentation.shared.markTTSFirstChunk()
+                    isFirstChunk = false
+                }
             }
 
             guard !audioData.isEmpty, !Task.isCancelled else {
@@ -738,9 +747,15 @@ final class KBDomainDrillViewModel {
                 return
             }
 
+            // TTFA: mark audio scheduled (AVAudioPlayer path)
+            await TTFAInstrumentation.shared.markAudioScheduled()
+
             // Play the collected audio
             announcementPlayer = try AVAudioPlayer(data: audioData)
             announcementPlayer?.play()
+
+            // TTFA: mark audio playing
+            await TTFAInstrumentation.shared.markAudioPlaying()
 
             // Wait for playback to complete
             if let duration = announcementPlayer?.duration {

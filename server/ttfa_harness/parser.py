@@ -62,8 +62,13 @@ def parse_log_line(line: str) -> Optional[TTFAEvent]:
         try:
             ts_str = ndjson_data.get("timestamp", "")
             if ts_str:
-                # macOS log timestamps are ISO-ish: "2024-01-15 10:30:00.123456-0800"
-                wall_timestamp = datetime.fromisoformat(ts_str.replace(" ", "T"))
+                # macOS log timestamps: "2024-01-15 10:30:00.123456-0800"
+                # Replace space with T for ISO format
+                iso_str = ts_str.replace(" ", "T")
+                # Python <3.11 needs colon in tz offset (-08:00 not -0800)
+                if re.search(r"[+-]\d{4}$", iso_str):
+                    iso_str = iso_str[:-2] + ":" + iso_str[-2:]
+                wall_timestamp = datetime.fromisoformat(iso_str)
         except ValueError:
             pass
 

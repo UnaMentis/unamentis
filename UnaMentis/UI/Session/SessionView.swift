@@ -3174,13 +3174,17 @@ class SessionViewModel: ObservableObject {
             let prepared = audioPlayer?.prepareToPlay() ?? false
             logger.info("Audio player prepared: \(prepared), duration: \(audioPlayer?.duration ?? 0)s, format: \(audioPlayer?.format.description ?? "unknown")")
 
+            // TTFA: mark audio scheduled before play (first segment only, guard is in actor)
+            Task {
+                await TTFAInstrumentation.shared.markAudioScheduled()
+            }
+
             let playing = audioPlayer?.play() ?? false
             logger.info("Audio player play() returned: \(playing), isPlaying: \(audioPlayer?.isPlaying ?? false)")
 
-            // TTFA: mark audio playing for session (first segment only, guard is in actor)
+            // TTFA: mark audio playing after play() confirms success
             if playing {
                 Task {
-                    await TTFAInstrumentation.shared.markAudioScheduled()
                     await TTFAInstrumentation.shared.markAudioPlaying()
                 }
             }
