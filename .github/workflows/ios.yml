@@ -24,7 +24,7 @@ permissions:
 jobs:
   lint:
     name: Lint
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
     - uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
 
   hook-audit:
     name: Hook Bypass Detection
-    runs-on: macos-14
+    runs-on: macos-15
     # Only run on push events (not PRs from forks which won't have hooks)
     if: github.event_name == 'push'
 
@@ -75,16 +75,17 @@ jobs:
 
   unit-tests:
     name: Unit Tests
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Select Xcode 16.2
-      run: sudo xcode-select -s /Applications/Xcode_16.2.app
-
-    - name: Show Xcode version
-      run: xcodebuild -version
+    - name: Select Xcode
+      run: |
+        XCODE_PATH="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -type d | sort -V | tail -1)"
+        echo "Selected Xcode: $XCODE_PATH"
+        sudo xcode-select -s "$XCODE_PATH"
+        xcodebuild -version
 
     - name: Install xcbeautify and XcodeGen
       run: brew install xcbeautify xcodegen
@@ -211,14 +212,18 @@ jobs:
 
   integration-tests:
     name: Integration Tests
-    runs-on: macos-14
+    runs-on: macos-15
     if: github.ref == 'refs/heads/main' || github.event.inputs.run_integration == 'true'
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Select Xcode 16.2
-      run: sudo xcode-select -s /Applications/Xcode_16.2.app
+    - name: Select Xcode
+      run: |
+        XCODE_PATH="$(find /Applications -maxdepth 1 -name 'Xcode*.app' -type d | sort -V | tail -1)"
+        echo "Selected Xcode: $XCODE_PATH"
+        sudo xcode-select -s "$XCODE_PATH"
+        xcodebuild -version
 
     - name: Install xcbeautify and XcodeGen
       run: brew install xcbeautify xcodegen

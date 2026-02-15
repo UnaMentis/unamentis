@@ -66,6 +66,8 @@ else
     if [ "${SKIP_LINT_IF_UNAVAILABLE:-false}" != "true" ]; then
         echo "Install Rust with: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
         FAILED=1
+    else
+        echo "SKIP_LINT_IF_UNAVAILABLE=true, skipping Rust checks"
     fi
 fi
 
@@ -73,7 +75,7 @@ fi
 echo ""
 echo "3. Ruff (Python)..."
 if command -v ruff &> /dev/null; then
-    if ruff check server/ --output-format=text; then
+    if ruff check server/ --output-format=concise; then
         echo -e "${GREEN}Ruff passed${NC}"
     else
         echo -e "${YELLOW}Ruff found issues (non-blocking)${NC}"

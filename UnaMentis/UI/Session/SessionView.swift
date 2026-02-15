@@ -1314,6 +1314,10 @@ class SessionViewModel: ObservableObject {
 
         logger.info("🟢 startSession called")
 
+        // TTFA: mark activation for session start
+        let ttfaFeature: TTFAFeature = topic != nil ? .sessionCurriculum : .sessionChat
+        await TTFAInstrumentation.shared.markActivation(ttfaFeature)
+
         // Get self-hosted server settings
         let selfHostedEnabled = UserDefaults.standard.bool(forKey: "selfHostedEnabled")
         let serverIP = UserDefaults.standard.string(forKey: "primaryServerIP") ?? ""
@@ -1388,6 +1392,8 @@ class SessionViewModel: ObservableObject {
                         if self.state == .aiThinking {
                             self.state = .aiSpeaking
                             self.logger.info("Transitioning to aiSpeaking - first audio received")
+                            // TTFA: mark first TTS/audio data received for session
+                            await TTFAInstrumentation.shared.markTTSFirstChunk()
                         }
 
                         // Queue the audio WITH its associated text for synchronized playback
@@ -3168,8 +3174,20 @@ class SessionViewModel: ObservableObject {
             let prepared = audioPlayer?.prepareToPlay() ?? false
             logger.info("Audio player prepared: \(prepared), duration: \(audioPlayer?.duration ?? 0)s, format: \(audioPlayer?.format.description ?? "unknown")")
 
+            // TTFA: mark audio scheduled before play (first segment only, guard is in actor)
+            Task {
+                await TTFAInstrumentation.shared.markAudioScheduled()
+            }
+
             let playing = audioPlayer?.play() ?? false
             logger.info("Audio player play() returned: \(playing), isPlaying: \(audioPlayer?.isPlaying ?? false)")
+
+            // TTFA: mark audio playing after play() confirms success
+            if playing {
+                Task {
+                    await TTFAInstrumentation.shared.markAudioPlaying()
+                }
+            }
 
             if !playing {
                 logger.error("AVAudioPlayer.play() returned false - audio will not play")

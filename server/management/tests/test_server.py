@@ -53,6 +53,7 @@ from server import (
     CurriculumSummary,
     CurriculumDetail,
     TopicSummary,
+    PROJECT_ROOT,
     chunk_text_for_tts,
     is_flag_enabled,
     broadcast_message,
@@ -1897,7 +1898,7 @@ class TestHandleDeleteCurriculum:
             total_duration="PT1H",
             difficulty="easy",
             age_range="18+",
-            file_path="/test/data/test.umcf",  # Test placeholder
+            file_path=str(PROJECT_ROOT / "curriculum" / "test.umcf"),
         )
 
         mock_request.match_info = {"curriculum_id": "test-delete"}

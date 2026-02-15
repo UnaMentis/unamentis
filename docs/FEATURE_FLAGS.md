@@ -53,6 +53,37 @@ function App() {
 }
 ```
 
+#### Server (Management API)
+
+The management server gates entire API modules behind feature flags using the
+`guarded_routes` pattern. Every route in a module shares a single flag.
+
+```python
+from feature_flag_guard import guarded_routes
+from feature_flag_keys import FlagKeys
+
+def register_foo_routes(app):
+    router = guarded_routes(app, FlagKeys.FOO)
+    router.add_get("/api/foo", handle_list)
+    router.add_post("/api/foo", handle_create)
+```
+
+When a flag is disabled, all routes in the module return `503`:
+
+```json
+{"error": "This feature is currently disabled", "flag": "service_tts_lab"}
+```
+
+**Query all flag states** via the management API:
+
+```bash
+curl http://localhost:8766/api/feature-flags
+# {"flags": {"ops_maintenance_mode": false, ...}, "source": "defaults"}
+```
+
+The `source` field tells you whether values come from Unleash (`"unleash"`)
+or the hardcoded defaults (`"defaults"`) when Unleash is unavailable.
+
 ### For Product/Ops
 
 1. Access Unleash UI: http://localhost:4242 (or production URL)

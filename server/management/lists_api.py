@@ -40,15 +40,21 @@ async def handle_get_lists(request: web.Request) -> web.Response:
 
             lists = []
             for row in rows:
-                lists.append({
-                    "id": str(row["id"]),
-                    "name": row["name"],
-                    "description": row["description"],
-                    "isShared": row["is_shared"],
-                    "itemCount": row["item_count"],
-                    "createdAt": row["created_at"].isoformat() if row["created_at"] else None,
-                    "updatedAt": row["updated_at"].isoformat() if row["updated_at"] else None,
-                })
+                lists.append(
+                    {
+                        "id": str(row["id"]),
+                        "name": row["name"],
+                        "description": row["description"],
+                        "isShared": row["is_shared"],
+                        "itemCount": row["item_count"],
+                        "createdAt": row["created_at"].isoformat()
+                        if row["created_at"]
+                        else None,
+                        "updatedAt": row["updated_at"].isoformat()
+                        if row["updated_at"]
+                        else None,
+                    }
+                )
 
             return web.json_response({"lists": lists})
     except Exception as e:
@@ -69,21 +75,33 @@ async def handle_create_list(request: web.Request) -> web.Response:
 
         pool = request.app["db_pool"]
         async with pool.acquire() as conn:
-            row = await conn.fetchrow("""
+            row = await conn.fetchrow(
+                """
                 INSERT INTO curriculum_lists (name, description, is_shared)
                 VALUES ($1, $2, $3)
                 RETURNING id, name, description, is_shared, created_at, updated_at
-            """, name, description, is_shared)
+            """,
+                name,
+                description,
+                is_shared,
+            )
 
-            return web.json_response({
-                "id": str(row["id"]),
-                "name": row["name"],
-                "description": row["description"],
-                "isShared": row["is_shared"],
-                "itemCount": 0,
-                "createdAt": row["created_at"].isoformat() if row["created_at"] else None,
-                "updatedAt": row["updated_at"].isoformat() if row["updated_at"] else None,
-            }, status=201)
+            return web.json_response(
+                {
+                    "id": str(row["id"]),
+                    "name": row["name"],
+                    "description": row["description"],
+                    "isShared": row["is_shared"],
+                    "itemCount": 0,
+                    "createdAt": row["created_at"].isoformat()
+                    if row["created_at"]
+                    else None,
+                    "updatedAt": row["updated_at"].isoformat()
+                    if row["updated_at"]
+                    else None,
+                },
+                status=201,
+            )
     except Exception as e:
         logger.error(f"Error creating list: {e}")
         return web.json_response({"error": str(e)}, status=500)
@@ -97,47 +115,63 @@ async def handle_get_list(request: web.Request) -> web.Response:
 
         async with pool.acquire() as conn:
             # Get list details
-            list_row = await conn.fetchrow("""
+            list_row = await conn.fetchrow(
+                """
                 SELECT id, name, description, is_shared, created_at, updated_at
                 FROM curriculum_lists
                 WHERE id = $1
-            """, UUID(list_id))
+            """,
+                UUID(list_id),
+            )
 
             if not list_row:
                 return web.json_response({"error": "List not found"}, status=404)
 
             # Get list items
-            item_rows = await conn.fetch("""
+            item_rows = await conn.fetch(
+                """
                 SELECT id, source_id, course_id, course_title,
                        course_thumbnail_url, notes, order_index, added_at
                 FROM curriculum_list_items
                 WHERE list_id = $1
                 ORDER BY order_index, added_at
-            """, UUID(list_id))
+            """,
+                UUID(list_id),
+            )
 
             items = []
             for row in item_rows:
-                items.append({
-                    "id": str(row["id"]),
-                    "sourceId": row["source_id"],
-                    "courseId": row["course_id"],
-                    "courseTitle": row["course_title"],
-                    "courseThumbnailUrl": row["course_thumbnail_url"],
-                    "notes": row["notes"],
-                    "orderIndex": row["order_index"],
-                    "addedAt": row["added_at"].isoformat() if row["added_at"] else None,
-                })
+                items.append(
+                    {
+                        "id": str(row["id"]),
+                        "sourceId": row["source_id"],
+                        "courseId": row["course_id"],
+                        "courseTitle": row["course_title"],
+                        "courseThumbnailUrl": row["course_thumbnail_url"],
+                        "notes": row["notes"],
+                        "orderIndex": row["order_index"],
+                        "addedAt": row["added_at"].isoformat()
+                        if row["added_at"]
+                        else None,
+                    }
+                )
 
-            return web.json_response({
-                "id": str(list_row["id"]),
-                "name": list_row["name"],
-                "description": list_row["description"],
-                "isShared": list_row["is_shared"],
-                "itemCount": len(items),
-                "items": items,
-                "createdAt": list_row["created_at"].isoformat() if list_row["created_at"] else None,
-                "updatedAt": list_row["updated_at"].isoformat() if list_row["updated_at"] else None,
-            })
+            return web.json_response(
+                {
+                    "id": str(list_row["id"]),
+                    "name": list_row["name"],
+                    "description": list_row["description"],
+                    "isShared": list_row["is_shared"],
+                    "itemCount": len(items),
+                    "items": items,
+                    "createdAt": list_row["created_at"].isoformat()
+                    if list_row["created_at"]
+                    else None,
+                    "updatedAt": list_row["updated_at"].isoformat()
+                    if list_row["updated_at"]
+                    else None,
+                }
+            )
     except Exception as e:
         logger.error(f"Error fetching list: {e}")
         return web.json_response({"error": str(e)}, status=500)
@@ -182,21 +216,27 @@ async def handle_update_list(request: web.Request) -> web.Response:
                 SET {", ".join(updates)}
                 WHERE id = ${param_idx}
                 RETURNING id, name, description, is_shared, created_at, updated_at
-            """
+            """  # nosec B608
 
             row = await conn.fetchrow(query, *params)
 
             if not row:
                 return web.json_response({"error": "List not found"}, status=404)
 
-            return web.json_response({
-                "id": str(row["id"]),
-                "name": row["name"],
-                "description": row["description"],
-                "isShared": row["is_shared"],
-                "createdAt": row["created_at"].isoformat() if row["created_at"] else None,
-                "updatedAt": row["updated_at"].isoformat() if row["updated_at"] else None,
-            })
+            return web.json_response(
+                {
+                    "id": str(row["id"]),
+                    "name": row["name"],
+                    "description": row["description"],
+                    "isShared": row["is_shared"],
+                    "createdAt": row["created_at"].isoformat()
+                    if row["created_at"]
+                    else None,
+                    "updatedAt": row["updated_at"].isoformat()
+                    if row["updated_at"]
+                    else None,
+                }
+            )
     except Exception as e:
         logger.error(f"Error updating list: {e}")
         return web.json_response({"error": str(e)}, status=500)
@@ -209,9 +249,12 @@ async def handle_delete_list(request: web.Request) -> web.Response:
         pool = request.app["db_pool"]
 
         async with pool.acquire() as conn:
-            result = await conn.execute("""
+            result = await conn.execute(
+                """
                 DELETE FROM curriculum_lists WHERE id = $1
-            """, UUID(list_id))
+            """,
+                UUID(list_id),
+            )
 
             if result == "DELETE 0":
                 return web.json_response({"error": "List not found"}, status=404)
@@ -232,13 +275,15 @@ async def handle_add_items_to_list(request: web.Request) -> web.Response:
         items = data.get("items", [])
         if not items and "sourceId" in data:
             # Single item format
-            items = [{
-                "sourceId": data["sourceId"],
-                "courseId": data["courseId"],
-                "courseTitle": data.get("courseTitle"),
-                "courseThumbnailUrl": data.get("courseThumbnailUrl"),
-                "notes": data.get("notes"),
-            }]
+            items = [
+                {
+                    "sourceId": data["sourceId"],
+                    "courseId": data["courseId"],
+                    "courseTitle": data.get("courseTitle"),
+                    "courseThumbnailUrl": data.get("courseThumbnailUrl"),
+                    "notes": data.get("notes"),
+                }
+            ]
 
         if not items:
             return web.json_response({"error": "No items provided"}, status=400)
@@ -246,24 +291,31 @@ async def handle_add_items_to_list(request: web.Request) -> web.Response:
         pool = request.app["db_pool"]
         async with pool.acquire() as conn:
             # Verify list exists
-            list_exists = await conn.fetchval("""
+            list_exists = await conn.fetchval(
+                """
                 SELECT EXISTS(SELECT 1 FROM curriculum_lists WHERE id = $1)
-            """, UUID(list_id))
+            """,
+                UUID(list_id),
+            )
 
             if not list_exists:
                 return web.json_response({"error": "List not found"}, status=404)
 
             # Get current max order_index
-            max_order = await conn.fetchval("""
+            max_order = await conn.fetchval(
+                """
                 SELECT COALESCE(MAX(order_index), 0)
                 FROM curriculum_list_items
                 WHERE list_id = $1
-            """, UUID(list_id))
+            """,
+                UUID(list_id),
+            )
 
             added_items = []
             for i, item in enumerate(items):
                 try:
-                    row = await conn.fetchrow("""
+                    row = await conn.fetchrow(
+                        """
                         INSERT INTO curriculum_list_items
                             (list_id, source_id, course_id, course_title,
                              course_thumbnail_url, notes, order_index)
@@ -271,33 +323,49 @@ async def handle_add_items_to_list(request: web.Request) -> web.Response:
                         ON CONFLICT (list_id, source_id, course_id) DO NOTHING
                         RETURNING id, source_id, course_id, course_title,
                                   course_thumbnail_url, notes, order_index, added_at
-                    """, UUID(list_id), item["sourceId"], item["courseId"],
-                        item.get("courseTitle"), item.get("courseThumbnailUrl"),
-                        item.get("notes"), max_order + i + 1)
+                    """,
+                        UUID(list_id),
+                        item["sourceId"],
+                        item["courseId"],
+                        item.get("courseTitle"),
+                        item.get("courseThumbnailUrl"),
+                        item.get("notes"),
+                        max_order + i + 1,
+                    )
 
                     if row:
-                        added_items.append({
-                            "id": str(row["id"]),
-                            "sourceId": row["source_id"],
-                            "courseId": row["course_id"],
-                            "courseTitle": row["course_title"],
-                            "courseThumbnailUrl": row["course_thumbnail_url"],
-                            "notes": row["notes"],
-                            "orderIndex": row["order_index"],
-                            "addedAt": row["added_at"].isoformat() if row["added_at"] else None,
-                        })
+                        added_items.append(
+                            {
+                                "id": str(row["id"]),
+                                "sourceId": row["source_id"],
+                                "courseId": row["course_id"],
+                                "courseTitle": row["course_title"],
+                                "courseThumbnailUrl": row["course_thumbnail_url"],
+                                "notes": row["notes"],
+                                "orderIndex": row["order_index"],
+                                "addedAt": row["added_at"].isoformat()
+                                if row["added_at"]
+                                else None,
+                            }
+                        )
                 except Exception as item_error:
                     logger.warning(f"Failed to add item: {item_error}")
 
             # Update list's updated_at
-            await conn.execute("""
+            await conn.execute(
+                """
                 UPDATE curriculum_lists SET updated_at = NOW() WHERE id = $1
-            """, UUID(list_id))
+            """,
+                UUID(list_id),
+            )
 
-            return web.json_response({
-                "addedCount": len(added_items),
-                "items": added_items,
-            }, status=201)
+            return web.json_response(
+                {
+                    "addedCount": len(added_items),
+                    "items": added_items,
+                },
+                status=201,
+            )
     except Exception as e:
         logger.error(f"Error adding items to list: {e}")
         return web.json_response({"error": str(e)}, status=500)
@@ -311,18 +379,25 @@ async def handle_remove_item_from_list(request: web.Request) -> web.Response:
 
         pool = request.app["db_pool"]
         async with pool.acquire() as conn:
-            result = await conn.execute("""
+            result = await conn.execute(
+                """
                 DELETE FROM curriculum_list_items
                 WHERE list_id = $1 AND id = $2
-            """, UUID(list_id), UUID(item_id))
+            """,
+                UUID(list_id),
+                UUID(item_id),
+            )
 
             if result == "DELETE 0":
                 return web.json_response({"error": "Item not found"}, status=404)
 
             # Update list's updated_at
-            await conn.execute("""
+            await conn.execute(
+                """
                 UPDATE curriculum_lists SET updated_at = NOW() WHERE id = $1
-            """, UUID(list_id))
+            """,
+                UUID(list_id),
+            )
 
             return web.json_response({"success": True})
     except Exception as e:
@@ -337,18 +412,24 @@ async def handle_get_list_memberships(request: web.Request) -> web.Response:
         course_ids_param = request.query.get("course_ids", "")
 
         if not source_id or not course_ids_param:
-            return web.json_response({"error": "source_id and course_ids required"}, status=400)
+            return web.json_response(
+                {"error": "source_id and course_ids required"}, status=400
+            )
 
         course_ids = [cid.strip() for cid in course_ids_param.split(",") if cid.strip()]
 
         pool = request.app["db_pool"]
         async with pool.acquire() as conn:
-            rows = await conn.fetch("""
+            rows = await conn.fetch(
+                """
                 SELECT li.course_id, l.id as list_id, l.name as list_name
                 FROM curriculum_list_items li
                 JOIN curriculum_lists l ON li.list_id = l.id
                 WHERE li.source_id = $1 AND li.course_id = ANY($2)
-            """, source_id, course_ids)
+            """,
+                source_id,
+                course_ids,
+            )
 
             # Group by course_id
             memberships = {}
@@ -356,10 +437,12 @@ async def handle_get_list_memberships(request: web.Request) -> web.Response:
                 course_id = row["course_id"]
                 if course_id not in memberships:
                     memberships[course_id] = []
-                memberships[course_id].append({
-                    "id": str(row["list_id"]),
-                    "name": row["list_name"],
-                })
+                memberships[course_id].append(
+                    {
+                        "id": str(row["list_id"]),
+                        "name": row["list_name"],
+                    }
+                )
 
             return web.json_response({"memberships": memberships})
     except Exception as e:
@@ -369,21 +452,26 @@ async def handle_get_list_memberships(request: web.Request) -> web.Response:
 
 def register_lists_routes(app: web.Application):
     """Register all list-related routes on the application."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
     global _app
     _app = app
 
+    router = guarded_routes(app, FlagKeys.LISTS)
+
     # Lists CRUD
-    app.router.add_get("/api/lists", handle_get_lists)
-    app.router.add_post("/api/lists", handle_create_list)
-    app.router.add_get("/api/lists/{id}", handle_get_list)
-    app.router.add_put("/api/lists/{id}", handle_update_list)
-    app.router.add_delete("/api/lists/{id}", handle_delete_list)
+    router.add_get("/api/lists", handle_get_lists)
+    router.add_post("/api/lists", handle_create_list)
+    router.add_get("/api/lists/{id}", handle_get_list)
+    router.add_put("/api/lists/{id}", handle_update_list)
+    router.add_delete("/api/lists/{id}", handle_delete_list)
 
     # List items
-    app.router.add_post("/api/lists/{id}/items", handle_add_items_to_list)
-    app.router.add_delete("/api/lists/{id}/items/{item_id}", handle_remove_item_from_list)
+    router.add_post("/api/lists/{id}/items", handle_add_items_to_list)
+    router.add_delete("/api/lists/{id}/items/{item_id}", handle_remove_item_from_list)
 
     # Memberships query
-    app.router.add_get("/api/lists/memberships", handle_get_list_memberships)
+    router.add_get("/api/lists/memberships", handle_get_list_memberships)
 
     logger.info("Lists API routes registered")

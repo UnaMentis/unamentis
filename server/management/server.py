@@ -4,6 +4,8 @@ UnaMentis Web Management Server
 A next-generation management interface for monitoring and configuring UnaMentis services.
 """
 
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -16,7 +18,7 @@ import time
 import uuid
 from collections import deque
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Optional, Any, Set
 from pathlib import Path
 
@@ -33,22 +35,45 @@ def _load_env_file():
                     key, _, value = line.partition("=")
                     key = key.strip()
                     value = value.strip().strip('"').strip("'")
-                    if key and key not in os.environ:  # Don't override existing env vars
+                    if (
+                        key and key not in os.environ
+                    ):  # Don't override existing env vars
                         os.environ[key] = value
 
 
 _load_env_file()
 
+# Add aiohttp for async HTTP server with WebSocket support
+try:
+    from aiohttp import web
+    import aiohttp
+except ImportError:
+    print("Installing required dependencies...")
+    import subprocess
+
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "aiohttp"])
+    from aiohttp import web
+    import aiohttp
+
+try:
+    import asyncpg
+except ImportError:
+    print("Installing asyncpg for database support...")
+    import subprocess
+
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "asyncpg"])
+    import asyncpg
+
 # Import resource monitoring and idle management
-from resource_monitor import resource_monitor, ResourceMonitor
-from idle_manager import idle_manager, IdleManager, IdleState
-from metrics_history import metrics_history, MetricsHistory
+from resource_monitor import resource_monitor
+from idle_manager import idle_manager, IdleState
+from metrics_history import metrics_history
 
 # Import curriculum importer system
-from import_api import register_import_routes, init_import_system, set_import_complete_callback
+from import_api import register_import_routes, set_import_complete_callback
 
 # Import curriculum reprocessing system
-from reprocess_api import register_reprocess_routes, init_reprocess_system
+from reprocess_api import register_reprocess_routes
 
 # Import curriculum lists system
 from lists_api import register_lists_routes
@@ -61,12 +86,22 @@ from media_api import register_media_routes
 
 # Import authentication system
 from auth import (
-    AuthAPI, register_auth_routes, auth_middleware, rate_limit_middleware,
-    TokenService, TokenConfig, RateLimiter, setup_token_service
+    AuthAPI,
+    register_auth_routes,
+    auth_middleware,
+    rate_limit_middleware,
+    TokenService,
+    TokenConfig,
+    RateLimiter,
+    setup_token_service,
 )
 
 # Import latency test harness system
-from latency_harness_api import register_latency_harness_routes, init_latency_harness, shutdown_latency_harness
+from latency_harness_api import (
+    register_latency_harness_routes,
+    init_latency_harness,
+    shutdown_latency_harness,
+)
 
 # Import diagnostic logging system
 from diagnostic_logging import diag_logger, get_diagnostic_config, set_diagnostic_config
@@ -104,32 +139,23 @@ from kb_packs_api import register_kb_packs_routes
 from bonjour_advertiser import start_bonjour_advertising
 
 # Import session management (for UserSession, UserVoiceConfig)
-from fov_context import SessionManager, UserVoiceConfig
+from fov_context import SessionManager
 
 # Import model context windows for dynamic parameter limits
 from fov_context.models import MODEL_CONTEXT_WINDOWS
 
-# Add aiohttp for async HTTP server with WebSocket support
+# Feature Flags (Unleash)
 try:
-    from aiohttp import web
-    import aiohttp
-except ImportError:
-    print("Installing required dependencies...")
-    import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "aiohttp"])
-    from aiohttp import web
-    import aiohttp
+    from UnleashClient import UnleashClient
 
-try:
-    import asyncpg
+    _unleash_available = True
 except ImportError:
-    print("Installing asyncpg for database support...")
-    import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "asyncpg"])
-    import asyncpg
+    _unleash_available = False
+
+from feature_flag_keys import FLAG_DEFAULTS
 
 # Configuration
-HOST = os.environ.get("VOICELEARN_MGMT_HOST", "0.0.0.0")
+HOST = os.environ.get("VOICELEARN_MGMT_HOST", "0.0.0.0")  # nosec B104
 PORT = int(os.environ.get("VOICELEARN_MGMT_PORT", "8766"))
 MAX_LOG_ENTRIES = 10000
 MAX_METRICS_HISTORY = 1000
@@ -142,25 +168,20 @@ NEXTJS_DIR = PROJECT_ROOT / "server" / "web"
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
-# Feature Flags (Unleash)
+# Feature Flags (Unleash) runtime state
 # UnleashClient will be initialized in on_startup() for async-friendly startup
 feature_flags: Optional["UnleashClient"] = None
-_unleash_available = False
 FEATURE_FLAG_URL = ""
 FEATURE_FLAG_KEY = ""
 
-try:
-    from UnleashClient import UnleashClient
+if _unleash_available:
     FEATURE_FLAG_URL = os.environ.get("FEATURE_FLAG_URL", "http://localhost:3063/proxy")
     FEATURE_FLAG_KEY = os.environ.get("FEATURE_FLAG_KEY", "proxy-client-key")
-    _unleash_available = True
-except ImportError:
-    logger.warning("UnleashClient not installed. Install with: pip install UnleashClient")
 
 
 def validate_path_in_directory(file_path: Path, base_directory: Path) -> Path:
@@ -255,7 +276,9 @@ def sanitize_file_extension(filename: str, allowed_extensions: set[str]) -> str:
     return ext
 
 
-def codeql_assert_path_within(file_path: Path, base_dir: Path) -> None:  # CodeQL: sanitizer
+def codeql_assert_path_within(
+    file_path: Path, base_dir: Path
+) -> None:  # CodeQL: sanitizer
     """Assert a path is within a base directory using CodeQL-recognized patterns.
 
     This function uses os.path.realpath() + str.startswith() which CodeQL
@@ -329,21 +352,26 @@ def safe_error_response(error: Exception, context: str = "operation") -> web.Res
 
     # Return a generic message to avoid leaking internal details
     return web.json_response(
-        {"error": f"An error occurred during {context}. Please try again."},
-        status=500
+        {"error": f"An error occurred during {context}. Please try again."}, status=500
     )
 
 
-def is_flag_enabled(flag_name: str, default: bool = False) -> bool:
+def is_flag_enabled(flag_name: str, default: bool | None = None) -> bool:
     """Check if a feature flag is enabled.
+
+    When Unleash is unavailable, falls back to the default from
+    FLAG_DEFAULTS (if the flag is registered there) or the explicit
+    ``default`` parameter.
 
     Args:
         flag_name: Name of the feature flag (e.g., 'ops_maintenance_mode')
-        default: Default value if flag system is unavailable
+        default: Explicit fallback. When None, FLAG_DEFAULTS is consulted.
 
     Returns:
         True if flag is enabled, False otherwise
     """
+    if default is None:
+        default = FLAG_DEFAULTS.get(flag_name, False)
     if feature_flags is None:
         return default
     try:
@@ -352,9 +380,26 @@ def is_flag_enabled(flag_name: str, default: bool = False) -> bool:
         return default
 
 
+async def handle_get_feature_flags(request: web.Request) -> web.Response:
+    """GET /api/feature-flags
+
+    Return the current evaluated state of all registered feature flags.
+    Clients can use this to adapt their behaviour without needing their
+    own Unleash SDK connection.
+    """
+    flags = {name: is_flag_enabled(name) for name in FLAG_DEFAULTS}
+    return web.json_response(
+        {
+            "flags": flags,
+            "source": "unleash" if feature_flags is not None else "defaults",
+        }
+    )
+
+
 @dataclass
 class LogEntry:
     """Represents a single log entry from a client."""
+
     id: str
     timestamp: str
     level: str
@@ -372,6 +417,7 @@ class LogEntry:
 @dataclass
 class MetricsSnapshot:
     """Represents a metrics snapshot from a client."""
+
     id: str
     client_id: str
     client_name: str
@@ -404,6 +450,7 @@ class MetricsSnapshot:
 @dataclass
 class RemoteClient:
     """Represents a connected remote client (iOS device)."""
+
     id: str
     name: str
     device_model: str = ""
@@ -422,6 +469,7 @@ class RemoteClient:
 @dataclass
 class ServerStatus:
     """Represents a backend server status."""
+
     id: str
     name: str
     type: str  # ollama, whisper, piper, gateway, custom
@@ -438,6 +486,7 @@ class ServerStatus:
 @dataclass
 class ModelInfo:
     """Represents a model available on a server."""
+
     id: str
     name: str
     type: str  # llm, stt, tts
@@ -453,6 +502,7 @@ class ModelInfo:
 @dataclass
 class ManagedService:
     """Represents a managed subprocess service."""
+
     id: str
     name: str
     service_type: str  # vibevoice, nextjs
@@ -471,6 +521,7 @@ class ManagedService:
 @dataclass
 class CurriculumSummary:
     """Summary of a curriculum for listing/browsing."""
+
     id: str
     title: str
     description: str
@@ -489,6 +540,7 @@ class CurriculumSummary:
 @dataclass
 class TopicSummary:
     """Summary of a topic within a curriculum."""
+
     id: str
     title: str
     description: str
@@ -504,6 +556,7 @@ class TopicSummary:
 @dataclass
 class CurriculumDetail:
     """Full curriculum detail including topics."""
+
     id: str
     title: str
     description: str
@@ -563,7 +616,7 @@ class ManagementState:
                 name=name,
                 type=server_type,
                 url=f"http://{host}:{port}",
-                port=port
+                port=port,
             )
 
     def _init_managed_services(self):
@@ -580,12 +633,14 @@ class ManagementState:
                 command=[
                     str(vibevoice_venv) if vibevoice_venv.exists() else "python3",
                     str(vibevoice_script),
-                    "--port", "8880",
-                    "--device", "mps"
+                    "--port",
+                    "8880",
+                    "--device",
+                    "mps",
                 ],
                 cwd=str(VIBEVOICE_DIR),
                 port=8880,
-                health_url="http://localhost:8880/health"
+                health_url="http://localhost:8880/health",
             )
 
         # Next.js Dashboard
@@ -597,7 +652,7 @@ class ManagementState:
                 command=["npx", "next", "dev"],
                 cwd=str(NEXTJS_DIR),
                 port=3000,
-                health_url="http://localhost:3000"
+                health_url="http://localhost:3000",
             )
 
     def _load_curricula(self):
@@ -617,7 +672,7 @@ class ManagementState:
 
     def _load_curriculum_file(self, file_path: Path):
         """Load a single UMCF file and extract summary/details."""
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             umcf = json.load(f)
 
         # Extract ID from the UMCF or generate from filename
@@ -639,7 +694,9 @@ class ManagementState:
 
             for idx, child in enumerate(children):
                 time_estimates = child.get("timeEstimates", {})
-                duration = time_estimates.get("intermediate", time_estimates.get("introductory", "PT30M"))
+                duration = time_estimates.get(
+                    "intermediate", time_estimates.get("introductory", "PT30M")
+                )
                 transcript = child.get("transcript", {})
                 segments = transcript.get("segments", [])
                 assessments = child.get("assessments", [])
@@ -650,18 +707,20 @@ class ManagementState:
                 reference_count = len(media.get("reference", []))
                 total_visual_assets += embedded_count + reference_count
 
-                topics.append(TopicSummary(
-                    id=child.get("id", {}).get("value", f"topic-{idx}"),
-                    title=child.get("title", "Untitled"),
-                    description=child.get("description", ""),
-                    order_index=child.get("orderIndex", idx),
-                    duration=duration,
-                    has_transcript=len(segments) > 0,
-                    segment_count=len(segments),
-                    assessment_count=len(assessments),
-                    embedded_asset_count=embedded_count,
-                    reference_asset_count=reference_count
-                ))
+                topics.append(
+                    TopicSummary(
+                        id=child.get("id", {}).get("value", f"topic-{idx}"),
+                        title=child.get("title", "Untitled"),
+                        description=child.get("description", ""),
+                        order_index=child.get("orderIndex", idx),
+                        duration=duration,
+                        has_transcript=len(segments) > 0,
+                        segment_count=len(segments),
+                        assessment_count=len(assessments),
+                        embedded_asset_count=embedded_count,
+                        reference_asset_count=reference_count,
+                    )
+                )
 
         # Extract glossary
         glossary = umcf.get("glossary", {}).get("terms", [])
@@ -685,7 +744,7 @@ class ManagementState:
             keywords=umcf.get("metadata", {}).get("keywords", []),
             file_path=str(file_path),
             visual_asset_count=total_visual_assets,
-            has_visual_assets=total_visual_assets > 0
+            has_visual_assets=total_visual_assets > 0,
         )
 
         # Create detailed view
@@ -701,7 +760,7 @@ class ManagementState:
             topics=[asdict(t) for t in topics],
             glossary_terms=glossary,
             learning_objectives=learning_objectives,
-            raw_umcf=umcf
+            raw_umcf=umcf,
         )
 
         self.curriculums[umcf_id] = summary
@@ -724,7 +783,10 @@ state = ManagementState()
 # Text Chunking for Natural Speech
 # =============================================================================
 
-def chunk_text_for_tts(text: str, max_chars: int = 300, min_chars: int = 50) -> list[dict]:
+
+def chunk_text_for_tts(
+    text: str, max_chars: int = 300, min_chars: int = 50
+) -> list[dict]:
     """
     Split text into natural segments for TTS streaming.
 
@@ -745,11 +807,11 @@ def chunk_text_for_tts(text: str, max_chars: int = 300, min_chars: int = 50) -> 
     # Remove common metadata headers that shouldn't be spoken
     # These are often video/document identifiers that the TTS shouldn't read
     # Pattern for MIT OCW headers like "MITOCW | MIT8_01F16_L00v01_360p"
-    text = re.sub(r'^MITOCW\s*\|\s*[A-Za-z0-9_]+\s*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r"^MITOCW\s*\|\s*[A-Za-z0-9_]+\s*", "", text, flags=re.IGNORECASE)
     # Pattern for standalone video markers like "MIT8_01F16_L00v01_360p"
-    text = re.sub(r'^MIT\d+[A-Za-z]*_[A-Za-z0-9_]+\s*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r"^MIT\d+[A-Za-z]*_[A-Za-z0-9_]+\s*", "", text, flags=re.IGNORECASE)
     # Pattern for leftover video quality markers like "v01_360p"
-    text = re.sub(r'^[vV]\d+_\d+p\s*', '', text)
+    text = re.sub(r"^[vV]\d+_\d+p\s*", "", text)
     text = text.strip()
 
     if not text:
@@ -759,17 +821,17 @@ def chunk_text_for_tts(text: str, max_chars: int = 300, min_chars: int = 50) -> 
     paragraphs = []
     current_para = []
 
-    for line in text.split('\n'):
+    for line in text.split("\n"):
         stripped = line.strip()
         if not stripped:
             if current_para:
-                paragraphs.append(' '.join(current_para))
+                paragraphs.append(" ".join(current_para))
                 current_para = []
         else:
             current_para.append(stripped)
 
     if current_para:
-        paragraphs.append(' '.join(current_para))
+        paragraphs.append(" ".join(current_para))
 
     segments = []
 
@@ -780,7 +842,7 @@ def chunk_text_for_tts(text: str, max_chars: int = 300, min_chars: int = 50) -> 
         # Split paragraph into sentences
         # Handle common sentence endings while preserving abbreviations
         # Split on sentence-ending punctuation followed by space or end
-        sentence_pattern = r'(?<=[.!?])\s+(?=[A-Z])|(?<=[.!?])$'
+        sentence_pattern = r"(?<=[.!?])\s+(?=[A-Z])|(?<=[.!?])$"
         sentences = re.split(sentence_pattern, paragraph)
         sentences = [s.strip() for s in sentences if s.strip()]
 
@@ -795,16 +857,18 @@ def chunk_text_for_tts(text: str, max_chars: int = 300, min_chars: int = 50) -> 
             if sentence_len > max_chars:
                 # Flush current chunk first
                 if current_chunk:
-                    chunk_text = ' '.join(current_chunk)
-                    segments.append({
-                        "content": chunk_text,
-                        "type": "lecture" if para_idx == 0 else "explanation"
-                    })
+                    chunk_text = " ".join(current_chunk)
+                    segments.append(
+                        {
+                            "content": chunk_text,
+                            "type": "lecture" if para_idx == 0 else "explanation",
+                        }
+                    )
                     current_chunk = []
                     current_length = 0
 
                 # Split long sentence on clause boundaries (commas, semicolons)
-                clause_pattern = r'(?<=[,;:])\s+'
+                clause_pattern = r"(?<=[,;:])\s+"
                 clauses = re.split(clause_pattern, sentence)
 
                 clause_chunk = []
@@ -816,10 +880,9 @@ def chunk_text_for_tts(text: str, max_chars: int = 300, min_chars: int = 50) -> 
                         continue
 
                     if clause_length + len(clause) + 1 > max_chars and clause_chunk:
-                        segments.append({
-                            "content": ' '.join(clause_chunk),
-                            "type": "lecture"
-                        })
+                        segments.append(
+                            {"content": " ".join(clause_chunk), "type": "lecture"}
+                        )
                         clause_chunk = []
                         clause_length = 0
 
@@ -833,11 +896,13 @@ def chunk_text_for_tts(text: str, max_chars: int = 300, min_chars: int = 50) -> 
                 # Normal case: accumulate sentences
                 if current_length + sentence_len + 1 > max_chars and current_chunk:
                     # Flush current chunk
-                    chunk_text = ' '.join(current_chunk)
-                    segments.append({
-                        "content": chunk_text,
-                        "type": "lecture" if len(segments) == 0 else "explanation"
-                    })
+                    chunk_text = " ".join(current_chunk)
+                    segments.append(
+                        {
+                            "content": chunk_text,
+                            "type": "lecture" if len(segments) == 0 else "explanation",
+                        }
+                    )
                     current_chunk = []
                     current_length = 0
 
@@ -846,13 +911,15 @@ def chunk_text_for_tts(text: str, max_chars: int = 300, min_chars: int = 50) -> 
 
         # Flush remaining chunk for this paragraph
         if current_chunk:
-            chunk_text = ' '.join(current_chunk)
+            chunk_text = " ".join(current_chunk)
             # Only add if it meets minimum length or it's all we have
             if len(chunk_text) >= min_chars or not segments:
-                segments.append({
-                    "content": chunk_text,
-                    "type": "lecture" if len(segments) == 0 else "explanation"
-                })
+                segments.append(
+                    {
+                        "content": chunk_text,
+                        "type": "lecture" if len(segments) == 0 else "explanation",
+                    }
+                )
             elif segments:
                 # Append to previous segment if too short
                 prev = segments[-1]
@@ -864,7 +931,9 @@ def chunk_text_for_tts(text: str, max_chars: int = 300, min_chars: int = 50) -> 
 
     logger.info(f"Chunked {len(text)} chars into {len(segments)} segments")
     for idx, seg in enumerate(segments):
-        logger.debug(f"  Segment {idx}: {len(seg['content'])} chars - {seg['content'][:50]}...")
+        logger.debug(
+            f"  Segment {idx}: {len(seg['content'])} chars - {seg['content'][:50]}..."
+        )
 
     return segments
 
@@ -873,16 +942,19 @@ def chunk_text_for_tts(text: str, max_chars: int = 300, min_chars: int = 50) -> 
 # WebSocket Broadcasting
 # =============================================================================
 
+
 async def broadcast_message(msg_type: str, data: Any):
     """Broadcast a message to all connected WebSocket clients."""
     if not state.websockets:
         return
 
-    message = json.dumps({
-        "type": msg_type,
-        "data": data,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
-    })
+    message = json.dumps(
+        {
+            "type": msg_type,
+            "data": data,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+        }
+    )
 
     dead_sockets = set()
     for ws in state.websockets:
@@ -899,6 +971,7 @@ async def broadcast_message(msg_type: str, data: Any):
 # API Handlers - Logs
 # =============================================================================
 
+
 async def handle_receive_log(request: web.Request) -> web.Response:
     """Receive log entries from iOS clients."""
     try:
@@ -910,9 +983,7 @@ async def handle_receive_log(request: web.Request) -> web.Response:
         # Update or create client
         if client_id not in state.clients:
             state.clients[client_id] = RemoteClient(
-                id=client_id,
-                name=client_name,
-                ip_address=client_ip
+                id=client_id, name=client_name, ip_address=client_ip
             )
         client = state.clients[client_id]
         client.last_seen = time.time()
@@ -925,7 +996,9 @@ async def handle_receive_log(request: web.Request) -> web.Response:
         for log_data in logs:
             entry = LogEntry(
                 id=str(uuid.uuid4()),
-                timestamp=log_data.get("timestamp", datetime.utcnow().isoformat() + "Z"),
+                timestamp=log_data.get(
+                    "timestamp", datetime.utcnow().isoformat() + "Z"
+                ),
                 level=log_data.get("level", "INFO"),
                 label=log_data.get("label", ""),
                 message=log_data.get("message", ""),
@@ -934,7 +1007,7 @@ async def handle_receive_log(request: web.Request) -> web.Response:
                 line=log_data.get("line", 0),
                 metadata=log_data.get("metadata", {}),
                 client_id=client_id,
-                client_name=client_name
+                client_name=client_name,
             )
             state.logs.append(entry)
             state.stats["total_logs_received"] += 1
@@ -971,34 +1044,47 @@ async def handle_get_logs(request: web.Request) -> web.Response:
 
         if level:
             levels = level.split(",")
-            filtered = [l for l in filtered if l.level in levels]
+            filtered = [
+                log_entry for log_entry in filtered if log_entry.level in levels
+            ]
 
         if search:
-            filtered = [l for l in filtered if search in l.message.lower() or search in l.label.lower()]
+            filtered = [
+                log_entry
+                for log_entry in filtered
+                if search in log_entry.message.lower()
+                or search in log_entry.label.lower()
+            ]
 
         if client_id:
-            filtered = [l for l in filtered if l.client_id == client_id]
+            filtered = [
+                log_entry for log_entry in filtered if log_entry.client_id == client_id
+            ]
 
         if label:
-            filtered = [l for l in filtered if label in l.label]
+            filtered = [log_entry for log_entry in filtered if label in log_entry.label]
 
         if since:
             since_ts = float(since)
-            filtered = [l for l in filtered if l.received_at > since_ts]
+            filtered = [
+                log_entry for log_entry in filtered if log_entry.received_at > since_ts
+            ]
 
         # Sort by received_at descending (newest first)
         filtered.sort(key=lambda x: x.received_at, reverse=True)
 
         # Paginate
         total = len(filtered)
-        filtered = filtered[offset:offset + limit]
+        filtered = filtered[offset : offset + limit]
 
-        return web.json_response({
-            "logs": [asdict(l) for l in filtered],
-            "total": total,
-            "limit": limit,
-            "offset": offset
-        })
+        return web.json_response(
+            {
+                "logs": [asdict(log_entry) for log_entry in filtered],
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting logs: {e}")
@@ -1018,6 +1104,7 @@ async def handle_clear_logs(request: web.Request) -> web.Response:
 # API Handlers - Metrics
 # =============================================================================
 
+
 async def handle_receive_metrics(request: web.Request) -> web.Response:
     """Receive metrics snapshot from iOS clients."""
     try:
@@ -1028,9 +1115,7 @@ async def handle_receive_metrics(request: web.Request) -> web.Response:
         # Update client
         if client_id not in state.clients:
             state.clients[client_id] = RemoteClient(
-                id=client_id,
-                name=client_name,
-                ip_address=request.remote or "unknown"
+                id=client_id, name=client_name, ip_address=request.remote or "unknown"
             )
         client = state.clients[client_id]
         client.last_seen = time.time()
@@ -1061,7 +1146,7 @@ async def handle_receive_metrics(request: web.Request) -> web.Response:
             total_cost=data.get("totalCost", 0),
             thermal_throttle_events=data.get("thermalThrottleEvents", 0),
             network_degradations=data.get("networkDegradations", 0),
-            raw_data=data
+            raw_data=data,
         )
 
         state.metrics_history.append(snapshot)
@@ -1102,20 +1187,24 @@ async def handle_get_metrics(request: web.Request) -> web.Response:
             total_sessions = len(set(m.id for m in metrics))
             total_turns = sum(m.turns_total for m in metrics)
         else:
-            avg_e2e = avg_llm = avg_stt = avg_tts = total_cost = total_sessions = total_turns = 0
+            avg_e2e = avg_llm = avg_stt = avg_tts = total_cost = total_sessions = (
+                total_turns
+            ) = 0
 
-        return web.json_response({
-            "metrics": [asdict(m) for m in metrics],
-            "aggregates": {
-                "avg_e2e_latency": round(avg_e2e, 2),
-                "avg_llm_ttft": round(avg_llm, 2),
-                "avg_stt_latency": round(avg_stt, 2),
-                "avg_tts_ttfb": round(avg_tts, 2),
-                "total_cost": round(total_cost, 4),
-                "total_sessions": total_sessions,
-                "total_turns": total_turns
+        return web.json_response(
+            {
+                "metrics": [asdict(m) for m in metrics],
+                "aggregates": {
+                    "avg_e2e_latency": round(avg_e2e, 2),
+                    "avg_llm_ttft": round(avg_llm, 2),
+                    "avg_stt_latency": round(avg_stt, 2),
+                    "avg_tts_ttfb": round(avg_tts, 2),
+                    "total_cost": round(total_cost, 4),
+                    "total_sessions": total_sessions,
+                    "total_turns": total_turns,
+                },
             }
-        })
+        )
 
     except Exception as e:
         logger.error(f"Error getting metrics: {e}")
@@ -1125,6 +1214,7 @@ async def handle_get_metrics(request: web.Request) -> web.Response:
 # =============================================================================
 # API Handlers - Remote Clients
 # =============================================================================
+
 
 async def handle_get_clients(request: web.Request) -> web.Response:
     """Get all remote clients."""
@@ -1142,13 +1232,15 @@ async def handle_get_clients(request: web.Request) -> web.Response:
         clients = list(state.clients.values())
         clients.sort(key=lambda x: x.last_seen, reverse=True)
 
-        return web.json_response({
-            "clients": [asdict(c) for c in clients],
-            "total": len(clients),
-            "online": sum(1 for c in clients if c.status == "online"),
-            "idle": sum(1 for c in clients if c.status == "idle"),
-            "offline": sum(1 for c in clients if c.status == "offline")
-        })
+        return web.json_response(
+            {
+                "clients": [asdict(c) for c in clients],
+                "total": len(clients),
+                "online": sum(1 for c in clients if c.status == "online"),
+                "idle": sum(1 for c in clients if c.status == "idle"),
+                "offline": sum(1 for c in clients if c.status == "offline"),
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting clients: {e}")
@@ -1159,7 +1251,9 @@ async def handle_client_heartbeat(request: web.Request) -> web.Response:
     """Handle client heartbeat/registration."""
     try:
         data = await request.json()
-        client_id = data.get("client_id") or request.headers.get("X-Client-ID", str(uuid.uuid4()))
+        client_id = data.get("client_id") or request.headers.get(
+            "X-Client-ID", str(uuid.uuid4())
+        )
 
         if client_id not in state.clients:
             state.clients[client_id] = RemoteClient(
@@ -1168,7 +1262,7 @@ async def handle_client_heartbeat(request: web.Request) -> web.Response:
                 device_model=data.get("device_model", ""),
                 os_version=data.get("os_version", ""),
                 app_version=data.get("app_version", ""),
-                ip_address=request.remote or "unknown"
+                ip_address=request.remote or "unknown",
             )
 
         client = state.clients[client_id]
@@ -1182,11 +1276,13 @@ async def handle_client_heartbeat(request: web.Request) -> web.Response:
 
         await broadcast_message("client_update", asdict(client))
 
-        return web.json_response({
-            "status": "ok",
-            "client_id": client_id,
-            "server_time": datetime.utcnow().isoformat() + "Z"
-        })
+        return web.json_response(
+            {
+                "status": "ok",
+                "client_id": client_id,
+                "server_time": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error handling heartbeat: {e}")
@@ -1196,6 +1292,7 @@ async def handle_client_heartbeat(request: web.Request) -> web.Response:
 # =============================================================================
 # API Handlers - Servers
 # =============================================================================
+
 
 async def check_server_health(server: ServerStatus) -> ServerStatus:
     """Check health of a single server."""
@@ -1227,11 +1324,13 @@ async def check_server_health(server: ServerStatus) -> ServerStatus:
                     try:
                         data = await response.json()
                         if server.type == "ollama" and "models" in data:
-                            server.models = [m.get("name", "") for m in data.get("models", [])]
+                            server.models = [
+                                m.get("name", "") for m in data.get("models", [])
+                            ]
                             server.capabilities = {"models": server.models}
                         elif server.type == "piper":
                             server.capabilities = {"voices": data}
-                    except:
+                    except Exception:
                         pass
                 elif response.status == 503:
                     server.status = "degraded"
@@ -1260,13 +1359,15 @@ async def handle_get_servers(request: web.Request) -> web.Response:
 
         servers = list(state.servers.values())
 
-        return web.json_response({
-            "servers": [asdict(s) for s in servers],
-            "total": len(servers),
-            "healthy": sum(1 for s in servers if s.status == "healthy"),
-            "degraded": sum(1 for s in servers if s.status == "degraded"),
-            "unhealthy": sum(1 for s in servers if s.status == "unhealthy")
-        })
+        return web.json_response(
+            {
+                "servers": [asdict(s) for s in servers],
+                "total": len(servers),
+                "healthy": sum(1 for s in servers if s.status == "healthy"),
+                "degraded": sum(1 for s in servers if s.status == "degraded"),
+                "unhealthy": sum(1 for s in servers if s.status == "unhealthy"),
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting servers: {e}")
@@ -1284,7 +1385,7 @@ async def handle_add_server(request: web.Request) -> web.Response:
             name=data.get("name", "Custom Server"),
             type=data.get("type", "custom"),
             url=data.get("url", ""),
-            port=data.get("port", 8080)
+            port=data.get("port", 8080),
         )
 
         # Check health immediately
@@ -1320,6 +1421,7 @@ async def handle_delete_server(request: web.Request) -> web.Response:
 # API Handlers - Models
 # =============================================================================
 
+
 async def get_ollama_model_details() -> dict:
     """Get detailed model info from Ollama including sizes and loaded status."""
     model_details = {}
@@ -1337,9 +1439,13 @@ async def get_ollama_model_details() -> dict:
                         model_details[name] = {
                             "size_bytes": model.get("size", 0),
                             "size_gb": round(model.get("size", 0) / (1024**3), 2),
-                            "parameter_size": model.get("details", {}).get("parameter_size", ""),
-                            "quantization": model.get("details", {}).get("quantization_level", ""),
-                            "family": model.get("details", {}).get("family", "")
+                            "parameter_size": model.get("details", {}).get(
+                                "parameter_size", ""
+                            ),
+                            "quantization": model.get("details", {}).get(
+                                "quantization_level", ""
+                            ),
+                            "family": model.get("details", {}).get("family", ""),
                         }
 
             # Get currently loaded models (includes VRAM usage)
@@ -1351,8 +1457,10 @@ async def get_ollama_model_details() -> dict:
                         loaded_models[name] = {
                             "loaded": True,
                             "size_vram": model.get("size_vram", 0),
-                            "size_vram_gb": round(model.get("size_vram", 0) / (1024**3), 2),
-                            "expires_at": model.get("expires_at", "")
+                            "size_vram_gb": round(
+                                model.get("size_vram", 0) / (1024**3), 2
+                            ),
+                            "expires_at": model.get("expires_at", ""),
                         }
     except Exception as e:
         logger.debug(f"Failed to get Ollama model details: {e}")
@@ -1390,34 +1498,44 @@ async def handle_get_models(request: web.Request) -> web.Response:
                         # Get context window from MODEL_CONTEXT_WINDOWS
                         context_window = MODEL_CONTEXT_WINDOWS.get(model_name, 32_000)
 
-                        models.append({
-                            "id": f"{srv.id}:{model_name}",
-                            "name": model_name,
-                            "type": "llm",
+                        models.append(
+                            {
+                                "id": f"{srv.id}:{model_name}",
+                                "name": model_name,
+                                "type": "llm",
+                                "server_id": srv.id,
+                                "server_name": srv.name,
+                                "status": "loaded" if is_loaded else "available",
+                                "size_bytes": size_bytes,
+                                "size_gb": details.get("size_gb", 0),
+                                "parameter_size": details.get("parameter_size", ""),
+                                "quantization": details.get("quantization", ""),
+                                "family": details.get("family", ""),
+                                "context_window": context_window,
+                                "context_window_formatted": f"{context_window // 1000}K"
+                                if context_window >= 1000
+                                else str(context_window),
+                                "vram_bytes": loaded_info.get("size_vram", 0)
+                                if is_loaded
+                                else 0,
+                                "vram_gb": loaded_info.get("size_vram_gb", 0)
+                                if is_loaded
+                                else 0,
+                            }
+                        )
+                elif srv.type == "whisper":
+                    models.append(
+                        {
+                            "id": f"{srv.id}:whisper",
+                            "name": "Whisper",
+                            "type": "stt",
                             "server_id": srv.id,
                             "server_name": srv.name,
-                            "status": "loaded" if is_loaded else "available",
-                            "size_bytes": size_bytes,
-                            "size_gb": details.get("size_gb", 0),
-                            "parameter_size": details.get("parameter_size", ""),
-                            "quantization": details.get("quantization", ""),
-                            "family": details.get("family", ""),
-                            "context_window": context_window,
-                            "context_window_formatted": f"{context_window // 1000}K" if context_window >= 1000 else str(context_window),
-                            "vram_bytes": loaded_info.get("size_vram", 0) if is_loaded else 0,
-                            "vram_gb": loaded_info.get("size_vram_gb", 0) if is_loaded else 0
-                        })
-                elif srv.type == "whisper":
-                    models.append({
-                        "id": f"{srv.id}:whisper",
-                        "name": "Whisper",
-                        "type": "stt",
-                        "server_id": srv.id,
-                        "server_name": srv.name,
-                        "status": "available",
-                        "size_bytes": 0,
-                        "size_gb": 0
-                    })
+                            "status": "available",
+                            "size_bytes": 0,
+                            "size_gb": 0,
+                        }
+                    )
                 elif srv.type == "piper":
                     # Piper voices can be nested: {"voices": {"voices": [...]}}
                     try:
@@ -1425,51 +1543,63 @@ async def handle_get_models(request: web.Request) -> web.Response:
                         if isinstance(voices_data, dict):
                             voices = voices_data.get("voices", [])
                         else:
-                            voices = voices_data if isinstance(voices_data, list) else []
+                            voices = (
+                                voices_data if isinstance(voices_data, list) else []
+                            )
 
                         if not isinstance(voices, list):
                             voices = []
 
                         for voice in list(voices)[:10]:  # Limit to 10 voices
-                            voice_name = voice if isinstance(voice, str) else voice.get("name", "unknown")
-                            models.append({
-                                "id": f"{srv.id}:{voice_name}",
-                                "name": voice_name,
-                                "type": "tts",
-                                "server_id": srv.id,
-                                "server_name": srv.name,
-                                "status": "available",
-                                "size_bytes": 0,
-                                "size_gb": 0
-                            })
+                            voice_name = (
+                                voice
+                                if isinstance(voice, str)
+                                else voice.get("name", "unknown")
+                            )
+                            models.append(
+                                {
+                                    "id": f"{srv.id}:{voice_name}",
+                                    "name": voice_name,
+                                    "type": "tts",
+                                    "server_id": srv.id,
+                                    "server_name": srv.name,
+                                    "status": "available",
+                                    "size_bytes": 0,
+                                    "size_gb": 0,
+                                }
+                            )
                     except Exception as e:
                         logger.warning(f"Failed to parse piper voices: {e}")
                 elif srv.type == "vibevoice":
                     # VibeVoice model info
-                    models.append({
-                        "id": f"{srv.id}:vibevoice",
-                        "name": "VibeVoice-Realtime-0.5B",
-                        "type": "tts",
-                        "server_id": srv.id,
-                        "server_name": srv.name,
-                        "status": "loaded",
-                        "size_bytes": 2 * 1024**3,  # ~2GB
-                        "size_gb": 2.0,
-                        "parameter_size": "0.5B"
-                    })
+                    models.append(
+                        {
+                            "id": f"{srv.id}:vibevoice",
+                            "name": "VibeVoice-Realtime-0.5B",
+                            "type": "tts",
+                            "server_id": srv.id,
+                            "server_name": srv.name,
+                            "status": "loaded",
+                            "size_bytes": 2 * 1024**3,  # ~2GB
+                            "size_gb": 2.0,
+                            "parameter_size": "0.5B",
+                        }
+                    )
 
-        return web.json_response({
-            "models": models,
-            "total": len(models),
-            "by_type": {
-                "llm": sum(1 for m in models if m["type"] == "llm"),
-                "stt": sum(1 for m in models if m["type"] == "stt"),
-                "tts": sum(1 for m in models if m["type"] == "tts")
-            },
-            "total_size_gb": round(total_size_bytes / (1024**3), 2),
-            "loaded_vram_gb": round(total_loaded_vram / (1024**3), 2),
-            "system_memory": get_system_memory()
-        })
+        return web.json_response(
+            {
+                "models": models,
+                "total": len(models),
+                "by_type": {
+                    "llm": sum(1 for m in models if m["type"] == "llm"),
+                    "stt": sum(1 for m in models if m["type"] == "stt"),
+                    "tts": sum(1 for m in models if m["type"] == "tts"),
+                },
+                "total_size_gb": round(total_size_bytes / (1024**3), 2),
+                "loaded_vram_gb": round(total_loaded_vram / (1024**3), 2),
+                "system_memory": get_system_memory(),
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting models: {e}")
@@ -1503,19 +1633,18 @@ async def handle_load_model(request: web.Request) -> web.Response:
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.post(
                 "http://localhost:11434/api/generate",
-                json={
-                    "model": model_name,
-                    "prompt": "",
-                    "keep_alive": keep_alive
-                }
+                json={"model": model_name, "prompt": "", "keep_alive": keep_alive},
             ) as resp:
                 if resp.status != 200:
                     error_text = await resp.text()
-                    return web.json_response({
-                        "status": "error",
-                        "model": model_name,
-                        "error": f"Ollama returned {resp.status}: {error_text}"
-                    }, status=resp.status)
+                    return web.json_response(
+                        {
+                            "status": "error",
+                            "model": model_name,
+                            "error": f"Ollama returned {resp.status}: {error_text}",
+                        },
+                        status=resp.status,
+                    )
 
                 # Consume the streaming response
                 async for _ in resp.content:
@@ -1526,7 +1655,9 @@ async def handle_load_model(request: web.Request) -> web.Response:
         # Get updated VRAM usage
         vram_bytes = 0
         try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+            async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=5)
+            ) as session:
                 async with session.get("http://localhost:11434/api/ps") as resp:
                     if resp.status == 200:
                         data = await resp.json()
@@ -1538,30 +1669,35 @@ async def handle_load_model(request: web.Request) -> web.Response:
             pass
 
         logger.info(f"Loaded model {model_name} in {load_time_ms}ms")
-        await broadcast_message("model_loaded", {"model": model_name, "vram_bytes": vram_bytes})
+        await broadcast_message(
+            "model_loaded", {"model": model_name, "vram_bytes": vram_bytes}
+        )
 
-        return web.json_response({
-            "status": "ok",
-            "model": model_name,
-            "vram_bytes": vram_bytes,
-            "vram_gb": round(vram_bytes / (1024**3), 2),
-            "load_time_ms": load_time_ms,
-            "message": f"Model {model_name} loaded successfully"
-        })
+        return web.json_response(
+            {
+                "status": "ok",
+                "model": model_name,
+                "vram_bytes": vram_bytes,
+                "vram_gb": round(vram_bytes / (1024**3), 2),
+                "load_time_ms": load_time_ms,
+                "message": f"Model {model_name} loaded successfully",
+            }
+        )
 
     except asyncio.TimeoutError:
-        return web.json_response({
-            "status": "error",
-            "model": model_id,
-            "error": "Timeout loading model (may still be loading in background)"
-        }, status=504)
+        return web.json_response(
+            {
+                "status": "error",
+                "model": model_id,
+                "error": "Timeout loading model (may still be loading in background)",
+            },
+            status=504,
+        )
     except Exception as e:
         logger.error(f"Error loading model {model_id}: {e}")
-        return web.json_response({
-            "status": "error",
-            "model": model_id,
-            "error": str(e)
-        }, status=500)
+        return web.json_response(
+            {"status": "error", "model": model_id, "error": str(e)}, status=500
+        )
 
 
 async def handle_unload_model(request: web.Request) -> web.Response:
@@ -1578,7 +1714,9 @@ async def handle_unload_model(request: web.Request) -> web.Response:
         # Get current VRAM usage before unload
         vram_before = 0
         try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+            async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=5)
+            ) as session:
                 async with session.get("http://localhost:11434/api/ps") as resp:
                     if resp.status == 200:
                         data = await resp.json()
@@ -1590,54 +1728,59 @@ async def handle_unload_model(request: web.Request) -> web.Response:
             pass
 
         if vram_before == 0:
-            return web.json_response({
-                "status": "ok",
-                "model": model_name,
-                "message": "Model was not loaded",
-                "freed_vram_bytes": 0
-            })
+            return web.json_response(
+                {
+                    "status": "ok",
+                    "model": model_name,
+                    "message": "Model was not loaded",
+                    "freed_vram_bytes": 0,
+                }
+            )
 
         # Unload by setting keep_alive to 0
         timeout = aiohttp.ClientTimeout(total=30)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.post(
                 "http://localhost:11434/api/generate",
-                json={
-                    "model": model_name,
-                    "prompt": "",
-                    "keep_alive": 0
-                }
+                json={"model": model_name, "prompt": "", "keep_alive": 0},
             ) as resp:
                 if resp.status != 200:
                     error_text = await resp.text()
-                    return web.json_response({
-                        "status": "error",
-                        "model": model_name,
-                        "error": f"Ollama returned {resp.status}: {error_text}"
-                    }, status=resp.status)
+                    return web.json_response(
+                        {
+                            "status": "error",
+                            "model": model_name,
+                            "error": f"Ollama returned {resp.status}: {error_text}",
+                        },
+                        status=resp.status,
+                    )
 
                 # Consume the streaming response
                 async for _ in resp.content:
                     pass
 
-        logger.info(f"Unloaded model {model_name}, freed {vram_before / (1024**3):.2f} GB")
-        await broadcast_message("model_unloaded", {"model": model_name, "freed_vram_bytes": vram_before})
+        logger.info(
+            f"Unloaded model {model_name}, freed {vram_before / (1024**3):.2f} GB"
+        )
+        await broadcast_message(
+            "model_unloaded", {"model": model_name, "freed_vram_bytes": vram_before}
+        )
 
-        return web.json_response({
-            "status": "ok",
-            "model": model_name,
-            "freed_vram_bytes": vram_before,
-            "freed_vram_gb": round(vram_before / (1024**3), 2),
-            "message": f"Model {model_name} unloaded"
-        })
+        return web.json_response(
+            {
+                "status": "ok",
+                "model": model_name,
+                "freed_vram_bytes": vram_before,
+                "freed_vram_gb": round(vram_before / (1024**3), 2),
+                "message": f"Model {model_name} unloaded",
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error unloading model {model_id}: {e}")
-        return web.json_response({
-            "status": "error",
-            "model": model_id,
-            "error": str(e)
-        }, status=500)
+        return web.json_response(
+            {"status": "error", "model": model_id, "error": str(e)}, status=500
+        )
 
 
 async def handle_pull_model(request: web.Request) -> web.StreamResponse:
@@ -1660,7 +1803,7 @@ async def handle_pull_model(request: web.Request) -> web.StreamResponse:
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive",
                 "X-Accel-Buffering": "no",
-            }
+            },
         )
         await response.prepare(request)
 
@@ -1669,7 +1812,7 @@ async def handle_pull_model(request: web.Request) -> web.StreamResponse:
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.post(
                 "http://localhost:11434/api/pull",
-                json={"name": model_name, "stream": True}
+                json={"name": model_name, "stream": True},
             ) as resp:
                 if resp.status != 200:
                     error_msg = await resp.text()
@@ -1696,7 +1839,9 @@ async def handle_pull_model(request: web.Request) -> web.StreamResponse:
                                 sse_data["error"] = data["error"]
                                 sse_data["status"] = "error"
 
-                            await response.write(f"data: {json.dumps(sse_data)}\n\n".encode())
+                            await response.write(
+                                f"data: {json.dumps(sse_data)}\n\n".encode()
+                            )
 
                         except json.JSONDecodeError:
                             continue
@@ -1733,32 +1878,34 @@ async def handle_delete_model(request: web.Request) -> web.Response:
         timeout = aiohttp.ClientTimeout(total=30)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.delete(
-                "http://localhost:11434/api/delete",
-                json={"name": model_name}
+                "http://localhost:11434/api/delete", json={"name": model_name}
             ) as resp:
                 if resp.status == 200:
                     logger.info(f"Deleted model: {model_name}")
                     await broadcast_message("model_deleted", {"model": model_name})
-                    return web.json_response({
-                        "status": "ok",
-                        "model": model_name,
-                        "message": f"Model {model_name} deleted"
-                    })
+                    return web.json_response(
+                        {
+                            "status": "ok",
+                            "model": model_name,
+                            "message": f"Model {model_name} deleted",
+                        }
+                    )
                 else:
                     error_text = await resp.text()
-                    return web.json_response({
-                        "status": "error",
-                        "model": model_name,
-                        "error": f"Ollama returned {resp.status}: {error_text}"
-                    }, status=resp.status)
+                    return web.json_response(
+                        {
+                            "status": "error",
+                            "model": model_name,
+                            "error": f"Ollama returned {resp.status}: {error_text}",
+                        },
+                        status=resp.status,
+                    )
 
     except Exception as e:
         logger.error(f"Error deleting model {model_id}: {e}")
-        return web.json_response({
-            "status": "error",
-            "model": model_id,
-            "error": str(e)
-        }, status=500)
+        return web.json_response(
+            {"status": "error", "model": model_id, "error": str(e)}, status=500
+        )
 
 
 # Model configuration file path
@@ -1778,7 +1925,7 @@ def load_model_config() -> dict:
         "services": {
             "llm": {"default_model": None, "fallback_model": None},
             "tts": {"default_provider": "vibevoice", "default_voice": "nova"},
-            "stt": {"default_model": "whisper"}
+            "stt": {"default_model": "whisper"},
         }
     }
 
@@ -1794,16 +1941,10 @@ async def handle_get_model_config(request: web.Request) -> web.Response:
     """Get current model configuration for all services."""
     try:
         config = load_model_config()
-        return web.json_response({
-            "status": "ok",
-            "config": config
-        })
+        return web.json_response({"status": "ok", "config": config})
     except Exception as e:
         logger.error(f"Error getting model config: {e}")
-        return web.json_response({
-            "status": "error",
-            "error": str(e)
-        }, status=500)
+        return web.json_response({"status": "error", "error": str(e)}, status=500)
 
 
 async def handle_save_model_config(request: web.Request) -> web.Response:
@@ -1814,10 +1955,10 @@ async def handle_save_model_config(request: web.Request) -> web.Response:
 
         # Validate structure
         if "services" not in config:
-            return web.json_response({
-                "status": "error",
-                "error": "Invalid config: 'services' key required"
-            }, status=400)
+            return web.json_response(
+                {"status": "error", "error": "Invalid config: 'services' key required"},
+                status=400,
+            )
 
         # Merge with existing config to preserve unset values
         existing = load_model_config()
@@ -1830,23 +1971,17 @@ async def handle_save_model_config(request: web.Request) -> web.Response:
         save_model_config(existing)
         logger.info(f"Model config saved: {existing}")
 
-        return web.json_response({
-            "status": "ok",
-            "config": existing,
-            "message": "Configuration saved"
-        })
+        return web.json_response(
+            {"status": "ok", "config": existing, "message": "Configuration saved"}
+        )
 
     except json.JSONDecodeError:
-        return web.json_response({
-            "status": "error",
-            "error": "Invalid JSON"
-        }, status=400)
+        return web.json_response(
+            {"status": "error", "error": "Invalid JSON"}, status=400
+        )
     except Exception as e:
         logger.error(f"Error saving model config: {e}")
-        return web.json_response({
-            "status": "error",
-            "error": str(e)
-        }, status=500)
+        return web.json_response({"status": "error", "error": str(e)}, status=500)
 
 
 # Model parameters configuration file path
@@ -1854,12 +1989,40 @@ MODEL_PARAMS_PATH = Path(__file__).parent / "data" / "model_params.json"
 
 # Default parameter definitions with ranges
 DEFAULT_MODEL_PARAMS = {
-    "num_ctx": {"value": 4096, "min": 256, "max": 131072, "description": "Context window size"},
-    "temperature": {"value": 0.8, "min": 0.0, "max": 2.0, "step": 0.1, "description": "Sampling temperature"},
-    "top_p": {"value": 0.9, "min": 0.0, "max": 1.0, "step": 0.05, "description": "Top-p (nucleus) sampling"},
+    "num_ctx": {
+        "value": 4096,
+        "min": 256,
+        "max": 131072,
+        "description": "Context window size",
+    },
+    "temperature": {
+        "value": 0.8,
+        "min": 0.0,
+        "max": 2.0,
+        "step": 0.1,
+        "description": "Sampling temperature",
+    },
+    "top_p": {
+        "value": 0.9,
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05,
+        "description": "Top-p (nucleus) sampling",
+    },
     "top_k": {"value": 40, "min": 1, "max": 100, "description": "Top-k sampling"},
-    "repeat_penalty": {"value": 1.1, "min": 0.0, "max": 2.0, "step": 0.1, "description": "Repeat penalty"},
-    "seed": {"value": -1, "min": -1, "max": 2147483647, "description": "Random seed (-1 for random)"},
+    "repeat_penalty": {
+        "value": 1.1,
+        "min": 0.0,
+        "max": 2.0,
+        "step": 0.1,
+        "description": "Repeat penalty",
+    },
+    "seed": {
+        "value": -1,
+        "min": -1,
+        "max": 2147483647,
+        "description": "Random seed (-1 for random)",
+    },
 }
 
 
@@ -1912,7 +2075,7 @@ async def handle_get_model_parameters(request: web.Request) -> web.Response:
         for key, default_def in DEFAULT_MODEL_PARAMS.items():
             param = {
                 **default_def,
-                "value": saved_params.get(key, default_def["value"])
+                "value": saved_params.get(key, default_def["value"]),
             }
             # Override num_ctx max with model's actual context window
             if key == "num_ctx":
@@ -1920,23 +2083,25 @@ async def handle_get_model_parameters(request: web.Request) -> web.Response:
                 param["model_max_context"] = model_context_window
             params[key] = param
 
-        return web.json_response({
-            "status": "ok",
-            "model": model_name,
-            "parameters": params,
-            "model_info": {
-                "context_window": model_context_window,
-                "context_window_formatted": f"{model_context_window // 1000}K" if model_context_window >= 1000 else str(model_context_window)
+        return web.json_response(
+            {
+                "status": "ok",
+                "model": model_name,
+                "parameters": params,
+                "model_info": {
+                    "context_window": model_context_window,
+                    "context_window_formatted": f"{model_context_window // 1000}K"
+                    if model_context_window >= 1000
+                    else str(model_context_window),
+                },
             }
-        })
+        )
 
     except Exception as e:
         logger.error(f"Error getting model parameters: {e}")
-        return web.json_response({
-            "status": "error",
-            "model": model_id,
-            "error": str(e)
-        }, status=500)
+        return web.json_response(
+            {"status": "error", "model": model_id, "error": str(e)}, status=500
+        )
 
 
 async def handle_save_model_parameters(request: web.Request) -> web.Response:
@@ -1967,25 +2132,24 @@ async def handle_save_model_parameters(request: web.Request) -> web.Response:
         save_model_params(model_name, validated_params)
         logger.info(f"Model parameters saved for {model_name}: {validated_params}")
 
-        return web.json_response({
-            "status": "ok",
-            "model": model_name,
-            "parameters": validated_params,
-            "message": "Parameters saved"
-        })
+        return web.json_response(
+            {
+                "status": "ok",
+                "model": model_name,
+                "parameters": validated_params,
+                "message": "Parameters saved",
+            }
+        )
 
     except json.JSONDecodeError:
-        return web.json_response({
-            "status": "error",
-            "error": "Invalid JSON"
-        }, status=400)
+        return web.json_response(
+            {"status": "error", "error": "Invalid JSON"}, status=400
+        )
     except Exception as e:
         logger.error(f"Error saving model parameters: {e}")
-        return web.json_response({
-            "status": "error",
-            "model": model_id,
-            "error": str(e)
-        }, status=500)
+        return web.json_response(
+            {"status": "error", "model": model_id, "error": str(e)}, status=500
+        )
 
 
 async def handle_get_model_capabilities(request: web.Request) -> web.Response:
@@ -2014,34 +2178,46 @@ async def handle_get_model_capabilities(request: web.Request) -> web.Response:
             else:
                 provider = "ollama"
 
-            capabilities.append({
-                "model": model_name,
-                "context_window": context_window,
-                "context_window_formatted": f"{context_window // 1000}K" if context_window >= 1000 else str(context_window),
-                "tier": tier,
-                "provider": provider
-            })
+            capabilities.append(
+                {
+                    "model": model_name,
+                    "context_window": context_window,
+                    "context_window_formatted": f"{context_window // 1000}K"
+                    if context_window >= 1000
+                    else str(context_window),
+                    "tier": tier,
+                    "provider": provider,
+                }
+            )
 
         # Sort by context window descending
         capabilities.sort(key=lambda x: x["context_window"], reverse=True)
 
-        return web.json_response({
-            "status": "ok",
-            "capabilities": capabilities,
-            "total": len(capabilities),
-            "by_tier": {
-                "cloud": sum(1 for c in capabilities if c["tier"] == "cloud"),
-                "mid_range": sum(1 for c in capabilities if c["tier"] == "mid_range"),
-                "on_device": sum(1 for c in capabilities if c["tier"] == "on_device"),
-                "tiny": sum(1 for c in capabilities if c["tier"] == "tiny")
-            },
-            "by_provider": {
-                "anthropic": sum(1 for c in capabilities if c["provider"] == "anthropic"),
-                "openai": sum(1 for c in capabilities if c["provider"] == "openai"),
-                "ollama": sum(1 for c in capabilities if c["provider"] == "ollama"),
-                "mlx": sum(1 for c in capabilities if c["provider"] == "mlx")
+        return web.json_response(
+            {
+                "status": "ok",
+                "capabilities": capabilities,
+                "total": len(capabilities),
+                "by_tier": {
+                    "cloud": sum(1 for c in capabilities if c["tier"] == "cloud"),
+                    "mid_range": sum(
+                        1 for c in capabilities if c["tier"] == "mid_range"
+                    ),
+                    "on_device": sum(
+                        1 for c in capabilities if c["tier"] == "on_device"
+                    ),
+                    "tiny": sum(1 for c in capabilities if c["tier"] == "tiny"),
+                },
+                "by_provider": {
+                    "anthropic": sum(
+                        1 for c in capabilities if c["provider"] == "anthropic"
+                    ),
+                    "openai": sum(1 for c in capabilities if c["provider"] == "openai"),
+                    "ollama": sum(1 for c in capabilities if c["provider"] == "ollama"),
+                    "mlx": sum(1 for c in capabilities if c["provider"] == "mlx"),
+                },
             }
-        })
+        )
     except Exception as e:
         logger.error(f"Error getting model capabilities: {e}")
         return web.json_response({"error": str(e)}, status=500)
@@ -2050,6 +2226,7 @@ async def handle_get_model_capabilities(request: web.Request) -> web.Response:
 # =============================================================================
 # API Handlers - Dashboard Stats
 # =============================================================================
+
 
 async def handle_get_stats(request: web.Request) -> web.Response:
     """Get overall dashboard statistics."""
@@ -2060,37 +2237,47 @@ async def handle_get_stats(request: web.Request) -> web.Response:
         # Calculate metrics from last hour
         hour_ago = now - 3600
         recent_metrics = [m for m in state.metrics_history if m.received_at > hour_ago]
-        recent_logs = [l for l in state.logs if l.received_at > hour_ago]
+        recent_logs = [
+            log_entry for log_entry in state.logs if log_entry.received_at > hour_ago
+        ]
 
         # Online clients
         online_clients = sum(1 for c in state.clients.values() if c.status == "online")
 
         # Healthy servers
-        healthy_servers = sum(1 for s in state.servers.values() if s.status == "healthy")
+        healthy_servers = sum(
+            1 for s in state.servers.values() if s.status == "healthy"
+        )
 
         # Average latencies
         if recent_metrics:
-            avg_e2e = sum(m.e2e_latency_median for m in recent_metrics) / len(recent_metrics)
-            avg_llm = sum(m.llm_ttft_median for m in recent_metrics) / len(recent_metrics)
+            avg_e2e = sum(m.e2e_latency_median for m in recent_metrics) / len(
+                recent_metrics
+            )
+            avg_llm = sum(m.llm_ttft_median for m in recent_metrics) / len(
+                recent_metrics
+            )
         else:
             avg_e2e = avg_llm = 0
 
-        return web.json_response({
-            "uptime_seconds": round(uptime, 0),
-            "total_logs": state.stats["total_logs_received"],
-            "total_metrics": state.stats["total_metrics_received"],
-            "errors_count": state.stats["errors_count"],
-            "warnings_count": state.stats["warnings_count"],
-            "logs_last_hour": len(recent_logs),
-            "sessions_last_hour": len(recent_metrics),
-            "online_clients": online_clients,
-            "total_clients": len(state.clients),
-            "healthy_servers": healthy_servers,
-            "total_servers": len(state.servers),
-            "avg_e2e_latency": round(avg_e2e, 2),
-            "avg_llm_ttft": round(avg_llm, 2),
-            "websocket_connections": len(state.websockets)
-        })
+        return web.json_response(
+            {
+                "uptime_seconds": round(uptime, 0),
+                "total_logs": state.stats["total_logs_received"],
+                "total_metrics": state.stats["total_metrics_received"],
+                "errors_count": state.stats["errors_count"],
+                "warnings_count": state.stats["warnings_count"],
+                "logs_last_hour": len(recent_logs),
+                "sessions_last_hour": len(recent_metrics),
+                "online_clients": online_clients,
+                "total_clients": len(state.clients),
+                "healthy_servers": healthy_servers,
+                "total_servers": len(state.servers),
+                "avg_e2e_latency": round(avg_e2e, 2),
+                "avg_llm_ttft": round(avg_llm, 2),
+                "websocket_connections": len(state.websockets),
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting stats: {e}")
@@ -2101,13 +2288,12 @@ async def handle_get_stats(request: web.Request) -> web.Response:
 # API Handlers - Managed Services
 # =============================================================================
 
+
 def get_process_memory(pid: int) -> dict:
     """Get memory usage for a process by PID."""
     try:
         result = subprocess.run(
-            ["ps", "-o", "rss=,vsz=", "-p", str(pid)],
-            capture_output=True,
-            text=True
+            ["ps", "-o", "rss=,vsz=", "-p", str(pid)], capture_output=True, text=True
         )
         if result.returncode == 0 and result.stdout.strip():
             parts = result.stdout.strip().split()
@@ -2118,7 +2304,7 @@ def get_process_memory(pid: int) -> dict:
                     "rss_mb": round(rss_kb / 1024, 1),
                     "vsz_mb": round(vsz_kb / 1024, 1),
                     "rss_bytes": rss_kb * 1024,
-                    "vsz_bytes": vsz_kb * 1024
+                    "vsz_bytes": vsz_kb * 1024,
                 }
     except Exception as e:
         logger.debug(f"Failed to get memory for PID {pid}: {e}")
@@ -2131,32 +2317,33 @@ def get_system_memory() -> dict:
         # Use vm_stat for macOS
         result = subprocess.run(["vm_stat"], capture_output=True, text=True)
         if result.returncode == 0:
-            lines = result.stdout.strip().split('\n')
+            lines = result.stdout.strip().split("\n")
             stats = {}
             page_size = 16384  # Default for Apple Silicon
             for line in lines:
-                if ':' in line:
-                    key, value = line.split(':', 1)
-                    value = value.strip().rstrip('.')
+                if ":" in line:
+                    key, value = line.split(":", 1)
+                    value = value.strip().rstrip(".")
                     try:
                         stats[key.strip()] = int(value)
                     except ValueError:
                         pass
 
             # Calculate memory in bytes
-            free_pages = stats.get('Pages free', 0)
-            active_pages = stats.get('Pages active', 0)
-            inactive_pages = stats.get('Pages inactive', 0)
-            wired_pages = stats.get('Pages wired down', 0)
-            compressed_pages = stats.get('Pages occupied by compressor', 0)
+            free_pages = stats.get("Pages free", 0)
+            active_pages = stats.get("Pages active", 0)
+            wired_pages = stats.get("Pages wired down", 0)
+            compressed_pages = stats.get("Pages occupied by compressor", 0)
 
             # Also get total memory from sysctl
             sysctl_result = subprocess.run(
-                ["sysctl", "-n", "hw.memsize"],
-                capture_output=True,
-                text=True
+                ["sysctl", "-n", "hw.memsize"], capture_output=True, text=True
             )
-            total_bytes = int(sysctl_result.stdout.strip()) if sysctl_result.returncode == 0 else 0
+            total_bytes = (
+                int(sysctl_result.stdout.strip())
+                if sysctl_result.returncode == 0
+                else 0
+            )
 
             used_bytes = (active_pages + wired_pages + compressed_pages) * page_size
             free_bytes = free_pages * page_size
@@ -2165,9 +2352,11 @@ def get_system_memory() -> dict:
                 "total_gb": round(total_bytes / (1024**3), 1),
                 "used_gb": round(used_bytes / (1024**3), 1),
                 "free_gb": round(free_bytes / (1024**3), 1),
-                "percent_used": round((used_bytes / total_bytes) * 100, 1) if total_bytes > 0 else 0,
+                "percent_used": round((used_bytes / total_bytes) * 100, 1)
+                if total_bytes > 0
+                else 0,
                 "total_bytes": total_bytes,
-                "used_bytes": used_bytes
+                "used_bytes": used_bytes,
             }
     except Exception as e:
         logger.debug(f"Failed to get system memory: {e}")
@@ -2176,7 +2365,9 @@ def get_system_memory() -> dict:
 
 def service_to_dict(service: ManagedService) -> dict:
     """Convert ManagedService to JSON-serializable dict."""
-    memory = get_process_memory(service.pid) if service.pid else {"rss_mb": 0, "vsz_mb": 0}
+    memory = (
+        get_process_memory(service.pid) if service.pid else {"rss_mb": 0, "vsz_mb": 0}
+    )
     return {
         "id": service.id,
         "name": service.name,
@@ -2188,7 +2379,7 @@ def service_to_dict(service: ManagedService) -> dict:
         "error_message": service.error_message,
         "auto_restart": service.auto_restart,
         "health_url": service.health_url,
-        "memory": memory
+        "memory": memory,
     }
 
 
@@ -2216,13 +2407,15 @@ async def detect_existing_processes():
                     result = subprocess.run(
                         ["lsof", "-t", "-i", f":{service.port}"],
                         capture_output=True,
-                        text=True
+                        text=True,
                     )
                     if result.stdout.strip():
                         service.pid = int(result.stdout.strip().split()[0])
                 except Exception:
                     pass
-                logger.info(f"Detected running service: {service.name} on port {service.port}")
+                logger.info(
+                    f"Detected running service: {service.name} on port {service.port}"
+                )
 
 
 async def start_service(service_id: str) -> tuple[bool, str]:
@@ -2263,7 +2456,7 @@ async def start_service(service_id: str) -> tuple[bool, str]:
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            start_new_session=True  # Detach from parent
+            start_new_session=True,  # Detach from parent
         )
         service.pid = service.process.pid
         service.started_at = time.time()
@@ -2273,9 +2466,13 @@ async def start_service(service_id: str) -> tuple[bool, str]:
 
         if service.process.poll() is not None:
             # Process exited
-            output = service.process.stdout.read().decode() if service.process.stdout else ""
+            output = (
+                service.process.stdout.read().decode() if service.process.stdout else ""
+            )
             service.status = "error"
-            service.error_message = f"Process exited with code {service.process.returncode}: {output[:500]}"
+            service.error_message = (
+                f"Process exited with code {service.process.returncode}: {output[:500]}"
+            )
             await broadcast_message("service_update", service_to_dict(service))
             return False, service.error_message
 
@@ -2318,9 +2515,7 @@ async def stop_service(service_id: str) -> tuple[bool, str]:
         # Also try to kill by port
         try:
             result = subprocess.run(
-                ["lsof", "-t", "-i", f":{service.port}"],
-                capture_output=True,
-                text=True
+                ["lsof", "-t", "-i", f":{service.port}"], capture_output=True, text=True
             )
             if result.stdout.strip():
                 for pid_str in result.stdout.strip().split():
@@ -2369,7 +2564,9 @@ async def handle_get_services(request: web.Request) -> web.Response:
                     # Check if process is still alive
                     if service.process and service.process.poll() is not None:
                         service.status = "error"
-                        service.error_message = f"Process exited with code {service.process.returncode}"
+                        service.error_message = (
+                            f"Process exited with code {service.process.returncode}"
+                        )
                     else:
                         service.status = "error"
                         service.error_message = "Health check failed"
@@ -2379,15 +2576,23 @@ async def handle_get_services(request: web.Request) -> web.Response:
         # Calculate total memory used by services
         total_memory_mb = sum(s.get("memory", {}).get("rss_mb", 0) for s in services)
 
-        return web.json_response({
-            "services": services,
-            "total": len(services),
-            "running": sum(1 for s in state.managed_services.values() if s.status == "running"),
-            "stopped": sum(1 for s in state.managed_services.values() if s.status == "stopped"),
-            "error": sum(1 for s in state.managed_services.values() if s.status == "error"),
-            "total_memory_mb": round(total_memory_mb, 1),
-            "system_memory": get_system_memory()
-        })
+        return web.json_response(
+            {
+                "services": services,
+                "total": len(services),
+                "running": sum(
+                    1 for s in state.managed_services.values() if s.status == "running"
+                ),
+                "stopped": sum(
+                    1 for s in state.managed_services.values() if s.status == "stopped"
+                ),
+                "error": sum(
+                    1 for s in state.managed_services.values() if s.status == "error"
+                ),
+                "total_memory_mb": round(total_memory_mb, 1),
+                "system_memory": get_system_memory(),
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting services: {e}")
@@ -2403,7 +2608,9 @@ async def handle_start_service(request: web.Request) -> web.Response:
         if success:
             return web.json_response({"status": "ok", "message": message})
         else:
-            return web.json_response({"status": "error", "message": message}, status=400)
+            return web.json_response(
+                {"status": "error", "message": message}, status=400
+            )
 
     except Exception as e:
         logger.error(f"Error starting service: {e}")
@@ -2419,7 +2626,9 @@ async def handle_stop_service(request: web.Request) -> web.Response:
         if success:
             return web.json_response({"status": "ok", "message": message})
         else:
-            return web.json_response({"status": "error", "message": message}, status=400)
+            return web.json_response(
+                {"status": "error", "message": message}, status=400
+            )
 
     except Exception as e:
         logger.error(f"Error stopping service: {e}")
@@ -2441,7 +2650,9 @@ async def handle_restart_service(request: web.Request) -> web.Response:
         if success:
             return web.json_response({"status": "ok", "message": message})
         else:
-            return web.json_response({"status": "error", "message": message}, status=400)
+            return web.json_response(
+                {"status": "error", "message": message}, status=400
+            )
 
     except Exception as e:
         logger.error(f"Error restarting service: {e}")
@@ -2482,6 +2693,7 @@ async def handle_stop_all_services(request: web.Request) -> web.Response:
 # API Handlers - Curriculum
 # =============================================================================
 
+
 async def handle_get_curricula(request: web.Request) -> web.Response:
     """Get list of available curricula."""
     try:
@@ -2493,18 +2705,19 @@ async def handle_get_curricula(request: web.Request) -> web.Response:
         # Apply filters
         if search:
             curricula = [
-                c for c in curricula
-                if search in c.title.lower() or search in c.description.lower()
+                c
+                for c in curricula
+                if search in c.title.lower()
+                or search in c.description.lower()
                 or any(search in kw.lower() for kw in c.keywords)
             ]
 
         if difficulty:
             curricula = [c for c in curricula if c.difficulty == difficulty]
 
-        return web.json_response({
-            "curricula": [asdict(c) for c in curricula],
-            "total": len(curricula)
-        })
+        return web.json_response(
+            {"curricula": [asdict(c) for c in curricula], "total": len(curricula)}
+        )
 
     except Exception as e:
         logger.error(f"Error getting curricula: {e}")
@@ -2570,7 +2783,11 @@ async def handle_get_topic_transcript(request: web.Request) -> web.Response:
             if child_id == topic_id:
                 transcript = child.get("transcript", {})
                 # Extract segments directly for iOS client compatibility
-                segments = transcript.get("segments", []) if isinstance(transcript, dict) else []
+                segments = (
+                    transcript.get("segments", [])
+                    if isinstance(transcript, dict)
+                    else []
+                )
 
                 # FALLBACK: If no transcript.segments, check for content.text
                 # This handles imported curricula (like MIT physics) that use content.text
@@ -2579,29 +2796,37 @@ async def handle_get_topic_transcript(request: web.Request) -> web.Response:
                     if isinstance(content_obj, dict):
                         raw_text = content_obj.get("text", "")
                         if raw_text:
-                            logger.info(f"Topic {topic_id} has no transcript.segments, using content.text ({len(raw_text)} chars)")
+                            logger.info(
+                                f"Topic {topic_id} has no transcript.segments, using content.text ({len(raw_text)} chars)"
+                            )
                             # Chunk the raw text into natural speech segments
-                            segments = chunk_text_for_tts(raw_text, max_chars=300, min_chars=50)
-                            logger.info(f"Created {len(segments)} segments from content.text")
+                            segments = chunk_text_for_tts(
+                                raw_text, max_chars=300, min_chars=50
+                            )
+                            logger.info(
+                                f"Created {len(segments)} segments from content.text"
+                            )
 
                 # Get media assets
                 media = child.get("media", {})
                 embedded_assets = media.get("embedded", [])
                 reference_assets = media.get("reference", [])
 
-                return web.json_response({
-                    "topic_id": topic_id,
-                    "topic_title": child.get("title", ""),
-                    "segments": segments,
-                    "misconceptions": child.get("misconceptions", []),
-                    "examples": child.get("examples", []),
-                    "assessments": child.get("assessments", []),
-                    "media": {
-                        "embedded": embedded_assets,
-                        "reference": reference_assets,
-                        "total_count": len(embedded_assets) + len(reference_assets)
+                return web.json_response(
+                    {
+                        "topic_id": topic_id,
+                        "topic_title": child.get("title", ""),
+                        "segments": segments,
+                        "misconceptions": child.get("misconceptions", []),
+                        "examples": child.get("examples", []),
+                        "assessments": child.get("assessments", []),
+                        "media": {
+                            "embedded": embedded_assets,
+                            "reference": reference_assets,
+                            "total_count": len(embedded_assets) + len(reference_assets),
+                        },
                     }
-                })
+                )
 
         return web.json_response({"error": "Topic not found"}, status=404)
 
@@ -2626,7 +2851,9 @@ async def handle_stream_topic_audio(request: web.Request) -> web.StreamResponse:
         voice = request.query.get("voice", "nova")
         tts_server = request.query.get("tts_server", "vibevoice")
 
-        logger.info(f"Stream topic audio: curriculum={curriculum_id}, topic={topic_id}, voice={voice}, tts={tts_server}")
+        logger.info(
+            f"Stream topic audio: curriculum={curriculum_id}, topic={topic_id}, voice={voice}, tts={tts_server}"
+        )
 
         if curriculum_id not in state.curriculum_raw:
             return web.json_response({"error": "Curriculum not found"}, status=404)
@@ -2647,7 +2874,11 @@ async def handle_stream_topic_audio(request: web.Request) -> web.StreamResponse:
             child_id = child.get("id", {}).get("value", "")
             if child_id == topic_id:
                 transcript = child.get("transcript", {})
-                transcript_segments = transcript.get("segments", []) if isinstance(transcript, dict) else []
+                transcript_segments = (
+                    transcript.get("segments", [])
+                    if isinstance(transcript, dict)
+                    else []
+                )
                 topic_title = child.get("title", "")
 
                 # FALLBACK: If no transcript.segments, check for content.text
@@ -2657,17 +2888,25 @@ async def handle_stream_topic_audio(request: web.Request) -> web.StreamResponse:
                     if isinstance(content_obj, dict):
                         raw_text = content_obj.get("text", "")
                         if raw_text:
-                            logger.info(f"[stream] Topic {topic_id} has no transcript.segments, using content.text ({len(raw_text)} chars)")
+                            logger.info(
+                                f"[stream] Topic {topic_id} has no transcript.segments, using content.text ({len(raw_text)} chars)"
+                            )
                             # Chunk the raw text into natural speech segments
-                            transcript_segments = chunk_text_for_tts(raw_text, max_chars=300, min_chars=50)
-                            logger.info(f"[stream] Created {len(transcript_segments)} segments from content.text")
+                            transcript_segments = chunk_text_for_tts(
+                                raw_text, max_chars=300, min_chars=50
+                            )
+                            logger.info(
+                                f"[stream] Created {len(transcript_segments)} segments from content.text"
+                            )
                 break
 
         if transcript_segments is None:
             return web.json_response({"error": "Topic not found"}, status=404)
 
         if not transcript_segments:
-            return web.json_response({"error": "Topic has no transcript segments"}, status=404)
+            return web.json_response(
+                {"error": "Topic has no transcript segments"}, status=404
+            )
 
         # Determine TTS server URL
         if tts_server == "piper":
@@ -2683,8 +2922,8 @@ async def handle_stream_topic_audio(request: web.Request) -> web.StreamResponse:
                 "Content-Type": "application/octet-stream",
                 "X-Topic-Title": topic_title,
                 "X-Segment-Count": str(len(transcript_segments)),
-                "Transfer-Encoding": "chunked"
-            }
+                "Transfer-Encoding": "chunked",
+            },
         )
         await response.prepare(request)
 
@@ -2696,10 +2935,14 @@ async def handle_stream_topic_audio(request: web.Request) -> web.StreamResponse:
             if not segment_text.strip():
                 continue
 
-            logger.info(f"  Segment {idx + 1}/{len(transcript_segments)}: {segment_type}, {len(segment_text)} chars")
+            logger.info(
+                f"  Segment {idx + 1}/{len(transcript_segments)}: {segment_type}, {len(segment_text)} chars"
+            )
 
             # Send segment metadata as a header chunk
-            meta_header = f"SEG:{idx}:{segment_type}:{len(segment_text)}\n".encode('utf-8')
+            meta_header = f"SEG:{idx}:{segment_type}:{len(segment_text)}\n".encode(
+                "utf-8"
+            )
             await response.write(meta_header)
 
             # Request TTS for this segment
@@ -2709,42 +2952,52 @@ async def handle_stream_topic_audio(request: web.Request) -> web.StreamResponse:
                         "model": "tts-1",
                         "input": segment_text,
                         "voice": voice,
-                        "response_format": "wav"
+                        "response_format": "wav",
                     }
 
-                    async with session.post(tts_url, json=tts_payload, timeout=aiohttp.ClientTimeout(total=30)) as tts_response:
+                    async with session.post(
+                        tts_url,
+                        json=tts_payload,
+                        timeout=aiohttp.ClientTimeout(total=30),
+                    ) as tts_response:
                         if tts_response.status == 200:
                             # Stream audio data as it arrives
                             audio_data = await tts_response.read()
 
                             # Send audio size header
-                            size_header = f"AUD:{len(audio_data)}\n".encode('utf-8')
+                            size_header = f"AUD:{len(audio_data)}\n".encode("utf-8")
                             await response.write(size_header)
 
                             # Send audio data in chunks
                             chunk_size = 8192
                             for i in range(0, len(audio_data), chunk_size):
-                                chunk = audio_data[i:i + chunk_size]
+                                chunk = audio_data[i : i + chunk_size]
                                 await response.write(chunk)
 
                             logger.info(f"    Sent {len(audio_data)} bytes of audio")
                         else:
                             error_text = await tts_response.text()
-                            logger.error(f"    TTS error: {tts_response.status} - {error_text}")
+                            logger.error(
+                                f"    TTS error: {tts_response.status} - {error_text}"
+                            )
                             # Send error marker
-                            await response.write(f"ERR:{tts_response.status}\n".encode('utf-8'))
+                            await response.write(
+                                f"ERR:{tts_response.status}\n".encode("utf-8")
+                            )
 
             except Exception as e:
                 logger.error(f"    TTS request failed: {e}")
                 # Sanitize error to avoid exposing stack traces/internals
                 error_type = type(e).__name__
-                await response.write(f"ERR:{error_type}\n".encode('utf-8'))
+                await response.write(f"ERR:{error_type}\n".encode("utf-8"))
 
         # Send end marker
         await response.write(b"END\n")
         await response.write_eof()
 
-        logger.info(f"Completed streaming {len(transcript_segments)} segments for topic {topic_id}")
+        logger.info(
+            f"Completed streaming {len(transcript_segments)} segments for topic {topic_id}"
+        )
         return response
 
     except Exception as e:
@@ -2756,13 +3009,8 @@ async def handle_reload_curricula(request: web.Request) -> web.Response:
     """Reload all curricula from disk."""
     try:
         state.reload_curricula()
-        await broadcast_message("curricula_reloaded", {
-            "count": len(state.curriculums)
-        })
-        return web.json_response({
-            "status": "ok",
-            "count": len(state.curriculums)
-        })
+        await broadcast_message("curricula_reloaded", {"count": len(state.curriculums)})
+        return web.json_response({"status": "ok", "count": len(state.curriculums)})
 
     except Exception as e:
         logger.error(f"Error reloading curricula: {e}")
@@ -2789,22 +3037,38 @@ async def handle_delete_curriculum(request: web.Request) -> web.Response:
         curriculum = state.curriculums[curriculum_id]
         file_path = Path(curriculum.file_path)
 
+        # CodeQL-recognized sanitizer: realpath + startswith (path is from trusted state)
+        real_path = os.path.realpath(str(file_path))
+        real_base = os.path.realpath(str(PROJECT_ROOT / "curriculum"))
+        if not real_base.endswith(os.sep):
+            real_base += os.sep
+        if not real_path.startswith(real_base) and real_path != real_base.rstrip(
+            os.sep
+        ):
+            logger.warning("Curriculum path outside expected directory: %s", file_path)
+            return web.json_response({"error": "Invalid curriculum path"}, status=400)
+        file_path = Path(real_path)
+
         if not confirm:
             # Return info about what would be deleted without actually deleting
-            return web.json_response({
-                "status": "confirmation_required",
-                "message": "Add ?confirm=true to permanently delete this curriculum",
-                "curriculum": {
-                    "id": curriculum_id,
-                    "title": curriculum.title,
-                    "file_path": str(file_path),
-                    "topic_count": curriculum.topic_count,
+            return web.json_response(
+                {
+                    "status": "confirmation_required",
+                    "message": "Add ?confirm=true to permanently delete this curriculum",
+                    "curriculum": {
+                        "id": curriculum_id,
+                        "title": curriculum.title,
+                        "file_path": str(file_path),
+                        "topic_count": curriculum.topic_count,
+                    },
                 }
-            })
+            )
 
         if not file_path.exists():
             logger.warning(f"Delete failed: file not found on disk: {file_path}")
-            return web.json_response({"error": "Curriculum file not found on disk"}, status=404)
+            return web.json_response(
+                {"error": "Curriculum file not found on disk"}, status=404
+            )
 
         # Delete the file
         file_path.unlink()
@@ -2817,16 +3081,21 @@ async def handle_delete_curriculum(request: web.Request) -> web.Response:
         if curriculum_id in state.curriculum_raw:
             del state.curriculum_raw[curriculum_id]
 
-        await broadcast_message("curriculum_deleted", {
-            "id": curriculum_id,
-            "title": curriculum.title,
-        })
+        await broadcast_message(
+            "curriculum_deleted",
+            {
+                "id": curriculum_id,
+                "title": curriculum.title,
+            },
+        )
 
-        return web.json_response({
-            "status": "deleted",
-            "id": curriculum_id,
-            "title": curriculum.title,
-        })
+        return web.json_response(
+            {
+                "status": "deleted",
+                "id": curriculum_id,
+                "title": curriculum.title,
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error deleting curriculum: {e}")
@@ -2850,9 +3119,23 @@ async def handle_archive_curriculum(request: web.Request) -> web.Response:
         curriculum = state.curriculums[curriculum_id]
         file_path = Path(curriculum.file_path)
 
+        # CodeQL-recognized sanitizer: realpath + startswith (path is from trusted state)
+        real_path = os.path.realpath(str(file_path))
+        real_base = os.path.realpath(str(PROJECT_ROOT / "curriculum"))
+        if not real_base.endswith(os.sep):
+            real_base += os.sep
+        if not real_path.startswith(real_base) and real_path != real_base.rstrip(
+            os.sep
+        ):
+            logger.warning("Curriculum path outside expected directory: %s", file_path)
+            return web.json_response({"error": "Invalid curriculum path"}, status=400)
+        file_path = Path(real_path)
+
         if not file_path.exists():
             logger.warning(f"Archive failed: file not found on disk: {file_path}")
-            return web.json_response({"error": "Curriculum file not found on disk"}, status=404)
+            return web.json_response(
+                {"error": "Curriculum file not found on disk"}, status=404
+            )
 
         # Create archived directory if it doesn't exist
         archived_dir = PROJECT_ROOT / "curriculum" / "archived"
@@ -2863,10 +3146,13 @@ async def handle_archive_curriculum(request: web.Request) -> web.Response:
         # Handle name conflicts
         counter = 1
         while archived_path.exists():
-            archived_path = archived_dir / f"{file_path.stem}-{counter}{file_path.suffix}"
+            archived_path = (
+                archived_dir / f"{file_path.stem}-{counter}{file_path.suffix}"
+            )
             counter += 1
 
         import shutil
+
         shutil.move(str(file_path), str(archived_path))
         logger.info(f"Successfully archived curriculum: {file_path} -> {archived_path}")
 
@@ -2877,18 +3163,23 @@ async def handle_archive_curriculum(request: web.Request) -> web.Response:
         if curriculum_id in state.curriculum_raw:
             del state.curriculum_raw[curriculum_id]
 
-        await broadcast_message("curriculum_archived", {
-            "id": curriculum_id,
-            "title": curriculum.title,
-            "archived_path": str(archived_path),
-        })
+        await broadcast_message(
+            "curriculum_archived",
+            {
+                "id": curriculum_id,
+                "title": curriculum.title,
+                "archived_path": str(archived_path),
+            },
+        )
 
-        return web.json_response({
-            "status": "archived",
-            "id": curriculum_id,
-            "title": curriculum.title,
-            "archived_path": str(archived_path),
-        })
+        return web.json_response(
+            {
+                "status": "archived",
+                "id": curriculum_id,
+                "title": curriculum.title,
+                "archived_path": str(archived_path),
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error archiving curriculum: {e}")
@@ -2905,15 +3196,14 @@ async def handle_get_archived_curricula(_request: web.Request) -> web.Response:
         archived_dir = PROJECT_ROOT / "curriculum" / "archived"
 
         if not archived_dir.exists():
-            return web.json_response({
-                "archived": [],
-                "total": 0
-            })
+            return web.json_response({"archived": [], "total": 0})
 
         archived = []
         for umcf_file in archived_dir.glob("*.umcf"):
             try:
-                with open(umcf_file, 'r', encoding='utf-8') as f:
+                # CodeQL-recognized validation for glob results
+                codeql_assert_path_within(umcf_file, archived_dir)
+                with open(umcf_file, "r", encoding="utf-8") as f:
                     umcf = json.load(f)
 
                 umcf_id = umcf.get("id", {}).get("value", umcf_file.stem)
@@ -2923,25 +3213,24 @@ async def handle_get_archived_curricula(_request: web.Request) -> web.Response:
                     root = content[0]
                     topic_count = len(root.get("children", []))
 
-                archived.append({
-                    "id": umcf_id,
-                    "title": umcf.get("title", "Untitled"),
-                    "description": umcf.get("description", ""),
-                    "file_path": str(umcf_file),
-                    "file_name": umcf_file.name,
-                    "topic_count": topic_count,
-                    "archived_at": umcf_file.stat().st_mtime,
-                })
+                archived.append(
+                    {
+                        "id": umcf_id,
+                        "title": umcf.get("title", "Untitled"),
+                        "description": umcf.get("description", ""),
+                        "file_path": str(umcf_file),
+                        "file_name": umcf_file.name,
+                        "topic_count": topic_count,
+                        "archived_at": umcf_file.stat().st_mtime,
+                    }
+                )
             except Exception as e:
                 logger.warning(f"Failed to read archived curriculum {umcf_file}: {e}")
 
         # Sort by archived date (newest first)
         archived.sort(key=lambda x: x["archived_at"], reverse=True)
 
-        return web.json_response({
-            "archived": archived,
-            "total": len(archived)
-        })
+        return web.json_response({"archived": archived, "total": len(archived)})
 
     except Exception as e:
         logger.error(f"Error getting archived curricula: {e}")
@@ -2965,9 +3254,13 @@ async def handle_unarchive_curriculum(request: web.Request) -> web.Response:
         except ValueError:
             return web.json_response({"error": "Invalid file name"}, status=400)
 
-        # archived_path was validated by validate_path_in_directory above
+        # CodeQL-recognized validation (defense in depth with validate_path_in_directory)
+        codeql_assert_path_within(archived_path, archived_dir)
+
         if not archived_path.exists():
-            return web.json_response({"error": "Archived curriculum not found"}, status=404)
+            return web.json_response(
+                {"error": "Archived curriculum not found"}, status=404
+            )
 
         # Move back to active directory
         # Use validated filename from archived_path, not original user input
@@ -2977,10 +3270,13 @@ async def handle_unarchive_curriculum(request: web.Request) -> web.Response:
         # Handle name conflicts
         counter = 1
         while active_path.exists():
-            active_path = active_dir / f"{archived_path.stem}-{counter}{archived_path.suffix}"
+            active_path = (
+                active_dir / f"{archived_path.stem}-{counter}{archived_path.suffix}"
+            )
             counter += 1
 
         import shutil
+
         # Path validated above via validate_path_in_directory
         shutil.move(str(archived_path), str(active_path))
         logger.info(f"Unarchived curriculum: {archived_path} -> {active_path}")
@@ -2989,21 +3285,26 @@ async def handle_unarchive_curriculum(request: web.Request) -> web.Response:
         state._load_curriculum_file(active_path)
 
         # Get the curriculum info
-        with open(active_path, 'r', encoding='utf-8') as f:
+        with open(active_path, "r", encoding="utf-8") as f:
             umcf = json.load(f)
         curriculum_id = umcf.get("id", {}).get("value", active_path.stem)
 
-        await broadcast_message("curriculum_unarchived", {
-            "id": curriculum_id,
-            "title": umcf.get("title", "Untitled"),
-        })
+        await broadcast_message(
+            "curriculum_unarchived",
+            {
+                "id": curriculum_id,
+                "title": umcf.get("title", "Untitled"),
+            },
+        )
 
-        return web.json_response({
-            "status": "unarchived",
-            "id": curriculum_id,
-            "title": umcf.get("title", "Untitled"),
-            "file_path": str(active_path),
-        })
+        return web.json_response(
+            {
+                "status": "unarchived",
+                "id": curriculum_id,
+                "title": umcf.get("title", "Untitled"),
+                "file_path": str(active_path),
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error unarchiving curriculum: {e}")
@@ -3032,37 +3333,43 @@ async def handle_delete_archived_curriculum(request: web.Request) -> web.Respons
 
         # archived_path was validated by validate_path_in_directory above
         if not archived_path.exists():
-            return web.json_response({"error": "Archived curriculum not found"}, status=404)
+            return web.json_response(
+                {"error": "Archived curriculum not found"}, status=404
+            )
 
         # CodeQL-recognized validation before file access
         codeql_assert_path_within(archived_path, archived_dir)
 
         # Read info for response (path validated above)
-        with open(archived_path, 'r', encoding='utf-8') as f:
+        with open(archived_path, "r", encoding="utf-8") as f:
             umcf = json.load(f)
         curriculum_id = umcf.get("id", {}).get("value", archived_path.stem)
         title = umcf.get("title", "Untitled")
 
         if not confirm:
-            return web.json_response({
-                "status": "confirmation_required",
-                "message": "Add ?confirm=true to permanently delete this archived curriculum",
-                "curriculum": {
-                    "id": curriculum_id,
-                    "title": title,
-                    "file_path": str(archived_path),
+            return web.json_response(
+                {
+                    "status": "confirmation_required",
+                    "message": "Add ?confirm=true to permanently delete this archived curriculum",
+                    "curriculum": {
+                        "id": curriculum_id,
+                        "title": title,
+                        "file_path": str(archived_path),
+                    },
                 }
-            })
+            )
 
         # Delete the file (path validated above)
         archived_path.unlink()
         logger.info(f"Permanently deleted archived curriculum: {archived_path}")
 
-        return web.json_response({
-            "status": "deleted",
-            "id": curriculum_id,
-            "title": title,
-        })
+        return web.json_response(
+            {
+                "status": "deleted",
+                "id": curriculum_id,
+                "title": title,
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error deleting archived curriculum: {e}")
@@ -3085,30 +3392,39 @@ async def handle_save_curriculum(request: web.Request) -> web.Response:
             file_path = Path(state.curriculums[curriculum_id].file_path)
         else:
             # New curriculum: filename sanitized to alphanumeric, hyphen, underscore only
-            safe_name = "".join(c if c.isalnum() or c in "-_" else "-" for c in data["title"].lower())
-            file_path = PROJECT_ROOT / "curriculum" / "examples" / "realistic" / f"{safe_name}.umcf"
+            safe_name = "".join(
+                c if c.isalnum() or c in "-_" else "-" for c in data["title"].lower()
+            )
+            file_path = (
+                PROJECT_ROOT
+                / "curriculum"
+                / "examples"
+                / "realistic"
+                / f"{safe_name}.umcf"
+            )
 
         # CodeQL-recognized validation before file write
         curriculum_base = PROJECT_ROOT / "curriculum"
         codeql_assert_path_within(file_path, curriculum_base)
 
         # Write the file (path is either trusted or sanitized above)
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
         # Reload the curriculum
         state._load_curriculum_file(file_path)
 
-        await broadcast_message("curriculum_updated", {
-            "id": curriculum_id,
-            "title": data.get("title")
-        })
+        await broadcast_message(
+            "curriculum_updated", {"id": curriculum_id, "title": data.get("title")}
+        )
 
-        return web.json_response({
-            "status": "ok",
-            "id": data.get("id", {}).get("value", file_path.stem),
-            "file_path": str(file_path)
-        })
+        return web.json_response(
+            {
+                "status": "ok",
+                "id": data.get("id", {}).get("value", file_path.stem),
+                "file_path": str(file_path),
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error saving curriculum: {e}")
@@ -3128,20 +3444,22 @@ async def handle_import_curriculum(request: web.Request) -> web.Response:
             logger.info(f"Importing curriculum from URL: {source_url}")
 
             import aiohttp
+
             async with aiohttp.ClientSession() as session:
-                async with session.get(source_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                async with session.get(
+                    source_url, timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
                     if response.status != 200:
                         return web.json_response(
                             {"error": f"Failed to fetch URL: HTTP {response.status}"},
-                            status=400
+                            status=400,
                         )
                     content = await response.text()
                     try:
                         umcf_data = json.loads(content)
                     except json.JSONDecodeError as e:
                         return web.json_response(
-                            {"error": f"Invalid JSON at URL: {str(e)}"},
-                            status=400
+                            {"error": f"Invalid JSON at URL: {str(e)}"}, status=400
                         )
 
         # Import from direct content
@@ -3151,18 +3469,18 @@ async def handle_import_curriculum(request: web.Request) -> web.Response:
 
         else:
             return web.json_response(
-                {"error": "Must provide 'url' or 'content'"},
-                status=400
+                {"error": "Must provide 'url' or 'content'"}, status=400
             )
 
         # Validate UMCF format
         if not isinstance(umcf_data, dict):
-            return web.json_response({"error": "Content must be a JSON object"}, status=400)
+            return web.json_response(
+                {"error": "Content must be a JSON object"}, status=400
+            )
 
         if umcf_data.get("formatIdentifier") != "umcf":
             return web.json_response(
-                {"error": "Invalid format: formatIdentifier must be 'umcf'"},
-                status=400
+                {"error": "Invalid format: formatIdentifier must be 'umcf'"}, status=400
             )
 
         # Extract title for filename
@@ -3171,7 +3489,9 @@ async def handle_import_curriculum(request: web.Request) -> web.Response:
         curriculum_id = umcf_data.get("id", {}).get("value", "")
 
         # Create safe filename (sanitized to alphanumeric, hyphen, underscore only)
-        safe_name = "".join(c if c.isalnum() or c in "-_" else "-" for c in title.lower())
+        safe_name = "".join(
+            c if c.isalnum() or c in "-_" else "-" for c in title.lower()
+        )
         if not safe_name:
             safe_name = f"imported-{int(time.time())}"
 
@@ -3188,7 +3508,7 @@ async def handle_import_curriculum(request: web.Request) -> web.Response:
             counter += 1
 
         # Write the file (path uses sanitized safe_name)
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(umcf_data, f, indent=2, ensure_ascii=False)
 
         logger.info(f"Saved imported curriculum to: {file_path}")
@@ -3197,19 +3517,24 @@ async def handle_import_curriculum(request: web.Request) -> web.Response:
         state._load_curriculum_file(file_path)
 
         # Broadcast update
-        await broadcast_message("curriculum_imported", {
-            "id": curriculum_id or file_path.stem,
-            "title": title,
-            "file_path": str(file_path)
-        })
+        await broadcast_message(
+            "curriculum_imported",
+            {
+                "id": curriculum_id or file_path.stem,
+                "title": title,
+                "file_path": str(file_path),
+            },
+        )
 
-        return web.json_response({
-            "status": "ok",
-            "id": curriculum_id or file_path.stem,
-            "title": title,
-            "file_path": str(file_path),
-            "source_url": source_url
-        })
+        return web.json_response(
+            {
+                "status": "ok",
+                "id": curriculum_id or file_path.stem,
+                "title": title,
+                "file_path": str(file_path),
+                "source_url": source_url,
+            }
+        )
 
     except asyncio.TimeoutError:
         return web.json_response({"error": "Timeout fetching URL"}, status=408)
@@ -3220,6 +3545,7 @@ async def handle_import_curriculum(request: web.Request) -> web.Response:
 # =============================================================================
 # API Handlers - Visual Assets
 # =============================================================================
+
 
 async def handle_upload_visual_asset(request: web.Request) -> web.Response:
     """Upload a visual asset for a curriculum topic."""
@@ -3256,10 +3582,20 @@ async def handle_upload_visual_asset(request: web.Request) -> web.Response:
             return web.json_response({"error": "No file uploaded"}, status=400)
 
         if not metadata.get("alt"):
-            return web.json_response({"error": "Alt text is required for accessibility"}, status=400)
+            return web.json_response(
+                {"error": "Alt text is required for accessibility"}, status=400
+            )
 
         # Validate path segments to prevent path traversal attacks
-        allowed_image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp'}
+        allowed_image_extensions = {
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".webp",
+            ".svg",
+            ".bmp",
+        }
         try:
             safe_curriculum_id = sanitize_path_segment(curriculum_id)
             safe_topic_id = sanitize_path_segment(topic_id)
@@ -3304,7 +3640,7 @@ async def handle_upload_visual_asset(request: web.Request) -> web.Response:
             asset["segmentTiming"] = {
                 "startSegment": metadata.get("startSegment", 0),
                 "endSegment": metadata.get("endSegment", 0),
-                "displayMode": metadata.get("displayMode", "inline")
+                "displayMode": metadata.get("displayMode", "inline"),
             }
         else:
             asset["keywords"] = metadata.get("keywords", [])
@@ -3335,17 +3671,15 @@ async def handle_upload_visual_asset(request: web.Request) -> web.Response:
             # Save the updated curriculum
             if curriculum_id in state.curriculums:
                 file_path = Path(state.curriculums[curriculum_id].file_path)
-                with open(file_path, 'w', encoding='utf-8') as f:
+                with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(umcf, f, indent=2, ensure_ascii=False)
 
                 # Reload to update state
                 state._load_curriculum_file(file_path)
 
-        return web.json_response({
-            "status": "success",
-            "asset": asset,
-            "localPath": str(local_path)
-        })
+        return web.json_response(
+            {"status": "success", "asset": asset, "localPath": str(local_path)}
+        )
 
     except Exception as e:
         return safe_error_response(e, "visual asset upload")
@@ -3379,14 +3713,16 @@ async def handle_delete_visual_asset(request: web.Request) -> web.Response:
 
                     # Remove from reference
                     reference = media.get("reference", [])
-                    media["reference"] = [a for a in reference if a.get("id") != asset_id]
+                    media["reference"] = [
+                        a for a in reference if a.get("id") != asset_id
+                    ]
 
                     break
 
             # Save the updated curriculum
             if curriculum_id in state.curriculums:
                 file_path = Path(state.curriculums[curriculum_id].file_path)
-                with open(file_path, 'w', encoding='utf-8') as f:
+                with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(umcf, f, indent=2, ensure_ascii=False)
 
                 state._load_curriculum_file(file_path)
@@ -3442,7 +3778,7 @@ async def handle_update_visual_asset(request: web.Request) -> web.Response:
             # Save the updated curriculum
             if updated_asset and curriculum_id in state.curriculums:
                 file_path = Path(state.curriculums[curriculum_id].file_path)
-                with open(file_path, 'w', encoding='utf-8') as f:
+                with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(umcf, f, indent=2, ensure_ascii=False)
 
                 state._load_curriculum_file(file_path)
@@ -3450,10 +3786,7 @@ async def handle_update_visual_asset(request: web.Request) -> web.Response:
         if not updated_asset:
             return web.json_response({"error": "Asset not found"}, status=404)
 
-        return web.json_response({
-            "status": "success",
-            "asset": updated_asset
-        })
+        return web.json_response({"status": "success", "asset": updated_asset})
 
     except Exception as e:
         logger.error(f"Error updating visual asset: {e}")
@@ -3471,10 +3804,7 @@ DOWNLOAD_RATE_LIMIT_SECONDS = 1.0  # 1 request per second for Wikimedia
 
 
 async def download_and_save_asset(
-    url: str,
-    curriculum_id: str,
-    topic_id: str,
-    asset_id: str
+    url: str, curriculum_id: str, topic_id: str, asset_id: str
 ) -> Optional[str]:
     """
     Download an asset from a remote URL and save it locally.
@@ -3533,20 +3863,26 @@ async def download_and_save_asset(
         }
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
+            async with session.get(
+                url, headers=headers, timeout=aiohttp.ClientTimeout(total=30)
+            ) as response:
                 if response.status == 200:
                     content = await response.read()
 
                     # Verify it's actually an image
                     content_type = response.headers.get("Content-Type", "")
                     if not content_type.startswith("image/"):
-                        logger.warning(f"Non-image content type for {url}: {content_type}")
+                        logger.warning(
+                            f"Non-image content type for {url}: {content_type}"
+                        )
 
                     # Save to disk (path already validated above)
                     with open(local_path, "wb") as f:
                         f.write(content)
 
-                    logger.info(f"Downloaded asset: {url} -> {local_path} ({len(content)} bytes)")
+                    logger.info(
+                        f"Downloaded asset: {url} -> {local_path} ({len(content)} bytes)"
+                    )
                     return str(local_path.relative_to(PROJECT_ROOT))
 
                 elif response.status == 429:
@@ -3624,44 +3960,44 @@ async def handle_preload_curriculum_assets(request: web.Request) -> web.Response
                         url=url,
                         curriculum_id=curriculum_id,
                         topic_id=topic_id,
-                        asset_id=asset_id
+                        asset_id=asset_id,
                     )
 
                     if result_path:
                         asset["localPath"] = result_path
-                        downloaded.append({
-                            "id": asset_id,
-                            "topic": topic_id,
-                            "localPath": result_path
-                        })
+                        downloaded.append(
+                            {
+                                "id": asset_id,
+                                "topic": topic_id,
+                                "localPath": result_path,
+                            }
+                        )
                     else:
-                        failed.append({
-                            "id": asset_id,
-                            "topic": topic_id,
-                            "url": url
-                        })
+                        failed.append({"id": asset_id, "topic": topic_id, "url": url})
 
         # Save the updated curriculum file
         if downloaded and curriculum_id in state.curriculums:
             file_path = Path(state.curriculums[curriculum_id].file_path)
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(umcf, f, indent=2, ensure_ascii=False)
 
             # Reload to update state
             state._load_curriculum_file(file_path)
             logger.info(f"Updated curriculum file with {len(downloaded)} local paths")
 
-        return web.json_response({
-            "status": "success",
-            "downloaded": len(downloaded),
-            "failed": len(failed),
-            "skipped": len(skipped),
-            "details": {
-                "downloaded": downloaded,
-                "failed": failed,
-                "skipped": skipped
+        return web.json_response(
+            {
+                "status": "success",
+                "downloaded": len(downloaded),
+                "failed": len(failed),
+                "skipped": len(skipped),
+                "details": {
+                    "downloaded": downloaded,
+                    "failed": failed,
+                    "skipped": skipped,
+                },
             }
-        })
+        )
 
     except Exception as e:
         return safe_error_response(e, "curriculum asset preload")
@@ -3697,6 +4033,7 @@ async def handle_get_curriculum_with_assets(request: web.Request) -> web.Respons
 
         # Deep copy the UMCF to avoid modifying the cached version
         import copy
+
         umcf = copy.deepcopy(state.curriculum_raw[curriculum_id])
 
         content = umcf.get("content", [])
@@ -3740,15 +4077,16 @@ async def handle_get_curriculum_with_assets(request: web.Request) -> web.Respons
                             ".png": "image/png",
                             ".gif": "image/gif",
                             ".webp": "image/webp",
-                            ".svg": "image/svg+xml"
+                            ".svg": "image/svg+xml",
                         }
                         mime_type = mime_types.get(ext, "application/octet-stream")
 
                         import base64
+
                         asset_data[asset_id] = {
                             "data": base64.b64encode(data).decode("ascii"),
                             "mimeType": mime_type,
-                            "size": len(data)
+                            "size": len(data),
                         }
 
                     except Exception as e:
@@ -3769,6 +4107,7 @@ async def handle_get_curriculum_with_assets(request: web.Request) -> web.Respons
 # WebSocket Handler
 # =============================================================================
 
+
 async def handle_websocket(request: web.Request) -> web.WebSocketResponse:
     """Handle WebSocket connections for real-time updates."""
     ws = web.WebSocketResponse()
@@ -3779,16 +4118,20 @@ async def handle_websocket(request: web.Request) -> web.WebSocketResponse:
 
     try:
         # Send initial state
-        await ws.send_json({
-            "type": "connected",
-            "data": {
-                "server_time": datetime.utcnow().isoformat() + "Z",
-                "stats": {
-                    "total_logs": state.stats["total_logs_received"],
-                    "online_clients": sum(1 for c in state.clients.values() if c.status == "online")
-                }
+        await ws.send_json(
+            {
+                "type": "connected",
+                "data": {
+                    "server_time": datetime.utcnow().isoformat() + "Z",
+                    "stats": {
+                        "total_logs": state.stats["total_logs_received"],
+                        "online_clients": sum(
+                            1 for c in state.clients.values() if c.status == "online"
+                        ),
+                    },
+                },
             }
-        })
+        )
 
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
@@ -3805,7 +4148,9 @@ async def handle_websocket(request: web.Request) -> web.WebSocketResponse:
 
     finally:
         state.websockets.discard(ws)
-        logger.info(f"WebSocket disconnected. Total connections: {len(state.websockets)}")
+        logger.info(
+            f"WebSocket disconnected. Total connections: {len(state.websockets)}"
+        )
 
     return ws
 
@@ -3813,6 +4158,7 @@ async def handle_websocket(request: web.Request) -> web.WebSocketResponse:
 # =============================================================================
 # Static Files & Dashboard
 # =============================================================================
+
 
 async def handle_dashboard(request: web.Request) -> web.Response:
     """Redirect to the unified Next.js console on port 3000.
@@ -3827,10 +4173,7 @@ async def handle_dashboard(request: web.Request) -> web.Response:
         index_file = static_dir / "index.html"
         if index_file.exists():
             return web.FileResponse(index_file)
-        return web.Response(
-            text="Legacy dashboard not found.",
-            status=404
-        )
+        return web.Response(text="Legacy dashboard not found.", status=404)
 
     # Redirect to the unified console
     return web.HTTPFound("http://localhost:3000")
@@ -3838,16 +4181,19 @@ async def handle_dashboard(request: web.Request) -> web.Response:
 
 async def handle_health(request: web.Request) -> web.Response:
     """Health check endpoint."""
-    return web.json_response({
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "version": "1.0.0"
-    })
+    return web.json_response(
+        {
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "version": "1.0.0",
+        }
+    )
 
 
 # =============================================================================
 # API Handlers - System Metrics & Idle Management
 # =============================================================================
+
 
 async def handle_get_system_metrics(request: web.Request) -> web.Response:
     """Get current system resource metrics summary."""
@@ -3882,11 +4228,13 @@ async def handle_get_power_history(request: web.Request) -> web.Response:
     try:
         limit = int(request.query.get("limit", "100"))
         history = resource_monitor.get_power_history(limit)
-        return web.json_response({
-            "history": history,
-            "count": len(history),
-            "interval_seconds": resource_monitor.collection_interval,
-        })
+        return web.json_response(
+            {
+                "history": history,
+                "count": len(history),
+                "interval_seconds": resource_monitor.collection_interval,
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting power history: {e}")
@@ -3898,10 +4246,12 @@ async def handle_get_process_history(request: web.Request) -> web.Response:
     try:
         limit = int(request.query.get("limit", "100"))
         history = resource_monitor.get_process_history(limit)
-        return web.json_response({
-            "history": history,
-            "count": len(history),
-        })
+        return web.json_response(
+            {
+                "history": history,
+                "count": len(history),
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting process history: {e}")
@@ -3955,10 +4305,12 @@ async def handle_idle_keep_awake(request: web.Request) -> web.Response:
         idle_manager.keep_awake(duration)
         await broadcast_message("idle_keep_awake", {"duration": duration})
 
-        return web.json_response({
-            "status": "ok",
-            "keeping_awake_for": duration,
-        })
+        return web.json_response(
+            {
+                "status": "ok",
+                "keeping_awake_for": duration,
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error setting keep awake: {e}")
@@ -3992,18 +4344,23 @@ async def handle_idle_force_state(request: web.Request) -> web.Response:
         }
 
         if state_name not in state_map:
-            return web.json_response({
-                "error": f"Unknown state: {state_name}",
-                "valid_states": list(state_map.keys())
-            }, status=400)
+            return web.json_response(
+                {
+                    "error": f"Unknown state: {state_name}",
+                    "valid_states": list(state_map.keys()),
+                },
+                status=400,
+            )
 
         await idle_manager.force_state(state_map[state_name])
         await broadcast_message("idle_state_changed", idle_manager.get_status())
 
-        return web.json_response({
-            "status": "ok",
-            "new_state": state_name,
-        })
+        return web.json_response(
+            {
+                "status": "ok",
+                "new_state": state_name,
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error forcing idle state: {e}")
@@ -4014,10 +4371,12 @@ async def handle_get_power_modes(request: web.Request) -> web.Response:
     """Get available power modes."""
     try:
         modes = idle_manager.get_available_modes()
-        return web.json_response({
-            "modes": modes,
-            "current": idle_manager.current_mode,
-        })
+        return web.json_response(
+            {
+                "modes": modes,
+                "current": idle_manager.current_mode,
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting power modes: {e}")
@@ -4029,10 +4388,12 @@ async def handle_get_idle_history(request: web.Request) -> web.Response:
     try:
         limit = int(request.query.get("limit", "50"))
         history = idle_manager.get_transition_history(limit)
-        return web.json_response({
-            "history": history,
-            "count": len(history),
-        })
+        return web.json_response(
+            {
+                "history": history,
+                "count": len(history),
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting idle history: {e}")
@@ -4048,10 +4409,12 @@ async def handle_get_diagnostic_config(request: web.Request) -> web.Response:
     """Get current diagnostic logging configuration."""
     try:
         config = get_diagnostic_config()
-        return web.json_response({
-            "success": True,
-            "config": config,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "config": config,
+            }
+        )
     except Exception as e:
         logger.error(f"Error getting diagnostic config: {e}")
         return web.json_response({"error": str(e)}, status=500)
@@ -4078,11 +4441,13 @@ async def handle_set_diagnostic_config(request: web.Request) -> web.Response:
 
         diag_logger.info("Diagnostic config updated via API", context=updated_config)
 
-        return web.json_response({
-            "success": True,
-            "config": updated_config,
-            "message": "Diagnostic logging configuration updated"
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "config": updated_config,
+                "message": "Diagnostic logging configuration updated",
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error setting diagnostic config: {e}")
@@ -4109,11 +4474,9 @@ async def handle_diagnostic_toggle(request: web.Request) -> web.Response:
 
         logger.info(message)
 
-        return web.json_response({
-            "success": True,
-            "enabled": diag_logger.is_enabled(),
-            "message": message
-        })
+        return web.json_response(
+            {"success": True, "enabled": diag_logger.is_enabled(), "message": message}
+        )
 
     except Exception as e:
         logger.error(f"Error toggling diagnostic logging: {e}")
@@ -4151,8 +4514,7 @@ async def handle_create_profile(request: web.Request) -> web.Response:
         for field in required:
             if field not in data:
                 return web.json_response(
-                    {"error": f"Missing required field: {field}"},
-                    status=400
+                    {"error": f"Missing required field: {field}"}, status=400
                 )
 
         # Validate thresholds
@@ -4160,13 +4522,11 @@ async def handle_create_profile(request: web.Request) -> web.Response:
         for key in ["warm", "cool", "cold", "dormant"]:
             if key not in thresholds:
                 return web.json_response(
-                    {"error": f"Missing threshold: {key}"},
-                    status=400
+                    {"error": f"Missing threshold: {key}"}, status=400
                 )
             if not isinstance(thresholds[key], (int, float)) or thresholds[key] < 0:
                 return web.json_response(
-                    {"error": f"Invalid threshold value for {key}"},
-                    status=400
+                    {"error": f"Invalid threshold value for {key}"}, status=400
                 )
 
         success = idle_manager.create_profile(
@@ -4179,14 +4539,20 @@ async def handle_create_profile(request: web.Request) -> web.Response:
 
         if not success:
             return web.json_response(
-                {"error": "Could not create profile (ID may already exist or is reserved)"},
-                status=400
+                {
+                    "error": "Could not create profile (ID may already exist or is reserved)"
+                },
+                status=400,
             )
 
-        return web.json_response({
-            "status": "created",
-            "profile": idle_manager.get_profile(data["id"].lower().replace(" ", "_")),
-        })
+        return web.json_response(
+            {
+                "status": "created",
+                "profile": idle_manager.get_profile(
+                    data["id"].lower().replace(" ", "_")
+                ),
+            }
+        )
 
     except json.JSONDecodeError:
         return web.json_response({"error": "Invalid JSON"}, status=400)
@@ -4212,13 +4578,15 @@ async def handle_update_profile(request: web.Request) -> web.Response:
         if not success:
             return web.json_response(
                 {"error": "Could not update profile (not found or is built-in)"},
-                status=400
+                status=400,
             )
 
-        return web.json_response({
-            "status": "updated",
-            "profile": idle_manager.get_profile(profile_id),
-        })
+        return web.json_response(
+            {
+                "status": "updated",
+                "profile": idle_manager.get_profile(profile_id),
+            }
+        )
 
     except json.JSONDecodeError:
         return web.json_response({"error": "Invalid JSON"}, status=400)
@@ -4237,7 +4605,7 @@ async def handle_delete_profile(request: web.Request) -> web.Response:
         if not success:
             return web.json_response(
                 {"error": "Could not delete profile (not found or is built-in)"},
-                status=400
+                status=400,
             )
 
         return web.json_response({"status": "deleted", "profile_id": profile_id})
@@ -4255,8 +4623,7 @@ async def handle_duplicate_profile(request: web.Request) -> web.Response:
 
         if "new_id" not in data or "new_name" not in data:
             return web.json_response(
-                {"error": "Missing required fields: new_id, new_name"},
-                status=400
+                {"error": "Missing required fields: new_id, new_name"}, status=400
             )
 
         success = idle_manager.duplicate_profile(
@@ -4267,15 +4634,16 @@ async def handle_duplicate_profile(request: web.Request) -> web.Response:
 
         if not success:
             return web.json_response(
-                {"error": "Could not duplicate profile"},
-                status=400
+                {"error": "Could not duplicate profile"}, status=400
             )
 
         new_id = data["new_id"].lower().replace(" ", "_")
-        return web.json_response({
-            "status": "duplicated",
-            "profile": idle_manager.get_profile(new_id),
-        })
+        return web.json_response(
+            {
+                "status": "duplicated",
+                "profile": idle_manager.get_profile(new_id),
+            }
+        )
 
     except json.JSONDecodeError:
         return web.json_response({"error": "Invalid JSON"}, status=400)
@@ -4287,6 +4655,7 @@ async def handle_duplicate_profile(request: web.Request) -> web.Response:
 # =============================================================================
 # Admin User Management
 # =============================================================================
+
 
 async def handle_get_admin_users(request: web.Request) -> web.Response:
     """Get all users for admin panel."""
@@ -4317,8 +4686,12 @@ async def handle_get_admin_users(request: web.Request) -> web.Response:
                     "display_name": row["display_name"],
                     "role": row.get("role", "user"),
                     "status": get_status(row),
-                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                    "last_login": row["last_login_at"].isoformat() if row.get("last_login_at") else None,
+                    "created_at": row["created_at"].isoformat()
+                    if row["created_at"]
+                    else None,
+                    "last_login": row["last_login_at"].isoformat()
+                    if row.get("last_login_at")
+                    else None,
                 }
                 for row in rows
             ]
@@ -4345,14 +4718,12 @@ async def handle_create_admin_user(request: web.Request) -> web.Response:
 
         if not email or not password:
             return web.json_response(
-                {"error": "Email and password required"},
-                status=400
+                {"error": "Email and password required"}, status=400
             )
 
         if len(password) < 8:
             return web.json_response(
-                {"error": "Password must be at least 8 characters"},
-                status=400
+                {"error": "Password must be at least 8 characters"}, status=400
             )
 
         password_hash = auth_api.password_service.hash_password(password)
@@ -4365,25 +4736,34 @@ async def handle_create_admin_user(request: web.Request) -> web.Response:
             )
             if existing:
                 return web.json_response(
-                    {"error": "Email already registered"},
-                    status=409
+                    {"error": "Email already registered"}, status=409
                 )
 
             # Create user
-            await conn.execute("""
+            await conn.execute(
+                """
                 INSERT INTO users (id, email, password_hash, display_name, role, is_active, created_at)
                 VALUES ($1, $2, $3, $4, $5, true, NOW())
-            """, uuid.UUID(user_id), email, password_hash, display_name or email.split("@")[0], role)
+            """,
+                uuid.UUID(user_id),
+                email,
+                password_hash,
+                display_name or email.split("@")[0],
+                role,
+            )
 
-            return web.json_response({
-                "status": "created",
-                "user": {
-                    "id": user_id,
-                    "email": email,
-                    "display_name": display_name or email.split("@")[0],
-                    "role": role,
-                }
-            }, status=201)
+            return web.json_response(
+                {
+                    "status": "created",
+                    "user": {
+                        "id": user_id,
+                        "email": email,
+                        "display_name": display_name or email.split("@")[0],
+                        "role": role,
+                    },
+                },
+                status=201,
+            )
 
     except json.JSONDecodeError:
         return web.json_response({"error": "Invalid JSON"}, status=400)
@@ -4406,13 +4786,11 @@ async def handle_delete_admin_user(request: web.Request) -> web.Response:
         async with auth_api.db.acquire() as conn:
             # Delete user sessions first
             await conn.execute(
-                "DELETE FROM sessions WHERE user_id = $1",
-                uuid.UUID(user_id)
+                "DELETE FROM sessions WHERE user_id = $1", uuid.UUID(user_id)
             )
             # Delete user
             result = await conn.execute(
-                "DELETE FROM users WHERE id = $1",
-                uuid.UUID(user_id)
+                "DELETE FROM users WHERE id = $1", uuid.UUID(user_id)
             )
 
             if result == "DELETE 0":
@@ -4430,11 +4808,13 @@ async def handle_get_metrics_history_hourly(request: web.Request) -> web.Respons
     try:
         days = int(request.query.get("days", "7"))
         history = metrics_history.get_hourly_history(days)
-        return web.json_response({
-            "history": history,
-            "count": len(history),
-            "days_requested": days,
-        })
+        return web.json_response(
+            {
+                "history": history,
+                "count": len(history),
+                "days_requested": days,
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting hourly history: {e}")
@@ -4446,11 +4826,13 @@ async def handle_get_metrics_history_daily(request: web.Request) -> web.Response
     try:
         days = int(request.query.get("days", "30"))
         history = metrics_history.get_daily_history(days)
-        return web.json_response({
-            "history": history,
-            "count": len(history),
-            "days_requested": days,
-        })
+        return web.json_response(
+            {
+                "history": history,
+                "count": len(history),
+                "days_requested": days,
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error getting daily history: {e}")
@@ -4476,7 +4858,10 @@ async def handle_unload_models(request: web.Request) -> web.Response:
         # Unload Ollama models
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get("http://localhost:11434/api/ps", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                async with session.get(
+                    "http://localhost:11434/api/ps",
+                    timeout=aiohttp.ClientTimeout(total=5),
+                ) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         for model in data.get("models", []):
@@ -4485,7 +4870,7 @@ async def handle_unload_models(request: web.Request) -> web.Response:
                                 await session.post(
                                     "http://localhost:11434/api/generate",
                                     json={"model": model_name, "keep_alive": 0},
-                                    timeout=aiohttp.ClientTimeout(total=10)
+                                    timeout=aiohttp.ClientTimeout(total=10),
                                 )
                                 logger.info(f"Unloaded Ollama model: {model_name}")
                         results["ollama"] = True
@@ -4497,17 +4882,19 @@ async def handle_unload_models(request: web.Request) -> web.Response:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     "http://localhost:8880/admin/unload",
-                    timeout=aiohttp.ClientTimeout(total=5)
+                    timeout=aiohttp.ClientTimeout(total=5),
                 ) as resp:
                     results["vibevoice"] = resp.status == 200
         except Exception as e:
             logger.debug(f"VibeVoice unload failed: {e}")
 
         await broadcast_message("models_unloaded", results)
-        return web.json_response({
-            "status": "ok",
-            "results": results,
-        })
+        return web.json_response(
+            {
+                "status": "ok",
+                "results": results,
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error unloading models: {e}")
@@ -4517,6 +4904,7 @@ async def handle_unload_models(request: web.Request) -> web.Response:
 # =============================================================================
 # Background Tasks
 # =============================================================================
+
 
 async def _metrics_recording_loop():
     """Background task to record metrics samples to history"""
@@ -4542,6 +4930,7 @@ async def _metrics_recording_loop():
 # =============================================================================
 # Application Setup
 # =============================================================================
+
 
 def setup_auth_routes(app: web.Application, db_pool) -> bool:
     """
@@ -4591,8 +4980,12 @@ def create_app() -> web.Application:
             response = await handler(request)
 
         response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Client-ID, X-Client-Name"
+        response.headers["Access-Control-Allow-Methods"] = (
+            "GET, POST, PUT, DELETE, OPTIONS"
+        )
+        response.headers["Access-Control-Allow-Headers"] = (
+            "Content-Type, X-Client-ID, X-Client-Name"
+        )
         return response
 
     app.middlewares.append(cors_middleware)
@@ -4600,6 +4993,9 @@ def create_app() -> web.Application:
     # API Routes
     app.router.add_get("/health", handle_health)
     app.router.add_get("/api/stats", handle_get_stats)
+
+    # Feature Flags
+    app.router.add_get("/api/feature-flags", handle_get_feature_flags)
 
     # Logs
     app.router.add_post("/api/logs", handle_receive_log)
@@ -4630,7 +5026,9 @@ def create_app() -> web.Application:
     app.router.add_post("/api/models/config", handle_save_model_config)
     app.router.add_get("/api/models/capabilities", handle_get_model_capabilities)
     app.router.add_get("/api/models/{model_id}/parameters", handle_get_model_parameters)
-    app.router.add_post("/api/models/{model_id}/parameters", handle_save_model_parameters)
+    app.router.add_post(
+        "/api/models/{model_id}/parameters", handle_save_model_parameters
+    )
 
     # Managed Services
     app.router.add_get("/api/services", handle_get_services)
@@ -4642,27 +5040,58 @@ def create_app() -> web.Application:
 
     # Curriculum
     app.router.add_get("/api/curricula", handle_get_curricula)
-    app.router.add_get("/api/curricula/archived", handle_get_archived_curricula)  # Must be before {curriculum_id}
+    app.router.add_get(
+        "/api/curricula/archived", handle_get_archived_curricula
+    )  # Must be before {curriculum_id}
     app.router.add_get("/api/curricula/{curriculum_id}", handle_get_curriculum_detail)
-    app.router.add_get("/api/curricula/{curriculum_id}/full", handle_get_curriculum_full)
-    app.router.add_get("/api/curricula/{curriculum_id}/topics/{topic_id}/transcript", handle_get_topic_transcript)
-    app.router.add_get("/api/curricula/{curriculum_id}/topics/{topic_id}/stream-audio", handle_stream_topic_audio)
+    app.router.add_get(
+        "/api/curricula/{curriculum_id}/full", handle_get_curriculum_full
+    )
+    app.router.add_get(
+        "/api/curricula/{curriculum_id}/topics/{topic_id}/transcript",
+        handle_get_topic_transcript,
+    )
+    app.router.add_get(
+        "/api/curricula/{curriculum_id}/topics/{topic_id}/stream-audio",
+        handle_stream_topic_audio,
+    )
     app.router.add_post("/api/curricula/reload", handle_reload_curricula)
     app.router.add_post("/api/curricula/import", handle_import_curriculum)
     app.router.add_put("/api/curricula/{curriculum_id}", handle_save_curriculum)
     app.router.add_delete("/api/curricula/{curriculum_id}", handle_delete_curriculum)
-    app.router.add_post("/api/curricula/{curriculum_id}/archive", handle_archive_curriculum)
-    app.router.add_post("/api/curricula/archived/{file_name}/unarchive", handle_unarchive_curriculum)
-    app.router.add_delete("/api/curricula/archived/{file_name}", handle_delete_archived_curriculum)
+    app.router.add_post(
+        "/api/curricula/{curriculum_id}/archive", handle_archive_curriculum
+    )
+    app.router.add_post(
+        "/api/curricula/archived/{file_name}/unarchive", handle_unarchive_curriculum
+    )
+    app.router.add_delete(
+        "/api/curricula/archived/{file_name}", handle_delete_archived_curriculum
+    )
 
     # Visual Asset Management
-    app.router.add_post("/api/curricula/{curriculum_id}/topics/{topic_id}/assets", handle_upload_visual_asset)
-    app.router.add_delete("/api/curricula/{curriculum_id}/topics/{topic_id}/assets/{asset_id}", handle_delete_visual_asset)
-    app.router.add_patch("/api/curricula/{curriculum_id}/topics/{topic_id}/assets/{asset_id}", handle_update_visual_asset)
+    app.router.add_post(
+        "/api/curricula/{curriculum_id}/topics/{topic_id}/assets",
+        handle_upload_visual_asset,
+    )
+    app.router.add_delete(
+        "/api/curricula/{curriculum_id}/topics/{topic_id}/assets/{asset_id}",
+        handle_delete_visual_asset,
+    )
+    app.router.add_patch(
+        "/api/curricula/{curriculum_id}/topics/{topic_id}/assets/{asset_id}",
+        handle_update_visual_asset,
+    )
 
     # Asset Pre-Download & Caching
-    app.router.add_post("/api/curricula/{curriculum_id}/preload-assets", handle_preload_curriculum_assets)
-    app.router.add_get("/api/curricula/{curriculum_id}/full-with-assets", handle_get_curriculum_with_assets)
+    app.router.add_post(
+        "/api/curricula/{curriculum_id}/preload-assets",
+        handle_preload_curriculum_assets,
+    )
+    app.router.add_get(
+        "/api/curricula/{curriculum_id}/full-with-assets",
+        handle_get_curriculum_with_assets,
+    )
 
     # Plugin Management System
     register_plugin_routes(app)
@@ -4704,8 +5133,12 @@ def create_app() -> web.Application:
         token_config = TokenConfig(
             secret_key=auth_secret,
             algorithm=os.environ.get("AUTH_ALGORITHM", "HS256"),
-            access_token_lifetime_minutes=int(os.environ.get("AUTH_ACCESS_TOKEN_MINUTES", "15")),
-            refresh_token_lifetime_days=int(os.environ.get("AUTH_REFRESH_TOKEN_DAYS", "30")),
+            access_token_lifetime_minutes=int(
+                os.environ.get("AUTH_ACCESS_TOKEN_MINUTES", "15")
+            ),
+            refresh_token_lifetime_days=int(
+                os.environ.get("AUTH_REFRESH_TOKEN_DAYS", "30")
+            ),
         )
         token_service = TokenService(token_config)
         rate_limiter = RateLimiter()
@@ -4721,7 +5154,9 @@ def create_app() -> web.Application:
         app.middlewares.append(auth_middleware)
         app.middlewares.append(rate_limit_middleware)
 
-        logger.info("Authentication system initialized (routes pending database connection)")
+        logger.info(
+            "Authentication system initialized (routes pending database connection)"
+        )
     else:
         logger.warning("AUTH_SECRET_KEY not set - authentication disabled")
 
@@ -4734,13 +5169,22 @@ def create_app() -> web.Application:
     # Set up callback to reload curricula when import completes
     def on_import_complete(progress):
         """Called when an import job completes successfully."""
-        logger.info(f"Import completed: {progress.config.output_name}, reloading curricula")
+        logger.info(
+            f"Import completed: {progress.config.output_name}, reloading curricula"
+        )
         state.reload_curricula()
         # Also broadcast to connected clients
-        asyncio.create_task(broadcast_message("curriculum_imported", {
-            "id": progress.config.output_name,
-            "title": getattr(progress, "_course_title", progress.config.output_name),
-        }))
+        asyncio.create_task(
+            broadcast_message(
+                "curriculum_imported",
+                {
+                    "id": progress.config.output_name,
+                    "title": getattr(
+                        progress, "_course_title", progress.config.output_name
+                    ),
+                },
+            )
+        )
 
     set_import_complete_callback(on_import_complete)
 
@@ -4759,7 +5203,9 @@ def create_app() -> web.Application:
     app.router.add_get("/api/system/idle/history", handle_get_idle_history)
     app.router.add_get("/api/system/idle/modes", handle_get_power_modes)
     app.router.add_post("/api/system/idle/keep-awake", handle_idle_keep_awake)
-    app.router.add_post("/api/system/idle/cancel-keep-awake", handle_idle_cancel_keep_awake)
+    app.router.add_post(
+        "/api/system/idle/cancel-keep-awake", handle_idle_cancel_keep_awake
+    )
     app.router.add_post("/api/system/idle/force-state", handle_idle_force_state)
     app.router.add_post("/api/system/unload-models", handle_unload_models)
 
@@ -4773,7 +5219,9 @@ def create_app() -> web.Application:
     app.router.add_post("/api/system/profiles", handle_create_profile)
     app.router.add_put("/api/system/profiles/{profile_id}", handle_update_profile)
     app.router.add_delete("/api/system/profiles/{profile_id}", handle_delete_profile)
-    app.router.add_post("/api/system/profiles/{profile_id}/duplicate", handle_duplicate_profile)
+    app.router.add_post(
+        "/api/system/profiles/{profile_id}/duplicate", handle_duplicate_profile
+    )
 
     # Admin User Management
     app.router.add_get("/api/admin/users", handle_get_admin_users)
@@ -4783,7 +5231,9 @@ def create_app() -> web.Application:
     # Historical Metrics (persisted)
     app.router.add_get("/api/system/history/hourly", handle_get_metrics_history_hourly)
     app.router.add_get("/api/system/history/daily", handle_get_metrics_history_daily)
-    app.router.add_get("/api/system/history/summary", handle_get_metrics_history_summary)
+    app.router.add_get(
+        "/api/system/history/summary", handle_get_metrics_history_summary
+    )
 
     # Static files and dashboard
     static_dir = Path(__file__).parent / "static"
@@ -4810,7 +5260,7 @@ def create_app() -> web.Application:
                 feature_flags = UnleashClient(
                     url=FEATURE_FLAG_URL,
                     app_name="UnaMentis-Management-API",
-                    custom_headers={"Authorization": FEATURE_FLAG_KEY}
+                    custom_headers={"Authorization": FEATURE_FLAG_KEY},
                 )
                 feature_flags.initialize_client()
                 logger.info(f"Feature flags initialized from {FEATURE_FLAG_URL}")
@@ -4825,8 +5275,8 @@ def create_app() -> web.Application:
 
         # Initialize TTS resource pool (priority-based generation)
         resource_pool = TTSResourcePool(
-            max_concurrent_live=7,      # Live users get 7 concurrent slots
-            max_concurrent_background=3  # Background pre-generation gets 3
+            max_concurrent_live=7,  # Live users get 7 concurrent slots
+            max_concurrent_background=3,  # Background pre-generation gets 3
         )
         app["tts_resource_pool"] = resource_pool
 
@@ -4842,7 +5292,9 @@ def create_app() -> web.Application:
             app["kb_audio_manager"] = kb_audio_manager
             logger.info("[Startup] KB audio manager initialized")
         except Exception as e:
-            logger.error(f"[Startup] KB audio manager init failed, continuing without KB audio: {e}")
+            logger.error(
+                f"[Startup] KB audio manager init failed, continuing without KB audio: {e}"
+            )
             app["kb_audio_manager"] = None
 
         # Initialize session manager (handles both FOV and user sessions)
@@ -4882,16 +5334,22 @@ def create_app() -> web.Application:
         # Register deployment API routes
         register_deployment_routes(app)
 
-        logger.info("[Startup] TTS cache, resource pool, session management, and deployment API initialized")
+        logger.info(
+            "[Startup] TTS cache, resource pool, session management, and deployment API initialized"
+        )
 
         # Initialize database connection for auth
         database_url = os.environ.get("DATABASE_URL")
         if database_url and "token_service" in app:
             try:
-                db_pool = await asyncpg.create_pool(database_url, min_size=2, max_size=10)
+                db_pool = await asyncpg.create_pool(
+                    database_url, min_size=2, max_size=10
+                )
                 app["db_pool"] = db_pool
                 if setup_auth_routes(app, db_pool):
-                    logger.info("[Startup] Database connected and auth routes initialized")
+                    logger.info(
+                        "[Startup] Database connected and auth routes initialized"
+                    )
                 else:
                     logger.warning("[Startup] Auth routes setup failed")
 
@@ -4906,7 +5364,9 @@ def create_app() -> web.Application:
             except Exception as e:
                 logger.error(f"[Startup] Database connection failed: {e}")
         elif "token_service" in app:
-            logger.warning("[Startup] DATABASE_URL not set, auth database features disabled")
+            logger.warning(
+                "[Startup] DATABASE_URL not set, auth database features disabled"
+            )
 
         # Start resource monitoring and idle management
         await resource_monitor.start()
@@ -4919,28 +5379,39 @@ def create_app() -> web.Application:
         # Start latency test harness
         await init_latency_harness()
 
-        logger.info("[Startup] Resource monitoring, idle management, metrics history, and latency harness started")
+        logger.info(
+            "[Startup] Resource monitoring, idle management, metrics history, and latency harness started"
+        )
 
         # Log diagnostic logging status
-        diag_logger.info("Server startup complete", context={
-            "host": HOST,
-            "port": PORT,
-            "diagnostic_enabled": diag_logger.is_enabled()
-        })
+        diag_logger.info(
+            "Server startup complete",
+            context={
+                "host": HOST,
+                "port": PORT,
+                "diagnostic_enabled": diag_logger.is_enabled(),
+            },
+        )
 
         # Schedule KB audio prefetch in background (checks coverage and generates if needed)
-        app["kb_audio_prefetch_task"] = asyncio.create_task(schedule_kb_audio_prefetch(app))
+        app["kb_audio_prefetch_task"] = asyncio.create_task(
+            schedule_kb_audio_prefetch(app)
+        )
 
         # Start Bonjour/mDNS advertising for client auto-discovery
         bonjour = await start_bonjour_advertising(
             gateway_port=11400,  # UnaMentis gateway port
-            management_port=PORT
+            management_port=PORT,
         )
         if bonjour:
             app["bonjour_advertiser"] = bonjour
-            logger.info("[Startup] Bonjour advertising started for client auto-discovery")
+            logger.info(
+                "[Startup] Bonjour advertising started for client auto-discovery"
+            )
         else:
-            logger.info("[Startup] Bonjour advertising not available (zeroconf not installed)")
+            logger.info(
+                "[Startup] Bonjour advertising not available (zeroconf not installed)"
+            )
 
     # Cleanup hook to stop background tasks
     async def on_cleanup(app):
@@ -4961,7 +5432,9 @@ def create_app() -> web.Application:
 
         # Cleanup inactive user sessions
         if "session_manager" in app:
-            removed = app["session_manager"].cleanup_inactive_user_sessions(max_inactive_minutes=0)
+            removed = app["session_manager"].cleanup_inactive_user_sessions(
+                max_inactive_minutes=0
+            )
             logger.info(f"[Cleanup] Removed {removed} user sessions")
 
         # Cleanup old deployments

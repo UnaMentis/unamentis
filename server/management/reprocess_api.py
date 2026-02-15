@@ -15,6 +15,7 @@ from aiohttp import web
 
 # Import reprocessing system
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from importers.core.reprocess_orchestrator import ReprocessOrchestrator
@@ -35,7 +36,9 @@ def get_orchestrator(app: web.Application) -> ReprocessOrchestrator:
         if state and hasattr(state, "curriculum_dir"):
             curriculum_dir = Path(state.curriculum_dir)
         else:
-            curriculum_dir = Path(__file__).parent.parent / "curriculum" / "examples" / "realistic"
+            curriculum_dir = (
+                Path(__file__).parent.parent / "curriculum" / "examples" / "realistic"
+            )
 
         # Get curriculum storage from app state
         curriculum_storage = {}
@@ -59,6 +62,7 @@ def init_reprocess_system(app: web.Application):
 # =============================================================================
 # Analysis Routes
 # =============================================================================
+
 
 async def handle_analyze_curriculum(request: web.Request) -> web.Response:
     """
@@ -92,23 +96,31 @@ async def handle_analyze_curriculum(request: web.Request) -> web.Response:
         orchestrator = get_orchestrator(request.app)
         analysis = await orchestrator.analyze_curriculum(curriculum_id, force=force)
 
-        return web.json_response({
-            "success": True,
-            "analysis": analysis.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "analysis": analysis.to_dict(),
+            }
+        )
 
     except ValueError as e:
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=404)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=404,
+        )
 
     except Exception as e:
         logger.exception(f"Error analyzing curriculum {curriculum_id}")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 async def handle_get_analysis(request: web.Request) -> web.Response:
@@ -130,28 +142,36 @@ async def handle_get_analysis(request: web.Request) -> web.Response:
         analysis = orchestrator.get_cached_analysis(curriculum_id)
 
         if analysis:
-            return web.json_response({
-                "success": True,
-                "analysis": analysis.to_dict(),
-            })
+            return web.json_response(
+                {
+                    "success": True,
+                    "analysis": analysis.to_dict(),
+                }
+            )
         else:
-            return web.json_response({
-                "success": True,
-                "analysis": None,
-                "message": "No cached analysis available. Run POST /api/reprocess/analyze/{id} first.",
-            })
+            return web.json_response(
+                {
+                    "success": True,
+                    "analysis": None,
+                    "message": "No cached analysis available. Run POST /api/reprocess/analyze/{id} first.",
+                }
+            )
 
     except Exception as e:
         logger.exception(f"Error getting analysis for {curriculum_id}")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 # =============================================================================
 # Job Routes
 # =============================================================================
+
 
 async def handle_start_job(request: web.Request) -> web.Response:
     """
@@ -186,24 +206,32 @@ async def handle_start_job(request: web.Request) -> web.Response:
         orchestrator = get_orchestrator(request.app)
         job_id = await orchestrator.start_reprocess(config)
 
-        return web.json_response({
-            "success": True,
-            "jobId": job_id,
-            "status": "queued",
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "jobId": job_id,
+                "status": "queued",
+            }
+        )
 
     except KeyError as e:
-        return web.json_response({
-            "success": False,
-            "error": f"Missing required field: {e}",
-        }, status=400)
+        return web.json_response(
+            {
+                "success": False,
+                "error": f"Missing required field: {e}",
+            },
+            status=400,
+        )
 
     except Exception as e:
         logger.exception("Error starting reprocess job")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 async def handle_list_jobs(request: web.Request) -> web.Response:
@@ -240,27 +268,34 @@ async def handle_list_jobs(request: web.Request) -> web.Response:
         # Return summary view for list
         job_summaries = []
         for job in jobs:
-            job_summaries.append({
-                "id": job.id,
-                "curriculumId": job.config.curriculum_id,
-                "status": job.status.value,
-                "overallProgress": job.overall_progress,
-                "currentStage": job.current_stage,
-                "startedAt": job.started_at.isoformat() if job.started_at else None,
-                "fixesApplied": len(job.fixes_applied),
-            })
+            job_summaries.append(
+                {
+                    "id": job.id,
+                    "curriculumId": job.config.curriculum_id,
+                    "status": job.status.value,
+                    "overallProgress": job.overall_progress,
+                    "currentStage": job.current_stage,
+                    "startedAt": job.started_at.isoformat() if job.started_at else None,
+                    "fixesApplied": len(job.fixes_applied),
+                }
+            )
 
-        return web.json_response({
-            "success": True,
-            "jobs": job_summaries,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "jobs": job_summaries,
+            }
+        )
 
     except Exception as e:
         logger.exception("Error listing reprocess jobs")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 async def handle_get_job(request: web.Request) -> web.Response:
@@ -282,22 +317,30 @@ async def handle_get_job(request: web.Request) -> web.Response:
         progress = orchestrator.get_progress(job_id)
 
         if not progress:
-            return web.json_response({
-                "success": False,
-                "error": f"Job not found: {job_id}",
-            }, status=404)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Job not found: {job_id}",
+                },
+                status=404,
+            )
 
-        return web.json_response({
-            "success": True,
-            "progress": progress.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "progress": progress.to_dict(),
+            }
+        )
 
     except Exception as e:
         logger.exception(f"Error getting job {job_id}")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 async def handle_cancel_job(request: web.Request) -> web.Response:
@@ -319,27 +362,36 @@ async def handle_cancel_job(request: web.Request) -> web.Response:
         cancelled = await orchestrator.cancel_job(job_id)
 
         if not cancelled:
-            return web.json_response({
-                "success": False,
-                "error": f"Job not found or already completed: {job_id}",
-            }, status=404)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Job not found or already completed: {job_id}",
+                },
+                status=404,
+            )
 
-        return web.json_response({
-            "success": True,
-            "cancelled": True,
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "cancelled": True,
+            }
+        )
 
     except Exception as e:
         logger.exception(f"Error cancelling job {job_id}")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 # =============================================================================
 # Preview Route
 # =============================================================================
+
 
 async def handle_preview(request: web.Request) -> web.Response:
     """
@@ -371,43 +423,56 @@ async def handle_preview(request: web.Request) -> web.Response:
         orchestrator = get_orchestrator(request.app)
         preview = await orchestrator.preview_reprocess(config)
 
-        return web.json_response({
-            "success": True,
-            "preview": preview.to_dict(),
-        })
+        return web.json_response(
+            {
+                "success": True,
+                "preview": preview.to_dict(),
+            }
+        )
 
     except ValueError as e:
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=404)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=404,
+        )
 
     except Exception as e:
         logger.exception(f"Error previewing reprocess for {curriculum_id}")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 # =============================================================================
 # Route Registration
 # =============================================================================
 
+
 def register_reprocess_routes(app: web.Application):
     """Register reprocessing API routes."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
+    router = guarded_routes(app, FlagKeys.REPROCESSING_ENABLED)
 
     # Analysis routes
-    app.router.add_post("/api/reprocess/analyze/{curriculum_id}", handle_analyze_curriculum)
-    app.router.add_get("/api/reprocess/analysis/{curriculum_id}", handle_get_analysis)
+    router.add_post("/api/reprocess/analyze/{curriculum_id}", handle_analyze_curriculum)
+    router.add_get("/api/reprocess/analysis/{curriculum_id}", handle_get_analysis)
 
     # Job routes
-    app.router.add_post("/api/reprocess/jobs", handle_start_job)
-    app.router.add_get("/api/reprocess/jobs", handle_list_jobs)
-    app.router.add_get("/api/reprocess/jobs/{job_id}", handle_get_job)
-    app.router.add_delete("/api/reprocess/jobs/{job_id}", handle_cancel_job)
+    router.add_post("/api/reprocess/jobs", handle_start_job)
+    router.add_get("/api/reprocess/jobs", handle_list_jobs)
+    router.add_get("/api/reprocess/jobs/{job_id}", handle_get_job)
+    router.add_delete("/api/reprocess/jobs/{job_id}", handle_cancel_job)
 
     # Preview route
-    app.router.add_post("/api/reprocess/preview/{curriculum_id}", handle_preview)
+    router.add_post("/api/reprocess/preview/{curriculum_id}", handle_preview)
 
     logger.info("Registered reprocessing API routes")

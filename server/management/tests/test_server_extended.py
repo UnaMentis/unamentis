@@ -49,6 +49,7 @@ from server import (
     CurriculumSummary,
     CurriculumDetail,
     TopicSummary,
+    PROJECT_ROOT,
     chunk_text_for_tts,
     broadcast_message,
     handle_load_model,
@@ -807,7 +808,7 @@ class TestHandleDeleteVisualAsset:
             total_duration="PT1H",
             difficulty="easy",
             age_range="18+",
-            file_path="/test/data/fake.umcf",  # Test placeholder,
+            file_path=str(PROJECT_ROOT / "curriculum" / "fake.umcf"),
         )
 
         mock_request.match_info = {
@@ -2131,7 +2132,7 @@ class TestHandleDeleteCurriculum:
             total_duration="PT1H",
             difficulty="easy",
             age_range="18+",
-            file_path="/test/data/test.umcf",  # Test placeholder,
+            file_path=str(PROJECT_ROOT / "curriculum" / "test.umcf"),
         )
 
         mock_request.match_info = {"curriculum_id": curriculum_id}

@@ -18,20 +18,18 @@ from aiohttp import web
 
 # Import the harness components
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "latency_harness"))
 
 from latency_harness.orchestrator import LatencyTestOrchestrator
 from latency_harness.analyzer import ResultsAnalyzer
 from latency_harness.storage import create_latency_storage, FileBasedLatencyStorage
 from latency_harness.models import (
-    TestSuiteDefinition,
     TestRun,
     TestResult,
     ClientType,
     ClientCapabilities,
-    ClientStatus,
     RunStatus,
-    NetworkProfile,
     PerformanceBaseline,
     BaselineMetrics,
     create_quick_validation_suite,
@@ -61,11 +59,9 @@ async def broadcast_latency_update(msg_type: str, data: dict):
     if not _latency_websockets:
         return
 
-    message = json.dumps({
-        "type": msg_type,
-        "data": data,
-        "timestamp": datetime.now().isoformat()
-    })
+    message = json.dumps(
+        {"type": msg_type, "data": data, "timestamp": datetime.now().isoformat()}
+    )
 
     # Send to all connected clients
     disconnected = set()
@@ -83,33 +79,51 @@ async def broadcast_latency_update(msg_type: str, data: dict):
 def _on_progress(run_id: str, completed: int, total: int):
     """Callback for test progress updates."""
     import asyncio
-    asyncio.create_task(broadcast_latency_update("test_progress", {
-        "runId": run_id,
-        "completedConfigurations": completed,
-        "totalConfigurations": total,
-        "progressPercent": (completed / total * 100) if total > 0 else 0,
-    }))
+
+    asyncio.create_task(
+        broadcast_latency_update(
+            "test_progress",
+            {
+                "runId": run_id,
+                "completedConfigurations": completed,
+                "totalConfigurations": total,
+                "progressPercent": (completed / total * 100) if total > 0 else 0,
+            },
+        )
+    )
 
 
 def _on_result(run_id: str, result: TestResult):
     """Callback for individual test results."""
     import asyncio
-    asyncio.create_task(broadcast_latency_update("test_result", {
-        "runId": run_id,
-        "result": result.to_dict(),
-    }))
+
+    asyncio.create_task(
+        broadcast_latency_update(
+            "test_result",
+            {
+                "runId": run_id,
+                "result": result.to_dict(),
+            },
+        )
+    )
 
 
 def _on_run_complete(run: TestRun):
     """Callback for test run completion."""
     import asyncio
-    asyncio.create_task(broadcast_latency_update("run_complete", {
-        "runId": run.id,
-        "status": run.status.value,
-        "completedConfigurations": run.completed_configurations,
-        "totalConfigurations": run.total_configurations,
-        "elapsedTimeSeconds": run.elapsed_time,
-    }))
+
+    asyncio.create_task(
+        broadcast_latency_update(
+            "run_complete",
+            {
+                "runId": run.id,
+                "status": run.status.value,
+                "completedConfigurations": run.completed_configurations,
+                "totalConfigurations": run.total_configurations,
+                "elapsedTimeSeconds": run.elapsed_time,
+            },
+        )
+    )
 
 
 async def init_latency_harness():
@@ -128,9 +142,9 @@ async def init_latency_harness():
 
     # Initialize file-based storage
     try:
-        if hasattr(_storage, 'initialize'):
+        if hasattr(_storage, "initialize"):
             await _storage.initialize()
-        elif hasattr(_storage, 'connect'):
+        elif hasattr(_storage, "connect"):
             await _storage.connect()
             await _storage.initialize_schema()
     except Exception as e:
@@ -173,7 +187,7 @@ async def shutdown_latency_harness():
         logger.info("Latency test harness stopped")
 
     if _storage:
-        if hasattr(_storage, 'close'):
+        if hasattr(_storage, "close"):
             await _storage.close()
         logger.info("Latency storage closed")
 
@@ -182,24 +196,27 @@ async def shutdown_latency_harness():
 # Test Suite Endpoints
 # =============================================================================
 
+
 async def handle_list_suites(request: web.Request) -> web.Response:
     """GET /api/latency-tests/suites - List all test suites."""
     orchestrator = get_orchestrator()
     suites = orchestrator.list_suites()
 
-    return web.json_response({
-        "suites": [
-            {
-                "id": s.id,
-                "name": s.name,
-                "description": s.description,
-                "scenarioCount": len(s.scenarios),
-                "totalTestCount": s.total_test_count,
-                "networkProfiles": [p.value for p in s.network_profiles],
-            }
-            for s in suites
-        ]
-    })
+    return web.json_response(
+        {
+            "suites": [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "description": s.description,
+                    "scenarioCount": len(s.scenarios),
+                    "totalTestCount": s.total_test_count,
+                    "networkProfiles": [p.value for p in s.network_profiles],
+                }
+                for s in suites
+            ]
+        }
+    )
 
 
 async def handle_get_suite(request: web.Request) -> web.Response:
@@ -209,25 +226,26 @@ async def handle_get_suite(request: web.Request) -> web.Response:
     suite = orchestrator.get_suite(suite_id)
 
     if not suite:
-        return web.json_response(
-            {"error": f"Suite not found: {suite_id}"},
-            status=404
-        )
+        return web.json_response({"error": f"Suite not found: {suite_id}"}, status=404)
 
-    return web.json_response({
-        "id": suite.id,
-        "name": suite.name,
-        "description": suite.description,
-        "scenarios": [s.to_dict() for s in suite.scenarios],
-        "networkProfiles": [p.value for p in suite.network_profiles],
-        "parameterSpace": {
-            "sttConfigs": [c.to_dict() for c in suite.parameter_space.stt_configs],
-            "llmConfigs": [c.to_dict() for c in suite.parameter_space.llm_configs],
-            "ttsConfigs": [c.to_dict() for c in suite.parameter_space.tts_configs],
-            "audioConfigs": [c.to_dict() for c in suite.parameter_space.audio_configs],
-        },
-        "totalTestCount": suite.total_test_count,
-    })
+    return web.json_response(
+        {
+            "id": suite.id,
+            "name": suite.name,
+            "description": suite.description,
+            "scenarios": [s.to_dict() for s in suite.scenarios],
+            "networkProfiles": [p.value for p in suite.network_profiles],
+            "parameterSpace": {
+                "sttConfigs": [c.to_dict() for c in suite.parameter_space.stt_configs],
+                "llmConfigs": [c.to_dict() for c in suite.parameter_space.llm_configs],
+                "ttsConfigs": [c.to_dict() for c in suite.parameter_space.tts_configs],
+                "audioConfigs": [
+                    c.to_dict() for c in suite.parameter_space.audio_configs
+                ],
+            },
+            "totalTestCount": suite.total_test_count,
+        }
+    )
 
 
 async def handle_upload_suite(request: web.Request) -> web.Response:
@@ -237,16 +255,16 @@ async def handle_upload_suite(request: web.Request) -> web.Response:
 
         # Parse and validate the suite definition
         # For now, return a placeholder - full implementation would parse YAML/JSON
-        return web.json_response({
-            "message": "Suite upload not yet implemented",
-            "received": data,
-        }, status=501)
+        return web.json_response(
+            {
+                "message": "Suite upload not yet implemented",
+                "received": data,
+            },
+            status=501,
+        )
 
     except json.JSONDecodeError:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
 
 async def handle_delete_suite(request: web.Request) -> web.Response:
@@ -255,32 +273,22 @@ async def handle_delete_suite(request: web.Request) -> web.Response:
 
     # Don't allow deleting built-in suites
     if suite_id in ["quick_validation", "provider_comparison"]:
-        return web.json_response(
-            {"error": "Cannot delete built-in suite"},
-            status=400
-        )
+        return web.json_response({"error": "Cannot delete built-in suite"}, status=400)
 
     # Delete from storage
     if _storage is None:
-        return web.json_response(
-            {"error": "Storage not initialized"},
-            status=500
-        )
+        return web.json_response({"error": "Storage not initialized"}, status=500)
 
     # Check if suite exists first
     suite = await _storage.get_suite(suite_id)
     if suite is None:
-        return web.json_response(
-            {"error": f"Suite '{suite_id}' not found"},
-            status=404
-        )
+        return web.json_response({"error": f"Suite '{suite_id}' not found"}, status=404)
 
     # Delete the suite
     deleted = await _storage.delete_suite(suite_id)
     if not deleted:
         return web.json_response(
-            {"error": f"Failed to delete suite '{suite_id}'"},
-            status=500
+            {"error": f"Failed to delete suite '{suite_id}'"}, status=500
         )
 
     return web.json_response({"message": f"Suite '{suite_id}' deleted successfully"})
@@ -289,6 +297,7 @@ async def handle_delete_suite(request: web.Request) -> web.Response:
 # =============================================================================
 # Test Run Endpoints
 # =============================================================================
+
 
 async def handle_start_run(request: web.Request) -> web.Response:
     """POST /api/latency-tests/runs - Start a new test run."""
@@ -299,10 +308,7 @@ async def handle_start_run(request: web.Request) -> web.Response:
         client_type_str = data.get("clientType")
 
         if not suite_id:
-            return web.json_response(
-                {"error": "suiteId is required"},
-                status=400
-            )
+            return web.json_response({"error": "suiteId is required"}, status=400)
 
         orchestrator = get_orchestrator()
 
@@ -313,8 +319,7 @@ async def handle_start_run(request: web.Request) -> web.Response:
                 client_type = ClientType(client_type_str)
             except ValueError:
                 return web.json_response(
-                    {"error": f"Invalid clientType: {client_type_str}"},
-                    status=400
+                    {"error": f"Invalid clientType: {client_type_str}"}, status=400
                 )
 
         # Start the test run
@@ -324,23 +329,19 @@ async def handle_start_run(request: web.Request) -> web.Response:
                 client_id=client_id,
                 client_type=client_type,
             )
-            return web.json_response({
-                "runId": run.id,
-                "status": run.status.value,
-                "totalConfigurations": run.total_configurations,
-                "message": f"Test run started on client {run.client_id}",
-            })
-        except ValueError as e:
             return web.json_response(
-                {"error": str(e)},
-                status=400
+                {
+                    "runId": run.id,
+                    "status": run.status.value,
+                    "totalConfigurations": run.total_configurations,
+                    "message": f"Test run started on client {run.client_id}",
+                }
             )
+        except ValueError as e:
+            return web.json_response({"error": str(e)}, status=400)
 
     except json.JSONDecodeError:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
 
 async def handle_list_runs(request: web.Request) -> web.Response:
@@ -360,9 +361,7 @@ async def handle_list_runs(request: web.Request) -> web.Response:
 
     runs = orchestrator.list_runs(status=status, limit=limit)
 
-    return web.json_response({
-        "runs": [run.to_dict() for run in runs]
-    })
+    return web.json_response({"runs": [run.to_dict() for run in runs]})
 
 
 async def handle_get_run(request: web.Request) -> web.Response:
@@ -372,10 +371,7 @@ async def handle_get_run(request: web.Request) -> web.Response:
     run = orchestrator.get_run(run_id)
 
     if not run:
-        return web.json_response(
-            {"error": f"Run not found: {run_id}"},
-            status=404
-        )
+        return web.json_response({"error": f"Run not found: {run_id}"}, status=404)
 
     return web.json_response(run.to_dict())
 
@@ -387,18 +383,17 @@ async def handle_get_run_results(request: web.Request) -> web.Response:
     run = orchestrator.get_run(run_id)
 
     if not run:
-        return web.json_response(
-            {"error": f"Run not found: {run_id}"},
-            status=404
-        )
+        return web.json_response({"error": f"Run not found: {run_id}"}, status=404)
 
-    return web.json_response({
-        "runId": run.id,
-        "status": run.status.value,
-        "completedConfigurations": run.completed_configurations,
-        "totalConfigurations": run.total_configurations,
-        "results": [r.to_dict() for r in run.results],
-    })
+    return web.json_response(
+        {
+            "runId": run.id,
+            "status": run.status.value,
+            "completedConfigurations": run.completed_configurations,
+            "totalConfigurations": run.total_configurations,
+            "results": [r.to_dict() for r in run.results],
+        }
+    )
 
 
 async def handle_cancel_run(request: web.Request) -> web.Response:
@@ -408,14 +403,13 @@ async def handle_cancel_run(request: web.Request) -> web.Response:
 
     await orchestrator.cancel_run(run_id)
 
-    return web.json_response({
-        "message": f"Run {run_id} cancelled"
-    })
+    return web.json_response({"message": f"Run {run_id} cancelled"})
 
 
 # =============================================================================
 # Analysis Endpoints
 # =============================================================================
+
 
 async def handle_get_analysis(request: web.Request) -> web.Response:
     """GET /api/latency-tests/runs/{run_id}/analysis - Get analysis report."""
@@ -424,92 +418,88 @@ async def handle_get_analysis(request: web.Request) -> web.Response:
     run = orchestrator.get_run(run_id)
 
     if not run:
-        return web.json_response(
-            {"error": f"Run not found: {run_id}"},
-            status=404
-        )
+        return web.json_response({"error": f"Run not found: {run_id}"}, status=404)
 
     try:
         analyzer = ResultsAnalyzer()
         report = analyzer.analyze(run)
     except Exception as e:
         logger.exception(f"Analysis failed for run {run_id}")
-        return web.json_response(
-            {"error": f"Analysis failed: {str(e)}"},
-            status=500
-        )
+        return web.json_response({"error": f"Analysis failed: {str(e)}"}, status=500)
 
-    return web.json_response({
-        "runId": report.run_id,
-        "generatedAt": report.generated_at.isoformat(),
-        "summary": {
-            "totalConfigurations": report.summary.total_configurations,
-            "totalTests": report.summary.total_tests,
-            "successfulTests": report.summary.successful_tests,
-            "failedTests": report.summary.failed_tests,
-            "overallMedianE2EMs": report.summary.overall_median_e2e_ms,
-            "overallP99E2EMs": report.summary.overall_p99_e2e_ms,
-            "overallMinE2EMs": report.summary.overall_min_e2e_ms,
-            "overallMaxE2EMs": report.summary.overall_max_e2e_ms,
-            "medianSTTMs": report.summary.median_stt_ms,
-            "medianLLMTTFBMs": report.summary.median_llm_ttfb_ms,
-            "medianLLMCompletionMs": report.summary.median_llm_completion_ms,
-            "medianTTSTTFBMs": report.summary.median_tts_ttfb_ms,
-            "medianTTSCompletionMs": report.summary.median_tts_completion_ms,
-            "testDurationMinutes": report.summary.test_duration_minutes,
-        },
-        "bestConfigurations": [
-            {
-                "rank": c.rank,
-                "configId": c.config_id,
-                "medianE2EMs": c.median_e2e_ms,
-                "p99E2EMs": c.p99_e2e_ms,
-                "stddevMs": c.stddev_ms,
-                "sampleCount": c.sample_count,
-                "breakdown": {
-                    "sttMs": c.breakdown.stt_ms,
-                    "llmTTFBMs": c.breakdown.llm_ttfb_ms,
-                    "llmCompletionMs": c.breakdown.llm_completion_ms,
-                    "ttsTTFBMs": c.breakdown.tts_ttfb_ms,
-                    "ttsCompletionMs": c.breakdown.tts_completion_ms,
-                },
-                "networkProjections": {
-                    k: {
-                        "e2eMs": v.e2e_ms,
-                        "meets500ms": v.meets_500ms,
-                        "meets1000ms": v.meets_1000ms,
-                    }
-                    for k, v in c.network_projections.items()
-                },
-                "estimatedCostPerHour": c.estimated_cost_per_hour,
-            }
-            for c in report.best_configurations
-        ],
-        "networkProjections": [
-            {
-                "network": p.network,
-                "addedLatencyMs": p.added_latency_ms,
-                "projectedMedianMs": p.projected_median_ms,
-                "projectedP99Ms": p.projected_p99_ms,
-                "meetsTarget": p.meets_target,
-                "configsMeetingTarget": p.configs_meeting_target,
-                "totalConfigs": p.total_configs,
-            }
-            for p in report.network_projections
-        ],
-        "regressions": [
-            {
-                "configId": r.config_id,
-                "metric": r.metric,
-                "baselineValue": r.baseline_value,
-                "currentValue": r.current_value,
-                "changePercent": r.change_percent,
-                "severity": r.severity.value,
-            }
-            for r in report.regressions
-        ],
-        "recommendations": report.recommendations,
-    })
+    return web.json_response(
+        {
+            "runId": report.run_id,
+            "generatedAt": report.generated_at.isoformat(),
+            "summary": {
+                "totalConfigurations": report.summary.total_configurations,
+                "totalTests": report.summary.total_tests,
+                "successfulTests": report.summary.successful_tests,
+                "failedTests": report.summary.failed_tests,
+                "overallMedianE2EMs": report.summary.overall_median_e2e_ms,
+                "overallP99E2EMs": report.summary.overall_p99_e2e_ms,
+                "overallMinE2EMs": report.summary.overall_min_e2e_ms,
+                "overallMaxE2EMs": report.summary.overall_max_e2e_ms,
+                "medianSTTMs": report.summary.median_stt_ms,
+                "medianLLMTTFBMs": report.summary.median_llm_ttfb_ms,
+                "medianLLMCompletionMs": report.summary.median_llm_completion_ms,
+                "medianTTSTTFBMs": report.summary.median_tts_ttfb_ms,
+                "medianTTSCompletionMs": report.summary.median_tts_completion_ms,
+                "testDurationMinutes": report.summary.test_duration_minutes,
+            },
+            "bestConfigurations": [
+                {
+                    "rank": c.rank,
+                    "configId": c.config_id,
+                    "medianE2EMs": c.median_e2e_ms,
+                    "p99E2EMs": c.p99_e2e_ms,
+                    "stddevMs": c.stddev_ms,
+                    "sampleCount": c.sample_count,
+                    "breakdown": {
+                        "sttMs": c.breakdown.stt_ms,
+                        "llmTTFBMs": c.breakdown.llm_ttfb_ms,
+                        "llmCompletionMs": c.breakdown.llm_completion_ms,
+                        "ttsTTFBMs": c.breakdown.tts_ttfb_ms,
+                        "ttsCompletionMs": c.breakdown.tts_completion_ms,
+                    },
+                    "networkProjections": {
+                        k: {
+                            "e2eMs": v.e2e_ms,
+                            "meets500ms": v.meets_500ms,
+                            "meets1000ms": v.meets_1000ms,
+                        }
+                        for k, v in c.network_projections.items()
+                    },
+                    "estimatedCostPerHour": c.estimated_cost_per_hour,
+                }
+                for c in report.best_configurations
+            ],
+            "networkProjections": [
+                {
+                    "network": p.network,
+                    "addedLatencyMs": p.added_latency_ms,
+                    "projectedMedianMs": p.projected_median_ms,
+                    "projectedP99Ms": p.projected_p99_ms,
+                    "meetsTarget": p.meets_target,
+                    "configsMeetingTarget": p.configs_meeting_target,
+                    "totalConfigs": p.total_configs,
+                }
+                for p in report.network_projections
+            ],
+            "regressions": [
+                {
+                    "configId": r.config_id,
+                    "metric": r.metric,
+                    "baselineValue": r.baseline_value,
+                    "currentValue": r.current_value,
+                    "changePercent": r.change_percent,
+                    "severity": r.severity.value,
+                }
+                for r in report.regressions
+            ],
+            "recommendations": report.recommendations,
+        }
+    )
 
 
 async def handle_compare_runs(request: web.Request) -> web.Response:
@@ -521,8 +511,7 @@ async def handle_compare_runs(request: web.Request) -> web.Response:
 
         if not run1_id or not run2_id:
             return web.json_response(
-                {"error": "run1Id and run2Id are required"},
-                status=400
+                {"error": "run1Id and run2Id are required"}, status=400
             )
 
         orchestrator = get_orchestrator()
@@ -530,15 +519,9 @@ async def handle_compare_runs(request: web.Request) -> web.Response:
         run2 = orchestrator.get_run(run2_id)
 
         if not run1:
-            return web.json_response(
-                {"error": f"Run not found: {run1_id}"},
-                status=404
-            )
+            return web.json_response({"error": f"Run not found: {run1_id}"}, status=404)
         if not run2:
-            return web.json_response(
-                {"error": f"Run not found: {run2_id}"},
-                status=404
-            )
+            return web.json_response({"error": f"Run not found: {run2_id}"}, status=404)
 
         analyzer = ResultsAnalyzer()
         comparison = analyzer.compare_runs(run1, run2)
@@ -546,10 +529,7 @@ async def handle_compare_runs(request: web.Request) -> web.Response:
         return web.json_response(comparison)
 
     except json.JSONDecodeError:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
 
 async def handle_export_results(request: web.Request) -> web.Response:
@@ -561,10 +541,7 @@ async def handle_export_results(request: web.Request) -> web.Response:
     run = orchestrator.get_run(run_id)
 
     if not run:
-        return web.json_response(
-            {"error": f"Run not found: {run_id}"},
-            status=404
-        )
+        return web.json_response({"error": f"Run not found: {run_id}"}, status=404)
 
     if format_type == "csv":
         # Generate CSV
@@ -575,45 +552,71 @@ async def handle_export_results(request: web.Request) -> web.Response:
         writer = csv.writer(output)
 
         # Header
-        writer.writerow([
-            "config_id", "scenario_name", "repetition", "timestamp",
-            "stt_latency_ms", "llm_ttfb_ms", "llm_completion_ms",
-            "tts_ttfb_ms", "tts_completion_ms", "e2e_latency_ms",
-            "network_profile", "is_success", "errors"
-        ])
+        writer.writerow(
+            [
+                "config_id",
+                "scenario_name",
+                "repetition",
+                "timestamp",
+                "stt_latency_ms",
+                "llm_ttfb_ms",
+                "llm_completion_ms",
+                "tts_ttfb_ms",
+                "tts_completion_ms",
+                "e2e_latency_ms",
+                "network_profile",
+                "is_success",
+                "errors",
+            ]
+        )
 
         # Data rows
         for r in run.results:
-            writer.writerow([
-                r.config_id, r.scenario_name, r.repetition,
-                r.timestamp.isoformat(),
-                r.stt_latency_ms, r.llm_ttfb_ms, r.llm_completion_ms,
-                r.tts_ttfb_ms, r.tts_completion_ms, r.e2e_latency_ms,
-                r.network_profile.value, r.is_success, ";".join(r.errors)
-            ])
+            writer.writerow(
+                [
+                    r.config_id,
+                    r.scenario_name,
+                    r.repetition,
+                    r.timestamp.isoformat(),
+                    r.stt_latency_ms,
+                    r.llm_ttfb_ms,
+                    r.llm_completion_ms,
+                    r.tts_ttfb_ms,
+                    r.tts_completion_ms,
+                    r.e2e_latency_ms,
+                    r.network_profile.value,
+                    r.is_success,
+                    ";".join(r.errors),
+                ]
+            )
 
         return web.Response(
             text=output.getvalue(),
             content_type="text/csv",
             headers={
                 "Content-Disposition": f"attachment; filename=latency_results_{run_id}.csv"
-            }
+            },
         )
 
     else:
         # JSON format
-        return web.json_response({
-            "runId": run.id,
-            "suiteName": run.suite_name,
-            "startedAt": run.started_at.isoformat(),
-            "completedAt": run.completed_at.isoformat() if run.completed_at else None,
-            "results": [r.to_dict() for r in run.results],
-        })
+        return web.json_response(
+            {
+                "runId": run.id,
+                "suiteName": run.suite_name,
+                "startedAt": run.started_at.isoformat(),
+                "completedAt": run.completed_at.isoformat()
+                if run.completed_at
+                else None,
+                "results": [r.to_dict() for r in run.results],
+            }
+        )
 
 
 # =============================================================================
 # Test Target Discovery Endpoints
 # =============================================================================
+
 
 async def handle_list_test_targets(request: web.Request) -> web.Response:
     """GET /api/latency-tests/targets - List available test targets.
@@ -700,7 +703,9 @@ async def handle_list_test_targets(request: web.Request) -> web.Response:
                 # e.g., "com.apple.CoreSimulator.SimRuntime.iOS-26-1" -> "iOS 26.1"
                 platform = "iOS"
                 if "iOS" in runtime:
-                    version_part = runtime.split("iOS-")[-1] if "iOS-" in runtime else ""
+                    version_part = (
+                        runtime.split("iOS-")[-1] if "iOS-" in runtime else ""
+                    )
                     if version_part:
                         platform = f"iOS {version_part.replace('-', '.')}"
                 elif "watchOS" in runtime:
@@ -717,7 +722,13 @@ async def handle_list_test_targets(request: web.Request) -> web.Response:
                     state = device.get("state", "Shutdown").lower()
 
                     # Determine device category (iPhone vs iPad)
-                    device_type = "iphone" if "iPhone" in device_name else "ipad" if "iPad" in device_name else "other"
+                    device_type = (
+                        "iphone"
+                        if "iPhone" in device_name
+                        else "ipad"
+                        if "iPad" in device_name
+                        else "other"
+                    )
 
                     target = {
                         "id": f"sim_{udid}",
@@ -805,23 +816,26 @@ async def handle_list_test_targets(request: web.Request) -> web.Response:
     # Sort simulators by name
     categories["ios_simulators"].sort(key=lambda x: (x["platform"], x["name"]))
 
-    return web.json_response({
-        "targets": targets,
-        "categories": categories,
-        "summary": {
-            "totalTargets": len(targets),
-            "iosSimulators": len(categories["ios_simulators"]),
-            "iosDevices": len(categories["ios_devices"]),
-            "androidSimulators": len(categories["android_simulators"]),
-            "androidDevices": len(categories["android_devices"]),
-            "connectedClients": len(categories["connected_clients"]),
+    return web.json_response(
+        {
+            "targets": targets,
+            "categories": categories,
+            "summary": {
+                "totalTargets": len(targets),
+                "iosSimulators": len(categories["ios_simulators"]),
+                "iosDevices": len(categories["ios_devices"]),
+                "androidSimulators": len(categories["android_simulators"]),
+                "androidDevices": len(categories["android_devices"]),
+                "connectedClients": len(categories["connected_clients"]),
+            },
         }
-    })
+    )
 
 
 # =============================================================================
 # Client Management Endpoints
 # =============================================================================
+
 
 async def handle_list_test_clients(request: web.Request) -> web.Response:
     """GET /api/latency-tests/clients - List connected test clients."""
@@ -830,28 +844,30 @@ async def handle_list_test_clients(request: web.Request) -> web.Response:
     # Get all clients
     clients = list(orchestrator.clients.values())
 
-    return web.json_response({
-        "clients": [
-            {
-                "clientId": c.client_id,
-                "clientType": c.client_type.value,
-                "isConnected": c.status.is_connected,
-                "isRunningTest": c.status.is_running_test,
-                "currentConfigId": c.status.current_config_id,
-                "lastHeartbeat": c.last_heartbeat.isoformat(),
-                "capabilities": {
-                    "supportedSTTProviders": c.capabilities.supported_stt_providers,
-                    "supportedLLMProviders": c.capabilities.supported_llm_providers,
-                    "supportedTTSProviders": c.capabilities.supported_tts_providers,
-                    "hasHighPrecisionTiming": c.capabilities.has_high_precision_timing,
-                    "hasDeviceMetrics": c.capabilities.has_device_metrics,
-                    "hasOnDeviceML": c.capabilities.has_on_device_ml,
-                    "maxConcurrentTests": c.capabilities.max_concurrent_tests,
-                },
-            }
-            for c in clients
-        ]
-    })
+    return web.json_response(
+        {
+            "clients": [
+                {
+                    "clientId": c.client_id,
+                    "clientType": c.client_type.value,
+                    "isConnected": c.status.is_connected,
+                    "isRunningTest": c.status.is_running_test,
+                    "currentConfigId": c.status.current_config_id,
+                    "lastHeartbeat": c.last_heartbeat.isoformat(),
+                    "capabilities": {
+                        "supportedSTTProviders": c.capabilities.supported_stt_providers,
+                        "supportedLLMProviders": c.capabilities.supported_llm_providers,
+                        "supportedTTSProviders": c.capabilities.supported_tts_providers,
+                        "hasHighPrecisionTiming": c.capabilities.has_high_precision_timing,
+                        "hasDeviceMetrics": c.capabilities.has_device_metrics,
+                        "hasOnDeviceML": c.capabilities.has_on_device_ml,
+                        "maxConcurrentTests": c.capabilities.max_concurrent_tests,
+                    },
+                }
+                for c in clients
+            ]
+        }
+    )
 
 
 async def handle_client_heartbeat_latency(request: web.Request) -> web.Response:
@@ -864,8 +880,7 @@ async def handle_client_heartbeat_latency(request: web.Request) -> web.Response:
 
         if not client_id or not client_type_str:
             return web.json_response(
-                {"error": "clientId and clientType are required"},
-                status=400
+                {"error": "clientId and clientType are required"}, status=400
             )
 
         orchestrator = get_orchestrator()
@@ -875,8 +890,7 @@ async def handle_client_heartbeat_latency(request: web.Request) -> web.Response:
             client_type = ClientType(client_type_str)
         except ValueError:
             return web.json_response(
-                {"error": f"Invalid clientType: {client_type_str}"},
-                status=400
+                {"error": f"Invalid clientType: {client_type_str}"}, status=400
             )
 
         # Check if client exists
@@ -885,10 +899,18 @@ async def handle_client_heartbeat_latency(request: web.Request) -> web.Response:
         else:
             # Register new client
             capabilities = ClientCapabilities(
-                supported_stt_providers=capabilities_data.get("supportedSTTProviders", []),
-                supported_llm_providers=capabilities_data.get("supportedLLMProviders", []),
-                supported_tts_providers=capabilities_data.get("supportedTTSProviders", []),
-                has_high_precision_timing=capabilities_data.get("hasHighPrecisionTiming", False),
+                supported_stt_providers=capabilities_data.get(
+                    "supportedSTTProviders", []
+                ),
+                supported_llm_providers=capabilities_data.get(
+                    "supportedLLMProviders", []
+                ),
+                supported_tts_providers=capabilities_data.get(
+                    "supportedTTSProviders", []
+                ),
+                has_high_precision_timing=capabilities_data.get(
+                    "hasHighPrecisionTiming", False
+                ),
                 has_device_metrics=capabilities_data.get("hasDeviceMetrics", False),
                 has_on_device_ml=capabilities_data.get("hasOnDeviceML", False),
                 max_concurrent_tests=capabilities_data.get("maxConcurrentTests", 1),
@@ -902,10 +924,7 @@ async def handle_client_heartbeat_latency(request: web.Request) -> web.Response:
         return web.json_response({"status": "ok"})
 
     except json.JSONDecodeError:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
 
 async def handle_submit_result(request: web.Request) -> web.Response:
@@ -917,8 +936,7 @@ async def handle_submit_result(request: web.Request) -> web.Response:
 
         if not client_id or not result_data:
             return web.json_response(
-                {"error": "clientId and result are required"},
-                status=400
+                {"error": "clientId and result are required"}, status=400
             )
 
         # Parse the result
@@ -928,49 +946,45 @@ async def handle_submit_result(request: web.Request) -> web.Response:
         return web.json_response({"status": "received"})
 
     except json.JSONDecodeError:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
 
 # =============================================================================
 # Baseline Management Endpoints
 # =============================================================================
 
+
 async def handle_list_baselines(request: web.Request) -> web.Response:
     """GET /api/latency-tests/baselines - List performance baselines."""
     global _storage
 
     if not _storage:
-        return web.json_response(
-            {"error": "Storage not initialized"},
-            status=500
-        )
+        return web.json_response({"error": "Storage not initialized"}, status=500)
 
     try:
         baselines = await _storage.list_baselines()
-        return web.json_response({
-            "baselines": [
-                {
-                    "id": b.id,
-                    "name": b.name,
-                    "description": b.description,
-                    "runId": b.run_id,
-                    "createdAt": b.created_at.isoformat(),
-                    "isActive": b.is_active,
-                    "configCount": len(b.config_metrics),
-                    "overallMedianE2EMs": b.overall_metrics.median_e2e_ms if b.overall_metrics else None,
-                }
-                for b in baselines
-            ]
-        })
+        return web.json_response(
+            {
+                "baselines": [
+                    {
+                        "id": b.id,
+                        "name": b.name,
+                        "description": b.description,
+                        "runId": b.run_id,
+                        "createdAt": b.created_at.isoformat(),
+                        "isActive": b.is_active,
+                        "configCount": len(b.config_metrics),
+                        "overallMedianE2EMs": b.overall_metrics.median_e2e_ms
+                        if b.overall_metrics
+                        else None,
+                    }
+                    for b in baselines
+                ]
+            }
+        )
     except Exception as e:
         logger.error(f"Failed to list baselines: {e}")
-        return web.json_response(
-            {"error": str(e)},
-            status=500
-        )
+        return web.json_response({"error": str(e)}, status=500)
 
 
 async def handle_create_baseline(request: web.Request) -> web.Response:
@@ -978,10 +992,7 @@ async def handle_create_baseline(request: web.Request) -> web.Response:
     global _storage
 
     if not _storage:
-        return web.json_response(
-            {"error": "Storage not initialized"},
-            status=500
-        )
+        return web.json_response({"error": "Storage not initialized"}, status=500)
 
     try:
         data = await request.json()
@@ -991,25 +1002,19 @@ async def handle_create_baseline(request: web.Request) -> web.Response:
         set_active = data.get("setActive", False)
 
         if not run_id:
-            return web.json_response(
-                {"error": "runId is required"},
-                status=400
-            )
+            return web.json_response({"error": "runId is required"}, status=400)
 
         # Get the run
         orchestrator = get_orchestrator()
         run = orchestrator.get_run(run_id)
 
         if not run:
-            return web.json_response(
-                {"error": f"Run not found: {run_id}"},
-                status=404
-            )
+            return web.json_response({"error": f"Run not found: {run_id}"}, status=404)
 
         if run.status != RunStatus.COMPLETED:
             return web.json_response(
                 {"error": f"Run is not completed (status: {run.status.value})"},
-                status=400
+                status=400,
             )
 
         # Filter to successful results
@@ -1017,8 +1022,7 @@ async def handle_create_baseline(request: web.Request) -> web.Response:
 
         if not successful_results:
             return web.json_response(
-                {"error": "Run has no successful results"},
-                status=400
+                {"error": "Run has no successful results"}, status=400
             )
 
         # Compute per-config metrics
@@ -1038,7 +1042,9 @@ async def handle_create_baseline(request: web.Request) -> web.Response:
 
             config_metrics[config_id] = BaselineMetrics(
                 median_e2e_ms=statistics.median(e2e),
-                p99_e2e_ms=sorted(e2e)[int(len(e2e) * 0.99)] if len(e2e) > 1 else e2e[0],
+                p99_e2e_ms=sorted(e2e)[int(len(e2e) * 0.99)]
+                if len(e2e) > 1
+                else e2e[0],
                 min_e2e_ms=min(e2e),
                 max_e2e_ms=max(e2e),
                 median_stt_ms=statistics.median(stt) if stt else None,
@@ -1059,7 +1065,9 @@ async def handle_create_baseline(request: web.Request) -> web.Response:
 
         overall_metrics = BaselineMetrics(
             median_e2e_ms=statistics.median(all_e2e),
-            p99_e2e_ms=sorted(all_e2e)[int(len(all_e2e) * 0.99)] if len(all_e2e) > 1 else all_e2e[0],
+            p99_e2e_ms=sorted(all_e2e)[int(len(all_e2e) * 0.99)]
+            if len(all_e2e) > 1
+            else all_e2e[0],
             min_e2e_ms=min(all_e2e),
             max_e2e_ms=max(all_e2e),
             median_stt_ms=statistics.median(all_stt) if all_stt else None,
@@ -1088,27 +1096,25 @@ async def handle_create_baseline(request: web.Request) -> web.Response:
 
         logger.info(f"Created baseline {baseline_id} from run {run_id}")
 
-        return web.json_response({
-            "id": baseline.id,
-            "name": baseline.name,
-            "runId": baseline.run_id,
-            "createdAt": baseline.created_at.isoformat(),
-            "isActive": baseline.is_active,
-            "configCount": len(baseline.config_metrics),
-            "overallMetrics": baseline.overall_metrics.to_dict() if baseline.overall_metrics else None,
-        })
+        return web.json_response(
+            {
+                "id": baseline.id,
+                "name": baseline.name,
+                "runId": baseline.run_id,
+                "createdAt": baseline.created_at.isoformat(),
+                "isActive": baseline.is_active,
+                "configCount": len(baseline.config_metrics),
+                "overallMetrics": baseline.overall_metrics.to_dict()
+                if baseline.overall_metrics
+                else None,
+            }
+        )
 
     except json.JSONDecodeError:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
     except Exception as e:
         logger.error(f"Failed to create baseline: {e}")
-        return web.json_response(
-            {"error": str(e)},
-            status=500
-        )
+        return web.json_response({"error": str(e)}, status=500)
 
 
 async def handle_check_baseline(request: web.Request) -> web.Response:
@@ -1116,18 +1122,14 @@ async def handle_check_baseline(request: web.Request) -> web.Response:
     global _storage
 
     if not _storage:
-        return web.json_response(
-            {"error": "Storage not initialized"},
-            status=500
-        )
+        return web.json_response({"error": "Storage not initialized"}, status=500)
 
     baseline_id = request.match_info["baseline_id"]
     run_id = request.query.get("runId")
 
     if not run_id:
         return web.json_response(
-            {"error": "runId query parameter is required"},
-            status=400
+            {"error": "runId query parameter is required"}, status=400
         )
 
     try:
@@ -1135,8 +1137,7 @@ async def handle_check_baseline(request: web.Request) -> web.Response:
         baseline = await _storage.get_baseline(baseline_id)
         if not baseline:
             return web.json_response(
-                {"error": f"Baseline not found: {baseline_id}"},
-                status=404
+                {"error": f"Baseline not found: {baseline_id}"}, status=404
             )
 
         # Get the run
@@ -1144,10 +1145,7 @@ async def handle_check_baseline(request: web.Request) -> web.Response:
         run = orchestrator.get_run(run_id)
 
         if not run:
-            return web.json_response(
-                {"error": f"Run not found: {run_id}"},
-                status=404
-            )
+            return web.json_response({"error": f"Run not found: {run_id}"}, status=404)
 
         # Convert baseline to format expected by analyzer
         baseline_dict: Dict[str, Dict[str, float]] = {}
@@ -1180,89 +1178,114 @@ async def handle_check_baseline(request: web.Request) -> web.Response:
             baseline_metrics = baseline.config_metrics.get(config_id)
             if baseline_metrics:
                 baseline_median = baseline_metrics.median_e2e_ms
-                change_percent = ((current_median - baseline_median) / baseline_median * 100)
+                change_percent = (
+                    (current_median - baseline_median) / baseline_median * 100
+                )
 
-                comparison_results.append({
-                    "configId": config_id,
-                    "baselineMedianMs": baseline_median,
-                    "currentMedianMs": current_median,
-                    "changePercent": round(change_percent, 2),
-                    "improved": change_percent < -5,
-                    "regressed": change_percent > 10,
-                    "severity": (
-                        "severe" if change_percent > 50 else
-                        "moderate" if change_percent > 20 else
-                        "minor" if change_percent > 10 else
-                        "none"
-                    ),
-                })
+                comparison_results.append(
+                    {
+                        "configId": config_id,
+                        "baselineMedianMs": baseline_median,
+                        "currentMedianMs": current_median,
+                        "changePercent": round(change_percent, 2),
+                        "improved": change_percent < -5,
+                        "regressed": change_percent > 10,
+                        "severity": (
+                            "severe"
+                            if change_percent > 50
+                            else "moderate"
+                            if change_percent > 20
+                            else "minor"
+                            if change_percent > 10
+                            else "none"
+                        ),
+                    }
+                )
             else:
                 # New config not in baseline
-                comparison_results.append({
-                    "configId": config_id,
-                    "baselineMedianMs": None,
-                    "currentMedianMs": current_median,
-                    "changePercent": None,
-                    "improved": False,
-                    "regressed": False,
-                    "severity": "unknown",
-                    "note": "Configuration not in baseline"
-                })
+                comparison_results.append(
+                    {
+                        "configId": config_id,
+                        "baselineMedianMs": None,
+                        "currentMedianMs": current_median,
+                        "changePercent": None,
+                        "improved": False,
+                        "regressed": False,
+                        "severity": "unknown",
+                        "note": "Configuration not in baseline",
+                    }
+                )
 
         # Overall comparison
         overall_current_median = report.summary.overall_median_e2e_ms
-        overall_baseline_median = baseline.overall_metrics.median_e2e_ms if baseline.overall_metrics else None
+        overall_baseline_median = (
+            baseline.overall_metrics.median_e2e_ms if baseline.overall_metrics else None
+        )
         overall_change = None
         if overall_baseline_median:
-            overall_change = ((overall_current_median - overall_baseline_median) / overall_baseline_median * 100)
+            overall_change = (
+                (overall_current_median - overall_baseline_median)
+                / overall_baseline_median
+                * 100
+            )
 
-        return web.json_response({
-            "baselineId": baseline_id,
-            "baselineName": baseline.name,
-            "runId": run_id,
-            "checkedAt": datetime.now().isoformat(),
-            "overall": {
-                "baselineMedianMs": overall_baseline_median,
-                "currentMedianMs": overall_current_median,
-                "changePercent": round(overall_change, 2) if overall_change else None,
-                "meetsTarget500ms": overall_current_median < 500,
-                "meetsTarget1000ms": overall_current_median < 1000,
-            },
-            "regressions": [
-                {
-                    "configId": r.config_id,
-                    "metric": r.metric,
-                    "baselineValue": r.baseline_value,
-                    "currentValue": r.current_value,
-                    "changePercent": round(r.change_percent, 2),
-                    "severity": r.severity.value,
-                }
-                for r in report.regressions
-            ],
-            "configComparisons": sorted(
-                comparison_results,
-                key=lambda x: x.get("changePercent") or 0,
-                reverse=True
-            ),
-            "summary": {
-                "totalConfigs": len(comparison_results),
-                "improvedConfigs": sum(1 for c in comparison_results if c.get("improved")),
-                "regressedConfigs": sum(1 for c in comparison_results if c.get("regressed")),
-                "newConfigs": sum(1 for c in comparison_results if c.get("baselineMedianMs") is None),
-            },
-        })
+        return web.json_response(
+            {
+                "baselineId": baseline_id,
+                "baselineName": baseline.name,
+                "runId": run_id,
+                "checkedAt": datetime.now().isoformat(),
+                "overall": {
+                    "baselineMedianMs": overall_baseline_median,
+                    "currentMedianMs": overall_current_median,
+                    "changePercent": round(overall_change, 2)
+                    if overall_change
+                    else None,
+                    "meetsTarget500ms": overall_current_median < 500,
+                    "meetsTarget1000ms": overall_current_median < 1000,
+                },
+                "regressions": [
+                    {
+                        "configId": r.config_id,
+                        "metric": r.metric,
+                        "baselineValue": r.baseline_value,
+                        "currentValue": r.current_value,
+                        "changePercent": round(r.change_percent, 2),
+                        "severity": r.severity.value,
+                    }
+                    for r in report.regressions
+                ],
+                "configComparisons": sorted(
+                    comparison_results,
+                    key=lambda x: x.get("changePercent") or 0,
+                    reverse=True,
+                ),
+                "summary": {
+                    "totalConfigs": len(comparison_results),
+                    "improvedConfigs": sum(
+                        1 for c in comparison_results if c.get("improved")
+                    ),
+                    "regressedConfigs": sum(
+                        1 for c in comparison_results if c.get("regressed")
+                    ),
+                    "newConfigs": sum(
+                        1
+                        for c in comparison_results
+                        if c.get("baselineMedianMs") is None
+                    ),
+                },
+            }
+        )
 
     except Exception as e:
         logger.error(f"Failed to check baseline: {e}")
-        return web.json_response(
-            {"error": str(e)},
-            status=500
-        )
+        return web.json_response({"error": str(e)}, status=500)
 
 
 # =============================================================================
 # WebSocket Endpoint
 # =============================================================================
+
 
 async def handle_latency_websocket(request: web.Request) -> web.WebSocketResponse:
     """WebSocket endpoint for real-time latency test updates.
@@ -1279,21 +1302,25 @@ async def handle_latency_websocket(request: web.Request) -> web.WebSocketRespons
 
     # Add to connected clients
     _latency_websockets.add(ws)
-    logger.info(f"WebSocket client connected for latency updates (total: {len(_latency_websockets)})")
+    logger.info(
+        f"WebSocket client connected for latency updates (total: {len(_latency_websockets)})"
+    )
 
     # Send initial state
     orchestrator = get_orchestrator()
     active_runs = orchestrator.list_runs(status=RunStatus.running)
 
-    await ws.send_json({
-        "type": "connection_established",
-        "data": {
-            "connectedClients": len(orchestrator.clients),
-            "activeRuns": len(active_runs),
-            "activeRunIds": [r.id for r in active_runs],
-        },
-        "timestamp": datetime.now().isoformat()
-    })
+    await ws.send_json(
+        {
+            "type": "connection_established",
+            "data": {
+                "connectedClients": len(orchestrator.clients),
+                "activeRuns": len(active_runs),
+                "activeRunIds": [r.id for r in active_runs],
+            },
+            "timestamp": datetime.now().isoformat(),
+        }
+    )
 
     try:
         async for msg in ws:
@@ -1307,45 +1334,52 @@ async def handle_latency_websocket(request: web.Request) -> web.WebSocketRespons
                         run_id = data.get("runId")
                         # For now, all connections receive all updates
                         # Future: implement per-run subscription filtering
-                        await ws.send_json({
-                            "type": "subscribed",
-                            "data": {"runId": run_id},
-                            "timestamp": datetime.now().isoformat()
-                        })
+                        await ws.send_json(
+                            {
+                                "type": "subscribed",
+                                "data": {"runId": run_id},
+                                "timestamp": datetime.now().isoformat(),
+                            }
+                        )
 
                     elif msg_type == "ping":
-                        await ws.send_json({
-                            "type": "pong",
-                            "timestamp": datetime.now().isoformat()
-                        })
+                        await ws.send_json(
+                            {"type": "pong", "timestamp": datetime.now().isoformat()}
+                        )
 
                     elif msg_type == "get_status":
                         # Return current harness status
                         clients = list(orchestrator.clients.values())
-                        await ws.send_json({
-                            "type": "status",
-                            "data": {
-                                "connectedTestClients": len(clients),
-                                "activeRuns": len(orchestrator.list_runs(status=RunStatus.running)),
-                                "clients": [
-                                    {
-                                        "clientId": c.client_id,
-                                        "clientType": c.client_type.value,
-                                        "isConnected": c.status.is_connected,
-                                        "isRunningTest": c.status.is_running_test,
-                                    }
-                                    for c in clients
-                                ],
-                            },
-                            "timestamp": datetime.now().isoformat()
-                        })
+                        await ws.send_json(
+                            {
+                                "type": "status",
+                                "data": {
+                                    "connectedTestClients": len(clients),
+                                    "activeRuns": len(
+                                        orchestrator.list_runs(status=RunStatus.running)
+                                    ),
+                                    "clients": [
+                                        {
+                                            "clientId": c.client_id,
+                                            "clientType": c.client_type.value,
+                                            "isConnected": c.status.is_connected,
+                                            "isRunningTest": c.status.is_running_test,
+                                        }
+                                        for c in clients
+                                    ],
+                                },
+                                "timestamp": datetime.now().isoformat(),
+                            }
+                        )
 
                 except json.JSONDecodeError:
-                    await ws.send_json({
-                        "type": "error",
-                        "data": {"message": "Invalid JSON"},
-                        "timestamp": datetime.now().isoformat()
-                    })
+                    await ws.send_json(
+                        {
+                            "type": "error",
+                            "data": {"message": "Invalid JSON"},
+                            "timestamp": datetime.now().isoformat(),
+                        }
+                    )
 
             elif msg.type == web.WSMsgType.ERROR:
                 logger.warning(f"WebSocket error: {ws.exception()}")
@@ -1355,7 +1389,9 @@ async def handle_latency_websocket(request: web.Request) -> web.WebSocketRespons
         logger.error(f"WebSocket handler error: {e}")
     finally:
         _latency_websockets.discard(ws)
-        logger.info(f"WebSocket client disconnected (remaining: {len(_latency_websockets)})")
+        logger.info(
+            f"WebSocket client disconnected (remaining: {len(_latency_websockets)})"
+        )
 
     return ws
 
@@ -1373,6 +1409,7 @@ def get_mass_orchestrator():
     global _mass_orchestrator
     if _mass_orchestrator is None:
         from latency_harness.test_orchestrator import MassTestOrchestrator
+
         _mass_orchestrator = MassTestOrchestrator()
     return _mass_orchestrator
 
@@ -1403,6 +1440,7 @@ async def handle_start_mass_test(request: web.Request) -> web.Response:
         provider_config = None
         if "providerConfigs" in data:
             from latency_harness.test_orchestrator import ProviderConfig
+
             pc = data["providerConfigs"]
             provider_config = ProviderConfig(
                 stt=pc.get("stt", "deepgram"),
@@ -1420,21 +1458,29 @@ async def handle_start_mass_test(request: web.Request) -> web.Response:
             turns_per_session=data.get("turnsPerSession", 3),
         )
 
-        return web.json_response({
-            "runId": run_id,
-            "status": "running",
-            "message": f"Started mass test with {data.get('webClients', 4)} web clients",
-        })
+        return web.json_response(
+            {
+                "runId": run_id,
+                "status": "running",
+                "message": f"Started mass test with {data.get('webClients', 4)} web clients",
+            }
+        )
 
     except ImportError as e:
-        return web.json_response({
-            "error": f"Playwright not available: {e}. Install with: pip install playwright && playwright install chromium",
-        }, status=500)
+        return web.json_response(
+            {
+                "error": f"Playwright not available: {e}. Install with: pip install playwright && playwright install chromium",
+            },
+            status=500,
+        )
     except Exception as e:
         logger.exception("Failed to start mass test")
-        return web.json_response({
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "error": str(e),
+            },
+            status=500,
+        )
 
 
 async def handle_get_mass_test_status(request: web.Request) -> web.Response:
@@ -1445,20 +1491,22 @@ async def handle_get_mass_test_status(request: web.Request) -> web.Response:
         orchestrator = get_mass_orchestrator()
         progress = await orchestrator.get_progress(run_id)
 
-        return web.json_response({
-            "runId": progress.run_id,
-            "status": progress.status.value,
-            "progress": {
-                "sessionsCompleted": progress.sessions_completed,
-                "sessionsTotal": progress.sessions_total,
-                "activeClients": progress.active_clients,
-                "elapsedSeconds": progress.elapsed_seconds,
-                "estimatedRemainingSeconds": progress.estimated_remaining_seconds,
-            },
-            "latencyStats": progress.latency_stats,
-            "errors": progress.errors,
-            "systemResources": progress.system_resources,
-        })
+        return web.json_response(
+            {
+                "runId": progress.run_id,
+                "status": progress.status.value,
+                "progress": {
+                    "sessionsCompleted": progress.sessions_completed,
+                    "sessionsTotal": progress.sessions_total,
+                    "activeClients": progress.active_clients,
+                    "elapsedSeconds": progress.elapsed_seconds,
+                    "estimatedRemainingSeconds": progress.estimated_remaining_seconds,
+                },
+                "latencyStats": progress.latency_stats,
+                "errors": progress.errors,
+                "systemResources": progress.system_resources,
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"error": str(e)}, status=404)
@@ -1475,13 +1523,15 @@ async def handle_stop_mass_test(request: web.Request) -> web.Response:
         orchestrator = get_mass_orchestrator()
         progress = await orchestrator.stop_test(run_id)
 
-        return web.json_response({
-            "runId": progress.run_id,
-            "status": progress.status.value,
-            "sessionsCompleted": progress.sessions_completed,
-            "sessionsTotal": progress.sessions_total,
-            "message": "Test stopped",
-        })
+        return web.json_response(
+            {
+                "runId": progress.run_id,
+                "status": progress.status.value,
+                "sessionsCompleted": progress.sessions_completed,
+                "sessionsTotal": progress.sessions_total,
+                "message": "Test stopped",
+            }
+        )
 
     except ValueError as e:
         return web.json_response({"error": str(e)}, status=404)
@@ -1497,19 +1547,21 @@ async def handle_list_mass_tests(request: web.Request) -> web.Response:
         limit = int(request.query.get("limit", "50"))
         runs = await orchestrator.list_runs(limit=limit)
 
-        return web.json_response({
-            "runs": [
-                {
-                    "runId": r.run_id,
-                    "status": r.status.value,
-                    "sessionsCompleted": r.sessions_completed,
-                    "sessionsTotal": r.sessions_total,
-                    "elapsedSeconds": r.elapsed_seconds,
-                    "latencyStats": r.latency_stats,
-                }
-                for r in runs
-            ]
-        })
+        return web.json_response(
+            {
+                "runs": [
+                    {
+                        "runId": r.run_id,
+                        "status": r.status.value,
+                        "sessionsCompleted": r.sessions_completed,
+                        "sessionsTotal": r.sessions_total,
+                        "elapsedSeconds": r.elapsed_seconds,
+                        "latencyStats": r.latency_stats,
+                    }
+                    for r in runs
+                ]
+            }
+        )
 
     except Exception as e:
         logger.exception("Failed to list mass tests")
@@ -1569,7 +1621,9 @@ async def handle_ingest_metrics(request: web.Request) -> web.Response:
     try:
         data = await request.json()
 
-        client_type = data.get("client", request.headers.get("X-Client-Type", "unknown"))
+        client_type = data.get(
+            "client", request.headers.get("X-Client-Type", "unknown")
+        )
         client_id = data.get("clientId", request.headers.get("X-Client-ID", "unknown"))
         client_name = data.get("clientName", request.headers.get("X-Client-Name"))
 
@@ -1633,13 +1687,17 @@ async def handle_ingest_metrics(request: web.Request) -> web.Response:
 
             ingested_count += 1
 
-        logger.info(f"Ingested {ingested_count} metrics from {client_type} client {client_id}")
+        logger.info(
+            f"Ingested {ingested_count} metrics from {client_type} client {client_id}"
+        )
 
-        return web.json_response({
-            "status": "ok",
-            "ingested": ingested_count,
-            "clientId": client_id,
-        })
+        return web.json_response(
+            {
+                "status": "ok",
+                "ingested": ingested_count,
+                "clientId": client_id,
+            }
+        )
 
     except json.JSONDecodeError:
         return web.json_response({"error": "Invalid JSON"}, status=400)
@@ -1682,7 +1740,11 @@ async def handle_list_metric_sessions(request: web.Request) -> web.Response:
             session["stats"] = {
                 "count": len(latencies),
                 "median_e2e_ms": statistics.median(latencies) if latencies else None,
-                "p99_e2e_ms": sorted(latencies)[int(len(latencies) * 0.99)] if len(latencies) > 1 else latencies[0] if latencies else None,
+                "p99_e2e_ms": sorted(latencies)[int(len(latencies) * 0.99)]
+                if len(latencies) > 1
+                else latencies[0]
+                if latencies
+                else None,
                 "min_e2e_ms": min(latencies) if latencies else None,
                 "max_e2e_ms": max(latencies) if latencies else None,
             }
@@ -1692,11 +1754,13 @@ async def handle_list_metric_sessions(request: web.Request) -> web.Response:
         # Remove raw latencies from response
         del session["latencies"]
 
-    return web.json_response({
-        "sessions": sessions,
-        "total": len(_metrics_by_session),
-        "filtered": len(sessions),
-    })
+    return web.json_response(
+        {
+            "sessions": sessions,
+            "total": len(_metrics_by_session),
+            "filtered": len(sessions),
+        }
+    )
 
 
 async def handle_get_metrics_summary(request: web.Request) -> web.Response:
@@ -1749,8 +1813,12 @@ async def handle_get_metrics_summary(request: web.Request) -> web.Response:
             "count": len(all_latencies),
             "median_e2e_ms": statistics.median(all_latencies),
             "p50_e2e_ms": statistics.median(all_latencies),
-            "p95_e2e_ms": sorted_latencies[int(len(sorted_latencies) * 0.95)] if len(sorted_latencies) > 1 else sorted_latencies[0],
-            "p99_e2e_ms": sorted_latencies[int(len(sorted_latencies) * 0.99)] if len(sorted_latencies) > 1 else sorted_latencies[0],
+            "p95_e2e_ms": sorted_latencies[int(len(sorted_latencies) * 0.95)]
+            if len(sorted_latencies) > 1
+            else sorted_latencies[0],
+            "p99_e2e_ms": sorted_latencies[int(len(sorted_latencies) * 0.99)]
+            if len(sorted_latencies) > 1
+            else sorted_latencies[0],
             "min_e2e_ms": min(all_latencies),
             "max_e2e_ms": max(all_latencies),
             "avg_e2e_ms": statistics.mean(all_latencies),
@@ -1766,7 +1834,9 @@ async def handle_get_metrics_summary(request: web.Request) -> web.Response:
             summary["byProvider"][provider] = {
                 "count": len(latencies),
                 "median_e2e_ms": statistics.median(latencies),
-                "p99_e2e_ms": sorted_l[int(len(sorted_l) * 0.99)] if len(sorted_l) > 1 else sorted_l[0],
+                "p99_e2e_ms": sorted_l[int(len(sorted_l) * 0.99)]
+                if len(sorted_l) > 1
+                else sorted_l[0],
             }
 
     return web.json_response(summary)
@@ -1782,66 +1852,79 @@ async def handle_get_client_metrics(request: web.Request) -> web.Response:
     metrics = _ingested_metrics.get(client_id, [])
 
     # Sort by timestamp (most recent first)
-    metrics = sorted(metrics, key=lambda m: m.get("timestamp", ""), reverse=True)[:limit]
+    metrics = sorted(metrics, key=lambda m: m.get("timestamp", ""), reverse=True)[
+        :limit
+    ]
 
-    return web.json_response({
-        "clientId": client_id,
-        "metricsCount": len(_ingested_metrics.get(client_id, [])),
-        "metrics": metrics,
-    })
+    return web.json_response(
+        {
+            "clientId": client_id,
+            "metricsCount": len(_ingested_metrics.get(client_id, [])),
+            "metrics": metrics,
+        }
+    )
 
 
 # =============================================================================
 # Route Registration
 # =============================================================================
 
+
 def register_latency_harness_routes(app: web.Application):
     """Register all latency harness routes."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
+    router = guarded_routes(app, FlagKeys.LATENCY_TESTING)
 
     # Test Suites
-    app.router.add_get("/api/latency-tests/suites", handle_list_suites)
-    app.router.add_get("/api/latency-tests/suites/{suite_id}", handle_get_suite)
-    app.router.add_post("/api/latency-tests/suites", handle_upload_suite)
-    app.router.add_delete("/api/latency-tests/suites/{suite_id}", handle_delete_suite)
+    router.add_get("/api/latency-tests/suites", handle_list_suites)
+    router.add_get("/api/latency-tests/suites/{suite_id}", handle_get_suite)
+    router.add_post("/api/latency-tests/suites", handle_upload_suite)
+    router.add_delete("/api/latency-tests/suites/{suite_id}", handle_delete_suite)
 
     # Test Runs
-    app.router.add_post("/api/latency-tests/runs", handle_start_run)
-    app.router.add_get("/api/latency-tests/runs", handle_list_runs)
-    app.router.add_get("/api/latency-tests/runs/{run_id}", handle_get_run)
-    app.router.add_get("/api/latency-tests/runs/{run_id}/results", handle_get_run_results)
-    app.router.add_delete("/api/latency-tests/runs/{run_id}", handle_cancel_run)
+    router.add_post("/api/latency-tests/runs", handle_start_run)
+    router.add_get("/api/latency-tests/runs", handle_list_runs)
+    router.add_get("/api/latency-tests/runs/{run_id}", handle_get_run)
+    router.add_get("/api/latency-tests/runs/{run_id}/results", handle_get_run_results)
+    router.add_delete("/api/latency-tests/runs/{run_id}", handle_cancel_run)
 
     # Analysis
-    app.router.add_get("/api/latency-tests/runs/{run_id}/analysis", handle_get_analysis)
-    app.router.add_post("/api/latency-tests/compare", handle_compare_runs)
-    app.router.add_get("/api/latency-tests/runs/{run_id}/export", handle_export_results)
+    router.add_get("/api/latency-tests/runs/{run_id}/analysis", handle_get_analysis)
+    router.add_post("/api/latency-tests/compare", handle_compare_runs)
+    router.add_get("/api/latency-tests/runs/{run_id}/export", handle_export_results)
 
     # Test Targets (available simulators and devices)
-    app.router.add_get("/api/latency-tests/targets", handle_list_test_targets)
+    router.add_get("/api/latency-tests/targets", handle_list_test_targets)
 
     # Clients (connected/registered clients)
-    app.router.add_get("/api/latency-tests/clients", handle_list_test_clients)
-    app.router.add_post("/api/latency-tests/heartbeat", handle_client_heartbeat_latency)
-    app.router.add_post("/api/latency-tests/results", handle_submit_result)
+    router.add_get("/api/latency-tests/clients", handle_list_test_clients)
+    router.add_post("/api/latency-tests/heartbeat", handle_client_heartbeat_latency)
+    router.add_post("/api/latency-tests/results", handle_submit_result)
 
     # Baselines
-    app.router.add_get("/api/latency-tests/baselines", handle_list_baselines)
-    app.router.add_post("/api/latency-tests/baselines", handle_create_baseline)
-    app.router.add_get("/api/latency-tests/baselines/{baseline_id}/check", handle_check_baseline)
+    router.add_get("/api/latency-tests/baselines", handle_list_baselines)
+    router.add_post("/api/latency-tests/baselines", handle_create_baseline)
+    router.add_get(
+        "/api/latency-tests/baselines/{baseline_id}/check", handle_check_baseline
+    )
 
     # WebSocket for real-time updates
-    app.router.add_get("/api/latency-tests/ws", handle_latency_websocket)
+    router.add_get("/api/latency-tests/ws", handle_latency_websocket)
 
     # Mass Test Orchestrator
-    app.router.add_post("/api/test-orchestrator/start", handle_start_mass_test)
-    app.router.add_get("/api/test-orchestrator/status/{run_id}", handle_get_mass_test_status)
-    app.router.add_post("/api/test-orchestrator/stop/{run_id}", handle_stop_mass_test)
-    app.router.add_get("/api/test-orchestrator/runs", handle_list_mass_tests)
+    router.add_post("/api/test-orchestrator/start", handle_start_mass_test)
+    router.add_get(
+        "/api/test-orchestrator/status/{run_id}", handle_get_mass_test_status
+    )
+    router.add_post("/api/test-orchestrator/stop/{run_id}", handle_stop_mass_test)
+    router.add_get("/api/test-orchestrator/runs", handle_list_mass_tests)
 
     # Unified Metrics Ingestion (iOS/Web clients)
-    app.router.add_post("/api/metrics/ingest", handle_ingest_metrics)
-    app.router.add_get("/api/metrics/sessions", handle_list_metric_sessions)
-    app.router.add_get("/api/metrics/summary", handle_get_metrics_summary)
-    app.router.add_get("/api/metrics/clients/{client_id}", handle_get_client_metrics)
+    router.add_post("/api/metrics/ingest", handle_ingest_metrics)
+    router.add_get("/api/metrics/sessions", handle_list_metric_sessions)
+    router.add_get("/api/metrics/summary", handle_get_metrics_summary)
+    router.add_get("/api/metrics/clients/{client_id}", handle_get_client_metrics)
 
     logger.info("Latency harness API routes registered")

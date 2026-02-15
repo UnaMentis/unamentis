@@ -39,6 +39,7 @@ def get_kb_repo(request: web.Request):
     """Get KB questions repository from request app, if database is available."""
     return request.app.get("kb_repo")
 
+
 # Data directory for packs storage
 DATA_DIR = Path(__file__).parent / "data"
 PACKS_DIR = DATA_DIR / "kb_packs"
@@ -139,7 +140,9 @@ def save_questions_store(store: dict[str, Any]):
     try:
         with open(store_path, "w", encoding="utf-8") as f:
             json.dump(store, f, indent=2)
-        logger.info(f"Saved questions store with {len(store.get('questions', {}))} questions")
+        logger.info(
+            f"Saved questions store with {len(store.get('questions', {}))} questions"
+        )
     except Exception as e:
         logger.error(f"Failed to save questions store: {e}")
 
@@ -158,7 +161,9 @@ def generate_question_id(domain_id: str, subcategory: str) -> str:
 def calculate_pack_stats(pack: dict, questions_store: dict) -> dict:
     """Calculate statistics for a pack."""
     questions = questions_store.get("questions", {})
-    pack_questions = [questions.get(qid) for qid in pack.get("question_ids", []) if qid in questions]
+    pack_questions = [
+        questions.get(qid) for qid in pack.get("question_ids", []) if qid in questions
+    ]
 
     if not pack_questions:
         return {
@@ -209,7 +214,9 @@ def calculate_pack_stats(pack: dict, questions_store: dict) -> dict:
 def get_domain_groups(pack: dict, questions_store: dict) -> list[dict]:
     """Get questions organized by domain for a pack."""
     questions = questions_store.get("questions", {})
-    pack_questions = [questions.get(qid) for qid in pack.get("question_ids", []) if qid in questions]
+    pack_questions = [
+        questions.get(qid) for qid in pack.get("question_ids", []) if qid in questions
+    ]
 
     domain_map: dict[str, dict] = {}
     for q in pack_questions:
@@ -329,7 +336,9 @@ async def handle_list_packs(request: web.Request) -> web.Response:
 
     except Exception:
         logger.exception("Error listing packs")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_create_pack(request: web.Request) -> web.Response:
@@ -352,27 +361,38 @@ async def handle_create_pack(request: web.Request) -> web.Response:
 
         # Validate required fields
         if "name" not in data:
-            return web.json_response({"success": False, "error": "Missing required field: name"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "Missing required field: name"}, status=400
+            )
 
         # Validate difficulty tier
         difficulty_tier = data.get("difficulty_tier", "varsity")
         if difficulty_tier not in VALID_DIFFICULTY_TIERS:
             return web.json_response(
-                {"success": False, "error": f"Invalid difficulty_tier. Valid: {VALID_DIFFICULTY_TIERS}"}, status=400
+                {
+                    "success": False,
+                    "error": f"Invalid difficulty_tier. Valid: {VALID_DIFFICULTY_TIERS}",
+                },
+                status=400,
             )
 
         # Validate pack type
         pack_type = data.get("type", "custom")
         if pack_type not in VALID_PACK_TYPES:
             return web.json_response(
-                {"success": False, "error": f"Invalid pack type. Valid: {VALID_PACK_TYPES}"}, status=400
+                {
+                    "success": False,
+                    "error": f"Invalid pack type. Valid: {VALID_PACK_TYPES}",
+                },
+                status=400,
             )
 
         # Validate status
         status = data.get("status", "draft")
         if status not in VALID_STATUSES:
             return web.json_response(
-                {"success": False, "error": f"Invalid status. Valid: {VALID_STATUSES}"}, status=400
+                {"success": False, "error": f"Invalid status. Valid: {VALID_STATUSES}"},
+                status=400,
             )
 
         registry = load_packs_registry()
@@ -401,10 +421,14 @@ async def handle_create_pack(request: web.Request) -> web.Response:
         return web.json_response({"success": True, "pack": pack})
 
     except json.JSONDecodeError:
-        return web.json_response({"success": False, "error": "Invalid JSON"}, status=400)
+        return web.json_response(
+            {"success": False, "error": "Invalid JSON"}, status=400
+        )
     except Exception:
         logger.exception("Error creating pack")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_get_pack(request: web.Request) -> web.Response:
@@ -415,7 +439,9 @@ async def handle_get_pack(request: web.Request) -> web.Response:
     pack_id = request.match_info["pack_id"]
 
     if not validate_pack_id(pack_id):
-        return web.json_response({"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400)
+        return web.json_response(
+            {"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400
+        )
 
     try:
         registry = load_packs_registry()
@@ -429,7 +455,9 @@ async def handle_get_pack(request: web.Request) -> web.Response:
                 break
 
         if not pack:
-            return web.json_response({"success": False, "error": f"Pack not found: {pack_id}"}, status=404)
+            return web.json_response(
+                {"success": False, "error": f"Pack not found: {pack_id}"}, status=404
+            )
 
         # Calculate stats
         stats = calculate_pack_stats(pack, questions_store)
@@ -450,7 +478,9 @@ async def handle_get_pack(request: web.Request) -> web.Response:
 
     except Exception:
         logger.exception("Error getting pack")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_update_pack(request: web.Request) -> web.Response:
@@ -461,7 +491,9 @@ async def handle_update_pack(request: web.Request) -> web.Response:
     pack_id = request.match_info["pack_id"]
 
     if not validate_pack_id(pack_id):
-        return web.json_response({"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400)
+        return web.json_response(
+            {"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400
+        )
 
     try:
         data = await request.json()
@@ -475,13 +507,17 @@ async def handle_update_pack(request: web.Request) -> web.Response:
                 break
 
         if pack_idx is None:
-            return web.json_response({"success": False, "error": f"Pack not found: {pack_id}"}, status=404)
+            return web.json_response(
+                {"success": False, "error": f"Pack not found: {pack_id}"}, status=404
+            )
 
         pack = registry["packs"][pack_idx]
 
         # Check if system pack
         if pack.get("type") == "system" and "type" not in data:
-            return web.json_response({"success": False, "error": "Cannot modify system pack"}, status=403)
+            return web.json_response(
+                {"success": False, "error": "Cannot modify system pack"}, status=403
+            )
 
         # Update allowed fields
         if "name" in data:
@@ -491,7 +527,10 @@ async def handle_update_pack(request: web.Request) -> web.Response:
         if "difficulty_tier" in data:
             if data["difficulty_tier"] not in VALID_DIFFICULTY_TIERS:
                 return web.json_response(
-                    {"success": False, "error": f"Invalid difficulty_tier. Valid: {VALID_DIFFICULTY_TIERS}"},
+                    {
+                        "success": False,
+                        "error": f"Invalid difficulty_tier. Valid: {VALID_DIFFICULTY_TIERS}",
+                    },
                     status=400,
                 )
             pack["difficulty_tier"] = data["difficulty_tier"]
@@ -500,7 +539,11 @@ async def handle_update_pack(request: web.Request) -> web.Response:
         if "status" in data:
             if data["status"] not in VALID_STATUSES:
                 return web.json_response(
-                    {"success": False, "error": f"Invalid status. Valid: {VALID_STATUSES}"}, status=400
+                    {
+                        "success": False,
+                        "error": f"Invalid status. Valid: {VALID_STATUSES}",
+                    },
+                    status=400,
                 )
             pack["status"] = data["status"]
 
@@ -513,10 +556,14 @@ async def handle_update_pack(request: web.Request) -> web.Response:
         return web.json_response({"success": True, "pack": pack})
 
     except json.JSONDecodeError:
-        return web.json_response({"success": False, "error": "Invalid JSON"}, status=400)
+        return web.json_response(
+            {"success": False, "error": "Invalid JSON"}, status=400
+        )
     except Exception:
         logger.exception("Error updating pack")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_delete_pack(request: web.Request) -> web.Response:
@@ -527,7 +574,9 @@ async def handle_delete_pack(request: web.Request) -> web.Response:
     pack_id = request.match_info["pack_id"]
 
     if not validate_pack_id(pack_id):
-        return web.json_response({"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400)
+        return web.json_response(
+            {"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400
+        )
 
     try:
         registry = load_packs_registry()
@@ -540,11 +589,15 @@ async def handle_delete_pack(request: web.Request) -> web.Response:
                 break
 
         if not pack:
-            return web.json_response({"success": False, "error": f"Pack not found: {pack_id}"}, status=404)
+            return web.json_response(
+                {"success": False, "error": f"Pack not found: {pack_id}"}, status=404
+            )
 
         # Check if system pack
         if pack.get("type") == "system":
-            return web.json_response({"success": False, "error": "Cannot delete system pack"}, status=403)
+            return web.json_response(
+                {"success": False, "error": "Cannot delete system pack"}, status=403
+            )
 
         # Remove pack
         registry["packs"] = [p for p in registry.get("packs", []) if p["id"] != pack_id]
@@ -556,7 +609,9 @@ async def handle_delete_pack(request: web.Request) -> web.Response:
 
     except Exception:
         logger.exception("Error deleting pack")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_add_questions_to_pack(request: web.Request) -> web.Response:
@@ -572,14 +627,18 @@ async def handle_add_questions_to_pack(request: web.Request) -> web.Response:
     pack_id = request.match_info["pack_id"]
 
     if not validate_pack_id(pack_id):
-        return web.json_response({"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400)
+        return web.json_response(
+            {"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400
+        )
 
     try:
         data = await request.json()
         question_ids = data.get("question_ids", [])
 
         if not question_ids:
-            return web.json_response({"success": False, "error": "No question_ids provided"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "No question_ids provided"}, status=400
+            )
 
         registry = load_packs_registry()
         questions_store = load_questions_store()
@@ -592,20 +651,25 @@ async def handle_add_questions_to_pack(request: web.Request) -> web.Response:
                 break
 
         if pack_idx is None:
-            return web.json_response({"success": False, "error": f"Pack not found: {pack_id}"}, status=404)
+            return web.json_response(
+                {"success": False, "error": f"Pack not found: {pack_id}"}, status=404
+            )
 
         pack = registry["packs"][pack_idx]
 
         # Check if system pack
         if pack.get("type") == "system":
-            return web.json_response({"success": False, "error": "Cannot modify system pack"}, status=403)
+            return web.json_response(
+                {"success": False, "error": "Cannot modify system pack"}, status=403
+            )
 
         # Validate question IDs exist
         valid_ids = set(questions_store.get("questions", {}).keys())
         invalid_ids = [qid for qid in question_ids if qid not in valid_ids]
         if invalid_ids:
             return web.json_response(
-                {"success": False, "error": f"Invalid question IDs: {invalid_ids[:5]}"}, status=400
+                {"success": False, "error": f"Invalid question IDs: {invalid_ids[:5]}"},
+                status=400,
             )
 
         # Add questions (avoid duplicates)
@@ -630,13 +694,19 @@ async def handle_add_questions_to_pack(request: web.Request) -> web.Response:
 
         logger.info(f"Added {len(added_ids)} questions to pack {pack_id}")
 
-        return web.json_response({"success": True, "added_count": len(added_ids), "added_ids": added_ids})
+        return web.json_response(
+            {"success": True, "added_count": len(added_ids), "added_ids": added_ids}
+        )
 
     except json.JSONDecodeError:
-        return web.json_response({"success": False, "error": "Invalid JSON"}, status=400)
+        return web.json_response(
+            {"success": False, "error": "Invalid JSON"}, status=400
+        )
     except Exception:
         logger.exception("Error adding questions to pack")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_remove_question_from_pack(request: web.Request) -> web.Response:
@@ -648,10 +718,15 @@ async def handle_remove_question_from_pack(request: web.Request) -> web.Response
     question_id = request.match_info["question_id"]
 
     if not validate_pack_id(pack_id):
-        return web.json_response({"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400)
+        return web.json_response(
+            {"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400
+        )
 
     if not validate_question_id(question_id):
-        return web.json_response({"success": False, "error": f"Invalid question_id: {question_id}"}, status=400)
+        return web.json_response(
+            {"success": False, "error": f"Invalid question_id: {question_id}"},
+            status=400,
+        )
 
     try:
         registry = load_packs_registry()
@@ -665,13 +740,17 @@ async def handle_remove_question_from_pack(request: web.Request) -> web.Response
                 break
 
         if pack_idx is None:
-            return web.json_response({"success": False, "error": f"Pack not found: {pack_id}"}, status=404)
+            return web.json_response(
+                {"success": False, "error": f"Pack not found: {pack_id}"}, status=404
+            )
 
         pack = registry["packs"][pack_idx]
 
         # Check if system pack
         if pack.get("type") == "system":
-            return web.json_response({"success": False, "error": "Cannot modify system pack"}, status=403)
+            return web.json_response(
+                {"success": False, "error": "Cannot modify system pack"}, status=403
+            )
 
         # Remove question from pack
         if question_id in pack.get("question_ids", []):
@@ -692,11 +771,15 @@ async def handle_remove_question_from_pack(request: web.Request) -> web.Response
 
             return web.json_response({"success": True})
         else:
-            return web.json_response({"success": False, "error": "Question not in pack"}, status=404)
+            return web.json_response(
+                {"success": False, "error": "Question not in pack"}, status=404
+            )
 
     except Exception:
         logger.exception("Error removing question from pack")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_create_bundle(request: web.Request) -> web.Response:
@@ -720,11 +803,15 @@ async def handle_create_bundle(request: web.Request) -> web.Response:
 
         # Validate required fields
         if "name" not in data:
-            return web.json_response({"success": False, "error": "Missing required field: name"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "Missing required field: name"}, status=400
+            )
 
         source_pack_ids = data.get("source_pack_ids", [])
         if not source_pack_ids:
-            return web.json_response({"success": False, "error": "No source_pack_ids provided"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "No source_pack_ids provided"}, status=400
+            )
 
         registry = load_packs_registry()
         questions_store = load_questions_store()
@@ -734,7 +821,11 @@ async def handle_create_bundle(request: web.Request) -> web.Response:
         invalid_packs = [pid for pid in source_pack_ids if pid not in pack_map]
         if invalid_packs:
             return web.json_response(
-                {"success": False, "error": f"Invalid source pack IDs: {invalid_packs}"}, status=400
+                {
+                    "success": False,
+                    "error": f"Invalid source pack IDs: {invalid_packs}",
+                },
+                status=400,
             )
 
         # Collect all question IDs from source packs
@@ -758,7 +849,9 @@ async def handle_create_bundle(request: web.Request) -> web.Response:
 
                 if dedup_strategy == "keep_first":
                     if q_text in seen_questions:
-                        duplicates.append({"question_id": qid, "duplicate_of": seen_questions[q_text]})
+                        duplicates.append(
+                            {"question_id": qid, "duplicate_of": seen_questions[q_text]}
+                        )
                         continue
                     seen_questions[q_text] = qid
 
@@ -769,7 +862,11 @@ async def handle_create_bundle(request: web.Request) -> web.Response:
         difficulty_tier = data.get("difficulty_tier", "varsity")
         if difficulty_tier not in VALID_DIFFICULTY_TIERS:
             return web.json_response(
-                {"success": False, "error": f"Invalid difficulty_tier. Valid: {VALID_DIFFICULTY_TIERS}"}, status=400
+                {
+                    "success": False,
+                    "error": f"Invalid difficulty_tier. Valid: {VALID_DIFFICULTY_TIERS}",
+                },
+                status=400,
             )
 
         now = datetime.now(timezone.utc).isoformat()
@@ -804,7 +901,9 @@ async def handle_create_bundle(request: web.Request) -> web.Response:
 
         stats = calculate_pack_stats(bundle, questions_store)
 
-        logger.info(f"Created bundle: {bundle['id']} with {len(all_question_ids)} questions from {len(source_pack_ids)} packs")
+        logger.info(
+            f"Created bundle: {bundle['id']} with {len(all_question_ids)} questions from {len(source_pack_ids)} packs"
+        )
 
         return web.json_response(
             {
@@ -816,10 +915,14 @@ async def handle_create_bundle(request: web.Request) -> web.Response:
         )
 
     except json.JSONDecodeError:
-        return web.json_response({"success": False, "error": "Invalid JSON"}, status=400)
+        return web.json_response(
+            {"success": False, "error": "Invalid JSON"}, status=400
+        )
     except Exception:
         logger.exception("Error creating bundle")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_preview_deduplication(request: web.Request) -> web.Response:
@@ -837,7 +940,9 @@ async def handle_preview_deduplication(request: web.Request) -> web.Response:
         source_pack_ids = data.get("source_pack_ids", [])
 
         if not source_pack_ids:
-            return web.json_response({"success": False, "error": "No source_pack_ids provided"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "No source_pack_ids provided"}, status=400
+            )
 
         registry = load_packs_registry()
         questions_store = load_questions_store()
@@ -860,7 +965,11 @@ async def handle_preview_deduplication(request: web.Request) -> web.Response:
                 if q_text not in text_to_occurrences:
                     text_to_occurrences[q_text] = []
                 text_to_occurrences[q_text].append(
-                    {"question_id": qid, "pack_id": pack_id, "pack_name": pack.get("name", "")}
+                    {
+                        "question_id": qid,
+                        "pack_id": pack_id,
+                        "pack_name": pack.get("name", ""),
+                    }
                 )
 
         # Find actual duplicates (more than one occurrence)
@@ -870,7 +979,14 @@ async def handle_preview_deduplication(request: web.Request) -> web.Response:
 
         for q_text, occurrences in text_to_occurrences.items():
             if len(occurrences) > 1:
-                duplicate_groups.append({"question_text": q_text[:100] + "..." if len(q_text) > 100 else q_text, "occurrences": occurrences})
+                duplicate_groups.append(
+                    {
+                        "question_text": q_text[:100] + "..."
+                        if len(q_text) > 100
+                        else q_text,
+                        "occurrences": occurrences,
+                    }
+                )
                 total_duplicates += len(occurrences) - 1
 
         return web.json_response(
@@ -883,10 +999,14 @@ async def handle_preview_deduplication(request: web.Request) -> web.Response:
         )
 
     except json.JSONDecodeError:
-        return web.json_response({"success": False, "error": "Invalid JSON"}, status=400)
+        return web.json_response(
+            {"success": False, "error": "Invalid JSON"}, status=400
+        )
     except Exception:
         logger.exception("Error previewing deduplication")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 # Question Management Handlers
@@ -972,7 +1092,9 @@ async def handle_list_questions(request: web.Request) -> web.Response:
                     break
             if pack:
                 pack_question_ids = set(pack.get("question_ids", []))
-                all_questions = [q for q in all_questions if q.get("id") in pack_question_ids]
+                all_questions = [
+                    q for q in all_questions if q.get("id") in pack_question_ids
+                ]
 
         # Apply filters
         filtered = []
@@ -1018,7 +1140,9 @@ async def handle_list_questions(request: web.Request) -> web.Response:
 
     except Exception:
         logger.exception("Error listing questions")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_create_question(request: web.Request) -> web.Response:
@@ -1052,33 +1176,46 @@ async def handle_create_question(request: web.Request) -> web.Response:
         missing = [f for f in required if f not in data]
         if missing:
             return web.json_response(
-                {"success": False, "error": f"Missing required fields: {missing}"}, status=400
+                {"success": False, "error": f"Missing required fields: {missing}"},
+                status=400,
             )
 
         # Validate question type
         question_type = data.get("question_type", "toss_up")
         if question_type not in VALID_QUESTION_TYPES:
             return web.json_response(
-                {"success": False, "error": f"Invalid question_type. Valid: {VALID_QUESTION_TYPES}"}, status=400
+                {
+                    "success": False,
+                    "error": f"Invalid question_type. Valid: {VALID_QUESTION_TYPES}",
+                },
+                status=400,
             )
 
         # Validate difficulty
         difficulty = data.get("difficulty", 2)
         if not (1 <= difficulty <= 5):
-            return web.json_response({"success": False, "error": "Difficulty must be 1-5"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "Difficulty must be 1-5"}, status=400
+            )
 
         # Validate question source
         question_source = data.get("question_source", "custom")
         if question_source not in VALID_QUESTION_SOURCES:
             return web.json_response(
-                {"success": False, "error": f"Invalid question_source. Valid: {VALID_QUESTION_SOURCES}"}, status=400
+                {
+                    "success": False,
+                    "error": f"Invalid question_source. Valid: {VALID_QUESTION_SOURCES}",
+                },
+                status=400,
             )
 
         questions_store = load_questions_store()
         registry = load_packs_registry()
 
         now = datetime.now(timezone.utc).isoformat()
-        question_id = generate_question_id(data["domain_id"], data.get("subcategory", "general"))
+        question_id = generate_question_id(
+            data["domain_id"], data.get("subcategory", "general")
+        )
 
         question = {
             "id": question_id,
@@ -1111,7 +1248,9 @@ async def handle_create_question(request: web.Request) -> web.Response:
         # Add to specified packs
         pack_ids = data.get("pack_ids", [])
         if pack_ids:
-            pack_map = {p["id"]: (idx, p) for idx, p in enumerate(registry.get("packs", []))}
+            pack_map = {
+                p["id"]: (idx, p) for idx, p in enumerate(registry.get("packs", []))
+            }
             for pack_id in pack_ids:
                 if pack_id in pack_map:
                     idx, pack = pack_map[pack_id]
@@ -1126,10 +1265,14 @@ async def handle_create_question(request: web.Request) -> web.Response:
         return web.json_response({"success": True, "question": question})
 
     except json.JSONDecodeError:
-        return web.json_response({"success": False, "error": "Invalid JSON"}, status=400)
+        return web.json_response(
+            {"success": False, "error": "Invalid JSON"}, status=400
+        )
     except Exception:
         logger.exception("Error creating question")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_get_question(request: web.Request) -> web.Response:
@@ -1140,20 +1283,28 @@ async def handle_get_question(request: web.Request) -> web.Response:
     question_id = request.match_info["question_id"]
 
     if not validate_question_id(question_id):
-        return web.json_response({"success": False, "error": f"Invalid question_id: {question_id}"}, status=400)
+        return web.json_response(
+            {"success": False, "error": f"Invalid question_id: {question_id}"},
+            status=400,
+        )
 
     try:
         questions_store = load_questions_store()
 
         question = questions_store.get("questions", {}).get(question_id)
         if not question:
-            return web.json_response({"success": False, "error": f"Question not found: {question_id}"}, status=404)
+            return web.json_response(
+                {"success": False, "error": f"Question not found: {question_id}"},
+                status=404,
+            )
 
         return web.json_response({"success": True, "question": question})
 
     except Exception:
         logger.exception("Error getting question")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_update_question(request: web.Request) -> web.Response:
@@ -1164,7 +1315,10 @@ async def handle_update_question(request: web.Request) -> web.Response:
     question_id = request.match_info["question_id"]
 
     if not validate_question_id(question_id):
-        return web.json_response({"success": False, "error": f"Invalid question_id: {question_id}"}, status=400)
+        return web.json_response(
+            {"success": False, "error": f"Invalid question_id: {question_id}"},
+            status=400,
+        )
 
     try:
         data = await request.json()
@@ -1172,7 +1326,10 @@ async def handle_update_question(request: web.Request) -> web.Response:
 
         question = questions_store.get("questions", {}).get(question_id)
         if not question:
-            return web.json_response({"success": False, "error": f"Question not found: {question_id}"}, status=404)
+            return web.json_response(
+                {"success": False, "error": f"Question not found: {question_id}"},
+                status=404,
+            )
 
         # Update allowed fields
         allowed_fields = [
@@ -1197,15 +1354,27 @@ async def handle_update_question(request: web.Request) -> web.Response:
             if field in data:
                 # Validate specific fields
                 if field == "difficulty" and not (1 <= data[field] <= 5):
-                    return web.json_response({"success": False, "error": "Difficulty must be 1-5"}, status=400)
-                if field == "question_type" and data[field] not in VALID_QUESTION_TYPES:
                     return web.json_response(
-                        {"success": False, "error": f"Invalid question_type. Valid: {VALID_QUESTION_TYPES}"},
+                        {"success": False, "error": "Difficulty must be 1-5"},
                         status=400,
                     )
-                if field == "question_source" and data[field] not in VALID_QUESTION_SOURCES:
+                if field == "question_type" and data[field] not in VALID_QUESTION_TYPES:
                     return web.json_response(
-                        {"success": False, "error": f"Invalid question_source. Valid: {VALID_QUESTION_SOURCES}"},
+                        {
+                            "success": False,
+                            "error": f"Invalid question_type. Valid: {VALID_QUESTION_TYPES}",
+                        },
+                        status=400,
+                    )
+                if (
+                    field == "question_source"
+                    and data[field] not in VALID_QUESTION_SOURCES
+                ):
+                    return web.json_response(
+                        {
+                            "success": False,
+                            "error": f"Invalid question_source. Valid: {VALID_QUESTION_SOURCES}",
+                        },
                         status=400,
                     )
                 question[field] = data[field]
@@ -1219,10 +1388,14 @@ async def handle_update_question(request: web.Request) -> web.Response:
         return web.json_response({"success": True, "question": question})
 
     except json.JSONDecodeError:
-        return web.json_response({"success": False, "error": "Invalid JSON"}, status=400)
+        return web.json_response(
+            {"success": False, "error": "Invalid JSON"}, status=400
+        )
     except Exception:
         logger.exception("Error updating question")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_delete_question(request: web.Request) -> web.Response:
@@ -1233,7 +1406,10 @@ async def handle_delete_question(request: web.Request) -> web.Response:
     question_id = request.match_info["question_id"]
 
     if not validate_question_id(question_id):
-        return web.json_response({"success": False, "error": f"Invalid question_id: {question_id}"}, status=400)
+        return web.json_response(
+            {"success": False, "error": f"Invalid question_id: {question_id}"},
+            status=400,
+        )
 
     try:
         questions_store = load_questions_store()
@@ -1241,7 +1417,10 @@ async def handle_delete_question(request: web.Request) -> web.Response:
 
         question = questions_store.get("questions", {}).get(question_id)
         if not question:
-            return web.json_response({"success": False, "error": f"Question not found: {question_id}"}, status=404)
+            return web.json_response(
+                {"success": False, "error": f"Question not found: {question_id}"},
+                status=404,
+            )
 
         # Remove from all packs
         for pack in registry.get("packs", []):
@@ -1260,7 +1439,9 @@ async def handle_delete_question(request: web.Request) -> web.Response:
 
     except Exception:
         logger.exception("Error deleting question")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_bulk_update_questions(request: web.Request) -> web.Response:
@@ -1284,23 +1465,37 @@ async def handle_bulk_update_questions(request: web.Request) -> web.Response:
         updates = data.get("updates", {})
 
         if not question_ids:
-            return web.json_response({"success": False, "error": "No question_ids provided"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "No question_ids provided"}, status=400
+            )
 
         if not updates:
-            return web.json_response({"success": False, "error": "No updates provided"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "No updates provided"}, status=400
+            )
 
         questions_store = load_questions_store()
 
         # Validate updates
         if "difficulty" in updates and not (1 <= updates["difficulty"] <= 5):
-            return web.json_response({"success": False, "error": "Difficulty must be 1-5"}, status=400)
-        if "question_type" in updates and updates["question_type"] not in VALID_QUESTION_TYPES:
             return web.json_response(
-                {"success": False, "error": f"Invalid question_type. Valid: {VALID_QUESTION_TYPES}"}, status=400
+                {"success": False, "error": "Difficulty must be 1-5"}, status=400
+            )
+        if (
+            "question_type" in updates
+            and updates["question_type"] not in VALID_QUESTION_TYPES
+        ):
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Invalid question_type. Valid: {VALID_QUESTION_TYPES}",
+                },
+                status=400,
             )
         if "status" in updates and updates["status"] not in VALID_STATUSES:
             return web.json_response(
-                {"success": False, "error": f"Invalid status. Valid: {VALID_STATUSES}"}, status=400
+                {"success": False, "error": f"Invalid status. Valid: {VALID_STATUSES}"},
+                status=400,
             )
 
         now = datetime.now(timezone.utc).isoformat()
@@ -1314,7 +1509,13 @@ async def handle_bulk_update_questions(request: web.Request) -> web.Response:
                 continue
 
             for field, value in updates.items():
-                if field in ["difficulty", "status", "question_type", "difficulty_tier", "question_source"]:
+                if field in [
+                    "difficulty",
+                    "status",
+                    "question_type",
+                    "difficulty_tier",
+                    "question_source",
+                ]:
                     question[field] = value
 
             question["updated_at"] = now
@@ -1325,13 +1526,23 @@ async def handle_bulk_update_questions(request: web.Request) -> web.Response:
 
         logger.info(f"Bulk updated {updated_count} questions")
 
-        return web.json_response({"success": True, "affected_count": updated_count, "errors": errors if errors else None})
+        return web.json_response(
+            {
+                "success": True,
+                "affected_count": updated_count,
+                "errors": errors if errors else None,
+            }
+        )
 
     except json.JSONDecodeError:
-        return web.json_response({"success": False, "error": "Invalid JSON"}, status=400)
+        return web.json_response(
+            {"success": False, "error": "Invalid JSON"}, status=400
+        )
     except Exception:
         logger.exception("Error bulk updating questions")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_import_from_module(request: web.Request) -> web.Response:
@@ -1351,15 +1562,22 @@ async def handle_import_from_module(request: web.Request) -> web.Response:
         pack_id = data.get("pack_id")
 
         if not pack_id:
-            return web.json_response({"success": False, "error": "pack_id is required"}, status=400)
+            return web.json_response(
+                {"success": False, "error": "pack_id is required"}, status=400
+            )
 
         if not validate_pack_id(pack_id):
-            return web.json_response({"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400)
+            return web.json_response(
+                {"success": False, "error": f"Invalid pack_id: {pack_id}"}, status=400
+            )
 
         # Load KB module content
         module_content = load_module_content("knowledge-bowl")
         if not module_content:
-            return web.json_response({"success": False, "error": "Knowledge Bowl module not found"}, status=404)
+            return web.json_response(
+                {"success": False, "error": "Knowledge Bowl module not found"},
+                status=404,
+            )
 
         registry = load_packs_registry()
         questions_store = load_questions_store()
@@ -1372,7 +1590,9 @@ async def handle_import_from_module(request: web.Request) -> web.Response:
                 break
 
         if pack_idx is None:
-            return web.json_response({"success": False, "error": f"Pack not found: {pack_id}"}, status=404)
+            return web.json_response(
+                {"success": False, "error": f"Pack not found: {pack_id}"}, status=404
+            )
 
         pack = registry["packs"][pack_idx]
 
@@ -1420,7 +1640,9 @@ async def handle_import_from_module(request: web.Request) -> web.Response:
                     "acceptable_answers": q.get("acceptable_answers", []),
                     "difficulty": difficulty,
                     "speed_target_seconds": q.get("speed_target_seconds", 5.0),
-                    "question_type": q.get("question_type", "toss-up").replace("-", "_"),
+                    "question_type": q.get("question_type", "toss-up").replace(
+                        "-", "_"
+                    ),
                     "hints": q.get("hints", []),
                     "explanation": q.get("explanation", ""),
                     "question_source": "naqt",  # From KB module
@@ -1441,7 +1663,9 @@ async def handle_import_from_module(request: web.Request) -> web.Response:
         save_packs_registry(registry)
         save_questions_store(questions_store)
 
-        logger.info(f"Imported {imported_count} questions from KB module to pack {pack_id}")
+        logger.info(
+            f"Imported {imported_count} questions from KB module to pack {pack_id}"
+        )
 
         return web.json_response(
             {
@@ -1452,10 +1676,14 @@ async def handle_import_from_module(request: web.Request) -> web.Response:
         )
 
     except json.JSONDecodeError:
-        return web.json_response({"success": False, "error": "Invalid JSON"}, status=400)
+        return web.json_response(
+            {"success": False, "error": "Invalid JSON"}, status=400
+        )
     except Exception:
         logger.exception("Error importing from module")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_list_domains(request: web.Request) -> web.Response:
@@ -1467,7 +1695,9 @@ async def handle_list_domains(request: web.Request) -> web.Response:
         repo = get_kb_repo(request)
         if repo:
             domains = await repo.list_domains()
-            return web.json_response({"success": True, "domains": domains, "source": "database"})
+            return web.json_response(
+                {"success": True, "domains": domains, "source": "database"}
+            )
 
         # Fallback to hardcoded domains from module
         module_content = load_module_content("knowledge-bowl")
@@ -1482,13 +1712,17 @@ async def handle_list_domains(request: web.Request) -> web.Response:
                 }
                 for d in module_content.get("domains", [])
             ]
-            return web.json_response({"success": True, "domains": domains, "source": "module"})
+            return web.json_response(
+                {"success": True, "domains": domains, "source": "module"}
+            )
 
         return web.json_response({"success": True, "domains": [], "source": "none"})
 
     except Exception:
         logger.exception("Error listing domains")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 def _convert_difficulty_to_numeric(difficulty: str) -> int:
@@ -1598,7 +1832,12 @@ def _load_importer_questions() -> list[dict]:
     # Paths to check for importer output
     importer_paths = [
         Path(__file__).parent.parent / "importers" / "output" / "kb-all-questions.json",
-        Path(__file__).parent.parent / "importers" / "plugins" / "sources" / "output" / "kb-all-questions.json",
+        Path(__file__).parent.parent
+        / "importers"
+        / "plugins"
+        / "sources"
+        / "output"
+        / "kb-all-questions.json",
     ]
 
     for path in importer_paths:
@@ -1606,7 +1845,9 @@ def _load_importer_questions() -> list[dict]:
             try:
                 with open(path, encoding="utf-8") as f:
                     data = json.load(f)
-                    q_list = data.get("questions", data) if isinstance(data, dict) else data
+                    q_list = (
+                        data.get("questions", data) if isinstance(data, dict) else data
+                    )
                     if isinstance(q_list, list):
                         for q in q_list:
                             q_id = q.get("id")
@@ -1632,7 +1873,10 @@ async def handle_sync_to_database(request: web.Request) -> web.Response:
         repo = get_kb_repo(request)
         if not repo:
             return web.json_response(
-                {"success": False, "error": "Database not available. Check DATABASE_URL configuration."},
+                {
+                    "success": False,
+                    "error": "Database not available. Check DATABASE_URL configuration.",
+                },
                 status=503,
             )
 
@@ -1657,7 +1901,9 @@ async def handle_sync_to_database(request: web.Request) -> web.Response:
                             "acceptable_answers": q.get("acceptable_answers", []),
                             "difficulty": q.get("difficulty", 2),
                             "speed_target_seconds": q.get("speed_target_seconds", 5.0),
-                            "question_type": q.get("question_type", "toss-up").replace("-", "_"),
+                            "question_type": q.get("question_type", "toss-up").replace(
+                                "-", "_"
+                            ),
                             "question_source": "naqt",
                             "buzzable": True,
                             "hints": q.get("hints", []),
@@ -1693,7 +1939,9 @@ async def handle_sync_to_database(request: web.Request) -> web.Response:
         total_count = await repo.get_question_count()
         domain_counts = await repo.get_domain_question_counts()
 
-        logger.info(f"Synced {total_imported} questions to database. Total: {total_count}")
+        logger.info(
+            f"Synced {total_imported} questions to database. Total: {total_count}"
+        )
 
         return web.json_response(
             {
@@ -1708,7 +1956,9 @@ async def handle_sync_to_database(request: web.Request) -> web.Response:
 
     except Exception:
         logger.exception("Error syncing to database")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 async def handle_database_status(request: web.Request) -> web.Response:
@@ -1741,41 +1991,51 @@ async def handle_database_status(request: web.Request) -> web.Response:
 
     except Exception:
         logger.exception("Error checking database status")
-        return web.json_response({"success": False, "error": "Internal server error"}, status=500)
+        return web.json_response(
+            {"success": False, "error": "Internal server error"}, status=500
+        )
 
 
 def register_kb_packs_routes(app: web.Application):
     """Register all KB packs management routes."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
+    router = guarded_routes(app, FlagKeys.KB_PACKS)
+
     # Database status and sync
-    app.router.add_get("/api/kb/database-status", handle_database_status)
-    app.router.add_post("/api/kb/sync-to-database", handle_sync_to_database)
-    app.router.add_get("/api/kb/domains", handle_list_domains)
+    router.add_get("/api/kb/database-status", handle_database_status)
+    router.add_post("/api/kb/sync-to-database", handle_sync_to_database)
+    router.add_get("/api/kb/domains", handle_list_domains)
 
     # Pack management
-    app.router.add_get("/api/kb/packs", handle_list_packs)
-    app.router.add_post("/api/kb/packs", handle_create_pack)
-    app.router.add_get("/api/kb/packs/{pack_id}", handle_get_pack)
-    app.router.add_patch("/api/kb/packs/{pack_id}", handle_update_pack)
-    app.router.add_delete("/api/kb/packs/{pack_id}", handle_delete_pack)
+    router.add_get("/api/kb/packs", handle_list_packs)
+    router.add_post("/api/kb/packs", handle_create_pack)
+    router.add_get("/api/kb/packs/{pack_id}", handle_get_pack)
+    router.add_patch("/api/kb/packs/{pack_id}", handle_update_pack)
+    router.add_delete("/api/kb/packs/{pack_id}", handle_delete_pack)
 
     # Pack question management
-    app.router.add_post("/api/kb/packs/{pack_id}/questions", handle_add_questions_to_pack)
-    app.router.add_delete("/api/kb/packs/{pack_id}/questions/{question_id}", handle_remove_question_from_pack)
+    router.add_post("/api/kb/packs/{pack_id}/questions", handle_add_questions_to_pack)
+    router.add_delete(
+        "/api/kb/packs/{pack_id}/questions/{question_id}",
+        handle_remove_question_from_pack,
+    )
 
     # Bundle operations
-    app.router.add_post("/api/kb/packs/bundle", handle_create_bundle)
-    app.router.add_post("/api/kb/packs/preview-dedup", handle_preview_deduplication)
+    router.add_post("/api/kb/packs/bundle", handle_create_bundle)
+    router.add_post("/api/kb/packs/preview-dedup", handle_preview_deduplication)
 
     # Question management
-    app.router.add_get("/api/kb/questions", handle_list_questions)
-    app.router.add_post("/api/kb/questions", handle_create_question)
-    app.router.add_get("/api/kb/questions/{question_id}", handle_get_question)
-    app.router.add_patch("/api/kb/questions/{question_id}", handle_update_question)
-    app.router.add_delete("/api/kb/questions/{question_id}", handle_delete_question)
-    app.router.add_post("/api/kb/questions/bulk-update", handle_bulk_update_questions)
+    router.add_get("/api/kb/questions", handle_list_questions)
+    router.add_post("/api/kb/questions", handle_create_question)
+    router.add_get("/api/kb/questions/{question_id}", handle_get_question)
+    router.add_patch("/api/kb/questions/{question_id}", handle_update_question)
+    router.add_delete("/api/kb/questions/{question_id}", handle_delete_question)
+    router.add_post("/api/kb/questions/bulk-update", handle_bulk_update_questions)
 
     # Import
-    app.router.add_post("/api/kb/import-from-module", handle_import_from_module)
+    router.add_post("/api/kb/import-from-module", handle_import_from_module)
 
     # Ensure directory exists
     ensure_packs_directory()

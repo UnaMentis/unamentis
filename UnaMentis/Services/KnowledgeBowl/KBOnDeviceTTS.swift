@@ -173,6 +173,8 @@ actor KBOnDeviceTTS {
                     if chunk.isFirst {
                         progress = 0.1
                         NSLog("🟡 First chunk received")
+                        // TTFA: mark first TTS chunk received (Apple TTS path)
+                        await TTFAInstrumentation.shared.markTTSFirstChunk()
                     } else if chunk.isLast {
                         progress = 1.0
                         NSLog("🟡 Last chunk received, total chunks: \(chunkCount)")
@@ -192,6 +194,8 @@ actor KBOnDeviceTTS {
                     if chunk.isFirst {
                         progress = 0.1
                         NSLog("🟡 First audio chunk received")
+                        // TTFA: mark first TTS chunk received
+                        await TTFAInstrumentation.shared.markTTSFirstChunk()
                     } else if !chunk.isLast {
                         progress = min(0.5, Float(audioChunks.count) * 0.05)
                     }

@@ -12,15 +12,9 @@ import logging
 from aiohttp import web
 
 from fov_context import (
-    FOVSession,
     SessionConfig,
     SessionManager,
-    SessionState,
-    ConversationTurn,
-    MessageRole,
     TranscriptSegment,
-    GlossaryTerm,
-    MisconceptionTrigger,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,49 +30,55 @@ def get_session_manager() -> SessionManager:
 
 def setup_fov_context_routes(app: web.Application) -> None:
     """Register FOV context API routes."""
-    app.router.add_post("/api/sessions", handle_create_session)
-    app.router.add_get("/api/sessions", handle_list_sessions)
-    app.router.add_get("/api/sessions/{session_id}", handle_get_session)
-    app.router.add_post("/api/sessions/{session_id}/start", handle_start_session)
-    app.router.add_post("/api/sessions/{session_id}/pause", handle_pause_session)
-    app.router.add_post("/api/sessions/{session_id}/resume", handle_resume_session)
-    app.router.add_post("/api/sessions/{session_id}/end", handle_end_session)
-    app.router.add_delete("/api/sessions/{session_id}", handle_delete_session)
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
+    router = guarded_routes(app, FlagKeys.FOV_CONTEXT)
+
+    router.add_post("/api/sessions", handle_create_session)
+    router.add_get("/api/sessions", handle_list_sessions)
+    router.add_get("/api/sessions/{session_id}", handle_get_session)
+    router.add_post("/api/sessions/{session_id}/start", handle_start_session)
+    router.add_post("/api/sessions/{session_id}/pause", handle_pause_session)
+    router.add_post("/api/sessions/{session_id}/resume", handle_resume_session)
+    router.add_post("/api/sessions/{session_id}/end", handle_end_session)
+    router.add_delete("/api/sessions/{session_id}", handle_delete_session)
 
     # Context updates
-    app.router.add_put("/api/sessions/{session_id}/topic", handle_set_topic)
-    app.router.add_put("/api/sessions/{session_id}/position", handle_set_position)
-    app.router.add_put("/api/sessions/{session_id}/segment", handle_set_segment)
+    router.add_put("/api/sessions/{session_id}/topic", handle_set_topic)
+    router.add_put("/api/sessions/{session_id}/position", handle_set_position)
+    router.add_put("/api/sessions/{session_id}/segment", handle_set_segment)
 
     # Conversation
-    app.router.add_post("/api/sessions/{session_id}/turns", handle_add_turn)
-    app.router.add_post("/api/sessions/{session_id}/barge-in", handle_barge_in)
+    router.add_post("/api/sessions/{session_id}/turns", handle_add_turn)
+    router.add_post("/api/sessions/{session_id}/barge-in", handle_barge_in)
 
     # Context building
-    app.router.add_get("/api/sessions/{session_id}/context", handle_get_context)
-    app.router.add_post("/api/sessions/{session_id}/context/build", handle_build_context)
-    app.router.add_get("/api/sessions/{session_id}/messages", handle_get_messages)
+    router.add_get("/api/sessions/{session_id}/context", handle_get_context)
+    router.add_post("/api/sessions/{session_id}/context/build", handle_build_context)
+    router.add_get("/api/sessions/{session_id}/messages", handle_get_messages)
 
     # Confidence analysis
-    app.router.add_post(
-        "/api/sessions/{session_id}/analyze-response",
-        handle_analyze_response
+    router.add_post(
+        "/api/sessions/{session_id}/analyze-response", handle_analyze_response
     )
 
     # Learner signals
-    app.router.add_post("/api/sessions/{session_id}/signals", handle_record_signal)
+    router.add_post("/api/sessions/{session_id}/signals", handle_record_signal)
 
     # Events
-    app.router.add_get("/api/sessions/{session_id}/events", handle_get_events)
+    router.add_get("/api/sessions/{session_id}/events", handle_get_events)
 
     # Debug and observability
-    app.router.add_get("/api/sessions/{session_id}/debug", handle_debug_session)
+    router.add_get("/api/sessions/{session_id}/debug", handle_debug_session)
+    # Health check is always available, not behind the flag
     app.router.add_get("/api/fov/health", handle_fov_health)
 
     logger.info("FOV context API routes registered")
 
 
 # --- Session Lifecycle Handlers ---
+
 
 async def handle_create_session(request: web.Request) -> web.Response:
     """
@@ -96,33 +96,30 @@ async def handle_create_session(request: web.Request) -> web.Response:
     try:
         data = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
     curriculum_id = data.get("curriculum_id")
     if not curriculum_id:
-        return web.json_response(
-            {"error": "curriculum_id is required"},
-            status=400
-        )
+        return web.json_response({"error": "curriculum_id is required"}, status=400)
 
     config = SessionConfig(
         model_name=data.get("model_name", "claude-3-5-sonnet-20241022"),
         model_context_window=data.get("model_context_window", 200_000),
         system_prompt=data.get("system_prompt"),
-        auto_expand_context=data.get("auto_expand_context", True)
+        auto_expand_context=data.get("auto_expand_context", True),
     )
 
     session = _session_manager.create_session(curriculum_id, config)
 
-    return web.json_response({
-        "session_id": session.session_id,
-        "curriculum_id": session.curriculum_id,
-        "state": session.state.value,
-        "created_at": session.created_at.isoformat()
-    }, status=201)
+    return web.json_response(
+        {
+            "session_id": session.session_id,
+            "curriculum_id": session.curriculum_id,
+            "state": session.state.value,
+            "created_at": session.created_at.isoformat(),
+        },
+        status=201,
+    )
 
 
 async def handle_list_sessions(request: web.Request) -> web.Response:
@@ -145,10 +142,7 @@ async def handle_get_session(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     return web.json_response(session.get_state())
 
@@ -163,10 +157,7 @@ async def handle_start_session(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     session.start()
     return web.json_response({"state": session.state.value})
@@ -182,10 +173,7 @@ async def handle_pause_session(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     session.pause()
     return web.json_response({"state": session.state.value})
@@ -201,10 +189,7 @@ async def handle_resume_session(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     session.resume()
     return web.json_response({"state": session.state.value})
@@ -220,10 +205,7 @@ async def handle_end_session(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     # Get final state before ending
     final_state = session.get_state()
@@ -243,13 +225,11 @@ async def handle_delete_session(request: web.Request) -> web.Response:
     if _session_manager.end_session(session_id):
         return web.json_response({"deleted": True})
     else:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
 
 # --- Context Update Handlers ---
+
 
 async def handle_set_topic(request: web.Request) -> web.Response:
     """
@@ -269,18 +249,12 @@ async def handle_set_topic(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     try:
         data = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
     topic_id = data.get("topic_id")
     topic_title = data.get("topic_title")
@@ -291,8 +265,7 @@ async def handle_set_topic(request: web.Request) -> web.Response:
 
     if not topic_id or not topic_title:
         return web.json_response(
-            {"error": "topic_id and topic_title are required"},
-            status=400
+            {"error": "topic_id and topic_title are required"}, status=400
         )
 
     session.set_current_topic(
@@ -301,13 +274,10 @@ async def handle_set_topic(request: web.Request) -> web.Response:
         topic_content=topic_content,
         learning_objectives=learning_objectives,
         glossary_terms=glossary_terms,
-        misconceptions=misconceptions
+        misconceptions=misconceptions,
     )
 
-    return web.json_response({
-        "topic_id": topic_id,
-        "topic_title": topic_title
-    })
+    return web.json_response({"topic_id": topic_id, "topic_title": topic_title})
 
 
 async def handle_set_position(request: web.Request) -> web.Response:
@@ -327,25 +297,19 @@ async def handle_set_position(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     try:
         data = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
     session.set_curriculum_position(
         curriculum_title=data.get("curriculum_title", ""),
         current_topic_index=data.get("current_topic_index", 0),
         total_topics=data.get("total_topics", 1),
         unit_title=data.get("unit_title"),
-        curriculum_outline=data.get("curriculum_outline")
+        curriculum_outline=data.get("curriculum_outline"),
     )
 
     return web.json_response({"updated": True})
@@ -368,25 +332,19 @@ async def handle_set_segment(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     try:
         data = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
     segment = TranscriptSegment(
         segment_id=data.get("segment_id", ""),
         text=data.get("text", ""),
         start_time=data.get("start_time", 0.0),
         end_time=data.get("end_time", 0.0),
-        topic_id=data.get("topic_id")
+        topic_id=data.get("topic_id"),
     )
 
     session.set_current_segment(segment)
@@ -395,6 +353,7 @@ async def handle_set_segment(request: web.Request) -> web.Response:
 
 
 # --- Conversation Handlers ---
+
 
 async def handle_add_turn(request: web.Request) -> web.Response:
     """
@@ -410,18 +369,12 @@ async def handle_add_turn(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     try:
         data = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
     role = data.get("role", "user")
     content = data.get("content", "")
@@ -431,11 +384,13 @@ async def handle_add_turn(request: web.Request) -> web.Response:
     else:
         turn = session.add_assistant_turn(content)
 
-    return web.json_response({
-        "turn_id": turn.id,
-        "role": turn.role.value,
-        "timestamp": turn.timestamp.isoformat()
-    })
+    return web.json_response(
+        {
+            "turn_id": turn.id,
+            "role": turn.role.value,
+            "timestamp": turn.timestamp.isoformat(),
+        }
+    )
 
 
 async def handle_barge_in(request: web.Request) -> web.Response:
@@ -454,21 +409,14 @@ async def handle_barge_in(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     try:
         data = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
     utterance = data.get("utterance", "")
-    interrupted_position = data.get("interrupted_position")
 
     # Record the barge-in as a user turn
     session.add_user_turn(utterance, is_barge_in=True)
@@ -477,22 +425,25 @@ async def handle_barge_in(request: web.Request) -> web.Response:
     context = session.build_llm_context(barge_in_utterance=utterance)
     messages = session.build_llm_messages(barge_in_utterance=utterance)
 
-    return web.json_response({
-        "session_id": session_id,
-        "barge_in_count": session.barge_in_count,
-        "context": {
-            "system_prompt": context.system_prompt,
-            "immediate": context.immediate_context,
-            "working": context.working_context,
-            "episodic": context.episodic_context,
-            "semantic": context.semantic_context,
-            "total_tokens": context.total_token_estimate
-        },
-        "messages": messages
-    })
+    return web.json_response(
+        {
+            "session_id": session_id,
+            "barge_in_count": session.barge_in_count,
+            "context": {
+                "system_prompt": context.system_prompt,
+                "immediate": context.immediate_context,
+                "working": context.working_context,
+                "episodic": context.episodic_context,
+                "semantic": context.semantic_context,
+                "total_tokens": context.total_token_estimate,
+            },
+            "messages": messages,
+        }
+    )
 
 
 # --- Context Building Handlers ---
+
 
 async def handle_get_context(request: web.Request) -> web.Response:
     """
@@ -504,10 +455,7 @@ async def handle_get_context(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     return web.json_response(session.context_manager.get_state_snapshot())
 
@@ -525,10 +473,7 @@ async def handle_build_context(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     try:
         data = await request.json()
@@ -539,14 +484,16 @@ async def handle_build_context(request: web.Request) -> web.Response:
 
     context = session.build_llm_context(barge_in_utterance)
 
-    return web.json_response({
-        "system_message": context.to_system_message(),
-        "immediate": context.immediate_context,
-        "working": context.working_context,
-        "episodic": context.episodic_context,
-        "semantic": context.semantic_context,
-        "total_tokens": context.total_token_estimate
-    })
+    return web.json_response(
+        {
+            "system_message": context.to_system_message(),
+            "immediate": context.immediate_context,
+            "working": context.working_context,
+            "episodic": context.episodic_context,
+            "semantic": context.semantic_context,
+            "total_tokens": context.total_token_estimate,
+        }
+    )
 
 
 async def handle_get_messages(request: web.Request) -> web.Response:
@@ -559,10 +506,7 @@ async def handle_get_messages(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     messages = session.build_llm_messages()
 
@@ -570,6 +514,7 @@ async def handle_get_messages(request: web.Request) -> web.Response:
 
 
 # --- Confidence Analysis Handlers ---
+
 
 async def handle_analyze_response(request: web.Request) -> web.Response:
     """
@@ -584,18 +529,12 @@ async def handle_analyze_response(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     try:
         data = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
     response = data.get("response", "")
 
@@ -609,7 +548,7 @@ async def handle_analyze_response(request: web.Request) -> web.Response:
         "knowledge_gap_score": analysis.knowledge_gap_score,
         "vague_language_score": analysis.vague_language_score,
         "detected_markers": [m.value for m in analysis.detected_markers],
-        "trend": analysis.trend.value
+        "trend": analysis.trend.value,
     }
 
     if recommendation:
@@ -617,13 +556,14 @@ async def handle_analyze_response(request: web.Request) -> web.Response:
             "should_expand": recommendation.should_expand,
             "priority": recommendation.priority.value,
             "scope": recommendation.suggested_scope.value,
-            "reason": recommendation.reason
+            "reason": recommendation.reason,
         }
 
     return web.json_response(result)
 
 
 # --- Learner Signal Handlers ---
+
 
 async def handle_record_signal(request: web.Request) -> web.Response:
     """
@@ -639,18 +579,12 @@ async def handle_record_signal(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     try:
         data = await request.json()
     except Exception:
-        return web.json_response(
-            {"error": "Invalid JSON"},
-            status=400
-        )
+        return web.json_response({"error": "Invalid JSON"}, status=400)
 
     signal_type = data.get("signal_type", "")
     content = data.get("content")
@@ -665,14 +599,14 @@ async def handle_record_signal(request: web.Request) -> web.Response:
         session.context_manager.record_user_question(content)
     else:
         return web.json_response(
-            {"error": f"Unknown signal type: {signal_type}"},
-            status=400
+            {"error": f"Unknown signal type: {signal_type}"}, status=400
         )
 
     return web.json_response({"recorded": True})
 
 
 # --- Event Handlers ---
+
 
 async def handle_get_events(request: web.Request) -> web.Response:
     """
@@ -684,10 +618,7 @@ async def handle_get_events(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     event_type = request.query.get("type")
     events = session.get_events(event_type)
@@ -696,6 +627,7 @@ async def handle_get_events(request: web.Request) -> web.Response:
 
 
 # --- Debug and Observability Handlers ---
+
 
 async def handle_debug_session(request: web.Request) -> web.Response:
     """
@@ -709,10 +641,7 @@ async def handle_debug_session(request: web.Request) -> web.Response:
     session = _session_manager.get_session(session_id)
 
     if not session:
-        return web.json_response(
-            {"error": "Session not found"},
-            status=404
-        )
+        return web.json_response({"error": "Session not found"}, status=404)
 
     # Get base state snapshot
     state = session.context_manager.get_state_snapshot()
@@ -727,7 +656,9 @@ async def handle_debug_session(request: web.Request) -> web.Response:
         if budget > 0:
             # Estimate current usage for each buffer
             if buffer_name == "immediate":
-                current = len(session.context_manager.immediate_buffer.recent_turns) * 50
+                current = (
+                    len(session.context_manager.immediate_buffer.recent_turns) * 50
+                )
             elif buffer_name == "working":
                 working = session.context_manager.working_buffer
                 current = len(working.topic_content or "") // 4
@@ -742,7 +673,7 @@ async def handle_debug_session(request: web.Request) -> web.Response:
             token_usage[buffer_name] = {
                 "budget": budget,
                 "estimated_used": current,
-                "percentage": round((current / budget) * 100, 1) if budget > 0 else 0
+                "percentage": round((current / budget) * 100, 1) if budget > 0 else 0,
             }
 
     # Build current context to get actual estimates
@@ -751,11 +682,13 @@ async def handle_debug_session(request: web.Request) -> web.Response:
     # Get confidence history
     confidence_history = []
     for event in session.get_events("confidence_analysis"):
-        confidence_history.append({
-            "timestamp": event.get("timestamp"),
-            "score": event.get("confidence_score"),
-            "uncertainty": event.get("uncertainty_score")
-        })
+        confidence_history.append(
+            {
+                "timestamp": event.get("timestamp"),
+                "score": event.get("confidence_score"),
+                "uncertainty": event.get("uncertainty_score"),
+            }
+        )
 
     # Get barge-in history
     barge_in_history = session.get_events("barge_in")
@@ -771,30 +704,42 @@ async def handle_debug_session(request: web.Request) -> web.Response:
             "immediate": {
                 "current_segment": state.get("immediate", {}).get("current_segment"),
                 "barge_in": state.get("immediate", {}).get("barge_in"),
-                "turn_count": len(session.context_manager.immediate_buffer.recent_turns),
-                "max_turns": budget_config.max_conversation_turns
+                "turn_count": len(
+                    session.context_manager.immediate_buffer.recent_turns
+                ),
+                "max_turns": budget_config.max_conversation_turns,
             },
             "working": {
                 "topic_id": state.get("working", {}).get("topic_id"),
                 "topic_title": state.get("working", {}).get("topic_title"),
-                "glossary_count": len(session.context_manager.working_buffer.glossary_terms),
-                "misconception_count": len(session.context_manager.working_buffer.misconception_triggers)
+                "glossary_count": len(
+                    session.context_manager.working_buffer.glossary_terms
+                ),
+                "misconception_count": len(
+                    session.context_manager.working_buffer.misconception_triggers
+                ),
             },
             "episodic": {
-                "topic_summary_count": len(session.context_manager.episodic_buffer.topic_summaries),
-                "questions_count": len(session.context_manager.episodic_buffer.user_questions),
+                "topic_summary_count": len(
+                    session.context_manager.episodic_buffer.topic_summaries
+                ),
+                "questions_count": len(
+                    session.context_manager.episodic_buffer.user_questions
+                ),
                 "learner_signals": {
                     "clarifications": session.context_manager.episodic_buffer.learner_signals.clarification_requests,
                     "repetitions": session.context_manager.episodic_buffer.learner_signals.repetition_requests,
-                    "confusions": session.context_manager.episodic_buffer.learner_signals.confusion_indicators
-                }
+                    "confusions": session.context_manager.episodic_buffer.learner_signals.confusion_indicators,
+                },
             },
             "semantic": {
                 "curriculum_id": session.context_manager.semantic_buffer.position.curriculum_id,
                 "current_topic_index": session.context_manager.semantic_buffer.position.current_topic_index,
                 "total_topics": session.context_manager.semantic_buffer.position.total_topics,
-                "has_outline": bool(session.context_manager.semantic_buffer.curriculum_outline)
-            }
+                "has_outline": bool(
+                    session.context_manager.semantic_buffer.curriculum_outline
+                ),
+            },
         },
         "token_usage": token_usage,
         "total_context_tokens": context.total_token_estimate,
@@ -807,8 +752,8 @@ async def handle_debug_session(request: web.Request) -> web.Response:
             "episodic_budget": budget_config.episodic_token_budget,
             "semantic_budget": budget_config.semantic_token_budget,
             "total_budget": budget_config.total_context_budget,
-            "max_conversation_turns": budget_config.max_conversation_turns
-        }
+            "max_conversation_turns": budget_config.max_conversation_turns,
+        },
     }
 
     return web.json_response(debug_info)
@@ -826,18 +771,20 @@ async def handle_fov_health(request: web.Request) -> web.Response:
     active_sessions = [s for s in sessions if s.get("state") == "active"]
     paused_sessions = [s for s in sessions if s.get("state") == "paused"]
 
-    return web.json_response({
-        "status": "healthy",
-        "sessions": {
-            "total": len(sessions),
-            "active": len(active_sessions),
-            "paused": len(paused_sessions)
-        },
-        "version": "1.0.0",
-        "features": {
-            "confidence_monitoring": True,
-            "context_expansion": True,
-            "adaptive_budgets": True,
-            "model_tiers": ["CLOUD", "MID_RANGE", "ON_DEVICE", "TINY"]
+    return web.json_response(
+        {
+            "status": "healthy",
+            "sessions": {
+                "total": len(sessions),
+                "active": len(active_sessions),
+                "paused": len(paused_sessions),
+            },
+            "version": "1.0.0",
+            "features": {
+                "confidence_monitoring": True,
+                "context_expansion": True,
+                "adaptive_budgets": True,
+                "model_tiers": ["CLOUD", "MID_RANGE", "ON_DEVICE", "TINY"],
+            },
         }
-    })
+    )

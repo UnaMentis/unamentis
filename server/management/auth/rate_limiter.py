@@ -9,7 +9,7 @@ import asyncio
 import logging
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Dict, Optional, Tuple
 
 from aiohttp import web
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RateLimitConfig:
     """Configuration for a rate limit."""
+
     requests: int  # Maximum requests allowed
     window_seconds: int  # Time window in seconds
     burst: Optional[int] = None  # Optional burst allowance
@@ -32,6 +33,7 @@ class RateLimitConfig:
 @dataclass
 class RateLimitState:
     """State for tracking rate limits."""
+
     tokens: float
     last_update: float
     request_count: int = 0
@@ -40,17 +42,15 @@ class RateLimitState:
 # Default rate limit configurations per endpoint category
 DEFAULT_LIMITS: Dict[str, RateLimitConfig] = {
     # Strict limits for auth endpoints
-    'auth/login': RateLimitConfig(requests=5, window_seconds=60, burst=5),
-    'auth/register': RateLimitConfig(requests=3, window_seconds=3600, burst=3),
-    'auth/forgot-password': RateLimitConfig(requests=3, window_seconds=3600, burst=3),
-    'auth/reset-password': RateLimitConfig(requests=5, window_seconds=3600, burst=5),
-    'auth/refresh': RateLimitConfig(requests=60, window_seconds=60, burst=10),
-
+    "auth/login": RateLimitConfig(requests=5, window_seconds=60, burst=5),
+    "auth/register": RateLimitConfig(requests=3, window_seconds=3600, burst=3),
+    "auth/forgot-password": RateLimitConfig(requests=3, window_seconds=3600, burst=3),
+    "auth/reset-password": RateLimitConfig(requests=5, window_seconds=3600, burst=5),
+    "auth/refresh": RateLimitConfig(requests=60, window_seconds=60, burst=10),
     # Default for authenticated API calls
-    'default': RateLimitConfig(requests=1000, window_seconds=60, burst=100),
-
+    "default": RateLimitConfig(requests=1000, window_seconds=60, burst=100),
     # Default for unauthenticated calls (relaxed for development)
-    'unauthenticated': RateLimitConfig(requests=500, window_seconds=60, burst=100),
+    "unauthenticated": RateLimitConfig(requests=500, window_seconds=60, burst=100),
 }
 
 
@@ -67,16 +67,21 @@ class InMemoryRateLimiter:
         self._buckets: Dict[str, RateLimitState] = defaultdict(
             lambda: RateLimitState(tokens=0, last_update=time.time())
         )
-        self._lock = asyncio.Lock()
+        # Lazily created: asyncio.Lock() requires a running event loop on Python <3.10
+        self._lock: Optional[asyncio.Lock] = None
+
+    @property
+    def _async_lock(self) -> asyncio.Lock:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        return self._lock
 
     def get_limit_config(self, category: str) -> RateLimitConfig:
         """Get rate limit config for a category."""
-        return self.limits.get(category, self.limits['default'])
+        return self.limits.get(category, self.limits["default"])
 
     async def check_rate_limit(
-        self,
-        key: str,
-        category: str = 'default'
+        self, key: str, category: str = "default"
     ) -> Tuple[bool, Dict[str, int]]:
         """
         Check if a request is within rate limits.
@@ -93,7 +98,7 @@ class InMemoryRateLimiter:
         config = self.get_limit_config(category)
         bucket_key = f"{category}:{key}"
 
-        async with self._lock:
+        async with self._async_lock:
             now = time.time()
             state = self._buckets[bucket_key]
 
@@ -116,27 +121,29 @@ class InMemoryRateLimiter:
 
             # Calculate headers
             remaining = max(0, int(state.tokens))
-            reset_time = int(now + (config.window_seconds - (now % config.window_seconds)))
+            reset_time = int(
+                now + (config.window_seconds - (now % config.window_seconds))
+            )
 
             headers = {
-                'X-RateLimit-Limit': config.requests,
-                'X-RateLimit-Remaining': remaining,
-                'X-RateLimit-Reset': reset_time,
-                'X-RateLimit-Window': config.window_seconds,
+                "X-RateLimit-Limit": config.requests,
+                "X-RateLimit-Remaining": remaining,
+                "X-RateLimit-Reset": reset_time,
+                "X-RateLimit-Window": config.window_seconds,
             }
 
             if not allowed:
                 # Calculate retry-after
                 tokens_needed = 1 - state.tokens
                 retry_after = int(tokens_needed / refill_rate) + 1
-                headers['Retry-After'] = retry_after
+                headers["Retry-After"] = retry_after
 
             return allowed, headers
 
-    async def reset(self, key: str, category: str = 'default') -> None:
+    async def reset(self, key: str, category: str = "default") -> None:
         """Reset rate limit for a key (e.g., after successful auth)."""
         bucket_key = f"{category}:{key}"
-        async with self._lock:
+        async with self._async_lock:
             if bucket_key in self._buckets:
                 del self._buckets[bucket_key]
 
@@ -145,7 +152,7 @@ class InMemoryRateLimiter:
         now = time.time()
         expired_keys = []
 
-        async with self._lock:
+        async with self._async_lock:
             for key, state in self._buckets.items():
                 if now - state.last_update > max_age_seconds:
                     expired_keys.append(key)
@@ -171,16 +178,16 @@ def get_rate_limit_category(path: str) -> str:
         The rate limit category
     """
     # Remove /api/ prefix if present
-    if path.startswith('/api/'):
+    if path.startswith("/api/"):
         path = path[5:]
 
     # Check for known categories
     for category in DEFAULT_LIMITS.keys():
-        if category != 'default' and category != 'unauthenticated':
+        if category != "default" and category != "unauthenticated":
             if path.startswith(category):
                 return category
 
-    return 'default'
+    return "default"
 
 
 def get_client_identifier(request: web.Request) -> str:
@@ -195,18 +202,18 @@ def get_client_identifier(request: web.Request) -> str:
         A string identifier for rate limiting
     """
     # Use user ID if authenticated
-    user_id = request.get('user_id')
+    user_id = request.get("user_id")
     if user_id:
         return f"user:{user_id}"
 
     # Fall back to IP address
     # Check for forwarded headers (behind proxy)
-    forwarded = request.headers.get('X-Forwarded-For')
+    forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
         # Take the first IP (client IP)
         return f"ip:{forwarded.split(',')[0].strip()}"
 
-    real_ip = request.headers.get('X-Real-IP')
+    real_ip = request.headers.get("X-Real-IP")
     if real_ip:
         return f"ip:{real_ip}"
 
@@ -218,13 +225,15 @@ def get_client_identifier(request: web.Request) -> str:
 
 
 @web.middleware
-async def rate_limit_middleware(request: web.Request, handler: Callable) -> web.Response:
+async def rate_limit_middleware(
+    request: web.Request, handler: Callable
+) -> web.Response:
     """
     Middleware to apply rate limiting to requests.
 
     Adds rate limit headers to all responses and returns 429 if limit exceeded.
     """
-    rate_limiter: Optional[RateLimiter] = request.app.get('rate_limiter')
+    rate_limiter: Optional[RateLimiter] = request.app.get("rate_limiter")
     if not rate_limiter:
         # Rate limiting not configured, allow all requests
         return await handler(request)
@@ -233,8 +242,8 @@ async def rate_limit_middleware(request: web.Request, handler: Callable) -> web.
     category = get_rate_limit_category(request.path)
 
     # Use different category for unauthenticated requests
-    if 'user_id' not in request and category == 'default':
-        category = 'unauthenticated'
+    if "user_id" not in request and category == "default":
+        category = "unauthenticated"
 
     identifier = get_client_identifier(request)
 
@@ -249,9 +258,9 @@ async def rate_limit_middleware(request: web.Request, handler: Callable) -> web.
             {
                 "error": "Rate limit exceeded",
                 "code": "RATE_LIMIT_EXCEEDED",
-                "retry_after": headers.get('Retry-After', 60)
+                "retry_after": headers.get("Retry-After", 60),
             },
-            status=429
+            status=429,
         )
         for header, value in headers.items():
             response.headers[header] = str(value)
@@ -268,8 +277,7 @@ async def rate_limit_middleware(request: web.Request, handler: Callable) -> web.
 
 
 def setup_rate_limiter(
-    app: web.Application,
-    limits: Optional[Dict[str, RateLimitConfig]] = None
+    app: web.Application, limits: Optional[Dict[str, RateLimitConfig]] = None
 ) -> RateLimiter:
     """
     Set up rate limiting for an aiohttp application.
@@ -282,7 +290,7 @@ def setup_rate_limiter(
         The configured RateLimiter instance
     """
     rate_limiter = RateLimiter(limits)
-    app['rate_limiter'] = rate_limiter
+    app["rate_limiter"] = rate_limiter
 
     # Schedule periodic cleanup
     async def cleanup_task():
@@ -296,10 +304,10 @@ def setup_rate_limiter(
                 logger.error(f"Error in rate limit cleanup: {e}")
 
     async def start_cleanup(app):
-        app['rate_limit_cleanup_task'] = asyncio.create_task(cleanup_task())
+        app["rate_limit_cleanup_task"] = asyncio.create_task(cleanup_task())
 
     async def stop_cleanup(app):
-        task = app.get('rate_limit_cleanup_task')
+        task = app.get("rate_limit_cleanup_task")
         if task:
             task.cancel()
             try:

@@ -436,9 +436,19 @@ public actor AudioEngine: ObservableObject {
             }
         }
 
+        // TTFA: mark audio buffer scheduled (first chunk only)
+        if chunk.isFirst {
+            await TTFAInstrumentation.shared.markAudioScheduled()
+        }
+
         // Start playing if not already
         if !playerNode.isPlaying {
             playerNode.play()
+
+            // TTFA: mark audio playing (closest to audible output)
+            if chunk.isFirst {
+                await TTFAInstrumentation.shared.markAudioPlaying()
+            }
         }
 
         // If this is the last chunk, wait for playback to complete
@@ -521,8 +531,14 @@ public actor AudioEngine: ObservableObject {
             }
         }
 
+        // TTFA: mark audio scheduled for raw audio path (cached playback)
+        await TTFAInstrumentation.shared.markAudioScheduled()
+
         if !playerNode.isPlaying {
             playerNode.play()
+
+            // TTFA: mark audio playing for raw audio path
+            await TTFAInstrumentation.shared.markAudioPlaying()
         }
     }
     

@@ -2,13 +2,19 @@
 
 ## Current State
 
-UnaMentis has a **fully implemented but unused** feature flags system:
+UnaMentis has a **fully implemented** feature flags system with the management
+server now actively wired up:
+
 - Unleash server infrastructure (Docker Compose)
 - iOS SDK (actor-based, offline caching)
 - Web SDK (React hooks, localStorage caching)
+- **Management server: 13 API modules gated by `guarded_routes`** (completed)
+- **`GET /api/feature-flags` endpoint for clients** (completed)
+- **24 flags defined in `feature_flag_keys.py` with safe defaults** (completed)
 - Audit tooling and CI workflow
 
-**What's missing:** No flags are registered, no app code uses the SDK, the server isn't running.
+**Completed:** Management server feature flag integration with route-level guards.
+**Remaining:** Wire SDK into iOS/web app startup, register flags in Unleash UI, start Unleash as a managed service.
 
 ---
 
@@ -201,6 +207,12 @@ Add a "Development Mode" toggle to the Server Manager that:
 
 ### Immediate (This Week)
 
+- [x] Wire `guarded_routes` into management server API modules (13 modules)
+- [x] Create `feature_flag_keys.py` with 26 centralized flag constants
+- [x] Create `feature_flag_guard.py` with `flag_guard` decorator and `GuardedRouter`
+- [x] Add `GET /api/feature-flags` endpoint for client flag queries
+- [x] Update `is_flag_enabled()` to use `FLAG_DEFAULTS` map
+- [x] Write tests for flag guard, keys, and endpoint
 - [ ] Add Unleash to Server Manager with dev mode toggle
 - [ ] Wire FeatureFlagService.start() into iOS app launch
 - [ ] Wire FeatureFlagProvider into web app root

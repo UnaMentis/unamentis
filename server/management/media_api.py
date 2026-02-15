@@ -8,7 +8,6 @@ These routes enable the curriculum studio to:
 - Check available rendering capabilities
 """
 
-import asyncio
 import base64
 import logging
 from pathlib import Path
@@ -18,16 +17,22 @@ from aiohttp import web
 
 # Import the generators
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from importers.enrichment.diagram_generator import (
-    DiagramGenerator, DiagramSpec, DiagramFormat, DiagramRenderMethod
+    DiagramGenerator,
+    DiagramSpec,
+    DiagramFormat,
 )
-from importers.enrichment.formula_generator import (
-    FormulaGenerator, FormulaSpec, FormulaRenderMethod
-)
+from importers.enrichment.formula_generator import FormulaGenerator, FormulaSpec
 from importers.enrichment.map_generator import (
-    MapGenerator, MapSpec, MapStyle, MapMarker, MapRoute, MapRegion, MapRenderMethod
+    MapGenerator,
+    MapSpec,
+    MapStyle,
+    MapMarker,
+    MapRoute,
+    MapRegion,
 )
 
 logger = logging.getLogger(__name__)
@@ -69,6 +74,7 @@ def get_map_generator() -> MapGenerator:
 # Capabilities Endpoint
 # =============================================================================
 
+
 async def handle_get_capabilities(request: web.Request) -> web.Response:
     """
     GET /api/media/capabilities
@@ -108,21 +114,27 @@ async def handle_get_capabilities(request: web.Request) -> web.Response:
             },
         }
 
-        return web.json_response({
-            "success": True,
-            "capabilities": capabilities,
-        })
-    except Exception as e:
+        return web.json_response(
+            {
+                "success": True,
+                "capabilities": capabilities,
+            }
+        )
+    except Exception:
         logger.exception("Error getting media capabilities")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": "Failed to get media capabilities",
+            },
+            status=500,
+        )
 
 
 # =============================================================================
 # Diagram Endpoints
 # =============================================================================
+
 
 async def handle_validate_diagram(request: web.Request) -> web.Response:
     """
@@ -144,11 +156,14 @@ async def handle_validate_diagram(request: web.Request) -> web.Response:
         try:
             source_format = DiagramFormat(format_str)
         except ValueError:
-            return web.json_response({
-                "success": False,
-                "error": f"Unknown diagram format: {format_str}",
-                "validFormats": [f.value for f in DiagramFormat],
-            }, status=400)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Unknown diagram format: {format_str}",
+                    "validFormats": [f.value for f in DiagramFormat],
+                },
+                status=400,
+            )
 
         generator = get_diagram_generator()
         spec = DiagramSpec(
@@ -160,17 +175,22 @@ async def handle_validate_diagram(request: web.Request) -> web.Response:
 
         errors = await generator.validate(spec)
 
-        return web.json_response({
-            "success": True,
-            "valid": len(errors) == 0,
-            "errors": errors,
-        })
-    except Exception as e:
+        return web.json_response(
+            {
+                "success": True,
+                "valid": len(errors) == 0,
+                "errors": errors,
+            }
+        )
+    except Exception:
         logger.exception("Error validating diagram")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": "Failed to validate diagram",
+            },
+            status=500,
+        )
 
 
 async def handle_render_diagram(request: web.Request) -> web.Response:
@@ -201,10 +221,13 @@ async def handle_render_diagram(request: web.Request) -> web.Response:
         try:
             source_format = DiagramFormat(format_str)
         except ValueError:
-            return web.json_response({
-                "success": False,
-                "error": f"Unknown diagram format: {format_str}",
-            }, status=400)
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": f"Unknown diagram format: {format_str}",
+                },
+                status=400,
+            )
 
         generator = get_diagram_generator()
         spec = DiagramSpec(
@@ -223,32 +246,41 @@ async def handle_render_diagram(request: web.Request) -> web.Response:
         if result.success and result.data:
             # Encode as base64 for JSON transport
             data_b64 = base64.b64encode(result.data).decode("utf-8")
-            return web.json_response({
-                "success": True,
-                "data": data_b64,
-                "mimeType": result.mime_type,
-                "width": result.width,
-                "height": result.height,
-                "renderMethod": result.render_method.value,
-            })
+            return web.json_response(
+                {
+                    "success": True,
+                    "data": data_b64,
+                    "mimeType": result.mime_type,
+                    "width": result.width,
+                    "height": result.height,
+                    "renderMethod": result.render_method.value,
+                }
+            )
         else:
-            return web.json_response({
-                "success": False,
-                "error": result.error or "Rendering failed",
-                "validationErrors": result.validation_errors,
-                "renderMethod": result.render_method.value,
-            }, status=400)
-    except Exception as e:
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": result.error or "Rendering failed",
+                    "validationErrors": result.validation_errors,
+                    "renderMethod": result.render_method.value,
+                },
+                status=400,
+            )
+    except Exception:
         logger.exception("Error rendering diagram")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": "Failed to render diagram",
+            },
+            status=500,
+        )
 
 
 # =============================================================================
 # Formula Endpoints
 # =============================================================================
+
 
 async def handle_validate_formula(request: web.Request) -> web.Response:
     """
@@ -268,18 +300,23 @@ async def handle_validate_formula(request: web.Request) -> web.Response:
         generator = get_formula_generator()
         errors, warnings = await generator.validate_latex(latex)
 
-        return web.json_response({
-            "success": True,
-            "valid": len(errors) == 0,
-            "errors": errors,
-            "warnings": warnings,
-        })
-    except Exception as e:
+        return web.json_response(
+            {
+                "success": True,
+                "valid": len(errors) == 0,
+                "errors": errors,
+                "warnings": warnings,
+            }
+        )
+    except Exception:
         logger.exception("Error validating formula")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": "Failed to validate formula",
+            },
+            status=500,
+        )
 
 
 async def handle_render_formula(request: web.Request) -> web.Response:
@@ -319,33 +356,42 @@ async def handle_render_formula(request: web.Request) -> web.Response:
 
         if result.success and result.data:
             data_b64 = base64.b64encode(result.data).decode("utf-8")
-            return web.json_response({
-                "success": True,
-                "data": data_b64,
-                "mimeType": result.mime_type,
-                "width": result.width,
-                "height": result.height,
-                "renderMethod": result.render_method.value,
-                "warnings": result.validation_warnings,
-            })
+            return web.json_response(
+                {
+                    "success": True,
+                    "data": data_b64,
+                    "mimeType": result.mime_type,
+                    "width": result.width,
+                    "height": result.height,
+                    "renderMethod": result.render_method.value,
+                    "warnings": result.validation_warnings,
+                }
+            )
         else:
-            return web.json_response({
-                "success": False,
-                "error": result.error or "Rendering failed",
-                "validationErrors": result.validation_errors,
-                "renderMethod": result.render_method.value,
-            }, status=400)
-    except Exception as e:
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": result.error or "Rendering failed",
+                    "validationErrors": result.validation_errors,
+                    "renderMethod": result.render_method.value,
+                },
+                status=400,
+            )
+    except Exception:
         logger.exception("Error rendering formula")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": "Failed to render formula",
+            },
+            status=500,
+        )
 
 
 # =============================================================================
 # Map Endpoints
 # =============================================================================
+
 
 async def handle_render_map(request: web.Request) -> web.Response:
     """
@@ -391,39 +437,53 @@ async def handle_render_map(request: web.Request) -> web.Response:
         # Parse markers
         markers = []
         for m in data.get("markers", []):
-            markers.append(MapMarker(
-                latitude=m.get("latitude", 0),
-                longitude=m.get("longitude", 0),
-                label=m.get("label", ""),
-                icon=m.get("icon"),
-                color=m.get("color", "#E74C3C"),
-                popup=m.get("popup"),
-            ))
+            markers.append(
+                MapMarker(
+                    latitude=m.get("latitude", 0),
+                    longitude=m.get("longitude", 0),
+                    label=m.get("label", ""),
+                    icon=m.get("icon"),
+                    color=m.get("color", "#E74C3C"),
+                    popup=m.get("popup"),
+                )
+            )
 
         # Parse routes
         routes = []
         for r in data.get("routes", []):
-            points = [(p[0], p[1]) for p in r.get("points", [])]
-            routes.append(MapRoute(
-                points=points,
-                label=r.get("label", ""),
-                color=r.get("color", "#3498DB"),
-                width=r.get("width", 2.0),
-                style=r.get("style", "solid"),
-            ))
+            points = [
+                (float(p[0]), float(p[1]))
+                for p in r.get("points", [])
+                if isinstance(p, (list, tuple)) and len(p) >= 2
+            ]
+            routes.append(
+                MapRoute(
+                    points=points,
+                    label=r.get("label", ""),
+                    color=r.get("color", "#3498DB"),
+                    width=r.get("width", 2.0),
+                    style=r.get("style", "solid"),
+                )
+            )
 
         # Parse regions
         regions = []
         for reg in data.get("regions", []):
-            points = [(p[0], p[1]) for p in reg.get("points", [])]
-            regions.append(MapRegion(
-                points=points,
-                label=reg.get("label", ""),
-                fill_color=reg.get("fillColor", "#3498DB"),
-                fill_opacity=reg.get("fillOpacity", 0.3),
-                border_color=reg.get("borderColor", "#2980B9"),
-                border_width=reg.get("borderWidth", 1.0),
-            ))
+            points = [
+                (float(p[0]), float(p[1]))
+                for p in reg.get("points", [])
+                if isinstance(p, (list, tuple)) and len(p) >= 2
+            ]
+            regions.append(
+                MapRegion(
+                    points=points,
+                    label=reg.get("label", ""),
+                    fill_color=reg.get("fillColor", "#3498DB"),
+                    fill_opacity=reg.get("fillOpacity", 0.3),
+                    border_color=reg.get("borderColor", "#2980B9"),
+                    border_width=reg.get("borderWidth", 1.0),
+                )
+            )
 
         generator = get_map_generator()
         spec = MapSpec(
@@ -460,17 +520,23 @@ async def handle_render_map(request: web.Request) -> web.Response:
                 response["htmlContent"] = result.html_content
             return web.json_response(response)
         else:
-            return web.json_response({
-                "success": False,
-                "error": result.error or "Rendering failed",
-                "renderMethod": result.render_method.value,
-            }, status=400)
-    except Exception as e:
+            return web.json_response(
+                {
+                    "success": False,
+                    "error": result.error or "Rendering failed",
+                    "renderMethod": result.render_method.value,
+                },
+                status=400,
+            )
+    except Exception:
         logger.exception("Error rendering map")
-        return web.json_response({
-            "success": False,
-            "error": str(e),
-        }, status=500)
+        return web.json_response(
+            {
+                "success": False,
+                "error": "Failed to render map",
+            },
+            status=500,
+        )
 
 
 async def handle_get_map_styles(request: web.Request) -> web.Response:
@@ -481,40 +547,59 @@ async def handle_get_map_styles(request: web.Request) -> web.Response:
     """
     styles = [
         {"id": "standard", "name": "Standard", "description": "Modern political map"},
-        {"id": "historical", "name": "Historical", "description": "Aged parchment style"},
-        {"id": "physical", "name": "Physical", "description": "Terrain and elevation focus"},
+        {
+            "id": "historical",
+            "name": "Historical",
+            "description": "Aged parchment style",
+        },
+        {
+            "id": "physical",
+            "name": "Physical",
+            "description": "Terrain and elevation focus",
+        },
         {"id": "satellite", "name": "Satellite", "description": "Aerial imagery"},
         {"id": "minimal", "name": "Minimal", "description": "Clean, minimal styling"},
-        {"id": "educational", "name": "Educational", "description": "Clear labels for learning"},
+        {
+            "id": "educational",
+            "name": "Educational",
+            "description": "Clear labels for learning",
+        },
     ]
-    return web.json_response({
-        "success": True,
-        "styles": styles,
-    })
+    return web.json_response(
+        {
+            "success": True,
+            "styles": styles,
+        }
+    )
 
 
 # =============================================================================
 # Route Registration
 # =============================================================================
 
+
 def register_media_routes(app: web.Application):
     """Register all media generation routes on the application."""
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
 
     logger.info("Registering media generation API routes...")
 
+    router = guarded_routes(app, FlagKeys.MEDIA_GENERATION_ENABLED)
+
     # Capabilities
-    app.router.add_get("/api/media/capabilities", handle_get_capabilities)
+    router.add_get("/api/media/capabilities", handle_get_capabilities)
 
     # Diagrams
-    app.router.add_post("/api/media/diagrams/validate", handle_validate_diagram)
-    app.router.add_post("/api/media/diagrams/render", handle_render_diagram)
+    router.add_post("/api/media/diagrams/validate", handle_validate_diagram)
+    router.add_post("/api/media/diagrams/render", handle_render_diagram)
 
     # Formulas
-    app.router.add_post("/api/media/formulas/validate", handle_validate_formula)
-    app.router.add_post("/api/media/formulas/render", handle_render_formula)
+    router.add_post("/api/media/formulas/validate", handle_validate_formula)
+    router.add_post("/api/media/formulas/render", handle_render_formula)
 
     # Maps
-    app.router.add_post("/api/media/maps/render", handle_render_map)
-    app.router.add_get("/api/media/maps/styles", handle_get_map_styles)
+    router.add_post("/api/media/maps/render", handle_render_map)
+    router.add_get("/api/media/maps/styles", handle_get_map_styles)
 
     logger.info("Media API routes registered")

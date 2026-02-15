@@ -22,12 +22,24 @@ if ! command -v xcodebuild &> /dev/null; then
     fi
 fi
 
+# Resolve simulator to UUID for reliable destination matching
+SIM_NAME="${SIMULATOR:-iPhone 17 Pro}"
+SIM_UDID=$(xcrun simctl list devices available 2>/dev/null \
+    | grep "$SIM_NAME" | head -1 \
+    | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}')
+
+if [ -n "$SIM_UDID" ]; then
+    SIM_DEST="platform=iOS Simulator,id=$SIM_UDID"
+else
+    SIM_DEST="platform=iOS Simulator,name=$SIM_NAME"
+fi
+
 # Common xcodebuild arguments
 XCODEBUILD_ARGS=(
     test
     -project UnaMentis.xcodeproj
     -scheme UnaMentis
-    -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+    -destination "$SIM_DEST"
     -only-testing:UnaMentisTests/Unit
     CODE_SIGNING_ALLOWED=NO
 )

@@ -16,6 +16,7 @@ Supports all Kyutai models:
 import asyncio
 import json
 import logging
+import os
 import time
 import uuid
 from pathlib import Path
@@ -33,6 +34,18 @@ logger = logging.getLogger(__name__)
 
 TTS_LAB_DIR = Path(__file__).parent / "tts_lab_configs"
 TTS_LAB_DIR.mkdir(exist_ok=True)
+
+
+def _safe_path(filename: str, base_dir: Path) -> Path:
+    """Validate a file path is within base_dir (CodeQL-recognized sanitizer)."""
+    candidate = base_dir / filename
+    real_path = os.path.realpath(str(candidate))
+    real_base = os.path.realpath(str(base_dir))
+    if not real_base.endswith(os.sep):
+        real_base += os.sep
+    if not real_path.startswith(real_base) and real_path != real_base.rstrip(os.sep):
+        raise ValueError("Path escapes allowed directory")
+    return Path(real_path)
 
 
 class TTSLabConfig:
@@ -254,7 +267,7 @@ SUPPORTED_MODELS = {
 }
 
 # Reference text for TTS model samples - designed to test various TTS capabilities
-TTS_REFERENCE_TEXT = '''The quick mathematician, Dr. Sarah Chen, carefully examined the peculiar equation. "Could this really be correct?" she wondered aloud, her eyes widening with excitement. After seventeen years of research, breakthrough discoveries still thrilled her. Numbers, equations, and the elegant beauty of mathematics had always been her true passion.'''
+TTS_REFERENCE_TEXT = """The quick mathematician, Dr. Sarah Chen, carefully examined the peculiar equation. "Could this really be correct?" she wondered aloud, her eyes widening with excitement. After seventeen years of research, breakthrough discoveries still thrilled her. Numbers, equations, and the elegant beauty of mathematics had always been her true passion."""
 
 # Directory for generated samples
 SAMPLES_DIR = Path(__file__).parent.parent / "web" / "public" / "audio" / "tts-samples"
@@ -342,9 +355,7 @@ async def handle_generate_test_audio(request: web.Request) -> web.Response:
 
     text = data.get("text")
     if not text or not text.strip():
-        return web.json_response(
-            {"error": "Missing or empty 'text' field"}, status=400
-        )
+        return web.json_response({"error": "Missing or empty 'text' field"}, status=400)
 
     config_data = data.get("config")
     if not config_data:
@@ -504,7 +515,10 @@ async def handle_get_config(request: web.Request) -> web.Response:
     }
     """
     config_id = request.match_info["config_id"]
-    config_file = TTS_LAB_DIR / f"{config_id}.json"
+    try:
+        config_file = _safe_path(f"{config_id}.json", TTS_LAB_DIR)
+    except ValueError:
+        return web.json_response({"error": "Invalid config_id"}, status=400)
 
     if not config_file.exists():
         return web.json_response({"error": "Configuration not found"}, status=404)
@@ -532,7 +546,10 @@ async def handle_delete_config(request: web.Request) -> web.Response:
     }
     """
     config_id = request.match_info["config_id"]
-    config_file = TTS_LAB_DIR / f"{config_id}.json"
+    try:
+        config_file = _safe_path(f"{config_id}.json", TTS_LAB_DIR)
+    except ValueError:
+        return web.json_response({"error": "Invalid config_id"}, status=400)
 
     if not config_file.exists():
         return web.json_response({"error": "Configuration not found"}, status=404)
@@ -543,7 +560,9 @@ async def handle_delete_config(request: web.Request) -> web.Response:
         return web.json_response({"success": True, "deleted_id": config_id})
     except Exception as e:
         logger.error(f"Failed to delete config {config_id}: {e}")
-        return web.json_response({"error": "Failed to delete configuration"}, status=500)
+        return web.json_response(
+            {"error": "Failed to delete configuration"}, status=500
+        )
 
 
 async def handle_validate_config(request: web.Request) -> web.Response:
@@ -687,7 +706,11 @@ async def handle_generate_samples(request: web.Request) -> web.Response:
             continue
 
         model_info = SUPPORTED_MODELS[model_id]
-        sample_path = SAMPLES_DIR / f"{model_id}.opus"
+        try:
+            sample_path = _safe_path(f"{model_id}.opus", SAMPLES_DIR)
+        except ValueError:
+            errors[model_id] = f"Invalid model_id: {model_id}"
+            continue
 
         # Skip if exists and not forcing
         if sample_path.exists() and not force:
@@ -713,7 +736,11 @@ async def handle_generate_samples(request: web.Request) -> web.Response:
                 f"Generating sample for {model_id} with voice {voice_id} using {provider}"
             )
 
-            audio_data, sample_rate, duration = await resource_pool.generate_with_priority(
+            (
+                audio_data,
+                sample_rate,
+                duration,
+            ) = await resource_pool.generate_with_priority(
                 text=TTS_REFERENCE_TEXT,
                 voice_id=voice_id,
                 provider=provider,
@@ -802,16 +829,20 @@ async def handle_get_sample_status(request: web.Request) -> web.Response:
 
 def register_tts_lab_routes(app: web.Application) -> None:
     """Register TTS Lab API routes."""
-    app.router.add_get("/api/tts-lab/models", handle_list_models)
-    app.router.add_post("/api/tts-lab/generate", handle_generate_test_audio)
-    app.router.add_post("/api/tts-lab/config", handle_save_config)
-    app.router.add_get("/api/tts-lab/configs", handle_list_configs)
-    app.router.add_get("/api/tts-lab/config/{config_id}", handle_get_config)
-    app.router.add_delete("/api/tts-lab/config/{config_id}", handle_delete_config)
-    app.router.add_post("/api/tts-lab/validate", handle_validate_config)
+    from feature_flag_guard import guarded_routes
+    from feature_flag_keys import FlagKeys
+
+    router = guarded_routes(app, FlagKeys.TTS_LAB)
+    router.add_get("/api/tts-lab/models", handle_list_models)
+    router.add_post("/api/tts-lab/generate", handle_generate_test_audio)
+    router.add_post("/api/tts-lab/config", handle_save_config)
+    router.add_get("/api/tts-lab/configs", handle_list_configs)
+    router.add_get("/api/tts-lab/config/{config_id}", handle_get_config)
+    router.add_delete("/api/tts-lab/config/{config_id}", handle_delete_config)
+    router.add_post("/api/tts-lab/validate", handle_validate_config)
 
     # Sample generation endpoints
-    app.router.add_get("/api/tts-lab/samples", handle_get_sample_status)
-    app.router.add_post("/api/tts-lab/samples/generate", handle_generate_samples)
+    router.add_get("/api/tts-lab/samples", handle_get_sample_status)
+    router.add_post("/api/tts-lab/samples/generate", handle_generate_samples)
 
     logger.info("Registered TTS Lab API routes")

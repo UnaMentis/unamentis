@@ -135,6 +135,28 @@ if client.is_enabled("maintenance_mode"):
     return {"status": "maintenance"}
 ```
 
+### Management Server Route Guards
+
+The management server uses `guarded_routes` to gate entire API modules behind
+flags. All 13 API modules are wired up. See `feature_flag_keys.py` for the
+complete flag inventory and `feature_flag_guard.py` for the guard implementation.
+
+```python
+from feature_flag_guard import guarded_routes
+from feature_flag_keys import FlagKeys
+
+def register_foo_routes(app):
+    router = guarded_routes(app, FlagKeys.FOO)
+    router.add_get("/api/foo", handle_list)
+    router.add_post("/api/foo", handle_create)
+```
+
+**Query all flag states** (useful for clients and debugging):
+
+```bash
+curl http://localhost:8766/api/feature-flags
+```
+
 ## Flag Categories
 
 | Category | Lifetime | Auto-merge | Example |
