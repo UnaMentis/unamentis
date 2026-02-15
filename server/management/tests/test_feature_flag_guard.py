@@ -126,7 +126,7 @@ class TestFlagGuard:
                 mock_get.return_value = mock_fn
 
                 request = make_mocked_request("GET", "/api/test")
-                response = asyncio.get_event_loop().run_until_complete(guarded(request))
+                response = asyncio.run(guarded(request))
                 assert response.status == 200
 
     def test_blocks_when_flag_disabled(self, mock_handler):
@@ -143,11 +143,12 @@ class TestFlagGuard:
                 mock_get.return_value = mock_fn
 
                 request = make_mocked_request("GET", "/api/test")
-                response = asyncio.get_event_loop().run_until_complete(guarded(request))
+                response = asyncio.run(guarded(request))
                 assert response.status == 503
+                assert response.headers.get("Retry-After") == "60"
 
-    def test_503_body_includes_flag_name(self, mock_handler):
-        """The 503 response should identify which flag blocked the request."""
+    def test_503_body_does_not_leak_flag_name(self, mock_handler):
+        """The 503 response must not expose the internal flag name."""
         import asyncio
         import json
 
@@ -161,7 +162,7 @@ class TestFlagGuard:
                 mock_get.return_value = mock_fn
 
                 request = make_mocked_request("GET", "/api/tts-lab/models")
-                response = asyncio.get_event_loop().run_until_complete(guarded(request))
+                response = asyncio.run(guarded(request))
                 body = json.loads(response.body)
                 assert "flag" not in body  # Internal flag names must not leak
                 assert "disabled" in body["error"].lower()
@@ -182,7 +183,7 @@ class TestFlagGuard:
                 mock_get.return_value = check
 
                 request = make_mocked_request("GET", "/api/tts-lab/models")
-                response = asyncio.get_event_loop().run_until_complete(guarded(request))
+                response = asyncio.run(guarded(request))
                 assert response.status == 503
 
     def test_unknown_flag_defaults_to_disabled(self, mock_handler):
@@ -200,7 +201,7 @@ class TestFlagGuard:
                 mock_get.return_value = check
 
                 request = make_mocked_request("GET", "/api/test")
-                response = asyncio.get_event_loop().run_until_complete(guarded(request))
+                response = asyncio.run(guarded(request))
                 assert response.status == 503
 
     def test_preserves_handler_name(self, mock_handler):
@@ -266,7 +267,7 @@ try:
     from server import is_flag_enabled, handle_get_feature_flags
 
     _server_available = True
-except BaseException:
+except Exception:
     _server_available = False
     is_flag_enabled = None
     handle_get_feature_flags = None
@@ -317,9 +318,7 @@ class TestFeatureFlagsEndpoint:
 
         with patch("server.feature_flags", None):
             request = make_mocked_request("GET", "/api/feature-flags")
-            response = asyncio.get_event_loop().run_until_complete(
-                handle_get_feature_flags(request)
-            )
+            response = asyncio.run(handle_get_feature_flags(request))
 
             body = json.loads(response.body)
             assert body["source"] == "defaults"
@@ -336,9 +335,7 @@ class TestFeatureFlagsEndpoint:
 
         with patch("server.feature_flags", mock_client):
             request = make_mocked_request("GET", "/api/feature-flags")
-            response = asyncio.get_event_loop().run_until_complete(
-                handle_get_feature_flags(request)
-            )
+            response = asyncio.run(handle_get_feature_flags(request))
 
             body = json.loads(response.body)
             assert body["source"] == "unleash"
@@ -350,9 +347,7 @@ class TestFeatureFlagsEndpoint:
 
         with patch("server.feature_flags", None):
             request = make_mocked_request("GET", "/api/feature-flags")
-            response = asyncio.get_event_loop().run_until_complete(
-                handle_get_feature_flags(request)
-            )
+            response = asyncio.run(handle_get_feature_flags(request))
 
             body = json.loads(response.body)
             for flag_name, expected in FLAG_DEFAULTS.items():

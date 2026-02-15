@@ -41,6 +41,8 @@ fi
 
 # Configuration with defaults
 TEST_TYPE="${TEST_TYPE:-unit}"
+# iPhone 17 Pro requires iOS 26 runtime. CI overrides this via SIMULATOR env var.
+# The fallback logic in get_simulator() handles missing runtimes gracefully.
 SIMULATOR="${SIMULATOR:-iPhone 17 Pro}"
 COVERAGE_THRESHOLD="${COVERAGE_THRESHOLD:-80}"
 ENABLE_COVERAGE="${ENABLE_COVERAGE:-true}"

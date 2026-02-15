@@ -47,8 +47,8 @@ def _get_is_flag_enabled() -> Callable:
 def flag_guard(flag_name: str) -> Callable:
     """Decorator that gates an aiohttp handler behind a feature flag.
 
-    When the flag is disabled the handler returns 503 with a JSON body
-    identifying the flag that blocked the request. When Unleash is
+    When the flag is disabled the handler returns 503 with a generic error
+    message (internal flag names are not exposed). When Unleash is
     unavailable, the default from FLAG_DEFAULTS is used.
 
     Usage::
@@ -85,6 +85,7 @@ def flag_guard(flag_name: str) -> Callable:
                         "error": "This feature is currently disabled",
                     },
                     status=503,
+                    headers={"Retry-After": "60"},
                 )
             return await handler(request)
 
