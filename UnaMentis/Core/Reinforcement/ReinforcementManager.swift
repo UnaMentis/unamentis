@@ -186,6 +186,7 @@ public actor ReinforcementManager {
 
     // MARK: - Private
 
+    @MainActor
     private func toDTO(_ item: ReinforcementItem) -> ReinforcementItemData {
         ReinforcementItemData(
             id: item.id ?? UUID(),

@@ -283,10 +283,12 @@ public struct ReadingReaderView: View {
                 if viewModel.state == .buffering {
                     ProgressView()
                         .frame(width: 32)
+                        .accessibilityLabel("Buffering audio")
                 } else {
                     Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
                         .font(.title3)
                         .frame(width: 32)
+                        .accessibilityLabel(viewModel.isPlaying ? "Pause" : "Play")
                 }
             }
             .disabled(viewModel.state == .buffering)

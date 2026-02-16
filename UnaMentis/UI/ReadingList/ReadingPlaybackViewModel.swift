@@ -548,10 +548,14 @@ extension ReadingPlaybackViewModel: FlaggableActivity {
 
     public func createBookmark(note: String?) async -> UUID? {
         guard let manager = ReadingListManager.shared else { return nil }
+        guard let itemId = item.id else {
+            logger.error("Cannot create bookmark: reading item has no ID")
+            return nil
+        }
 
         do {
             let result = try await manager.addBookmarkById(
-                itemId: item.id ?? UUID(),
+                itemId: itemId,
                 chunkIndex: currentChunkIndex,
                 note: note
             )

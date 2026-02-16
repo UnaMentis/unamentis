@@ -57,6 +57,10 @@ public actor AudioEngine: ObservableObject {
     /// Whether TTS playback is currently active
     public private(set) var isPlaying = false
 
+    /// Latest STT transcript received from the speech-to-text pipeline.
+    /// Updated by the session layer when STT results arrive.
+    public var lastTranscript: String = ""
+
     /// Queue of scheduled audio buffers for sequential playback
     private var pendingBuffers: [AVAudioPCMBuffer] = []
 

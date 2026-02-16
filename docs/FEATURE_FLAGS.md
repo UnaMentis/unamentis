@@ -251,13 +251,15 @@ Scopes:
 - ab_       A/B test experiments
 - ops_      Operational toggles
 - perm_     Permission flags
+- server_   Server capacity/deployment features
 
 Examples:
 - voice_new_engine
 - ui_dark_mode
-- ab_pricing_v2
+- ab_onboarding_v2
 - ops_maintenance
 - perm_admin_panel
+- server_extended_sessions
 ```
 
 ## Best Practices

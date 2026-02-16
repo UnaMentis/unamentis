@@ -214,19 +214,19 @@ jobs:
         # Parse results for summary
         if [ -f "latency_results.json" ]; then
           python3 -c "
-import json
-try:
-    with open('latency_results.json') as f:
-        data = json.load(f)
-    print(f'status={data.get(\"status\", \"unknown\")}')
-    metrics = data.get('metrics', {})
-    print(f'p50={metrics.get(\"p50_ms\", \"N/A\")}')
-    print(f'p99={metrics.get(\"p99_ms\", \"N/A\")}')
-except:
-    print('status=error')
-    print('p50=N/A')
-    print('p99=N/A')
-" >> $GITHUB_OUTPUT
+          import json
+          try:
+              with open('latency_results.json') as f:
+                  data = json.load(f)
+              print(f'status={data.get(\"status\", \"unknown\")}')
+              metrics = data.get('metrics', {})
+              print(f'p50={metrics.get(\"p50_ms\", \"N/A\")}')
+              print(f'p99={metrics.get(\"p99_ms\", \"N/A\")}')
+          except:
+              print('status=error')
+              print('p50=N/A')
+              print('p99=N/A')
+          " >> $GITHUB_OUTPUT
         fi
       continue-on-error: true
 
