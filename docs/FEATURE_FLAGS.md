@@ -178,14 +178,14 @@ let enabled = await FeatureFlagService.shared.isEnabled("new_voice_engine")
 
 // With user context
 let context = FeatureFlagContext(userId: user.id)
-let enabled = await FeatureFlagService.shared.isEnabled("premium_features", context: context)
+let enabled = await FeatureFlagService.shared.isEnabled("advanced_analytics", context: context)
 
 // Get variant for A/B tests
-if let variant = await FeatureFlagService.shared.getVariant("pricing_experiment") {
+if let variant = await FeatureFlagService.shared.getVariant("onboarding_experiment") {
     switch variant.name {
-    case "control": showControlPricing()
-    case "variant_a": showVariantAPricing()
-    default: showControlPricing()
+    case "control": showControlOnboarding()
+    case "variant_a": showVariantAOnboarding()
+    default: showControlOnboarding()
     }
 }
 ```

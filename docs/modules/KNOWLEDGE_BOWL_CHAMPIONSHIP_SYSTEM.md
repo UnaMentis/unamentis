@@ -4768,35 +4768,22 @@ Academic competitions have historically favored students from well-resourced sch
 
 ### Economic Accessibility
 
-**Pricing Philosophy:**
-- Core functionality should be accessible to all, regardless of school funding
-- Premium features can exist, but shouldn't create competitive advantage
-- Scholarship/subsidy programs for under-resourced schools
+**Open Source Philosophy:**
+- All functionality is free and accessible to all, regardless of school funding
+- No features are gated behind payments or subscriptions
+- Server administrators control which features are enabled via feature flags based on server capacity
 
-**Recommended Pricing Structure:**
-```
-Free Tier:
-- Individual practice (limited questions/day)
-- Basic progress tracking
-- Access to core content
-
-School/Team Tier:
+**All Users Get:**
 - Unlimited practice
 - Full analytics
 - Team features
-- Priced on sliding scale by school resources
-
-Premium Tier:
 - Advanced analytics
 - Custom content creation
-- Priority support
-- For schools that can afford it
-```
+- Access to all content
 
 **Equity Considerations:**
 - Rural schools with limited internet: Offline mode essential
 - Schools without dedicated coaches: Self-guided learning paths
-- Title I schools: Automatic discounts or free access
 - Home school students: Individual access without team requirement
 
 ### Technology Requirements

@@ -260,13 +260,13 @@ final class FeatureFlagTypesTests: XCTestCase {
             sessionId: "session-456",
             appVersion: "1.0.0",
             platform: "iOS",
-            properties: ["tier": "premium"]
+            properties: ["tier": "full"]
         )
 
         XCTAssertEqual(context.userId, "user-123")
         XCTAssertEqual(context.sessionId, "session-456")
         XCTAssertEqual(context.appVersion, "1.0.0")
-        XCTAssertEqual(context.properties["tier"], "premium")
+        XCTAssertEqual(context.properties["tier"], "full")
     }
 
     func testContext_current_returnsContext() {

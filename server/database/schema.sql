@@ -778,8 +778,8 @@ CREATE TABLE organizations (
     org_type VARCHAR(50) DEFAULT 'personal' CHECK (org_type IN (
         'personal', 'school', 'district', 'university', 'enterprise', 'homeschool_coop'
     )),
-    subscription_tier VARCHAR(50) DEFAULT 'free' CHECK (subscription_tier IN (
-        'free', 'basic', 'pro', 'enterprise'
+    deployment_tier VARCHAR(50) DEFAULT 'community' CHECK (deployment_tier IN (
+        'community', 'school', 'district', 'enterprise'
     )),
     privacy_tier_id UUID REFERENCES privacy_tiers(id),
 
