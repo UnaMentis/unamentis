@@ -26,20 +26,19 @@ permissions:
   contents: read
   issues: write
 
-env:
-  # API keys for E2E tests (from repository secrets)
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-  DEEPGRAM_API_KEY: ${{ secrets.DEEPGRAM_API_KEY }}
-  ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-  GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-
 jobs:
   ios-e2e:
     name: iOS E2E Tests
     runs-on: macos-14
     if: github.event.inputs.run_ios_e2e != 'false'
     timeout-minutes: 45
+    env:
+      # API keys scoped to this job only (principle of least privilege)
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DEEPGRAM_API_KEY: ${{ secrets.DEEPGRAM_API_KEY }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
     steps:
     - uses: actions/checkout@v4
@@ -135,7 +134,7 @@ jobs:
 
     - name: Upload E2E Test Results
       uses: actions/upload-artifact@v4
-      if: always()
+      if: always() && steps.check_e2e.outputs.has_tests == 'true'
       with:
         name: e2e-test-results
         path: E2ETestResults.xcresult

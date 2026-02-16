@@ -244,9 +244,13 @@ public final class ReadingPlaybackViewModel: ObservableObject {
         if state == .paused {
             await service.resume()
         } else {
+            guard let itemId = item.id else {
+                logger.error("Cannot start playback: reading item has no ID")
+                return
+            }
             do {
                 try await service.startPlayback(
-                    itemId: item.id ?? UUID(),
+                    itemId: itemId,
                     chunks: chunks,
                     startIndex: currentChunkIndex
                 )
@@ -312,10 +316,10 @@ public final class ReadingPlaybackViewModel: ObservableObject {
             }
         } else {
             // Start fresh from the requested position
-            guard let service = playbackService else { return }
+            guard let service = playbackService, let itemId = item.id else { return }
             do {
                 try await service.startPlayback(
-                    itemId: item.id ?? UUID(),
+                    itemId: itemId,
                     chunks: chunks,
                     startIndex: chunkIndex
                 )
@@ -344,10 +348,10 @@ public final class ReadingPlaybackViewModel: ObservableObject {
                 errorMessage = "Failed to add bookmark"
                 showError = true
             }
-        } else if let manager = ReadingListManager.shared {
+        } else if let manager = ReadingListManager.shared, let itemId = item.id {
             do {
                 _ = try await manager.addBookmarkById(
-                    itemId: item.id ?? UUID(),
+                    itemId: itemId,
                     chunkIndex: targetIndex,
                     note: note
                 )

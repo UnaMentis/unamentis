@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 if [ ! -f .env ]; then
   echo "Error: .env file not found. Copy .env.example and add your API keys."
   exit 1
