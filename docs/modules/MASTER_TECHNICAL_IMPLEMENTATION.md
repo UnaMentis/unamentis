@@ -1451,13 +1451,11 @@ class VoicePipelineTests: XCTestCase {
 
 ### 10.1 App Store Structure
 
-| App | Bundle ID | Pricing |
-|-----|-----------|---------|
-| Main App | `com.unamentis.academictrainer` | Free |
-| KB Module | IAP: `kb.module.full` | $4.99 |
-| QB Module | IAP: `qb.module.full` | $4.99 |
-| SB Module | IAP: `sb.module.full` | $4.99 |
-| All Modules Bundle | IAP: `all.modules.bundle` | $9.99 |
+UnaMentis is fully open source. All modules are free with no in-app purchases.
+
+| App | Bundle ID | Cost |
+|-----|-----------|------|
+| Main App (all modules) | `com.unamentis.academictrainer` | Free |
 
 ### 10.2 Update Strategy
 

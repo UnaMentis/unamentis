@@ -3284,7 +3284,6 @@ class SessionViewModel: ObservableObject {
     }
 }
 
-
 // MARK: - Session Help Sheet
 
 /// In-app help for the session view explaining all UI elements and interactions

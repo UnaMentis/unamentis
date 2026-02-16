@@ -227,12 +227,12 @@ Based on the project architecture, consider these additional flags:
 | `ops_batch_tts_requests` | Batch TTS for efficiency |
 | `service_streaming_enabled` | Enable streaming (more responsive but potentially more expensive) |
 
-### User Tiers (Future)
+### Server Capacity (Future)
 | Flag | Purpose |
 |------|---------|
-| `tier_premium_features` | Premium user features |
-| `tier_extended_sessions` | Allow sessions > 90 minutes |
-| `tier_priority_routing` | Priority access to resources |
+| `server_advanced_features` | Enable advanced features on capable servers |
+| `server_extended_sessions` | Allow sessions > 90 minutes |
+| `server_priority_routing` | Priority access to resources |
 
 ### Curriculum
 | Flag | Purpose |

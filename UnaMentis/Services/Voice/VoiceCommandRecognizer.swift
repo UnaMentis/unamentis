@@ -20,6 +20,8 @@ public enum VoiceCommand: String, Sendable, CaseIterable {
     case skip       // Skip current item
     case repeatLast // Repeat last audio
     case quit       // Exit/cancel
+    case bookmark   // Create positional bookmark
+    case flag       // Flag for review (creates bookmark + review item)
 
     /// Human-readable name for feedback
     public var displayName: String {
@@ -30,6 +32,8 @@ public enum VoiceCommand: String, Sendable, CaseIterable {
         case .skip: return "Skip"
         case .repeatLast: return "Repeat"
         case .quit: return "Exit"
+        case .bookmark: return "Bookmark"
+        case .flag: return "Flag"
         }
     }
 }
@@ -133,6 +137,22 @@ public actor VoiceCommandRecognizer {
             "go back",
             "cancel",
             "end session"
+        ],
+        .bookmark: [
+            "bookmark",
+            "bookmark this",
+            "mark this",
+            "save my place",
+            "mark my place"
+        ],
+        .flag: [
+            "flag",
+            "flag this",
+            "flag for review",
+            "review this",
+            "study this",
+            "remember this",
+            "come back to this"
         ]
     ]
 

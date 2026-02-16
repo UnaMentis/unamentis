@@ -212,6 +212,126 @@ final class VoiceCommandRecognizerTests: XCTestCase {
         }
     }
 
+    // MARK: - Bookmark Command Tests
+
+    func testExactMatchBookmark() async {
+        let result = await recognizer.recognize(transcript: "bookmark")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .bookmark)
+        XCTAssertEqual(result?.confidence, 1.0)
+        XCTAssertEqual(result?.matchType, .exact)
+    }
+
+    func testBookmarkThisMatchesBookmark() async {
+        let result = await recognizer.recognize(transcript: "bookmark this")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .bookmark)
+    }
+
+    func testMarkThisMatchesBookmark() async {
+        let result = await recognizer.recognize(transcript: "mark this")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .bookmark)
+    }
+
+    func testSaveMyPlaceMatchesBookmark() async {
+        let result = await recognizer.recognize(transcript: "save my place")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .bookmark)
+    }
+
+    func testMarkMyPlaceMatchesBookmark() async {
+        let result = await recognizer.recognize(transcript: "mark my place")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .bookmark)
+    }
+
+    func testBookmarkContains() async {
+        let contains = await recognizer.contains(command: .bookmark, in: "please bookmark this")
+        XCTAssertTrue(contains)
+    }
+
+    // MARK: - Flag Command Tests
+
+    func testExactMatchFlag() async {
+        let result = await recognizer.recognize(transcript: "flag")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .flag)
+        XCTAssertEqual(result?.confidence, 1.0)
+        XCTAssertEqual(result?.matchType, .exact)
+    }
+
+    func testFlagThisMatchesFlag() async {
+        let result = await recognizer.recognize(transcript: "flag this")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .flag)
+    }
+
+    func testFlagForReviewMatchesFlag() async {
+        let result = await recognizer.recognize(transcript: "flag for review")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .flag)
+    }
+
+    func testReviewThisMatchesFlag() async {
+        let result = await recognizer.recognize(transcript: "review this")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .flag)
+    }
+
+    func testStudyThisMatchesFlag() async {
+        let result = await recognizer.recognize(transcript: "study this")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .flag)
+    }
+
+    func testRememberThisMatchesFlag() async {
+        let result = await recognizer.recognize(transcript: "remember this")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .flag)
+    }
+
+    func testComeBackToThisMatchesFlag() async {
+        let result = await recognizer.recognize(transcript: "come back to this")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .flag)
+    }
+
+    func testFlagEmbeddedInPhrase() async {
+        let result = await recognizer.recognize(transcript: "I want to flag this for later")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.command, .flag)
+    }
+
+    func testFlagContains() async {
+        let contains = await recognizer.contains(command: .flag, in: "flag this")
+        XCTAssertTrue(contains)
+    }
+
+    // MARK: - Bookmark/Flag Context Filtering Tests
+
+    func testBookmarkFilteredOutWhenNotInValidCommands() async {
+        let validCommands: Set<VoiceCommand> = [.ready, .next]
+        let result = await recognizer.recognize(transcript: "bookmark", validCommands: validCommands)
+        XCTAssertNil(result)
+    }
+
+    func testFlagFilteredOutWhenNotInValidCommands() async {
+        let validCommands: Set<VoiceCommand> = [.ready, .next]
+        let result = await recognizer.recognize(transcript: "flag", validCommands: validCommands)
+        XCTAssertNil(result)
+    }
+
+    func testBookmarkAndFlagAllowedWhenInValidCommands() async {
+        let validCommands: Set<VoiceCommand> = [.bookmark, .flag]
+        let bookmarkResult = await recognizer.recognize(transcript: "bookmark", validCommands: validCommands)
+        let flagResult = await recognizer.recognize(transcript: "flag", validCommands: validCommands)
+        XCTAssertNotNil(bookmarkResult)
+        XCTAssertNotNil(flagResult)
+        XCTAssertEqual(bookmarkResult?.command, .bookmark)
+        XCTAssertEqual(flagResult?.command, .flag)
+    }
+
     // MARK: - Performance Tests
 
     func testRecognitionPerformance() async throws {

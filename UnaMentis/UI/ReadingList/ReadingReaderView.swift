@@ -63,6 +63,9 @@ public struct ReadingReaderView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "An error occurred")
             }
+            .onDisappear {
+                Task { await viewModel.stopPlayback() }
+            }
         }
     }
 
@@ -93,7 +96,7 @@ public struct ReadingReaderView: View {
                 }
             }
             .onChange(of: viewModel.currentChunkIndex) { _, newIndex in
-                if viewModel.isPlaying {
+                if viewModel.hasActivePlayback {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         proxy.scrollTo(newIndex, anchor: .center)
                     }
@@ -172,10 +175,10 @@ public struct ReadingReaderView: View {
 
     /// Background highlight for the currently active chunk
     private func chunkBackground(for index: Int32) -> some ShapeStyle {
-        if viewModel.isPlaying && viewModel.currentChunkIndex == index {
+        if viewModel.hasActivePlayback && viewModel.currentChunkIndex == index {
             return AnyShapeStyle(Color.blue.opacity(0.08))
         }
-        if scrolledChunkIndex == index && !viewModel.isPlaying {
+        if scrolledChunkIndex == index && !viewModel.hasActivePlayback {
             return AnyShapeStyle(Color.blue.opacity(0.04))
         }
         return AnyShapeStyle(Color.clear)
@@ -213,24 +216,24 @@ public struct ReadingReaderView: View {
             VStack(spacing: 12) {
                 // Progress indicator
                 if viewModel.totalChunks > 0 {
-                    ProgressView(value: viewModel.isPlaying
+                    ProgressView(value: viewModel.hasActivePlayback
                                  ? viewModel.progress
                                  : Double(scrolledChunkIndex) / Double(max(viewModel.totalChunks - 1, 1)))
-                        .tint(viewModel.isPlaying ? .blue : .gray)
+                        .tint(viewModel.hasActivePlayback ? .blue : .gray)
                 }
 
                 // Controls
                 HStack(spacing: 24) {
                     // Section info
-                    Text("Section \(max(scrolledChunkIndex, viewModel.currentChunkIndex) + 1) of \(viewModel.totalChunks)")
+                    Text("Section \(viewModel.hasActivePlayback ? viewModel.currentChunkIndex + 1 : scrolledChunkIndex + 1) of \(viewModel.totalChunks)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(minWidth: 80, alignment: .leading)
 
                     Spacer()
 
-                    if viewModel.isPlaying {
-                        // Audio playback controls
+                    if viewModel.hasActivePlayback {
+                        // Audio playback controls (visible during play, pause, and buffering)
                         playbackControls
                     } else {
                         // Listen from here button
@@ -277,10 +280,18 @@ public struct ReadingReaderView: View {
             Button {
                 Task { await viewModel.togglePlayPause() }
             } label: {
-                Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.title3)
-                    .frame(width: 32)
+                if viewModel.state == .buffering {
+                    ProgressView()
+                        .frame(width: 32)
+                        .accessibilityLabel("Buffering audio")
+                } else {
+                    Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.title3)
+                        .frame(width: 32)
+                        .accessibilityLabel(viewModel.isPlaying ? "Pause" : "Play")
+                }
             }
+            .disabled(viewModel.state == .buffering)
 
             Button {
                 Task { await viewModel.skipForward() }
@@ -354,7 +365,8 @@ public struct ReadingReaderView: View {
                     Button("Save") {
                         Task {
                             await viewModel.addBookmark(
-                                note: bookmarkNote.isEmpty ? nil : bookmarkNote
+                                note: bookmarkNote.isEmpty ? nil : bookmarkNote,
+                                atChunk: scrolledChunkIndex
                             )
                             bookmarkNote = ""
                             showBookmarkSheet = false

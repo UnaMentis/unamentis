@@ -97,8 +97,8 @@ if unleash.isEnabled("new_voice_engine") {
 
 // With context
 let context = UnleashContext(userId: "user123")
-if unleash.isEnabled("premium_features", context: context) {
-    // Show premium features
+if unleash.isEnabled("advanced_analytics", context: context) {
+    // Show advanced analytics
 }
 ```
 

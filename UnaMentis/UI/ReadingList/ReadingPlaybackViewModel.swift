@@ -7,6 +7,7 @@ import Foundation
 import SwiftUI
 import Combine
 import Logging
+import OSLog
 
 // MARK: - Visual Asset Data Transfer Object
 
@@ -51,6 +52,17 @@ public final class ReadingPlaybackViewModel: ObservableObject {
         state == .playing
     }
 
+    /// Whether playback is active (playing, paused, or buffering).
+    /// Controls should remain visible in all these states.
+    public var hasActivePlayback: Bool {
+        switch state {
+        case .playing, .paused, .buffering:
+            return true
+        default:
+            return false
+        }
+    }
+
     /// Whether can skip backward
     public var canSkipBackward: Bool {
         currentChunkIndex > 0 && state != .loading
@@ -70,6 +82,13 @@ public final class ReadingPlaybackViewModel: ObservableObject {
     private var allVisualAssets: [ReadingVisualAssetData] = []
     private var storedAudioEngine: AudioEngine?
     private var storedTTSService: (any TTSService)?
+
+    // Voice command support
+    private let voiceCommandRecognizer = VoiceCommandRecognizer()
+    private let voiceBookmarkService = VoiceBookmarkService()
+    private let voiceFeedback = VoiceActivityFeedback()
+    private var voiceMonitoringTask: Task<Void, Never>?
+    private var lastProcessedTranscript: String = ""
 
     // MARK: - Initialization
 
@@ -225,9 +244,13 @@ public final class ReadingPlaybackViewModel: ObservableObject {
         if state == .paused {
             await service.resume()
         } else {
+            guard let itemId = item.id else {
+                logger.error("Cannot start playback: reading item has no ID")
+                return
+            }
             do {
                 try await service.startPlayback(
-                    itemId: item.id ?? UUID(),
+                    itemId: itemId,
                     chunks: chunks,
                     startIndex: currentChunkIndex
                 )
@@ -251,8 +274,9 @@ public final class ReadingPlaybackViewModel: ObservableObject {
             storedAudioEngine = nil
         }
 
-        // Release TTS model memory
+        // Schedule deferred TTS release (keeps model warm for quick re-entry)
         storedTTSService = nil
+        await ReadingTTSCache.shared.scheduleRelease()
     }
 
     /// Skip forward
@@ -292,10 +316,10 @@ public final class ReadingPlaybackViewModel: ObservableObject {
             }
         } else {
             // Start fresh from the requested position
-            guard let service = playbackService else { return }
+            guard let service = playbackService, let itemId = item.id else { return }
             do {
                 try await service.startPlayback(
-                    itemId: item.id ?? UUID(),
+                    itemId: itemId,
                     chunks: chunks,
                     startIndex: chunkIndex
                 )
@@ -312,8 +336,11 @@ public final class ReadingPlaybackViewModel: ObservableObject {
     public func addBookmark(note: String? = nil, atChunk chunkIndex: Int32? = nil) async {
         let targetIndex = chunkIndex ?? currentChunkIndex
 
-        if let service = playbackService {
-            // Use service path if available (saves via service)
+        // When an explicit chunk index is provided (e.g., from reader scroll position),
+        // use the direct manager path to ensure the correct position is saved.
+        // The playback service path only uses its own currentChunkIndex and ignores
+        // any explicit index, so we reserve it for "bookmark at playback position" only.
+        if chunkIndex == nil, let service = playbackService {
             do {
                 try await service.addBookmark(note: note)
                 loadBookmarks()
@@ -321,11 +348,10 @@ public final class ReadingPlaybackViewModel: ObservableObject {
                 errorMessage = "Failed to add bookmark"
                 showError = true
             }
-        } else if let manager = ReadingListManager.shared {
-            // Direct path when playback service isn't active (reader mode)
+        } else if let manager = ReadingListManager.shared, let itemId = item.id {
             do {
                 _ = try await manager.addBookmarkById(
-                    itemId: item.id ?? UUID(),
+                    itemId: itemId,
                     chunkIndex: targetIndex,
                     note: note
                 )
@@ -371,6 +397,9 @@ public final class ReadingPlaybackViewModel: ObservableObject {
             onComplete: { [weak self] in
                 self?.state = .completed
             },
+            onBuffering: { [weak self] in
+                self?.state = .buffering
+            },
             onChunkChange: { [weak self] index, total in
                 self?.currentChunkIndex = index
                 self?.totalChunks = total
@@ -405,13 +434,149 @@ public final class ReadingPlaybackViewModel: ObservableObject {
         }
     }
 
-    /// Create or return cached on-device Pocket TTS for reading narration
+    /// Create or return cached TTS service for reading narration.
+    /// Uses the platform-wide TTS provider resolution for consistency
+    /// with curriculum modules and Knowledge Bowl.
     private func getTTSService() async -> (any TTSService)? {
         if let service = storedTTSService { return service }
 
-        // Use user's Pocket TTS settings (respects voice, speed, quality prefs)
-        let service = KyutaiPocketTTSService(config: .fromUserDefaults())
+        let service = await ReadingTTSCache.shared.getService()
         self.storedTTSService = service
         return service
+    }
+
+    // MARK: - Voice Command Monitoring
+
+    /// Valid voice commands for the current playback state
+    private func validCommandsForState() -> Set<VoiceCommand>? {
+        switch state {
+        case .playing:
+            return [.bookmark, .flag]
+        default:
+            return nil
+        }
+    }
+
+    /// Start monitoring for voice commands during playback.
+    /// Called when playback starts or resumes.
+    public func startVoiceCommandMonitoring() {
+        stopVoiceCommandMonitoring()
+
+        guard let engine = storedAudioEngine else { return }
+
+        voiceMonitoringTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(200))
+                guard !Task.isCancelled else { return }
+
+                guard let self else { return }
+                guard let validCommands = self.validCommandsForState() else { continue }
+
+                // Get the latest transcript from the audio engine
+                let transcript = await engine.lastTranscript
+                guard !transcript.isEmpty, transcript != self.lastProcessedTranscript else { continue }
+                self.lastProcessedTranscript = transcript
+
+                // Check for voice commands
+                if let result = await self.voiceCommandRecognizer.recognize(
+                    transcript: transcript,
+                    validCommands: validCommands
+                ), result.shouldExecute {
+                    await self.handleVoiceCommand(result.command)
+                    self.lastProcessedTranscript = ""
+                }
+            }
+        }
+    }
+
+    /// Stop voice command monitoring
+    public func stopVoiceCommandMonitoring() {
+        voiceMonitoringTask?.cancel()
+        voiceMonitoringTask = nil
+    }
+
+    /// Handle a recognized voice command
+    private func handleVoiceCommand(_ command: VoiceCommand) async {
+        switch command {
+        case .bookmark:
+            await voiceBookmarkService.performBookmark(
+                activity: self,
+                feedback: voiceFeedback
+            )
+            loadBookmarks()
+        case .flag:
+            await voiceBookmarkService.performFlag(
+                activity: self,
+                feedback: voiceFeedback
+            )
+            loadBookmarks()
+        default:
+            break
+        }
+    }
+}
+
+// MARK: - FlaggableActivity Conformance
+
+extension ReadingPlaybackViewModel: FlaggableActivity {
+
+    public var currentSegmentIndex: Int32 {
+        currentChunkIndex
+    }
+
+    public var totalSegments: Int32 {
+        Int32(totalChunks)
+    }
+
+    public var currentSegmentText: String? {
+        currentChunkText
+    }
+
+    public var previousSegmentText: String? {
+        let prevIndex = Int(currentChunkIndex) - 1
+        guard prevIndex >= 0, prevIndex < chunks.count else { return nil }
+        return chunks[prevIndex].text
+    }
+
+    public var sourceTitle: String {
+        item.title ?? "Reading List Item"
+    }
+
+    public var sourceType: ReinforcementSourceType {
+        .readingList
+    }
+
+    public var sourceId: UUID? {
+        item.id
+    }
+
+    public func createBookmark(note: String?) async -> UUID? {
+        guard let manager = ReadingListManager.shared else { return nil }
+        guard let itemId = item.id else {
+            logger.error("Cannot create bookmark: reading item has no ID")
+            return nil
+        }
+
+        do {
+            let result = try await manager.addBookmarkById(
+                itemId: itemId,
+                chunkIndex: currentChunkIndex,
+                note: note
+            )
+            return result.id
+        } catch {
+            logger.error("Failed to create bookmark: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    public func pausePlayback() async {
+        guard let service = playbackService, state == .playing else { return }
+        await service.pause()
+    }
+
+    public func resumePlayback() async {
+        guard let service = playbackService, state == .paused else { return }
+        await service.resume()
     }
 }

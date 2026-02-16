@@ -792,7 +792,7 @@ struct UnifiedUserProfile: Codable {
     let email: String
     let createdAt: Date
 
-    // Module subscriptions
+    // Enabled modules
     var activeModules: Set<CompetitionFormat>
 
     // Unified performance data

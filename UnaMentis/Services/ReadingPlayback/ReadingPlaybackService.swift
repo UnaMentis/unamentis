@@ -77,6 +77,7 @@ public struct ReadingPlaybackCallbacks: Sendable {
     public let onResume: @Sendable @MainActor () -> Void
     public let onStop: @Sendable @MainActor () -> Void
     public let onComplete: @Sendable @MainActor () -> Void
+    public let onBuffering: @Sendable @MainActor () -> Void
     public let onChunkChange: @Sendable @MainActor (Int32, Int) -> Void
     public let onError: @Sendable @MainActor (Error) -> Void
 
@@ -86,6 +87,7 @@ public struct ReadingPlaybackCallbacks: Sendable {
         onResume: @escaping @Sendable @MainActor () -> Void = {},
         onStop: @escaping @Sendable @MainActor () -> Void = {},
         onComplete: @escaping @Sendable @MainActor () -> Void = {},
+        onBuffering: @escaping @Sendable @MainActor () -> Void = {},
         onChunkChange: @escaping @Sendable @MainActor (Int32, Int) -> Void = { _, _ in },
         onError: @escaping @Sendable @MainActor (Error) -> Void = { _ in }
     ) {
@@ -94,6 +96,7 @@ public struct ReadingPlaybackCallbacks: Sendable {
         self.onResume = onResume
         self.onStop = onStop
         self.onComplete = onComplete
+        self.onBuffering = onBuffering
         self.onChunkChange = onChunkChange
         self.onError = onError
     }
@@ -132,8 +135,11 @@ public actor ReadingPlaybackService {
     /// Pre-buffered audio ready for playback
     private var preBufferedChunks: [Int32: PreBufferedChunk] = [:]
 
-    /// Number of chunks to pre-buffer ahead
-    private let preBufferCount: Int = 3
+    /// Number of chunks to pre-buffer ahead of current position
+    private let preBufferCount: Int = 5
+
+    /// Number of chunks to retain behind current position (FOV pattern)
+    private let retainBehindCount: Int32 = 6
 
     /// TTS service for audio generation
     private var ttsService: (any TTSService)?
@@ -266,7 +272,23 @@ public actor ReadingPlaybackService {
 
         // Continue playback loop if needed
         if playbackTask == nil {
-            startPlaybackLoop()
+            // Choose the best playback strategy for the current chunk:
+            // 1. Pre-buffered in memory? Use normal path
+            // 2. Cached audio from Core Data? Use cached path (instant)
+            // 3. Neither? Stream directly for fastest TTFB
+            if preBufferedChunks[currentChunkIndex] != nil {
+                startPlaybackLoop()
+            } else if Int(currentChunkIndex) < chunks.count,
+                      chunks[Int(currentChunkIndex)].hasCachedAudio {
+                startPlaybackLoop(useCachedAudio: true)
+            } else {
+                startPlaybackLoop(streamFirstChunk: true)
+            }
+
+            // Ensure pre-buffering is running ahead
+            if !isPreBuffering {
+                startPreBuffering(from: currentChunkIndex + 1)
+            }
         }
     }
 
@@ -392,7 +414,24 @@ public actor ReadingPlaybackService {
 
             let chunk = chunks[Int(chunkIndex)]
 
-            logger.debug("Pre-buffering chunk \(chunkIndex)")
+            // Check if this chunk already has cached audio from import-time
+            // pre-generation. If so, use it directly (instant, no TTS needed).
+            if chunk.hasCachedAudio, let audioData = chunk.cachedAudioData {
+                logger.debug("Using cached audio for pre-buffer chunk \(chunkIndex)")
+                let ttsChunk = TTSAudioChunk(
+                    audioData: audioData,
+                    format: .pcmFloat32(sampleRate: chunk.cachedAudioSampleRate, channels: 1),
+                    sequenceNumber: 0,
+                    isFirst: true,
+                    isLast: true
+                )
+                let preBuffered = PreBufferedChunk(chunk: chunk, audioChunks: [ttsChunk])
+                preBufferedChunks[chunkIndex] = preBuffered
+                nextIndexToBuffer += 1
+                continue
+            }
+
+            logger.debug("Pre-buffering chunk \(chunkIndex) (synthesizing)")
 
             do {
                 // Generate TTS audio
@@ -410,6 +449,25 @@ public actor ReadingPlaybackService {
 
                 logger.debug("Buffered chunk \(chunkIndex) with \(audioChunks.count) audio segments")
 
+                // Persist synthesized audio to Core Data so future sessions
+                // can skip synthesis for this chunk (cross-session caching).
+                if let itemId = currentItemId, let manager = readingListManager {
+                    var combinedData = Data()
+                    for ac in audioChunks {
+                        combinedData.append(ac.audioData)
+                    }
+                    if !combinedData.isEmpty {
+                        try? await MainActor.run {
+                            try manager.saveCachedAudio(
+                                itemId: itemId,
+                                chunkIndex: chunkIndex,
+                                audioData: combinedData,
+                                sampleRate: 24000
+                            )
+                        }
+                    }
+                }
+
             } catch {
                 logger.error("Failed to buffer chunk \(chunkIndex): \(error.localizedDescription)")
                 // Continue to next chunk on error
@@ -423,7 +481,7 @@ public actor ReadingPlaybackService {
 
     /// Wait for a specific chunk to be buffered
     private func waitForChunk(at index: Int32) async throws {
-        let timeout: TimeInterval = 30.0
+        let timeout: TimeInterval = 10.0
         let startTime = Date()
 
         while preBufferedChunks[index] == nil {
@@ -551,28 +609,8 @@ public actor ReadingPlaybackService {
                     }
                     break
                 }
-            } else {
-                // Use pre-buffered chunk (normal path for chunks 1+)
-                guard let preBuffered = preBufferedChunks[currentChunkIndex] else {
-                    // Need to wait for buffer
-                    state = .buffering
-                    do {
-                        try await waitForChunk(at: currentChunkIndex)
-                        state = .playing
-                    } catch {
-                        state = .error("Buffering failed")
-                        if let cb = callbacks {
-                            let errMsg = error.localizedDescription
-                            await MainActor.run {
-                                cb.onError(ReadingPlaybackError.playbackFailed(errMsg))
-                            }
-                        }
-                        break
-                    }
-                    continue
-                }
-
-                // Play all audio chunks for this text chunk
+            } else if let preBuffered = preBufferedChunks[currentChunkIndex] {
+                // Use pre-buffered chunk (normal path for chunks already synthesized)
                 do {
                     for audioChunk in preBuffered.audioChunks {
                         if Task.isCancelled || state != .playing {
@@ -591,6 +629,43 @@ public actor ReadingPlaybackService {
                     }
                     break
                 }
+            } else {
+                // No pre-buffered audio available. Check if this chunk has
+                // import-time cached audio (from pre-generation).
+                let chunk = chunks[Int(currentChunkIndex)]
+                if chunk.hasCachedAudio, let audioData = chunk.cachedAudioData {
+                    logger.debug("Playing import-cached audio for chunk \(currentChunkIndex)")
+                    let ttsChunk = TTSAudioChunk(
+                        audioData: audioData,
+                        format: .pcmFloat32(sampleRate: chunk.cachedAudioSampleRate, channels: 1),
+                        sequenceNumber: 0,
+                        isFirst: true,
+                        isLast: true
+                    )
+                    do {
+                        try await audioEngine.playAudio(ttsChunk)
+                    } catch {
+                        logger.error("Cached audio playback error: \(error.localizedDescription)")
+                    }
+                } else {
+                    // No cached audio either, must wait for pre-buffer
+                    state = .buffering
+                    if let cb = callbacks { await notify(cb.onBuffering) }
+                    do {
+                        try await waitForChunk(at: currentChunkIndex)
+                        state = .playing
+                    } catch {
+                        state = .error("Buffering failed")
+                        if let cb = callbacks {
+                            let errMsg = error.localizedDescription
+                            await MainActor.run {
+                                cb.onError(ReadingPlaybackError.playbackFailed(errMsg))
+                            }
+                        }
+                        break
+                    }
+                    continue
+                }
             }
 
             // Check if we should continue (might have been paused/stopped)
@@ -599,8 +674,13 @@ public actor ReadingPlaybackService {
             // Move to next chunk
             currentChunkIndex += 1
 
-            // Clean up old buffered chunks to save memory
-            let oldIndex = currentChunkIndex - 2
+            // Persist position on every chunk transition so progress survives crashes
+            await saveCurrentPosition()
+
+            // Clean up old buffered chunks outside the FOV retention window.
+            // Keep retainBehindCount chunks behind current position so the user
+            // can skip back without triggering re-synthesis.
+            let oldIndex = currentChunkIndex - retainBehindCount
             if oldIndex >= 0 {
                 preBufferedChunks.removeValue(forKey: oldIndex)
             }

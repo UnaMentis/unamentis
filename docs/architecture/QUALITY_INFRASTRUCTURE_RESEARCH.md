@@ -191,7 +191,7 @@ Feature flags (toggles) allow you to enable or disable features without code cha
 | Release | Days-Weeks | Ship incomplete features | New voice mode |
 | Experiment | Weeks-Months | A/B testing | UI variant test |
 | Ops | Long-lived | Operational control | Maintenance mode |
-| Permission | Permanent | User access control | Premium features |
+| Permission | Permanent | User access control | Server-admin features |
 
 ### Flag Lifecycle Management (Critical!)
 

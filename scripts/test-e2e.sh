@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 if [ ! -f .env ]; then
   echo "Error: .env file not found. Copy .env.example and add your API keys."
   exit 1
@@ -9,6 +9,19 @@ if [ "$RUN_E2E_TESTS" != "true" ]; then
   echo "E2E tests disabled. Set RUN_E2E_TESTS=true in .env to run."
   exit 0
 fi
+
+# Generate Xcode project if needed
+if [ ! -f "UnaMentis.xcodeproj/project.pbxproj" ]; then
+  echo "Generating Xcode project..."
+  xcodegen generate
+fi
+
+# Check E2E tests exist
+if [ ! -d "UnaMentisTests/E2E" ] || [ -z "$(ls -A UnaMentisTests/E2E 2>/dev/null)" ]; then
+  echo "No E2E tests found in UnaMentisTests/E2E/. Nothing to run."
+  exit 0
+fi
+
 echo "Running E2E tests (this may take 10-30 minutes)..."
 
 # Resolve simulator to UUID for reliable destination matching

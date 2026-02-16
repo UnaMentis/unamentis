@@ -178,14 +178,14 @@ let enabled = await FeatureFlagService.shared.isEnabled("new_voice_engine")
 
 // With user context
 let context = FeatureFlagContext(userId: user.id)
-let enabled = await FeatureFlagService.shared.isEnabled("premium_features", context: context)
+let enabled = await FeatureFlagService.shared.isEnabled("advanced_analytics", context: context)
 
 // Get variant for A/B tests
-if let variant = await FeatureFlagService.shared.getVariant("pricing_experiment") {
+if let variant = await FeatureFlagService.shared.getVariant("onboarding_experiment") {
     switch variant.name {
-    case "control": showControlPricing()
-    case "variant_a": showVariantAPricing()
-    default: showControlPricing()
+    case "control": showControlOnboarding()
+    case "variant_a": showVariantAOnboarding()
+    default: showControlOnboarding()
     }
 }
 ```
@@ -251,13 +251,15 @@ Scopes:
 - ab_       A/B test experiments
 - ops_      Operational toggles
 - perm_     Permission flags
+- server_   Server capacity/deployment features
 
 Examples:
 - voice_new_engine
 - ui_dark_mode
-- ab_pricing_v2
+- ab_onboarding_v2
 - ops_maintenance
 - perm_admin_panel
+- server_extended_sessions
 ```
 
 ## Best Practices
