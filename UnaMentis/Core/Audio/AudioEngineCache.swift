@@ -1,83 +1,110 @@
 // UnaMentis - Audio Engine Cache
-// Keeps the platform audio engine warm between navigations.
+// Keeps AudioEngine warm between view transitions for instant resume
 //
-// Part of Core/Audio (shared audio playback infrastructure)
+// When a user navigates away from a reading/playback view and returns,
+// the AudioEngine normally needs reconfiguration (~200-500ms). This
+// cache keeps a configured, running AudioEngine available for a timeout
+// period, eliminating the delay on quick re-entry.
 //
-// Without this cache, every screen transition tears down and rebuilds
-// the audio engine (1-2 second cold start). The cache returns a warm
-// engine instance if available, or nil if not.
+// Part of Core/Audio
 
 import Foundation
 import Logging
 
 // MARK: - Audio Engine Cache
 
-/// Singleton cache that keeps the AudioEngine warm between module navigations.
+/// Singleton actor that caches a configured AudioEngine between view transitions.
 ///
-/// Behavior:
-/// - Returns a warm engine instance if available, nil if not
-/// - Starts a configurable inactivity timer on release
-/// - If no module reclaims the engine within the timeout, tears it down
+/// The cached engine is released after an inactivity timeout to free
+/// resources when the user isn't actively in a playback view.
 public actor AudioEngineCache {
+
     /// Shared singleton instance
     public static let shared = AudioEngineCache()
 
-    private let logger = Logger(label: "com.unamentis.audio.enginecache")
+    private let logger = Logger(label: "com.unamentis.audio.engine.cache")
 
-    /// The cached engine (nil when cold)
+    /// Cached AudioEngine instance
     private var cachedEngine: AudioEngine?
 
-    /// Timeout before tearing down an unclaimed engine (default: 2 minutes)
-    private let inactivityTimeout: TimeInterval = 120
-
-    /// Timer task for deferred teardown
+    /// Task that will release the engine after timeout
     private var releaseTask: Task<Void, Never>?
+
+    /// How long to keep the engine warm after use
+    private let inactivityTimeout: TimeInterval = 120 // 2 minutes
 
     private init() {}
 
-    /// Get the cached engine, or nil if no warm engine is available.
-    /// Cancels any pending release timer.
-    public func getEngine() -> AudioEngine? {
+    // MARK: - Public API
+
+    /// Get or create a configured AudioEngine.
+    ///
+    /// Returns the cached engine if available, otherwise creates and
+    /// configures a new one. The engine is started and ready for playback.
+    public func getEngine() async -> AudioEngine? {
         releaseTask?.cancel()
         releaseTask = nil
 
         if let engine = cachedEngine {
-            logger.debug("Returning warm AudioEngine from cache")
-            return engine
+            // Ensure it's still running
+            let isRunning = await engine.isRunning
+            if isRunning {
+                logger.debug("Returning cached AudioEngine")
+                return engine
+            }
+            // Engine stopped unexpectedly, recreate
+            logger.info("Cached AudioEngine not running, recreating")
         }
 
-        logger.debug("No cached AudioEngine available")
-        return nil
+        // Create new engine
+        let engine = AudioEngine(
+            vadService: SileroVADService(),
+            telemetry: TelemetryEngine()
+        )
+
+        do {
+            try await engine.configure(config: .default)
+            try await engine.start()
+            cachedEngine = engine
+            logger.info("Created and cached new AudioEngine")
+            return engine
+        } catch {
+            logger.error("Failed to create AudioEngine: \(error.localizedDescription)")
+            return nil
+        }
     }
 
-    /// Store an engine in the cache for reuse by the next module.
-    public func store(_ engine: AudioEngine) {
-        releaseTask?.cancel()
-        releaseTask = nil
-        cachedEngine = engine
-        logger.debug("AudioEngine stored in cache")
-    }
-
-    /// Schedule deferred release of the cached engine.
-    /// If no module reclaims it within `inactivityTimeout`, it is torn down.
+    /// Schedule deferred release of the AudioEngine.
+    ///
+    /// Called when playback suspends or a view disappears. The engine
+    /// stays warm for the timeout, then is stopped and released.
     public func scheduleRelease() {
         releaseTask?.cancel()
+        let timeout = inactivityTimeout
         releaseTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(120))
-            await self?.releaseNow()
+            try? await Task.sleep(for: .seconds(timeout))
+            guard !Task.isCancelled else { return }
+            await self?.clearCache()
         }
-        logger.debug("Scheduled deferred AudioEngine release")
+        logger.debug("Scheduled AudioEngine release in \(inactivityTimeout)s")
     }
 
-    /// Immediately release the cached engine.
-    public func releaseNow() {
+    /// Immediately release the cached engine (for explicit cleanup).
+    public func releaseNow() async {
         releaseTask?.cancel()
         releaseTask = nil
+        await clearCache()
+    }
 
+    // MARK: - Private
+
+    private func clearCache() async {
         if let engine = cachedEngine {
-            Task { await engine.stop() }
-            cachedEngine = nil
-            logger.info("AudioEngine released from cache")
+            await engine.stop()
+            await engine.cleanup()
         }
+        cachedEngine = nil
+        releaseTask = nil
+        logger.info("Released cached AudioEngine (inactivity timeout)")
     }
 }

@@ -1,22 +1,26 @@
 // UnaMentis - Playable Segment Protocol
-// Abstraction over the unit of content that gets synthesized and played.
+// Abstraction for audio segments that can be played by the orchestrator
 //
-// Part of Core/Audio (shared audio playback infrastructure)
+// Each module provides its own conforming type (ReadingChunkData,
+// sentence wrappers, KBQuestion adapters) while the orchestrator
+// handles the common playback logic.
+//
+// Part of Core/Audio
 
 import Foundation
 
 // MARK: - Cached Segment Audio
 
-/// Pre-existing audio data for a segment, allowing the orchestrator
-/// to skip TTS synthesis entirely and play with zero latency.
+/// Pre-generated or previously synthesized audio data for a segment.
+/// Enables instant playback (0ms latency) by bypassing TTS synthesis.
 public struct CachedSegmentAudio: Sendable {
-    /// Raw PCM audio bytes
+    /// Raw PCM audio data
     public let audioData: Data
 
-    /// Sample rate of the audio (e.g., 24000)
+    /// Sample rate of the audio (e.g. 24000 for Pocket TTS)
     public let sampleRate: Double
 
-    /// Number of audio channels (default: 1 for mono)
+    /// Number of audio channels (typically 1 for mono TTS output)
     public let channels: UInt32
 
     public init(audioData: Data, sampleRate: Double, channels: UInt32 = 1) {
@@ -25,12 +29,12 @@ public struct CachedSegmentAudio: Sendable {
         self.channels = channels
     }
 
-    /// Convert to TTSAudioChunk for playback through the audio engine
-    public func toTTSAudioChunk(sequenceNumber: Int = 0) -> TTSAudioChunk {
+    /// Convert to a TTSAudioChunk for playback via AudioEngine
+    public func toTTSAudioChunk() -> TTSAudioChunk {
         TTSAudioChunk(
             audioData: audioData,
             format: .pcmFloat32(sampleRate: sampleRate, channels: channels),
-            sequenceNumber: sequenceNumber,
+            sequenceNumber: 0,
             isFirst: true,
             isLast: true
         )
@@ -39,21 +43,20 @@ public struct CachedSegmentAudio: Sendable {
 
 // MARK: - Playable Segment Protocol
 
-/// An abstraction over the unit of content that gets synthesized and played.
-/// Each module provides its own conforming type.
+/// A segment of content that can be played by AudioPlaybackOrchestrator.
 ///
-/// Conforming types:
-/// - `ReadingChunkData` (Reading List)
-/// - `SessionSentenceSegment` (Voice Session)
-/// - `KBTextSegment` (Knowledge Bowl)
+/// Each module provides its own conforming type:
+/// - Reading List: `ReadingChunkData` (text chunks with optional cached audio)
+/// - Session: Sentence wrapper (text from LLM streaming)
+/// - Knowledge Bowl: Question/feedback adapter (with server cached audio)
 public protocol PlayableSegment: Sendable {
-    /// Zero-based position in the segment sequence
+    /// Position index in the playback sequence
     var segmentIndex: Int { get }
 
-    /// Text content to synthesize (ignored if cachedAudio exists)
+    /// Text content to synthesize if no cached audio is available
     var segmentText: String { get }
 
-    /// Pre-existing audio data. When present, the orchestrator skips TTS
-    /// entirely and plays the cached audio with zero synthesis latency.
+    /// Pre-generated or previously cached audio, if available.
+    /// When non-nil, the orchestrator plays this instantly without TTS synthesis.
     var cachedAudio: CachedSegmentAudio? { get }
 }

@@ -1,26 +1,37 @@
 // UnaMentis - Playback Orchestrator Configuration
-// Controls how the AudioPlaybackOrchestrator behaves per module.
+// Tunable parameters for audio playback behavior per module
 //
-// Part of Core/Audio (shared audio playback infrastructure)
+// Part of Core/Audio
 
 import Foundation
 
-// MARK: - Playback Orchestrator Config
+// MARK: - Playback Orchestrator Configuration
 
-/// Configuration for the AudioPlaybackOrchestrator.
-/// Modules select a preset or provide custom values.
+/// Configuration for AudioPlaybackOrchestrator behavior.
+///
+/// Each module uses a different preset tuned to its playback pattern:
+/// - Reading List: deep prefetch, inter-segment silence, retention for skip-back
+/// - Session: shallow prefetch, no silence, dynamic segment append
+/// - Knowledge Bowl: minimal prefetch, single segment at a time
 public struct PlaybackOrchestratorConfig: Sendable {
-    /// Number of segments to synthesize ahead of the current one
-    public let prefetchDepth: Int
 
-    /// Milliseconds of silence inserted between segments
-    public let interSegmentSilenceMs: Int
+    /// Number of segments to prefetch ahead of the current playback position.
+    /// Higher values reduce buffering risk at the cost of memory.
+    public var prefetchDepth: Int
 
-    /// Number of played segments to keep in memory for skip-back
-    public let retainBehindCount: Int
+    /// Milliseconds of silence to insert between segments.
+    /// Creates natural pacing for reading content (600ms recommended).
+    /// Set to 0 for conversation-like flow (sessions).
+    public var interSegmentSilenceMs: Int
 
-    /// Max wait time for a prefetch to complete before falling back to direct synthesis
-    public let bufferTimeoutSeconds: TimeInterval
+    /// Number of played segments to retain behind the current position.
+    /// Enables instant skip-back without re-synthesis.
+    /// Set to 0 for memory-constrained scenarios (sessions).
+    public var retainBehindCount: Int
+
+    /// Maximum seconds to wait for a segment's audio to become available
+    /// before reporting a buffer timeout error.
+    public var bufferTimeoutSeconds: TimeInterval
 
     public init(
         prefetchDepth: Int,
@@ -33,12 +44,10 @@ public struct PlaybackOrchestratorConfig: Sendable {
         self.retainBehindCount = retainBehindCount
         self.bufferTimeoutSeconds = bufferTimeoutSeconds
     }
-}
 
-// MARK: - Config Presets
+    // MARK: - Presets
 
-extension PlaybackOrchestratorConfig {
-    /// General purpose preset
+    /// Default configuration (conservative settings)
     public static let `default` = PlaybackOrchestratorConfig(
         prefetchDepth: 3,
         interSegmentSilenceMs: 0,
@@ -46,7 +55,7 @@ extension PlaybackOrchestratorConfig {
         bufferTimeoutSeconds: 10
     )
 
-    /// Long-form reading with natural pacing
+    /// Reading list preset: deep prefetch, natural pacing, skip-back support
     public static let readingList = PlaybackOrchestratorConfig(
         prefetchDepth: 5,
         interSegmentSilenceMs: 600,
@@ -54,7 +63,7 @@ extension PlaybackOrchestratorConfig {
         bufferTimeoutSeconds: 10
     )
 
-    /// Conversational voice sessions, low-latency
+    /// Session preset: shallow prefetch, no gaps, dynamic segment append
     public static let session = PlaybackOrchestratorConfig(
         prefetchDepth: 2,
         interSegmentSilenceMs: 0,
@@ -62,7 +71,7 @@ extension PlaybackOrchestratorConfig {
         bufferTimeoutSeconds: 15
     )
 
-    /// Single question/answer, fire-and-forget
+    /// Knowledge Bowl preset: single segment, no prefetch, server cache
     public static let knowledgeBowl = PlaybackOrchestratorConfig(
         prefetchDepth: 0,
         interSegmentSilenceMs: 0,

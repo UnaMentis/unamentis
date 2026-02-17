@@ -430,15 +430,6 @@ private final class ReadingPlaybackOrchestratorDelegate: PlaybackOrchestratorDel
     }
 }
 
-// MARK: - Delegate Setter Extension
-
-extension AudioPlaybackOrchestrator {
-    /// Set the delegate for this orchestrator
-    func setDelegate(_ newDelegate: any PlaybackOrchestratorDelegate) {
-        self.delegate = newDelegate
-    }
-}
-
 // MARK: - Bookmark Data Transfer Object
 
 /// Lightweight bookmark data for actor boundary crossing

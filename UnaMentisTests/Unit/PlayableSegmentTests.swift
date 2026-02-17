@@ -35,11 +35,11 @@ final class CachedSegmentAudioTests: XCTestCase {
         XCTAssertEqual(chunk.sequenceNumber, 0)
     }
 
-    func testToTTSAudioChunk_respectsSequenceNumber() {
+    func testToTTSAudioChunk_usesZeroSequenceNumber() {
         let cached = CachedSegmentAudio(audioData: Data(count: 100), sampleRate: 24000)
-        let chunk = cached.toTTSAudioChunk(sequenceNumber: 5)
+        let chunk = cached.toTTSAudioChunk()
 
-        XCTAssertEqual(chunk.sequenceNumber, 5)
+        XCTAssertEqual(chunk.sequenceNumber, 0)
     }
 }
 
