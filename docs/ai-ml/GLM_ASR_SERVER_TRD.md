@@ -2,9 +2,9 @@
 
 **Purpose:** Detailed technical specification for implementing GLM-ASR-Nano-2512 as a self-hosted STT provider in UnaMentis iOS.
 
-**Version:** 1.0
-**Date:** December 2025
-**Status:** Draft
+**Version:** 2.0
+**Date:** February 2026
+**Status:** Implementation Complete (iOS client), Server backend updating
 **Related:** `GLM_ASR_NANO_2512.md`, `UnaMentis_TDD.md`
 
 ---
@@ -172,6 +172,55 @@ Implement a self-hosted GLM-ASR-Nano-2512 speech-to-text service that:
 
 ### 3.2 Software Stack
 
+> **Important (Dec 27, 2025):** Z.AI updated model weights for transformers 5.0.0 and SGLang
+> compatibility. SGLang is now the recommended inference backend. vLLM requires transformers
+> >= 5.0.0 (dev install). A legacy path using transformers 4.51.3 is available.
+
+#### Option A: SGLang Backend (Recommended)
+
+```yaml
+# docker-compose.sglang.yml
+version: '3.8'
+
+services:
+  glm-asr-server:
+    image: lmsysorg/sglang:dev
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    ports:
+      - "30000:30000"
+    volumes:
+      - ./models:/root/.cache/huggingface
+    command: >
+      python -m sglang.launch_server
+      --model zai-org/GLM-ASR-Nano-2512
+      --host 0.0.0.0
+      --port 30000
+
+  streaming-gateway:
+    build: ./gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - VLLM_ENDPOINT=http://glm-asr-server:30000
+      - WS_PORT=8080
+    depends_on:
+      - glm-asr-server
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./certs:/etc/ssl/certs
+    depends_on:
+      - streaming-gateway
+```
+
+#### Option B: vLLM Backend (requires transformers 5.0.0)
+
 ```yaml
 # docker-compose.yml
 version: '3.8'
@@ -190,6 +239,7 @@ services:
     volumes:
       - ./models:/root/.cache/huggingface
     command: >
+      pip install git+https://github.com/huggingface/transformers &&
       python -m vllm.entrypoints.openai.api_server
       --model ${MODEL_NAME}
       --dtype ${DTYPE}
@@ -1729,3 +1779,4 @@ spec:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | December 2025 | Claude | Initial TRD |
+| 2.0 | February 2026 | Claude | Added SGLang as recommended backend, added transformers 5.0.0 requirement, updated Docker configs |

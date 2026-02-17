@@ -24,15 +24,21 @@
 | | GLMASRHealthMonitor | 🟢 Complete | ~150 lines |
 | | STTProviderRouter | 🟢 Complete | ~200 lines |
 | | STTProvider enum update | 🟢 Complete | Added glmASRNano case |
-| **Phase 3: On-Device Implementation** | GLMASROnDeviceSTTService | 🟢 Complete | CoreML + llama.cpp |
-| | CoreML Model Integration | 🟢 Complete | Whisper encoder, adapter, embed head |
-| | llama.cpp Text Decoder | 🟢 Complete | Q4_K_M quantized GGUF |
+| **Phase 3: On-Device Implementation** | GLMASROnDeviceSTTService | 🔄 Needs Rework | Original CoreML + llama.cpp approach |
+| | CoreML Model Integration | ❌ Deprecated | Multi-component pipeline replaced by unified GGUF |
+| | llama.cpp Text Decoder | 🔄 Needs Rework | Unified GGUF replaces decoder-only approach |
 | | Simulator Support | 🟢 Complete | Enabled when models present |
 | **Phase 4: Integration** | CI Workflow update | 🟢 Complete | Auto-picks up new tests |
 | | Documentation update | 🟢 Complete | Full documentation |
 | | Final verification | 🟢 Complete | `swift build` succeeds |
 
-**Legend:** 🔴 Not Started | 🟡 In Progress | 🟢 Complete | ⏸️ Blocked
+| **Phase 5: Updated On-Device (Feb 2026)** | Unified GGUF approach | 🟡 In Progress | Single Q4_K_M file (~1.06GB) |
+| | llama.cpp wrapper update | ⏸️ Blocked | StanfordBDHG v0.3.3 predates audio support (PRs #17901, #18142) |
+| | Audio pipeline via libmtmd | ⏸️ Blocked | Depends on wrapper update |
+| | Updated unit tests (TDD) | 🟡 In Progress | GLMASROnDeviceConfigurationTests added |
+| | Server backend update | 🟡 In Progress | Adding SGLang, transformers 5.0 |
+
+**Legend:** 🔴 Not Started | 🟡 In Progress | 🟢 Complete | ⏸️ Blocked | 🔄 Needs Rework | ❌ Deprecated
 
 ---
 
@@ -366,6 +372,18 @@ Optimal Device: iPhone 17 Pro Max (12GB RAM)
 - Enabled simulator support when models present
 - Created comprehensive on-device guide
 - Updated all documentation
+
+### Session 3 - February 2026
+- Discovered Z.AI updated model weights on Dec 27, 2025 for transformers 5.0.0 and SGLang compatibility
+- Identified that the original multi-component CoreML pipeline is no longer the correct approach
+- Community GGUF available at Mungert/GLM-ASR-Nano-2512-GGUF with Q4_K_M at ~1.06GB (vs ~2.4GB multi-component)
+- Actual BF16 safetensors weight is 4.52GB (not ~3.0GB as originally estimated)
+- Confirmed SGLang dev Docker as the recommended inference backend
+- vLLM now requires transformers >= 5.0.0 (dev install from source)
+- StanfordBDHG/llama.cpp v0.3.3 predates upstream audio support (PRs #17901, #18142), blocking on-device inference
+- Revised on-device architecture to unified GGUF via llama.cpp libmtmd
+- Added GLMASROnDeviceConfigurationTests.swift (TDD for new architecture)
+- Updated all GLM-ASR documentation to reflect current state
 
 ---
 

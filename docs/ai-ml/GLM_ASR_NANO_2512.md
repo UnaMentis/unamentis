@@ -2,9 +2,9 @@
 
 **Purpose:** Technical evaluation and integration roadmap for Z.AI's GLM-ASR-Nano-2512 speech recognition model in UnaMentis iOS.
 
-**Version:** 1.0
-**Date:** December 2025
-**Status:** Evaluation / Planning
+**Version:** 2.0
+**Date:** February 2026
+**Status:** Implementation (Server complete, On-device rearchitecting)
 
 ---
 
@@ -78,23 +78,36 @@ GLM-ASR-Nano aligns with UnaMentis's core principles:
 
 | Specification | Value |
 |--------------|-------|
-| **Parameters** | 1.5 billion |
-| **Architecture** | Transformer Encoder-Decoder |
+| **Parameters** | 1.5B (2B including embeddings per HuggingFace model card) |
+| **Architecture** | `GlmAsrForConditionalGeneration` (Seq2Seq) |
 | **Input Format** | 16kHz mono PCM audio |
-| **Feature Extraction** | 80-dim Mel filterbank |
+| **Feature Extraction** | Whisper-based audio encoder |
 | **Context Window** | Up to 30 seconds |
 | **Streaming Support** | Yes (chunked processing) |
 | **Output** | Text tokens with timestamps |
 | **License** | MIT (full commercial use) |
+| **Weight Format** | Single `model.safetensors` (4.52 GB, BF16) |
+| **Tensor Type** | BF16 (Brain Float 16) |
+| **Framework Requirements** | transformers >= 5.0.0 (dev) OR SGLang dev Docker |
+| **Legacy Support** | transformers 4.51.3 + inference.py script |
+
+> **Important (Dec 27, 2025):** Z.AI updated model weights for transformers 5.0.0 and SGLang
+> compatibility. If your model was downloaded before December 27, 2025, re-download the latest
+> version from HuggingFace.
 
 ### 2.3 Model Size by Precision
 
-| Precision | Model Size | VRAM Required | Use Case |
-|-----------|------------|---------------|----------|
-| FP32 | ~6.0 GB | ~8 GB | Development/debugging |
-| FP16/BF16 | ~3.0 GB | ~4.5 GB | Production server |
-| INT8 | ~1.5 GB | ~2.5 GB | Edge server |
-| INT4 | ~0.75 GB | ~1.5 GB | Mobile/on-device |
+| Format | File Size | Use Case | Source |
+|--------|-----------|----------|--------|
+| BF16 (safetensors) | 4.52 GB | Server (native) | [Official](https://huggingface.co/zai-org/GLM-ASR-Nano-2512) |
+| BF16 (GGUF) | 3.19 GB | Server/development | [Community](https://huggingface.co/Mungert/GLM-ASR-Nano-2512-GGUF) |
+| Q8_0 (GGUF) | 1.7 GB | High-quality edge | Community |
+| Q4_K_M (GGUF) | **~1.06 GB** | **On-device (recommended)** | Community |
+| Q4_K_S (GGUF) | ~976 MB | On-device (smaller) | Community |
+| IQ4_XS (GGUF) | ~925 MB | On-device (smallest usable) | Community |
+
+Community GGUF built with llama.cpp commit `e1f15b454f`, using advanced "layer bumping"
+quantization for better precision on important layers.
 
 ---
 
@@ -219,18 +232,19 @@ Full MIT license unlocks:
 - Network latency added
 - Server costs (but lower than API costs at scale)
 
-### 5.2 Option B: On-Device Inference (iPhone 17 Pro Max)
+### 5.2 Option B: On-Device Inference (Unified GGUF via llama.cpp)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    On-Device Architecture                           │
+│              On-Device Architecture (Unified GGUF)                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │   iPhone 17 Pro Max                                                 │
 │   ┌─────────────────────────────────────────────────────────────┐  │
 │   │                                                              │  │
-│   │  AudioEngine ──► CoreML Model ──► GLMASROnDeviceSTTService  │  │
-│   │  (16kHz PCM)     (INT4, ~750MB)   (Implements STTProtocol)  │  │
+│   │  AudioEngine ──► llama.cpp (unified GGUF) ──► Transcript   │  │
+│   │  (16kHz PCM)     Q4_K_M (~1.06GB)                          │  │
+│   │                  single model file                           │  │
 │   │                                                              │  │
 │   │  ┌────────────────────────────────────────────────────────┐ │  │
 │   │  │ A19 Pro Neural Engine (16-core) + 12GB RAM            │ │  │
@@ -242,16 +256,22 @@ Full MIT license unlocks:
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+> **Architecture Change:** The original design speculated a multi-component CoreML decomposition
+> (Whisper encoder + audio adapter + embed head + GGUF decoder, totaling ~2.4GB). The updated
+> approach uses a unified GGUF via llama.cpp's libmtmd audio support, resulting in a single
+> Q4_K_M file at ~1.06GB.
+
 **Pros:**
 - Zero network latency
 - Complete privacy (audio never leaves device)
 - Works offline
 - No ongoing server costs
+- Single model file (~1.06GB Q4_K_M vs ~2.4GB multi-component)
 
 **Cons:**
-- Requires iPhone 17 Pro Max (12GB RAM)
-- CoreML conversion work needed
-- ~750MB app size increase
+- Requires iPhone 17 Pro (12GB RAM)
+- llama.cpp Swift wrapper needs updating (StanfordBDHG v0.3.3 predates audio support)
+- Audio support in llama.cpp still marked experimental
 - Battery/thermal impact during long sessions
 
 ### 5.3 Option C: Hybrid (Recommended Long-Term)
@@ -415,25 +435,55 @@ if ultraTierIdentifiers.contains(identifier) && ramGB >= 12 {
 
 ### 7.3 Quick Start Server Setup
 
-```bash
-# 1. Install dependencies
-pip install vllm transformers torch
+#### Option A: SGLang (Recommended)
 
-# 2. Download model
+```bash
+# Download the model
 huggingface-cli download zai-org/GLM-ASR-Nano-2512
 
-# 3. Start vLLM server
+# Start via SGLang Docker (dev image required for GLM-ASR support)
+docker run --gpus all \
+  -p 30000:30000 \
+  -v ~/.cache/huggingface:/root/.cache/huggingface \
+  lmsysorg/sglang:dev \
+  python -m sglang.launch_server \
+    --model zai-org/GLM-ASR-Nano-2512 \
+    --host 0.0.0.0 \
+    --port 30000
+```
+
+#### Option B: vLLM (requires transformers 5.0.0)
+
+```bash
+# Install transformers from source (5.0.0 dev required)
+pip install git+https://github.com/huggingface/transformers
+pip install vllm torch
+
+# Download model
+huggingface-cli download zai-org/GLM-ASR-Nano-2512
+
+# Start vLLM server
 python -m vllm.entrypoints.openai.api_server \
   --model zai-org/GLM-ASR-Nano-2512 \
   --dtype float16 \
   --max-model-len 4096 \
   --port 8000 \
   --host 0.0.0.0
+```
 
-# 4. Test endpoint
-curl http://localhost:8000/v1/audio/transcriptions \
-  -F file=@test.wav \
-  -F model=glm-asr-nano
+#### Option C: Legacy (transformers 4.51.3)
+
+```bash
+# Install dependencies (no source install needed)
+pip install transformers==4.51.3 torch
+
+# Download model
+huggingface-cli download zai-org/GLM-ASR-Nano-2512
+
+# Run using the inference.py script provided in the repo
+python inference.py \
+  --model zai-org/GLM-ASR-Nano-2512 \
+  --audio test.wav
 ```
 
 ---
@@ -490,24 +540,30 @@ self-hosting becomes cost-effective at ~10 active daily users.
 │                    Implementation Roadmap                           │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  PHASE 1: Server-Side Integration                                  │
+│  PHASE 1: Server-Side Integration                    [COMPLETE]    │
 │  ├─ Implement GLMASRSTTService (WebSocket streaming)               │
 │  ├─ Deploy to RunPod/Lambda for testing                            │
 │  ├─ A/B test against Deepgram                                      │
 │  └─ Measure latency, accuracy, cost                                │
 │                                                                     │
-│  PHASE 2: Production Hardening                                     │
+│  PHASE 2: Production Hardening                       [COMPLETE]    │
 │  ├─ Add health checks and failover                                 │
 │  ├─ Implement request queuing for load spikes                      │
 │  ├─ Set up monitoring and alerting                                 │
 │  └─ Create fallback to Deepgram on server failure                  │
 │                                                                     │
-│  PHASE 3: On-Device Exploration (Post iPhone 17 Launch)            │
-│  ├─ Convert model to CoreML                                        │
-│  ├─ Implement INT4 quantization                                    │
-│  ├─ Create GLMASROnDeviceSTTService                                │
-│  ├─ Add .ultra device tier detection                               │
-│  └─ Implement hybrid routing (on-device + server fallback)         │
+│  PHASE 3: Server Backend Update                   [IN PROGRESS]    │
+│  ├─ Add SGLang as recommended inference backend                    │
+│  ├─ Handle Dec 27 weight format changes (BF16 safetensors)        │
+│  ├─ Update Docker configs for SGLang and vLLM paths               │
+│  └─ Document transformers 5.0.0 requirement for vLLM              │
+│                                                                     │
+│  PHASE 4: On-Device Rearchitecture               [IN PROGRESS]    │
+│  ├─ Unified GGUF via llama.cpp libmtmd audio support              │
+│  ├─ Single Q4_K_M model file (~1.06GB)                            │
+│  ├─ Update StanfordBDHG llama.cpp Swift wrapper                   │
+│  │   (v0.3.3 predates audio support, PRs #17901, #18142)         │
+│  └─ Implement hybrid routing (on-device + server fallback)        │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -568,6 +624,7 @@ let glmASREndpoint = STTEndpoint(
 - **Hugging Face Model:** https://huggingface.co/zai-org/GLM-ASR-Nano-2512
 - **GitHub Repository:** https://github.com/zai-org/GLM-ASR
 - **Z.AI Documentation:** https://docs.z.ai/guides/audio/glm-asr-2512
+- **Community GGUF:** https://huggingface.co/Mungert/GLM-ASR-Nano-2512-GGUF
 
 ### 10.2 Related Documentation
 
@@ -594,3 +651,4 @@ let glmASREndpoint = STTEndpoint(
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | December 2025 | Claude | Initial document |
+| 2.0 | February 2026 | Claude | Updated for Dec 27 weight format changes, added SGLang support, corrected model sizes to match actual GGUF variants, revised on-device architecture from multi-component CoreML to unified GGUF approach, added llama.cpp audio support findings |

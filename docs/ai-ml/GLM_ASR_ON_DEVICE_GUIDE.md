@@ -2,7 +2,7 @@
 
 **Purpose:** Complete guide for implementing and using the on-device GLM-ASR-Nano speech recognition service in UnaMentis iOS.
 
-**Last Updated:** December 2025
+**Last Updated:** February 2026
 
 ---
 
@@ -23,7 +23,7 @@
 
 ### 1.1 What is On-Device GLM-ASR?
 
-UnaMentis supports running GLM-ASR-Nano directly on the device using CoreML for the neural network components and llama.cpp for the text decoder. This provides:
+UnaMentis supports running GLM-ASR-Nano directly on the device using a unified GGUF model via llama.cpp. This provides:
 
 - **Zero latency** - No network round-trip
 - **Complete privacy** - Audio never leaves the device
@@ -34,10 +34,12 @@ UnaMentis supports running GLM-ASR-Nano directly on the device using CoreML for 
 
 | Requirement | Minimum | Recommended |
 |-------------|---------|-------------|
-| Device | iPhone 15 Pro | iPhone 17 Pro Max |
-| RAM | 8GB | 12GB |
+| Device | iPhone 17 Pro | iPhone 17 Pro Max |
+| RAM | 12GB | 12GB |
 | iOS | 18.0 | 18.0+ |
-| Storage | 2.5GB free | 5GB free |
+| Storage | 1.5GB free | 3GB free |
+
+The unified GGUF approach requires only ~1.06GB of storage for the model file, but 12GB of RAM is needed to accommodate runtime activations during inference.
 
 ### 1.3 When to Use On-Device
 
@@ -54,8 +56,13 @@ The `GLMASROnDeviceSTTService` is automatically selected when:
 
 ### 2.1 Component Overview
 
+> **Architecture Change:** The original design decomposed GLM-ASR into multiple CoreML components
+> (Whisper encoder, audio adapter, embed head) plus a GGUF text decoder, totaling ~2.4GB. The
+> updated approach uses a unified GGUF model via llama.cpp's libmtmd audio support. A single
+> Q4_K_M quantized file handles the full audio-to-text pipeline at ~1.06GB.
+
 ```
-                    GLM-ASR On-Device Pipeline
+                 GLM-ASR On-Device Pipeline (Unified GGUF)
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
 │  Audio Input                                                    │
@@ -63,32 +70,11 @@ The `GLMASROnDeviceSTTService` is automatically selected when:
 │       │                                                         │
 │       ▼                                                         │
 │  ┌─────────────────────────────────────────┐                   │
-│  │     GLMASRWhisperEncoder (CoreML)       │                   │
-│  │     - Mel spectrogram extraction         │                   │
-│  │     - Whisper encoder (1.2GB model)      │                   │
-│  │     - Outputs: audio embeddings          │                   │
-│  └─────────────────────────────────────────┘                   │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────────────────────────────────┐                   │
-│  │     GLMASRAudioAdapter (CoreML)         │                   │
-│  │     - Adapter network (56MB model)       │                   │
-│  │     - Aligns audio features to LLM space │                   │
-│  └─────────────────────────────────────────┘                   │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────────────────────────────────┐                   │
-│  │     GLMASREmbedHead (CoreML)            │                   │
-│  │     - Embedding head (232MB model)       │                   │
-│  │     - Produces token embeddings          │                   │
-│  └─────────────────────────────────────────┘                   │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────────────────────────────────┐                   │
-│  │     GLM-4 Text Decoder (llama.cpp)      │                   │
-│  │     - Q4_K_M quantized (935MB model)     │                   │
-│  │     - Autoregressive text generation     │                   │
-│  │     - Streaming token output             │                   │
+│  │     llama.cpp (unified GGUF)            │                   │
+│  │     - Audio encoding via libmtmd        │                   │
+│  │     - Whisper-based feature extraction  │                   │
+│  │     - Autoregressive text decoding      │                   │
+│  │     - Q4_K_M quantized (~1.06GB)        │                   │
 │  └─────────────────────────────────────────┘                   │
 │       │                                                         │
 │       ▼                                                         │
@@ -102,10 +88,7 @@ The `GLMASROnDeviceSTTService` is automatically selected when:
 | Class | File | Purpose |
 |-------|------|---------|
 | `GLMASROnDeviceSTTService` | [GLMASROnDeviceSTTService.swift](../UnaMentis/Services/STT/GLMASROnDeviceSTTService.swift) | Main STT service implementation |
-| `GLMWhisperEncoder` | (internal) | CoreML Whisper encoder wrapper |
-| `GLMAudioAdapter` | (internal) | CoreML adapter wrapper |
-| `GLMEmbedHead` | (internal) | CoreML embed head wrapper |
-| `GLMTextDecoder` | (internal) | llama.cpp decoder wrapper |
+| `GLMTextDecoder` | (internal) | llama.cpp unified GGUF wrapper (handles full pipeline) |
 
 ### 2.3 Protocol Conformance
 
@@ -131,59 +114,51 @@ public actor GLMASROnDeviceSTTService: STTServiceProtocol {
 
 ### 3.1 Required Models
 
+A single GGUF file is required:
+
 | Model | Size | Format | Purpose |
 |-------|------|--------|---------|
-| GLMASRWhisperEncoder | 1.2 GB | .mlpackage | Audio feature extraction |
-| GLMASRAudioAdapter | 56 MB | .mlpackage | Feature alignment |
-| GLMASREmbedHead | 232 MB | .mlpackage | Token embedding |
-| glm-asr-nano-q4km | 935 MB | .gguf | Text decoding (llama.cpp) |
+| glm-asr-nano-2512-q4km | ~1.06 GB | .gguf | Full audio-to-text pipeline (unified) |
 
-**Total:** ~2.4 GB
+### 3.2 Quantization Options
 
-### 3.2 Model Location
+| Quantization | File Size | Quality | Use Case |
+|-------------|-----------|---------|---------|
+| Q4_K_M | ~1.06 GB | Recommended | On-device (best balance) |
+| Q4_K_S | ~976 MB | Good | On-device (smaller) |
+| IQ4_XS | ~925 MB | Acceptable | On-device (smallest usable) |
+| Q8_0 | 1.7 GB | High | Server/development |
 
-Models should be placed in:
+### 3.3 Model Location
+
+Place the model at:
 
 ```
 models/glm-asr-nano/
-├── GLMASRWhisperEncoder.mlpackage/
-├── GLMASRAudioAdapter.mlpackage/
-├── GLMASREmbedHead.mlpackage/
-└── glm-asr-nano-q4km.gguf
+└── glm-asr-nano-2512-q4km.gguf
 ```
 
-### 3.3 Obtaining Models
-
-Models are available from:
-
-1. **Hugging Face:** https://huggingface.co/zai-org/GLM-ASR-Nano-2512
-2. **Project scripts:** `./scripts/download-glm-models.sh` (if available)
-
-### 3.4 CoreML Conversion
-
-If you have the original PyTorch models, convert to CoreML:
+### 3.4 Downloading Models
 
 ```bash
-# Install coremltools
-pip install coremltools torch
-
-# Run conversion script
-python scripts/convert_glm_to_coreml.py \
-    --input-dir /path/to/pytorch/models \
-    --output-dir models/glm-asr-nano
+# Download the Q4_K_M GGUF from community repository
+huggingface-cli download Mungert/GLM-ASR-Nano-2512-GGUF \
+    --include "glm-asr-nano-2512-q4km.gguf" \
+    --local-dir models/glm-asr-nano
 ```
 
-### 3.5 GGUF Quantization
+### 3.5 Deprecated: Multi-Component CoreML Pipeline
 
-The text decoder uses Q4_K_M quantization for optimal size/quality balance:
+The following four-file approach is no longer used:
 
-```bash
-# If you have the F16 model, quantize it:
-/path/to/llama.cpp/build/bin/llama-quantize \
-    models/glm-asr-nano/glm-asr-nano-f16.gguf \
-    models/glm-asr-nano/glm-asr-nano-q4km.gguf \
-    Q4_K_M
-```
+| File | Size | Status |
+|------|------|--------|
+| `GLMASRWhisperEncoder.mlpackage` | 1.2 GB | Deprecated |
+| `GLMASRAudioAdapter.mlpackage` | 56 MB | Deprecated |
+| `GLMASREmbedHead.mlpackage` | 232 MB | Deprecated |
+| `glm-asr-nano-q4km.gguf` (old decoder only) | 935 MB | Deprecated |
+
+The unified GGUF approach replaces all four components with a single file and eliminates the CoreML conversion requirement.
 
 ---
 
@@ -291,7 +266,7 @@ Swift Compiler - Custom Flags:
 
 ### 5.3 Package Dependencies
 
-The project's Package.swift already includes llama.cpp:
+The project's Package.swift includes llama.cpp:
 
 ```swift
 dependencies: [
@@ -310,6 +285,12 @@ targets: [
     ),
 ]
 ```
+
+> **Blocker (February 2026):** StanfordBDHG/llama.cpp v0.3.3 was packaged before audio/multimodal
+> support landed in upstream llama.cpp. The relevant upstream PRs are #17901 and #18142. Until
+> the Swift wrapper is updated to a revision that includes those PRs, on-device audio inference
+> via libmtmd is not available. The service can be built and tested structurally, but model
+> loading will fail at runtime until this dependency is updated.
 
 ### 5.4 Entitlements
 
@@ -518,3 +499,4 @@ if let resourcePath = Bundle.main.resourcePath {
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | December 2025 | Claude | Initial document |
+| 2.0 | February 2026 | Claude | Revised to unified GGUF architecture, updated model sizes, documented llama.cpp Swift wrapper blocker, deprecated multi-component pipeline |
