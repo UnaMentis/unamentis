@@ -114,7 +114,11 @@ public final class ReadingPlaybackViewModel: ObservableObject {
                 item.managedObjectContext?.refresh(item, mergeChanges: true)
             }
 
-            // Load chunks from Core Data (includes cached audio on chunk 0)
+            // Bug fix: Refresh all objects in context to ensure we pick up
+            // any cached audio data written by background pre-generation.
+            refreshChunkCacheFromCoreData()
+
+            // Load chunks from Core Data (includes cached audio)
             chunks = loadChunksFromItem()
             totalChunks = chunks.count
 
@@ -133,7 +137,7 @@ public final class ReadingPlaybackViewModel: ObservableObject {
             // Create playback service
             let service = ReadingPlaybackService()
 
-            // Initialize AudioEngine and TTS service in parallel
+            // Initialize AudioEngine (from cache for instant resume) and TTS service in parallel
             async let audioEngineResult = getAudioEngine()
             async let ttsServiceResult = getTTSService()
 
@@ -141,9 +145,22 @@ public final class ReadingPlaybackViewModel: ObservableObject {
                let ttsService = await ttsServiceResult,
                let manager = ReadingListManager.shared {
 
-                // Pre-warm the TTS model so synthesis starts instantly
-                if let pocketService = ttsService as? KyutaiPocketTTSService {
-                    try await pocketService.ensureLoaded()
+                // Non-blocking TTS warm-up: if first chunk has cached audio,
+                // we can play instantly while the TTS model loads in background.
+                // Otherwise, we must wait for the model before starting.
+                let firstChunk = chunks[safe: Int(currentChunkIndex)]
+                if firstChunk?.hasCachedAudio == true {
+                    // First chunk plays from cache; warm TTS in background for later chunks
+                    Task {
+                        if let pocketService = ttsService as? KyutaiPocketTTSService {
+                            try? await pocketService.ensureLoaded()
+                        }
+                    }
+                } else {
+                    // No cached audio for first chunk; must wait for TTS
+                    if let pocketService = ttsService as? KyutaiPocketTTSService {
+                        try await pocketService.ensureLoaded()
+                    }
                 }
 
                 let callbacks = makeCallbacks()
@@ -170,7 +187,14 @@ public final class ReadingPlaybackViewModel: ObservableObject {
         }
     }
 
-    /// Load chunks from the reading item, including cached audio on chunk 0
+    /// Refresh Core Data context to pick up cached audio from background pre-generation
+    private func refreshChunkCacheFromCoreData() {
+        guard let context = item.managedObjectContext else { return }
+        // Refresh all objects so we see the latest cachedAudioData
+        context.refreshAllObjects()
+    }
+
+    /// Load chunks from the reading item, including cached audio
     private func loadChunksFromItem() -> [ReadingChunkData] {
         return item.chunksArray.map { chunk in
             ReadingChunkData(
@@ -261,7 +285,22 @@ public final class ReadingPlaybackViewModel: ObservableObject {
         }
     }
 
-    /// Stop playback and release audio resources
+    /// Suspend playback preserving all cached state.
+    /// Use when navigating away from the view (onDisappear).
+    /// Cheaper than stopPlayback(); retains prefetch cache for instant resume.
+    public func suspendPlayback() async {
+        if let service = playbackService {
+            await service.suspendPlayback()
+        }
+
+        // Schedule deferred resource release (keeps engine/TTS warm for 2 min)
+        await AudioEngineCache.shared.scheduleRelease()
+        storedAudioEngine = nil
+        storedTTSService = nil
+        await AudioTTSCache.shared.scheduleRelease()
+    }
+
+    /// Stop playback and release audio resources (explicit "Done" action)
     public func stopPlayback() async {
         if let service = playbackService {
             await service.stopPlayback()
@@ -276,7 +315,7 @@ public final class ReadingPlaybackViewModel: ObservableObject {
 
         // Schedule deferred TTS release (keeps model warm for quick re-entry)
         storedTTSService = nil
-        await ReadingTTSCache.shared.scheduleRelease()
+        await AudioTTSCache.shared.scheduleRelease()
     }
 
     /// Skip forward
@@ -416,12 +455,20 @@ public final class ReadingPlaybackViewModel: ObservableObject {
         )
     }
 
-    // MARK: - Service Access (Simplified)
+    // MARK: - Service Access
 
-    /// Create or return cached AudioEngine for TTS playback
+    /// Create or return cached AudioEngine for TTS playback.
+    /// Uses AudioEngineCache for instant resume on view re-entry.
     private func getAudioEngine() async -> AudioEngine? {
         if let engine = storedAudioEngine { return engine }
 
+        // Try cached engine first for instant resume
+        if let cached = await AudioEngineCache.shared.getEngine() {
+            self.storedAudioEngine = cached
+            return cached
+        }
+
+        // Fallback: create new
         let engine = AudioEngine(vadService: SileroVADService(), telemetry: TelemetryEngine())
         do {
             try await engine.configure(config: .default)
@@ -435,12 +482,11 @@ public final class ReadingPlaybackViewModel: ObservableObject {
     }
 
     /// Create or return cached TTS service for reading narration.
-    /// Uses the platform-wide TTS provider resolution for consistency
-    /// with curriculum modules and Knowledge Bowl.
+    /// Uses AudioTTSCache for warm model between sessions.
     private func getTTSService() async -> (any TTSService)? {
         if let service = storedTTSService { return service }
 
-        let service = await ReadingTTSCache.shared.getService()
+        let service = await AudioTTSCache.shared.getService()
         self.storedTTSService = service
         return service
     }
@@ -578,5 +624,13 @@ extension ReadingPlaybackViewModel: FlaggableActivity {
     public func resumePlayback() async {
         guard let service = playbackService, state == .paused else { return }
         await service.resume()
+    }
+}
+
+// MARK: - Array Safe Subscript
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }

@@ -80,7 +80,7 @@ public struct ReadingPlaybackView: View {
                 Text(viewModel.errorMessage ?? "An error occurred")
             }
             .onDisappear {
-                Task { await viewModel.stopPlayback() }
+                Task { await viewModel.suspendPlayback() }
             }
         }
     }
