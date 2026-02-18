@@ -521,7 +521,7 @@ UnaMentis can connect to local/LAN servers for zero-cost inference:
 | llama.cpp | 8080 | LLM inference |
 | vLLM | 8000 | High-throughput LLM |
 | SGLang | 30000 | GLM-ASR-Nano inference (recommended) |
-| GLM-ASR gateway | 8080 | STT WebSocket streaming (bridges to SGLang/vLLM) |
+| GLM-ASR gateway | 8081 | STT WebSocket streaming (bridges to SGLang/vLLM) |
 | Chatterbox TTS | 8004 | Expressive TTS |
 | VibeVoice TTS | 11403 | Real-time TTS |
 | Piper TTS | 11402 | Lightweight TTS |

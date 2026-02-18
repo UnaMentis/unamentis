@@ -1483,9 +1483,10 @@ class SessionViewModel: ObservableObject {
                 sttService = AppleSpeechSTTService()
             }
         case .glmASRNano:
-            if selfHostedEnabled && !serverIP.isEmpty {
+            if selfHostedEnabled && !serverIP.isEmpty,
+               let serverURL = URL(string: "wss://\(serverIP):8081/v1/audio/stream") {
                 let config = GLMASRSTTService.Configuration(
-                    serverURL: URL(string: "wss://\(serverIP):8080/v1/audio/stream")!,
+                    serverURL: serverURL,
                     authToken: nil,
                     language: "auto",
                     interimResults: true,
@@ -1493,7 +1494,7 @@ class SessionViewModel: ObservableObject {
                     reconnectAttempts: 3,
                     reconnectDelayMs: 1000
                 )
-                logger.info("Using GLM-ASR-Nano STT at \(serverIP):8080")
+                logger.info("Using GLM-ASR-Nano STT at \(serverIP):8081")
                 sttService = GLMASRSTTService(configuration: config, telemetry: appState.telemetry)
             } else {
                 logger.warning("GLM-ASR-Nano selected but no server IP configured, falling back to Apple Speech")

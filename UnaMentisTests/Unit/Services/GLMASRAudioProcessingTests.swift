@@ -74,8 +74,11 @@ final class GLMASRAudioProcessingTests: XCTestCase {
             XCTFail("startStreaming should reject 44.1kHz format")
         } catch STTError.invalidAudioFormat {
             // Expected: format check rejects non-16kHz
+        } catch let error as GLMASROnDeviceSTTService.OnDeviceError {
+            // Model loading errors are acceptable in test environment (no model files present)
+            _ = error
         } catch {
-            // Model loading may fail first, which is also acceptable
+            XCTFail("Unexpected error type: \(type(of: error)): \(error)")
         }
     }
 
@@ -93,8 +96,11 @@ final class GLMASRAudioProcessingTests: XCTestCase {
             XCTFail("startStreaming should reject stereo format")
         } catch STTError.invalidAudioFormat {
             // Expected: format check rejects non-mono
+        } catch let error as GLMASROnDeviceSTTService.OnDeviceError {
+            // Model loading errors are acceptable in test environment (no model files present)
+            _ = error
         } catch {
-            // Model loading may fail first
+            XCTFail("Unexpected error type: \(type(of: error)): \(error)")
         }
     }
 

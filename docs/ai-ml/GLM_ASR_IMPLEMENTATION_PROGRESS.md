@@ -35,8 +35,8 @@
 | **Phase 5: Updated On-Device (Feb 2026)** | Unified GGUF approach | 🟡 In Progress | Single Q4_K_M file (~1.06GB) |
 | | llama.cpp wrapper update | ⏸️ Blocked | StanfordBDHG v0.3.3 predates audio support (PRs #17901, #18142) |
 | | Audio pipeline via libmtmd | ⏸️ Blocked | Depends on wrapper update |
-| | Updated unit tests (TDD) | 🟡 In Progress | GLMASROnDeviceConfigurationTests added |
-| | Server backend update | 🟡 In Progress | Adding SGLang, transformers 5.0 |
+| | Updated unit tests (TDD) | 🟢 Complete | 4 test classes: Configuration (28), AudioProcessing (23), UnifiedGGUF (16), Provider (14) |
+| | Server backend update | 🟢 Complete | SGLang support added, transformers 5.0 documented |
 
 **Legend:** 🔴 Not Started | 🟡 In Progress | 🟢 Complete | ⏸️ Blocked | 🔄 Needs Rework | ❌ Deprecated
 

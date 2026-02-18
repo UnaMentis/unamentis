@@ -184,7 +184,7 @@ version: '3.8'
 
 services:
   glm-asr-server:
-    image: lmsysorg/sglang:dev
+    image: lmsysorg/sglang:v0.4.5.post2-cu124
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
