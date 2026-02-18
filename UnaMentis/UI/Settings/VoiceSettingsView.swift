@@ -589,7 +589,7 @@ class VoiceSettingsViewModel: ObservableObject {
            let stt = STTProvider(rawValue: sttRaw) {
             self.sttProvider = stt
         } else {
-            self.sttProvider = .glmASROnDevice
+            self.sttProvider = .glmASRNano
         }
 
         if let llmRaw = defaults.string(forKey: "llmProvider"),
@@ -717,7 +717,7 @@ class VoiceSettingsViewModel: ObservableObject {
             maxTokens = 2048
 
         case .costOptimized:
-            sttProvider = .glmASROnDevice
+            sttProvider = .glmASRNano
             llmProvider = .localMLX
             ttsProvider = .appleTTS
             sampleRate = 16000

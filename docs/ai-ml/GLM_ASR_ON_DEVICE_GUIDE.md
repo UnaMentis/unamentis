@@ -167,16 +167,15 @@ The unified GGUF approach replaces all four components with a single file and el
 ### 4.1 Service Initialization
 
 ```swift
-let config = GLMASROnDeviceConfiguration(
-    encoderModelPath: Bundle.main.path(forResource: "GLMASRWhisperEncoder", ofType: "mlpackage"),
-    adapterModelPath: Bundle.main.path(forResource: "GLMASRAudioAdapter", ofType: "mlpackage"),
-    embedHeadModelPath: Bundle.main.path(forResource: "GLMASREmbedHead", ofType: "mlpackage"),
-    decoderModelPath: Bundle.main.path(forResource: "glm-asr-nano-q4km", ofType: "gguf"),
-    computeUnits: .cpuAndNeuralEngine,
-    maxContextLength: 4096
+// Unified GGUF approach: single model file handles the full pipeline
+let config = GLMASROnDeviceSTTService.Configuration(
+    modelDirectory: Bundle.main.resourceURL!.appendingPathComponent("models/glm-asr-nano"),
+    maxAudioDuration: 30.0,
+    useNeuralEngine: true,
+    gpuLayers: 99
 )
 
-let sttService = try await GLMASROnDeviceSTTService(configuration: config)
+let sttService = GLMASROnDeviceSTTService(configuration: config)
 ```
 
 ### 4.2 Audio Processing
@@ -223,14 +222,14 @@ if GLMASROnDeviceSTTService.isDeviceSupported {
 
 ### 4.4 Simulator Support
 
-For simulator testing, on-device mode is enabled when models are present:
+For simulator testing, on-device mode is enabled when the GGUF model file is present:
 
 ```swift
 #if targetEnvironment(simulator)
-// Check if models exist in the expected location
+// Check if the unified GGUF model exists in the expected location
 let modelDir = Configuration.default.modelDirectory
-let encoderPath = modelDir.appendingPathComponent("GLMASRWhisperEncoder.mlpackage").path
-return FileManager.default.fileExists(atPath: encoderPath)
+let ggufPath = modelDir.appendingPathComponent("glm-asr-nano-q4km.gguf").path
+return FileManager.default.fileExists(atPath: ggufPath)
 #else
 return true
 #endif
@@ -303,33 +302,18 @@ No special entitlements are required for on-device inference. Standard microphon
 ### 6.1 Configuration Options
 
 ```swift
-public struct GLMASROnDeviceConfiguration {
-    /// Path to the Whisper encoder CoreML model
-    public var encoderModelPath: String?
+public struct Configuration: Sendable {
+    /// Directory containing the unified GGUF model file
+    public var modelDirectory: URL
 
-    /// Path to the audio adapter CoreML model
-    public var adapterModelPath: String?
+    /// Maximum audio duration in seconds (default: 30.0)
+    public var maxAudioDuration: TimeInterval = 30.0
 
-    /// Path to the embed head CoreML model
-    public var embedHeadModelPath: String?
+    /// Use Neural Engine for acceleration (default: true)
+    public var useNeuralEngine: Bool = true
 
-    /// Path to the GGUF decoder model
-    public var decoderModelPath: String?
-
-    /// CoreML compute units (default: cpuAndNeuralEngine)
-    public var computeUnits: MLComputeUnits = .cpuAndNeuralEngine
-
-    /// Maximum context length for decoder (default: 4096)
-    public var maxContextLength: Int = 4096
-
-    /// Number of threads for llama.cpp (default: 4)
-    public var decoderThreads: Int = 4
-
-    /// Enable streaming results (default: true)
-    public var streamingEnabled: Bool = true
-
-    /// Language hint (default: "auto")
-    public var language: String = "auto"
+    /// Number of GPU layers for llama.cpp (default: 99)
+    public var gpuLayers: Int = 99
 }
 ```
 

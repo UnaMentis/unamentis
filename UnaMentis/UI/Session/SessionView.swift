@@ -1436,7 +1436,7 @@ class SessionViewModel: ObservableObject {
 
         // Read user settings from UserDefaults
         let sttProviderSetting = UserDefaults.standard.string(forKey: "sttProvider")
-            .flatMap { STTProvider(rawValue: $0) } ?? .glmASROnDevice
+            .flatMap { STTProvider(rawValue: $0) } ?? .glmASRNano
         let llmProviderSetting = UserDefaults.standard.string(forKey: "llmProvider")
             .flatMap { LLMProvider(rawValue: $0) } ?? .localMLX
         let ttsProviderSetting = UserDefaults.standard.string(forKey: "ttsProvider")

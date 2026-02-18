@@ -11,6 +11,7 @@
 
 import XCTest
 @testable import UnaMentis
+import AVFoundation
 
 @MainActor
 final class GLMASROnDeviceConfigurationTests: XCTestCase {
@@ -169,6 +170,8 @@ final class GLMASROnDeviceConfigurationTests: XCTestCase {
             default:
                 XCTFail("Expected modelNotFound or modelLoadFailed, got: \(error)")
             }
+        } catch {
+            XCTFail("Expected OnDeviceError, got: \(type(of: error)): \(error)")
         }
     }
 
