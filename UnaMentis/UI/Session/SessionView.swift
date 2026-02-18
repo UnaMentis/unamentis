@@ -1482,6 +1482,23 @@ class SessionViewModel: ObservableObject {
                 logger.warning("AssemblyAI API key not configured, falling back to Apple Speech")
                 sttService = AppleSpeechSTTService()
             }
+        case .glmASRNano:
+            if selfHostedEnabled && !serverIP.isEmpty {
+                let config = GLMASRSTTService.Configuration(
+                    serverURL: URL(string: "wss://\(serverIP):8080/v1/audio/stream")!,
+                    authToken: nil,
+                    language: "auto",
+                    interimResults: true,
+                    punctuate: true,
+                    reconnectAttempts: 3,
+                    reconnectDelayMs: 1000
+                )
+                logger.info("Using GLM-ASR-Nano STT at \(serverIP):8080")
+                sttService = GLMASRSTTService(configuration: config, telemetry: appState.telemetry)
+            } else {
+                logger.warning("GLM-ASR-Nano selected but no server IP configured, falling back to Apple Speech")
+                sttService = AppleSpeechSTTService()
+            }
         default:
             // Default fallback to Apple Speech (always available)
             logger.info("Using Apple Speech as default STT provider")

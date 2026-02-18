@@ -7,7 +7,7 @@
 - `GLM_ASR_SERVER_TRD.md` - Server technical requirements document
 - `GLM_ASR_ON_DEVICE_GUIDE.md` - On-device implementation guide
 
-**Last Updated:** December 2025
+**Last Updated:** February 2026
 
 ---
 
@@ -60,7 +60,7 @@
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `UnaMentis/Services/STT/GLMASROnDeviceSTTService.swift` | On-device STT with CoreML + llama.cpp | ~600 |
+| `UnaMentis/Services/STT/GLMASROnDeviceSTTService.swift` | On-device STT service (CoreML pipeline deprecated; see Phase 5 GGUF approach) | ~600 |
 
 ### New Documentation
 
@@ -88,6 +88,10 @@
 | `GLMASRSTTServiceTests` | 12 | Configuration, format validation, message parsing, audio conversion |
 | `GLMASRHealthMonitorTests` | 11 | State transitions, thresholds, monitoring lifecycle |
 | `STTProviderRouterTests` | 10 | Provider selection, failover, recovery |
+| `GLMASROnDeviceConfigurationTests` | 28 | On-device GGUF configuration, load/validation |
+| `GLMASRAudioProcessingTests` | 23 | Audio format validation, mel spectrogram, state management |
+| `GLMASRUnifiedGGUFTests` | 16 | Streaming state machine, model loading, error paths |
+| `GLMASROnDeviceProviderTests` | 14 | STT provider routing, health-based failover |
 
 ### Integration Tests
 
@@ -293,28 +297,17 @@ for await result in results {
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │               GLMASROnDeviceSTTService Pipeline                 │
+│               (Phase 5: Unified GGUF Architecture)              │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  Audio Input (16kHz PCM)                                        │
 │       │                                                         │
 │       ▼                                                         │
 │  ┌─────────────────────────────────────────┐                   │
-│  │     GLMASRWhisperEncoder (CoreML)       │ 1.2 GB            │
-│  └─────────────────────────────────────────┘                   │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────────────────────────────────┐                   │
-│  │     GLMASRAudioAdapter (CoreML)         │ 56 MB             │
-│  └─────────────────────────────────────────┘                   │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────────────────────────────────┐                   │
-│  │     GLMASREmbedHead (CoreML)            │ 232 MB            │
-│  └─────────────────────────────────────────┘                   │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────────────────────────────────┐                   │
-│  │     GLM-4 Decoder (llama.cpp Q4_K_M)    │ 935 MB            │
+│  │     llama.cpp (unified GGUF)            │ ~1.06 GB          │
+│  │     - Audio encoding via libmtmd        │ (Q4_K_M)          │
+│  │     - Whisper-based feature extraction  │                   │
+│  │     - Autoregressive text decoding      │                   │
 │  └─────────────────────────────────────────┘                   │
 │       │                                                         │
 │       ▼                                                         │
@@ -322,9 +315,9 @@ for await result in results {
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
-Total Model Size: ~2.4 GB
-Supported Devices: iPhone 15 Pro+ (8GB+ RAM)
-Optimal Device: iPhone 17 Pro Max (12GB RAM)
+Total Model Size: ~1.06 GB (Q4_K_M quantization)
+Minimum Device: iPhone 17 Pro (12GB RAM)
+Status: Blocked on StanfordBDHG/llama.cpp wrapper update
 ```
 
 ---
@@ -335,19 +328,20 @@ Optimal Device: iPhone 17 Pro Max (12GB RAM)
 
 1. **Server Deployment**
    - [ ] Set up GPU server (RunPod/AWS/GCP)
-   - [ ] Deploy vLLM with GLM-ASR-Nano model
+   - [ ] Deploy SGLang (recommended) or vLLM with GLM-ASR-Nano model
    - [ ] Configure TLS/SSL certificates
    - [ ] Set up monitoring (Prometheus/Grafana)
 
-### On-Device Setup (Required for Local Testing)
+### On-Device Setup (Blocked, Phase 5)
 
 1. **Model Files**
-   - [ ] Download models from Hugging Face (~2.4GB)
-   - [ ] Place in `models/glm-asr-nano/`
+   - [ ] Download unified GGUF from Mungert/GLM-ASR-Nano-2512-GGUF (~1.06GB Q4_K_M)
+   - [ ] Place `glm-asr-nano-2512-q4km.gguf` in `models/glm-asr-nano/`
    - [ ] Add to Xcode target (Copy Bundle Resources)
+   - **Blocked:** Final on-device setup requires StanfordBDHG/llama.cpp wrapper update for audio/libmtmd support (see Phase 5)
 
 2. **Testing**
-   - [ ] Test on physical iPhone 15 Pro or later
+   - [ ] Test on physical iPhone 17 Pro or later (minimum supported device)
    - [ ] Profile performance and latency
    - [ ] Verify thermal management under load
 
@@ -396,4 +390,4 @@ Optimal Device: iPhone 17 Pro Max (12GB RAM)
 
 ---
 
-*Last Updated: December 2025*
+*Last Updated: February 2026*

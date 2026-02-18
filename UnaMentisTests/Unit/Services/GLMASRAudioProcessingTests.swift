@@ -52,16 +52,16 @@ final class GLMASRAudioProcessingTests: XCTestCase {
 
     // MARK: - Audio Format Validation
 
-    func testStartStreaming_validFormat16kHzMono_succeeds() async throws {
+    func testAVAudioFormat_valid16kHzMono_matchesRequiredSpecs() async throws {
         let format = validAudioFormat()
 
-        // Format validation: verify the valid format matches required specs.
-        // Model loading fails before format check in startStreaming, so we validate directly.
+        // Validate the format we use throughout tests matches GLM-ASR requirements
         XCTAssertEqual(format.sampleRate, 16000)
         XCTAssertEqual(format.channelCount, 1)
     }
 
     func testStartStreaming_invalidSampleRate_throws() async {
+        let service = makeService()
         let format44k = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: 44100,
@@ -69,13 +69,18 @@ final class GLMASRAudioProcessingTests: XCTestCase {
             interleaved: false
         )!
 
-        // Models will fail to load first, but we verify the format would be rejected
-        // by testing the validation logic directly
-        XCTAssertNotEqual(format44k.sampleRate, 16000,
-                          "44.1kHz should not match the required 16kHz sample rate")
+        do {
+            _ = try await service.startStreaming(audioFormat: format44k)
+            XCTFail("startStreaming should reject 44.1kHz format")
+        } catch STTError.invalidAudioFormat {
+            // Expected: format check rejects non-16kHz
+        } catch {
+            // Model loading may fail first, which is also acceptable
+        }
     }
 
     func testStartStreaming_stereoFormat_rejected() async {
+        let service = makeService()
         let format = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: 16000,
@@ -83,8 +88,14 @@ final class GLMASRAudioProcessingTests: XCTestCase {
             interleaved: false
         )!
 
-        XCTAssertNotEqual(format.channelCount, 1,
-                          "Stereo format should not match required mono channel count")
+        do {
+            _ = try await service.startStreaming(audioFormat: format)
+            XCTFail("startStreaming should reject stereo format")
+        } catch STTError.invalidAudioFormat {
+            // Expected: format check rejects non-mono
+        } catch {
+            // Model loading may fail first
+        }
     }
 
     // MARK: - Service State
@@ -164,9 +175,12 @@ final class GLMASRAudioProcessingTests: XCTestCase {
         // First call will fail (no models)
         do { try await service.loadModels() } catch {}
 
-        // isLoaded should still be false since first call failed
+        // Second call should also fail gracefully without crashing
+        do { try await service.loadModels() } catch {}
+
+        // isLoaded should still be false since both calls failed
         let loaded = await service.isLoaded
-        XCTAssertFalse(loaded, "isLoaded should be false after failed load")
+        XCTAssertFalse(loaded, "isLoaded should be false after failed loads")
     }
 
     // MARK: - Mel Spectrogram Shape
@@ -174,6 +188,7 @@ final class GLMASRAudioProcessingTests: XCTestCase {
     func testMelSpectrogramConstants_matchWhisperConfig() {
         // Verify the constants match Whisper's standard mel spectrogram config
         // These are verified against the GLM-ASR model card
+        // TODO: validate against GLMASROnDeviceSTTService constants when they are exposed
         let nFFT = 400
         let hopLength = 160
         let nMels = 128
@@ -246,27 +261,27 @@ final class GLMASRAudioProcessingTests: XCTestCase {
     // MARK: - OnDeviceError
 
     func testOnDeviceError_modelNotFound_hasDescription() {
-        let error = GLMASROnDeviceSTTService.OnDeviceError.modelNotFound("test.mlpackage")
+        let error = GLMASROnDeviceSTTService.OnDeviceError.modelNotFound("test.gguf")
         XCTAssertNotNil(error.errorDescription)
-        XCTAssertTrue(error.errorDescription!.contains("test.mlpackage"))
+        XCTAssertTrue(error.errorDescription?.contains("test.gguf") ?? false)
     }
 
     func testOnDeviceError_modelLoadFailed_hasDescription() {
         let error = GLMASROnDeviceSTTService.OnDeviceError.modelLoadFailed("corruption")
         XCTAssertNotNil(error.errorDescription)
-        XCTAssertTrue(error.errorDescription!.contains("corruption"))
+        XCTAssertTrue(error.errorDescription?.contains("corruption") ?? false)
     }
 
     func testOnDeviceError_inferenceError_hasDescription() {
         let error = GLMASROnDeviceSTTService.OnDeviceError.inferenceError("timeout")
         XCTAssertNotNil(error.errorDescription)
-        XCTAssertTrue(error.errorDescription!.contains("timeout"))
+        XCTAssertTrue(error.errorDescription?.contains("timeout") ?? false)
     }
 
     func testOnDeviceError_audioProcessingError_hasDescription() {
         let error = GLMASROnDeviceSTTService.OnDeviceError.audioProcessingError("bad format")
         XCTAssertNotNil(error.errorDescription)
-        XCTAssertTrue(error.errorDescription!.contains("bad format"))
+        XCTAssertTrue(error.errorDescription?.contains("bad format") ?? false)
     }
 
     func testOnDeviceError_notConfigured_hasDescription() {

@@ -35,7 +35,7 @@ UnaMentis supports running GLM-ASR-Nano directly on the device using a unified G
 | Requirement | Minimum | Recommended |
 |-------------|---------|-------------|
 | Device | iPhone 17 Pro | iPhone 17 Pro Max |
-| RAM | 12GB | 12GB |
+| RAM | 8GB (12GB recommended) | 12GB |
 | iOS | 18.0 | 18.0+ |
 | Storage | 1.5GB free | 3GB free |
 
@@ -45,7 +45,7 @@ The unified GGUF approach requires only ~1.06GB of storage for the model file, b
 
 The `GLMASROnDeviceSTTService` is automatically selected when:
 
-1. Device has sufficient RAM (12GB+ for optimal, 8GB minimum)
+1. Device has sufficient RAM (12GB recommended, 8GB minimum)
 2. Model files are present in the app bundle
 3. Thermal state is nominal (not overheating)
 4. User has enabled on-device mode in settings
@@ -213,7 +213,7 @@ Before initializing, check if the device supports on-device inference:
 ```swift
 if GLMASROnDeviceSTTService.isDeviceSupported {
     // Initialize on-device service
-    let service = try await GLMASROnDeviceSTTService(configuration: config)
+    let service = GLMASROnDeviceSTTService(configuration: config)
 } else {
     // Fall back to server-based service
     let service = GLMASRSTTService(configuration: serverConfig)
@@ -228,7 +228,7 @@ For simulator testing, on-device mode is enabled when the GGUF model file is pre
 #if targetEnvironment(simulator)
 // Check if the unified GGUF model exists in the expected location
 let modelDir = Configuration.default.modelDirectory
-let ggufPath = modelDir.appendingPathComponent("glm-asr-nano-q4km.gguf").path
+let ggufPath = modelDir.appendingPathComponent("glm-asr-nano-2512-q4km.gguf").path
 return FileManager.default.fileExists(atPath: ggufPath)
 #else
 return true
@@ -245,7 +245,7 @@ return true
 2. **Right-click** on the UnaMentis folder in the navigator
 3. **Select "Add Files to UnaMentis..."**
 4. **Navigate** to `models/glm-asr-nano/`
-5. **Select all model files** (.mlpackage folders and .gguf file)
+5. **Select the model file** (`glm-asr-nano-2512-q4km.gguf`)
 6. **Check** "Copy items if needed"
 7. **Check** "Add to targets: UnaMentis"
 8. **Click Add**
@@ -319,30 +319,31 @@ public struct Configuration: Sendable {
 
 ### 6.2 Compute Unit Selection
 
-| Compute Units | Description | Best For |
+| Configuration | Description | Best For |
 |---------------|-------------|----------|
-| `.cpuOnly` | CPU only | Debugging |
-| `.cpuAndGPU` | CPU + GPU | Not recommended |
-| `.cpuAndNeuralEngine` | CPU + Neural Engine | **Recommended** |
-| `.all` | All available | Maximum performance |
+| `useNeuralEngine: false, gpuLayers: 0` | CPU only | Debugging |
+| `useNeuralEngine: true, gpuLayers: 33` | Neural Engine + limited GPU | 8GB devices |
+| `useNeuralEngine: true, gpuLayers: 99` | Neural Engine + full GPU offload | **Recommended** (12GB devices) |
 
 ### 6.3 Memory Management
 
 For devices with limited RAM, configure conservatively:
 
 ```swift
-// For 8GB devices (iPhone 15 Pro)
-let config = GLMASROnDeviceConfiguration(
-    computeUnits: .cpuAndNeuralEngine,
-    maxContextLength: 2048,  // Reduced
-    decoderThreads: 2        // Reduced
+// For 8GB devices (conservative)
+let config = GLMASROnDeviceSTTService.Configuration(
+    modelDirectory: Bundle.main.resourceURL!.appendingPathComponent("models/glm-asr-nano"),
+    maxAudioDuration: 15.0,
+    useNeuralEngine: true,
+    gpuLayers: 33   // Offload fewer layers to GPU
 )
 
-// For 12GB devices (iPhone 17 Pro Max)
-let config = GLMASROnDeviceConfiguration(
-    computeUnits: .all,
-    maxContextLength: 4096,
-    decoderThreads: 4
+// For 12GB devices (iPhone 17 Pro/Pro Max)
+let config = GLMASROnDeviceSTTService.Configuration(
+    modelDirectory: Bundle.main.resourceURL!.appendingPathComponent("models/glm-asr-nano"),
+    maxAudioDuration: 30.0,
+    useNeuralEngine: true,
+    gpuLayers: 99   // Full GPU offload
 )
 ```
 
@@ -367,7 +368,7 @@ Note: Simulator performance will be slower than real devices.
 
 For accurate performance testing, use a physical device:
 
-1. **Connect** iPhone 15 Pro or later
+1. **Connect** iPhone 17 Pro or later (minimum supported device)
 2. **Select device** as build target
 3. **Build and run** (Cmd+R)
 4. **Test with real speech**
@@ -422,8 +423,8 @@ if let resourcePath = Bundle.main.resourcePath {
 **Symptom:** App crashes or system kills app
 
 **Solution:**
-1. Reduce `maxContextLength`
-2. Use fewer `decoderThreads`
+1. Reduce `gpuLayers` (e.g., from 99 to 33) to lower memory usage
+2. Reduce `maxAudioDuration` to process shorter chunks
 3. Ensure no other memory-heavy apps running
 4. Consider server-based fallback for older devices
 
@@ -432,20 +433,21 @@ if let resourcePath = Bundle.main.resourcePath {
 **Symptom:** High latency, choppy audio
 
 **Solution:**
-1. Use `.cpuAndNeuralEngine` compute units
+1. Ensure `useNeuralEngine: true` in Configuration
 2. Check thermal state (throttling when hot)
-3. Ensure models are optimized (CoreML compiled)
+3. Reduce `gpuLayers` if memory-constrained
 4. Profile with Instruments
 
-### 8.4 CoreML Errors
+### 8.4 GGUF Model Errors
 
-**Symptom:** `CoreML model failed to load`
+**Symptom:** `Failed to load GGUF model` or `llama_model_load failed`
 
 **Solution:**
-1. Verify iOS version (18.0+ required)
-2. Check model format (.mlpackage not .mlmodel)
-3. Recompile models with latest coremltools
-4. Check Xcode console for detailed errors
+1. Verify the GGUF file is not corrupted (re-download if needed)
+2. Check quantization format matches expectations (Q4_K_M recommended)
+3. Verify the file name matches `glm-asr-nano-2512-q4km.gguf`
+4. Ensure sufficient free memory for model loading (~1.5GB at runtime)
+5. Consider server-based fallback for unsupported devices
 
 ### 8.5 llama.cpp Errors
 

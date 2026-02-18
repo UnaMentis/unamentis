@@ -203,7 +203,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - VLLM_ENDPOINT=http://glm-asr-server:30000
+      - INFERENCE_ENDPOINT=http://glm-asr-server:30000
       - WS_PORT=8080
     depends_on:
       - glm-asr-server
@@ -227,19 +227,23 @@ version: '3.8'
 
 services:
   glm-asr-server:
-    image: vllm/vllm-openai:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.vllm
+    # Dockerfile.vllm:
+    # FROM vllm/vllm-openai:latest
+    # RUN pip install --no-cache-dir git+https://github.com/huggingface/transformers@v5.0.0
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - MODEL_NAME=zai-org/GLM-ASR-Nano-2512
-      - DTYPE=float16
+      - DTYPE=bfloat16
       - MAX_MODEL_LEN=4096
     ports:
       - "8000:8000"
     volumes:
       - ./models:/root/.cache/huggingface
     command: >
-      pip install git+https://github.com/huggingface/transformers &&
       python -m vllm.entrypoints.openai.api_server
       --model ${MODEL_NAME}
       --dtype ${DTYPE}
@@ -270,19 +274,36 @@ services:
 
 ### 3.3 Streaming Gateway
 
-The streaming gateway bridges WebSocket connections to the vLLM inference server:
+The streaming gateway bridges WebSocket connections to the inference server (SGLang recommended; vLLM also supported):
 
 ```python
 # gateway/server.py
 import asyncio
-import websockets
-import numpy as np
+import base64
+import json
+import os
+from dataclasses import dataclass
 from typing import AsyncGenerator
+
 import aiohttp
+import numpy as np
+import websockets
+
+
+@dataclass
+class TranscriptionResult:
+    text: str
+    is_final: bool
+    confidence: float
+    latency_ms: int
+
+    def to_json(self) -> str:
+        return json.dumps(self.__dict__)
+
 
 class GLMASRStreamingGateway:
-    def __init__(self, vllm_endpoint: str):
-        self.vllm_endpoint = vllm_endpoint
+    def __init__(self, inference_endpoint: str):
+        self.inference_endpoint = inference_endpoint
         self.chunk_buffer_ms = 500  # Accumulate 500ms before inference
         self.sample_rate = 16000
 
@@ -332,7 +353,7 @@ class GLMASRStreamingGateway:
 
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                f"{self.vllm_endpoint}/v1/audio/transcriptions",
+                f"{self.inference_endpoint}/v1/audio/transcriptions",
                 json={
                     "audio": audio_b64,
                     "model": "glm-asr-nano",
@@ -352,7 +373,7 @@ class GLMASRStreamingGateway:
 
 async def main():
     gateway = GLMASRStreamingGateway(
-        vllm_endpoint=os.environ.get("VLLM_ENDPOINT", "http://localhost:8000")
+        inference_endpoint=os.environ.get("INFERENCE_ENDPOINT", "http://localhost:8000")
     )
 
     async with websockets.serve(
@@ -1731,7 +1752,7 @@ spec:
 
 - [ ] Set up GPU server (RunPod/AWS/GCP)
 - [ ] Install NVIDIA drivers and container runtime
-- [ ] Deploy vLLM with GLM-ASR-Nano model
+- [ ] Deploy SGLang (recommended) or vLLM with GLM-ASR-Nano model
 - [ ] Implement streaming WebSocket gateway
 - [ ] Configure TLS/SSL certificates
 - [ ] Set up health check endpoint

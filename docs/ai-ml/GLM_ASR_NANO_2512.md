@@ -62,13 +62,13 @@ GLM-ASR-Nano aligns with UnaMentis's core principles:
 │                                                                     │
 │   Audio Input ──► Feature      ──► Transformer   ──► Token         │
 │   (16kHz PCM)     Extraction       Encoder           Decoder       │
-│                   (Mel-Spec)       (1.5B params)     (Streaming)   │
+│                   (Whisper-enc)    (1.5B params)     (Streaming)   │
 │                                                                     │
 │   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐               │
-│   │ 80-dim Mel  │  │ 24 Encoder  │  │ Autoregres- │               │
-│   │ Filterbank  │  │ Layers      │  │ sive Decode │               │
-│   │ 25ms window │  │ 1024 hidden │  │ + CTC head  │               │
-│   │ 10ms hop    │  │ 16 heads    │  │             │               │
+│   │ Whisper-    │  │ 24 Encoder  │  │ Autoregres- │               │
+│   │ based       │  │ Layers      │  │ sive Decode │               │
+│   │ Encoder     │  │ 1024 hidden │  │ + CTC head  │               │
+│   │             │  │ 16 heads    │  │             │               │
 │   └─────────────┘  └─────────────┘  └─────────────┘               │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
@@ -331,7 +331,7 @@ func selectSTTService() -> STTServiceProtocol {
 │  ├─ GPU: 6-core with hardware ray tracing                          │
 │  └─ Neural Engine: 16-core with per-core accelerators              │
 │                                                                     │
-│  Memory: 12GB LPDDR5X @ 8533 MT/s                                  │
+│  Memory: 12GB LPDDR5X @ 9600 MT/s                                  │
 │          (50% more than iPhone 16 Pro Max)                          │
 │                                                                     │
 │  Thermal: Vapor Chamber Cooling                                     │
@@ -379,8 +379,8 @@ enum DeviceCapabilityTier: String, Codable, Sendable {
 
 // Detection logic update
 let ultraTierIdentifiers: Set<String> = [
-    "iPhone18,1",  // iPhone 17 Pro (projected)
-    "iPhone18,2",  // iPhone 17 Pro Max (projected)
+    "iPhone18,1",  // iPhone 17 Pro
+    "iPhone18,2",  // iPhone 17 Pro Max
 ]
 
 if ultraTierIdentifiers.contains(identifier) && ramGB >= 12 {
@@ -456,8 +456,8 @@ docker run --gpus all \
 
 ```bash
 # Install transformers from source (5.0.0 dev required)
-pip install git+https://github.com/huggingface/transformers
-pip install vllm torch
+pip install git+https://github.com/huggingface/transformers@v5.0.0
+pip install vllm
 
 # Download model
 huggingface-cli download zai-org/GLM-ASR-Nano-2512
@@ -465,7 +465,7 @@ huggingface-cli download zai-org/GLM-ASR-Nano-2512
 # Start vLLM server
 python -m vllm.entrypoints.openai.api_server \
   --model zai-org/GLM-ASR-Nano-2512 \
-  --dtype float16 \
+  --dtype bfloat16 \
   --max-model-len 4096 \
   --port 8000 \
   --host 0.0.0.0
@@ -518,7 +518,7 @@ python inference.py \
 ### 8.2 Break-Even Analysis
 
 ```
-Break-even point: ~57 hours/month of STT usage
+Break-even point: ~573 hours/month of STT usage
 
 $149/month (server) ÷ $0.26/hour (Deepgram) = 573 hours/month
 
@@ -526,7 +526,8 @@ Below 573 hours/month: Deepgram API is cheaper
 Above 573 hours/month: Self-hosted GLM-ASR is cheaper
 
 For UnaMentis's target of extended 60-90 minute sessions,
-self-hosting becomes cost-effective at ~10 active daily users.
+self-hosting becomes cost-effective at approximately 44 active users
+(3 sessions per week at 60 minutes each).
 ```
 
 ---

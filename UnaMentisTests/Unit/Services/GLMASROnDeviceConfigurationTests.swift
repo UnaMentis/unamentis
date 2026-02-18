@@ -71,28 +71,21 @@ final class GLMASROnDeviceConfigurationTests: XCTestCase {
 
     // MARK: - Unified GGUF Model Path Tests
 
-    func testConfiguration_ggufModelFilename_isCorrect() {
-        // The unified GGUF approach uses a single file
-        let expectedFilename = "glm-asr-nano-q4km.gguf"
-
+    func testConfiguration_defaultModelDirectory_containsGLMASRPath() {
+        // Verify the default model directory resolves to a path containing glm-asr
         let config = GLMASROnDeviceSTTService.Configuration.default
-        let ggufPath = config.modelDirectory
-            .appendingPathComponent(expectedFilename)
-
-        XCTAssertTrue(
-            ggufPath.lastPathComponent == expectedFilename,
-            "GGUF model path should end with \(expectedFilename)"
-        )
+        let path = config.modelDirectory.path
+        // The default directory should be a valid file URL path
+        XCTAssertFalse(path.isEmpty, "Model directory path should not be empty")
     }
 
     func testConfiguration_isSendable() {
-        // Configuration must be Sendable for use across actor boundaries
+        // This test enforces compile-time Sendable conformance for Configuration.
+        // The act of passing it to a Task verifies the compiler accepts it as Sendable.
         let config = GLMASROnDeviceSTTService.Configuration.default
-
-        // Verify the configuration can be used in a sendable context
-        // This test validates at compile time that Configuration conforms to Sendable
-        let sendableConfig: any Sendable = config
-        XCTAssertNotNil(sendableConfig)
+        Task { @Sendable in
+            _ = config.modelDirectory
+        }
     }
 
     // MARK: - Service Initialization Tests
@@ -202,8 +195,9 @@ final class GLMASROnDeviceConfigurationTests: XCTestCase {
         // and returns a boolean based on actual hardware
         let isSupported = GLMASROnDeviceSTTService.isDeviceSupported
         // On CI/simulator, this should be false
-        // On a real device, it depends on hardware
-        XCTAssertNotNil(isSupported as Bool?)
+        // On a real device, it depends on hardware.
+        // This verifies the property can be read without crashing.
+        _ = isSupported
     }
 
     // MARK: - STTService Protocol Conformance Tests
@@ -236,9 +230,11 @@ final class GLMASROnDeviceConfigurationTests: XCTestCase {
             XCTFail("Should throw for 44.1kHz sample rate")
         } catch STTError.invalidAudioFormat {
             // Expected: only 16kHz is valid
+        } catch let error as GLMASROnDeviceSTTService.OnDeviceError {
+            // Model loading errors are acceptable in test environment (no model files present)
+            _ = error
         } catch {
-            // Other errors (model loading) may occur first, which is acceptable
-            // since model validation happens before format validation in the pipeline
+            XCTFail("Unexpected error type: \(type(of: error)): \(error)")
         }
     }
 
@@ -258,8 +254,11 @@ final class GLMASROnDeviceConfigurationTests: XCTestCase {
             XCTFail("Should throw for stereo audio")
         } catch STTError.invalidAudioFormat {
             // Expected: only mono is valid
+        } catch let error as GLMASROnDeviceSTTService.OnDeviceError {
+            // Model loading errors are acceptable in test environment (no model files present)
+            _ = error
         } catch {
-            // Other errors (model loading) may occur first
+            XCTFail("Unexpected error type: \(type(of: error)): \(error)")
         }
     }
 

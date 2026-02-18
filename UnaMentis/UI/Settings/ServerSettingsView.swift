@@ -312,6 +312,7 @@ struct AddServerSheet: View {
                             Text(type.displayName).tag(type)
                         }
                     }
+                    .pickerStyle(.navigationLink)
                 }
 
                 Section {
