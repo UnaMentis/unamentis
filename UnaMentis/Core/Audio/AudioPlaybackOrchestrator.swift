@@ -97,6 +97,12 @@ public actor AudioPlaybackOrchestrator {
         self.audioEngine = audioEngine
     }
 
+    /// Set the delegate for receiving playback events.
+    /// Required because actor-isolated properties cannot be set from outside the actor.
+    public func setDelegate(_ newDelegate: any PlaybackOrchestratorDelegate) {
+        self.delegate = newDelegate
+    }
+
     // MARK: - Segment Management
 
     /// Load segments for playback. Replaces any previously loaded segments.

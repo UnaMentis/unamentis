@@ -207,8 +207,9 @@ final class KBVoiceCoordinator: ObservableObject {
 
     // MARK: - TTS: Speaking
 
-    /// Speak text using TTS and wait for completion
-    func speak(_ text: String) async {
+    /// Speak text using TTS and wait for completion.
+    /// Optionally pass pre-cached audio to skip TTS synthesis.
+    func speak(_ text: String, cachedAudio: CachedSegmentAudio? = nil) async {
         guard let ttsService = ttsService,
               let audioEngine = audioEngine else {
             Self.logger.warning("Voice services not ready, cannot speak")
@@ -229,23 +230,18 @@ final class KBVoiceCoordinator: ObservableObject {
         isSpeaking = true
         Self.logger.info("Speaking: \"\(text.prefix(50))...\"")
 
-        do {
-            let stream = try await ttsService.synthesize(text: text)
+        let segment = KBTextSegment(text: text, cachedAudio: cachedAudio)
+        let orch = AudioPlaybackOrchestrator(
+            config: .knowledgeBowl,
+            ttsService: ttsService,
+            audioEngine: audioEngine
+        )
+        await orch.loadSegments([segment])
+        await orch.startPlayback(from: 0)
 
-            var isFirstChunk = true
-            for await chunk in stream {
-                // TTFA: mark first TTS chunk received
-                if isFirstChunk {
-                    isFirstChunk = false
-                    await TTFAInstrumentation.shared.markTTSFirstChunk()
-                }
-                try await audioEngine.playAudio(chunk)
-                if chunk.isLast {
-                    break
-                }
-            }
-        } catch {
-            Self.logger.error("TTS failed: \(error)")
+        // Wait for the single segment to complete
+        while await orch.state == .playing || await orch.state == .buffering {
+            try? await Task.sleep(for: .milliseconds(50))
         }
 
         isSpeaking = false
@@ -258,77 +254,68 @@ final class KBVoiceCoordinator: ObservableObject {
         await TTFAInstrumentation.shared.markActivation(.kbOral)
 
         // Try server cache first if available
+        var cached: CachedSegmentAudio?
         if useServerTTS, let cache = audioCache {
             do {
-                if let cached = try await cache.getAudio(
+                if let serverAudio = try await cache.getAudio(
                     questionId: question.id,
                     segment: .question
                 ) {
-                    try await playCachedAudio(cached)
-                    return
+                    cached = CachedSegmentAudio(
+                        audioData: serverAudio.data,
+                        sampleRate: Double(serverAudio.sampleRate),
+                        channels: 1
+                    )
                 }
             } catch {
                 Self.logger.warning("Server audio unavailable, falling back to local: \(error)")
             }
         }
 
-        // Fallback: speak with local TTS
-        await speak(question.questionText)
+        await speak(question.questionText, cachedAudio: cached)
     }
 
     /// Speak correct/incorrect feedback with explanation
     func speakFeedback(isCorrect: Bool, correctAnswer: String, explanation: String, question: KBQuestion? = nil) async {
-        // Try server feedback audio first
+        let feedbackText = isCorrect
+            ? "Correct!"
+            : "Incorrect. The correct answer is \(correctAnswer)."
+
+        // Try server feedback audio
+        var feedbackCached: CachedSegmentAudio?
         if useServerTTS, let cache = audioCache {
-            do {
-                let feedbackType = isCorrect ? "correct" : "incorrect"
-                if let feedbackAudio = try await cache.getFeedbackAudio(feedbackType) {
-                    try await playCachedAudio(feedbackAudio)
-                } else {
-                    // Fallback for feedback
-                    if isCorrect {
-                        await speak("Correct!")
-                    } else {
-                        await speak("Incorrect. The correct answer is \(correctAnswer).")
-                    }
-                }
-            } catch {
-                // Fallback to local TTS
-                if isCorrect {
-                    await speak("Correct!")
-                } else {
-                    await speak("Incorrect. The correct answer is \(correctAnswer).")
-                }
-            }
-        } else {
-            if isCorrect {
-                await speak("Correct!")
-            } else {
-                await speak("Incorrect. The correct answer is \(correctAnswer).")
+            let feedbackType = isCorrect ? "correct" : "incorrect"
+            if let serverAudio = try? await cache.getFeedbackAudio(feedbackType) {
+                feedbackCached = CachedSegmentAudio(
+                    audioData: serverAudio.data,
+                    sampleRate: Double(serverAudio.sampleRate),
+                    channels: 1
+                )
             }
         }
+
+        await speak(feedbackText, cachedAudio: feedbackCached)
 
         // Brief pause before explanation
         try? await Task.sleep(nanoseconds: 500_000_000)
 
         if !explanation.isEmpty {
             // Try cached explanation
+            var explCached: CachedSegmentAudio?
             if useServerTTS, let cache = audioCache, let q = question {
-                do {
-                    if let cached = try await cache.getAudio(
-                        questionId: q.id,
-                        segment: .explanation
-                    ) {
-                        try await playCachedAudio(cached)
-                        return
-                    }
-                } catch {
-                    Self.logger.debug("Explanation cache miss, using local TTS")
+                if let serverAudio = try? await cache.getAudio(
+                    questionId: q.id,
+                    segment: .explanation
+                ) {
+                    explCached = CachedSegmentAudio(
+                        audioData: serverAudio.data,
+                        sampleRate: Double(serverAudio.sampleRate),
+                        channels: 1
+                    )
                 }
             }
 
-            // Fallback: local TTS
-            await speak(explanation)
+            await speak(explanation, cachedAudio: explCached)
         }
     }
 
@@ -349,53 +336,6 @@ final class KBVoiceCoordinator: ObservableObject {
     }
 
     // MARK: - Server Audio Cache
-
-    /// Play pre-cached audio from server
-    private func playCachedAudio(_ cached: KBCachedAudio) async throws {
-        // TTFA: cached audio path
-        await TTFAInstrumentation.shared.markCachedHit()
-
-        guard let audioEngine = audioEngine else {
-            throw VoiceCoordinatorError.notConfigured
-        }
-
-        // Ensure audio engine is running for playback
-        let engineRunning = await audioEngine.isRunning
-        if !engineRunning {
-            try await audioEngine.start()
-        }
-
-        isSpeaking = true
-        Self.logger.debug("Playing cached audio (\(cached.data.count) bytes)")
-
-        // Create format for 24kHz 16-bit mono WAV (server default)
-        guard let format = AVAudioFormat(
-            commonFormat: .pcmFormatInt16,
-            sampleRate: Double(cached.sampleRate),
-            channels: 1,
-            interleaved: false
-        ) else {
-            throw VoiceCoordinatorError.audioFormatUnavailable
-        }
-
-        // Skip WAV header (44 bytes) to get raw PCM data
-        let pcmData: Data
-        if cached.data.count > 44 {
-            pcmData = cached.data.dropFirst(44)
-        } else {
-            pcmData = cached.data
-        }
-
-        do {
-            try await audioEngine.playRawAudio(pcmData, format: format)
-        } catch {
-            Self.logger.error("Failed to play cached audio: \(error)")
-            throw error
-        }
-
-        isSpeaking = false
-        Self.logger.debug("Finished playing cached audio")
-    }
 
     /// Warm the cache at session start
     func warmCache(questions: [KBQuestion]) async {
@@ -497,6 +437,22 @@ final class KBVoiceCoordinator: ObservableObject {
 
         // Notify callback
         onTranscriptComplete?(transcript)
+    }
+}
+
+// MARK: - KB Text Segment
+
+/// A single text segment for KB TTS playback via AudioPlaybackOrchestrator.
+/// Optionally carries pre-cached server audio.
+struct KBTextSegment: PlayableSegment {
+    let segmentIndex: Int
+    let segmentText: String
+    let cachedAudio: CachedSegmentAudio?
+
+    init(text: String, cachedAudio: CachedSegmentAudio? = nil) {
+        self.segmentIndex = 0  // KB always uses single-segment playback
+        self.segmentText = text
+        self.cachedAudio = cachedAudio
     }
 }
 

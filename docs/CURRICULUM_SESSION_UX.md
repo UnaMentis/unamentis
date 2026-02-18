@@ -26,6 +26,8 @@ When a curriculum topic session begins, content arrives from the server in segme
 
 ### Implementation Details
 
+> **Note:** This describes the curriculum transcript streaming path (server-side TTS via `TranscriptStreamingService`), which uses its own audio queue and AVAudioPlayer. The interactive voice session path uses `AudioPlaybackOrchestrator` with dynamic segment append instead. See `docs/design/AUDIO_PLAYBACK_ORCHESTRATOR.md`.
+
 In `SessionViewModel`:
 - `pendingTextSegments: [Int: String]` - Buffers text by segment index
 - `audioQueue: [(audio: Data, text: String, index: Int)]` - Queues audio with its paired text

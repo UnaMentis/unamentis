@@ -221,7 +221,7 @@ The app works on any device, even without API keys or servers:
 ```
 UnaMentis/
 ├── Core/
-│   ├── Audio/           # AudioEngine, VAD, thermal management
+│   ├── Audio/           # AudioEngine, AudioPlaybackOrchestrator, AudioEngineCache, AudioTTSCache, VAD, thermal management
 │   ├── Config/          # APIKeyManager (Keychain), ServerConfigManager
 │   ├── Curriculum/      # CurriculumEngine, ProgressTracker, UMCFParser
 │   ├── Logging/         # RemoteLogHandler
@@ -1105,6 +1105,7 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 - **Knowledge Bowl Question Pack API** (full CRUD for packs/questions, bundle creation with deduplication, module import)
 - **KB Pack Management UI** (Operations Console: pack browser, question browser, pack creation, bulk operations)
 - **Reading List** with file and URL import, markdown stripping, HTML article extraction (swift-readability/Mozilla Readability), Vision OCR for scanned PDFs, TTS-friendly text chunking
+- **AudioPlaybackOrchestrator** (shared TTS playback actor used by Voice Session, Reading List, and Knowledge Bowl, with configurable prefetch, inter-segment silence, pause/resume/suspend, dynamic segment append, and warm audio engine + TTS caching)
 
 ### In Progress
 - Android client (separate repository)
@@ -1235,6 +1236,9 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 | `server/usm-core/crates/usm-ffi/src/lib.rs` | C FFI bindings for Swift |
 | `server/usm-core/config/services.toml` | Service definitions |
 | `server/web-client/src/app/` | Web client application |
+| `UnaMentis/Core/Audio/AudioPlaybackOrchestrator.swift` | **Shared TTS playback orchestrator** (prefetch, pause/resume, dynamic segments) |
+| `UnaMentis/Core/Audio/AudioEngineCache.swift` | Warm AudioEngine singleton cache (2-min timeout between views) |
+| `UnaMentis/Core/Audio/AudioTTSCache.swift` | Warm TTS service singleton cache (2-min timeout) |
 | `UnaMentis/Core/ReadingList/ReadingListManager.swift` | Reading list import, dedup, Core Data management |
 | `UnaMentis/Core/ReadingList/ReadingTextChunker.swift` | Text chunking with Vision OCR fallback for scanned PDFs |
 | `UnaMentis/Core/ReadingList/HTMLArticleExtractor.swift` | Article extraction using swift-readability + SwiftSoup |
