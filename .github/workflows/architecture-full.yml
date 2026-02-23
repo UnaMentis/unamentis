@@ -50,6 +50,39 @@ jobs:
           }
           LIVEEOF
 
+      - name: Create Cloudflare Pages project (if needed)
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # Check if project exists
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/solution-explorer-unamentis" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}")
+
+          if [ "$STATUS" = "200" ]; then
+            echo "Pages project already exists"
+          else
+            echo "Creating Pages project solution-explorer-unamentis..."
+            curl -s -X POST \
+              "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects" \
+              -H "Authorization: Bearer ${CF_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data '{
+                "name": "solution-explorer-unamentis",
+                "production_branch": "main"
+              }' | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          if data.get('success'):
+              print('Pages project created successfully')
+          else:
+              for e in data.get('errors', []):
+                  print(f'Error: {e.get(\"message\", str(e))}')
+              sys.exit(1)
+          "
+          fi
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
