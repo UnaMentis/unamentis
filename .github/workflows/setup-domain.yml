@@ -1,0 +1,100 @@
+name: Setup Custom Domain
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    name: Add solution-explorer.unamentis.org
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Cloudflare Zone ID
+        id: zone
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          ZONE_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=unamentis.org" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json" | python3 -c "import json,sys; data=json.load(sys.stdin); print(data['result'][0]['id'] if data.get('result') else 'NOT_FOUND')")
+
+          echo "zone_id=$ZONE_ID" >> "$GITHUB_OUTPUT"
+
+          if [ "$ZONE_ID" = "NOT_FOUND" ]; then
+            echo "::error::Could not find Cloudflare zone for unamentis.org"
+            exit 1
+          fi
+          echo "Found zone ID: $ZONE_ID"
+
+      - name: Check if CNAME already exists
+        id: check_dns
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          EXISTING=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${{ steps.zone.outputs.zone_id }}/dns_records?name=solution-explorer.unamentis.org&type=CNAME" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json" | python3 -c "import json,sys; data=json.load(sys.stdin); print(len(data.get('result', [])))")
+
+          echo "existing_count=$EXISTING" >> "$GITHUB_OUTPUT"
+          if [ "$EXISTING" != "0" ]; then
+            echo "CNAME record already exists, skipping creation"
+          fi
+
+      - name: Create CNAME DNS Record
+        if: steps.check_dns.outputs.existing_count == '0'
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          RESULT=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ steps.zone.outputs.zone_id }}/dns_records" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "type": "CNAME",
+              "name": "solution-explorer",
+              "content": "um-solution-explorer.pages.dev",
+              "proxied": true
+            }')
+
+          SUCCESS=$(echo "$RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('success', False))")
+          if [ "$SUCCESS" != "True" ]; then
+            echo "::warning::DNS record creation response: $RESULT"
+            echo "DNS record may require manual creation if token lacks Zone:DNS:Edit permission"
+          else
+            echo "CNAME record created successfully"
+          fi
+
+      - name: Add Custom Domain to Pages Project
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          RESULT=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/um-solution-explorer/domains" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"name": "solution-explorer.unamentis.org"}')
+
+          SUCCESS=$(echo "$RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('success', False))")
+          if [ "$SUCCESS" = "True" ]; then
+            echo "Custom domain added to Pages project successfully"
+          else
+            ERROR=$(echo "$RESULT" | python3 -c "import json,sys; errors=json.load(sys.stdin).get('errors',[]); print(errors[0].get('message','unknown') if errors else 'unknown')")
+            if echo "$ERROR" | grep -qi "already"; then
+              echo "Custom domain already exists on the project"
+            else
+              echo "::warning::Pages domain response: $RESULT"
+              echo "May require manual setup if token lacks permission"
+            fi
+          fi
+
+      - name: Verify Setup
+        run: |
+          echo "=== Domain Setup Summary ==="
+          echo "CNAME: solution-explorer.unamentis.org -> um-solution-explorer.pages.dev"
+          echo "Pages project: um-solution-explorer"
+          echo ""
+          echo "DNS propagation may take a few minutes."
+          echo "After propagation, verify at: https://solution-explorer.unamentis.org"
+          echo ""
+          echo "This workflow can be deleted after successful setup."

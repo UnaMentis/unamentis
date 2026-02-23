@@ -23,7 +23,38 @@ jobs:
       - uses: sirfifer/solution-explorer@main
         with:
           config: solution-explorer.json
-          deploy-to: cloudflare
-          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          deploy-to: artifact-only
           cloudflare-project-name: um-solution-explorer
+
+      - name: Add live-config for viewer
+        run: |
+          cat > .solution-explorer/viewer/dist/live-config.json << 'EOF'
+          {
+            "enabled": true,
+            "data_url": "https://unamentis.github.io/unamentis/live",
+            "backend_mode": "github",
+            "polling": {
+              "default_interval_seconds": 30,
+              "min_interval_seconds": 15,
+              "idle_interval_seconds": 120,
+              "adaptive": true,
+              "pause_when_hidden": true
+            },
+            "features": {
+              "activity_log": true,
+              "admin_dashboard": true,
+              "version_history": true,
+              "ci_status_overlay": true,
+              "realtime_ci_webhooks": false,
+              "realtime_push": false
+            }
+          }
+          EOF
+
+      - name: Deploy to Cloudflare Pages
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy .solution-explorer/viewer/dist --project-name=um-solution-explorer --branch=main --commit-dirty=true
