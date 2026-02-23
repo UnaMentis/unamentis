@@ -11,17 +11,24 @@ jobs:
     name: Add solution-explorer.unamentis.org
     runs-on: ubuntu-latest
     steps:
-      - name: Add Custom Domain to Pages Project
+      - name: Create CNAME DNS Record
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "Adding solution-explorer.unamentis.org to Pages project um-solution-explorer..."
+          # Zone ID from Pages API response for unamentis.org
+          ZONE_ID="8187e1e6b3b194f2ecc55ebc754389b8"
 
-          RESULT=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/um-solution-explorer/domains" \
+          echo "Creating CNAME: solution-explorer.unamentis.org -> um-solution-explorer.pages.dev"
+
+          RESULT=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
             -H "Authorization: Bearer $CF_TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{"name": "solution-explorer.unamentis.org"}')
+            -d '{
+              "type": "CNAME",
+              "name": "solution-explorer",
+              "content": "um-solution-explorer.pages.dev",
+              "proxied": true
+            }')
 
           echo "API Response:"
           echo "$RESULT" | python3 -m json.tool
@@ -29,37 +36,18 @@ jobs:
           SUCCESS=$(echo "$RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('success', False))")
           if [ "$SUCCESS" = "True" ]; then
             echo ""
-            echo "Custom domain added to Pages project successfully!"
-            echo "Cloudflare will auto-provision the SSL certificate."
+            echo "CNAME record created successfully!"
           else
-            ERROR=$(echo "$RESULT" | python3 -c "import json,sys; errors=json.load(sys.stdin).get('errors',[]); print(errors[0].get('message','unknown') if errors else 'unknown')")
-            if echo "$ERROR" | grep -qi "already"; then
-              echo "Custom domain already exists on the project. All good!"
-            else
-              echo "::warning::Could not add domain automatically."
-              echo "Manual steps needed in Cloudflare dashboard:"
-              echo "1. DNS > Records > Add CNAME: solution-explorer -> um-solution-explorer.pages.dev (proxied)"
-              echo "2. Pages > um-solution-explorer > Custom domains > Add: solution-explorer.unamentis.org"
-            fi
+            ERROR_MSG=$(echo "$RESULT" | python3 -c "import json,sys; errors=json.load(sys.stdin).get('errors',[]); print(errors[0].get('message','unknown') if errors else 'unknown')")
+            echo ""
+            echo "DNS creation result: $ERROR_MSG"
+            echo "If this failed, add the CNAME manually in Cloudflare dashboard:"
+            echo "  DNS > Records > Add CNAME: solution-explorer -> um-solution-explorer.pages.dev (proxied)"
           fi
 
-      - name: Verify Current Domains
-        env:
-          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Verify Domain Resolution
         run: |
-          echo "Current domains on um-solution-explorer:"
-          curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/um-solution-explorer/domains" \
-            -H "Authorization: Bearer $CF_TOKEN" \
-            -H "Content-Type: application/json" | python3 -c "
-          import json, sys
-          data = json.load(sys.stdin)
-          if data.get('success'):
-              for d in data.get('result', []):
-                  status = d.get('status', 'unknown')
-                  name = d.get('name', 'unknown')
-                  print(f'  - {name} ({status})')
-          else:
-              print('  Could not list domains')
-              print(f'  Response: {json.dumps(data, indent=2)}')
-          "
+          echo "Waiting 10 seconds for DNS propagation..."
+          sleep 10
+          echo "Testing resolution..."
+          curl -sI --max-time 10 https://solution-explorer.unamentis.org 2>&1 | head -5 || echo "Domain not resolving yet (may need more time)"
