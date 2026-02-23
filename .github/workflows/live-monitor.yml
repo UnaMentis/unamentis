@@ -106,7 +106,7 @@ jobs:
           import json
           config = {
               'enabled': True,
-              'data_url': 'https://unamentis.github.io/unamentis/live',
+              'data_url': 'https://unamentis.github.io/unamentis',
               'backend_mode': 'github',
               'polling': {
                   'default_interval_seconds': 30,

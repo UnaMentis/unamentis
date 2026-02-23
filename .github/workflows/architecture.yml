@@ -31,7 +31,7 @@ jobs:
           cat > .solution-explorer/viewer/dist/live-config.json << 'EOF'
           {
             "enabled": true,
-            "data_url": "https://unamentis.github.io/unamentis/live",
+            "data_url": "https://unamentis.github.io/unamentis",
             "backend_mode": "github",
             "polling": {
               "default_interval_seconds": 30,
