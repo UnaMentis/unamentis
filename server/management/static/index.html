@@ -281,6 +281,12 @@
                         </svg>
                         <span>Plugins</span>
                     </button>
+                    <button class="nav-tab flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-150 border whitespace-nowrap flex-shrink-0 text-dark-400 border-transparent hover:text-dark-200 hover:bg-dark-700/40 hover:border-dark-600/50" data-tab="testing">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                        </svg>
+                        <span>Testing</span>
+                    </button>
                 </div>
             </div>
         </nav>
@@ -1614,6 +1620,82 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Testing Tab -->
+            <div id="tab-testing" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold">Testing</h2>
+                        <p class="text-sm text-dark-400 mt-1">Pipeline validation and deployment testing tools</p>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Deployment Status -->
+                    <div class="glass rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-accent-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Deployment Canary
+                        </h3>
+                        <p class="text-sm text-dark-400 mb-4">
+                            This tab was added to validate the solution-explorer deploy pipeline.
+                            If you can see this, the architecture analyzer successfully detected it.
+                        </p>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2 border-b border-dark-700">
+                                <span class="text-dark-400 text-sm">Tab added</span>
+                                <span class="text-sm font-mono">2026-02-23</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-dark-700">
+                                <span class="text-dark-400 text-sm">Purpose</span>
+                                <span class="text-sm">Deploy pipeline validation</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-dark-400 text-sm">Status</span>
+                                <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-accent-success/20 text-accent-success">Active</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Info -->
+                    <div class="glass rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-accent-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            System Info
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2 border-b border-dark-700">
+                                <span class="text-dark-400 text-sm">Server</span>
+                                <span class="text-sm font-mono" id="testing-server-host">--</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-dark-700">
+                                <span class="text-dark-400 text-sm">Browser</span>
+                                <span class="text-sm font-mono" id="testing-browser">--</span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-dark-400 text-sm">Loaded at</span>
+                                <span class="text-sm font-mono" id="testing-loaded-at">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    (function() {
+                        const host = document.getElementById('testing-server-host');
+                        const browser = document.getElementById('testing-browser');
+                        const loaded = document.getElementById('testing-loaded-at');
+                        if (host) host.textContent = window.location.host || 'unknown';
+                        if (browser) browser.textContent = navigator.userAgent.split(' ').pop() || 'unknown';
+                        if (loaded) loaded.textContent = new Date().toLocaleString();
+                    })();
+                </script>
+            </div>
+
         </div>
     </div>
 
