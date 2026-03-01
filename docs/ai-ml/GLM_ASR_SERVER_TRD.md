@@ -232,7 +232,9 @@ services:
       dockerfile: Dockerfile.vllm
     # Dockerfile.vllm:
     # FROM vllm/vllm-openai:latest
-    # RUN pip install --no-cache-dir git+https://github.com/huggingface/transformers@v5.0.0
+    # COPY requirements.txt .
+    # RUN pip install --no-cache-dir -r requirements.txt
+    #   requirements.txt pins: transformers>=5.0.0
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
@@ -256,7 +258,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - VLLM_ENDPOINT=http://glm-asr-server:8000
+      - INFERENCE_ENDPOINT=http://glm-asr-server:8000
       - WS_PORT=8080
     depends_on:
       - glm-asr-server
@@ -285,9 +287,13 @@ import os
 from dataclasses import dataclass
 from typing import AsyncGenerator
 
+import logging
+
 import aiohttp
 import numpy as np
 import websockets
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -331,16 +337,25 @@ class GLMASRStreamingGateway:
                         async for result in self.transcribe(audio_data):
                             await websocket.send(result.to_json())
 
-                elif message == "END_STREAM":
-                    # Process remaining audio
-                    if audio_buffer:
-                        audio_data = np.concatenate(audio_buffer)
-                        async for result in self.transcribe(audio_data, is_final=True):
-                            await websocket.send(result.to_json())
-                    break
+                elif isinstance(message, str):
+                    try:
+                        control = json.loads(message)
+                        msg_type = control.get("type")
+
+                        if msg_type == "end":
+                            # Process remaining audio
+                            if audio_buffer:
+                                audio_data = np.concatenate(audio_buffer)
+                                async for result in self.transcribe(audio_data, is_final=True):
+                                    await websocket.send(result.to_json())
+                            break
+                        elif msg_type == "ping":
+                            await websocket.send(json.dumps({"type": "pong"}))
+                    except json.JSONDecodeError:
+                        logger.warning("Received malformed text message")
 
         except websockets.ConnectionClosed:
-            pass
+            logger.debug("Client disconnected")
 
     async def transcribe(
         self,
