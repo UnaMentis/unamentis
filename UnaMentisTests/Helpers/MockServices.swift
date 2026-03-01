@@ -390,6 +390,153 @@ struct TestDataFactory {
     }
 }
 
+// MARK: - Mock TTS Service
+
+/// Faithful mock TTS service for testing audio playback orchestrator
+///
+/// This mock exists because real TTS API calls:
+/// - Cost money per character (cloud providers)
+/// - Require model loading (on-device providers, 1-2s cold start)
+/// - Require AVAudioSession (unavailable in unit test host)
+///
+/// The mock faithfully reproduces real behavior including:
+/// - Streaming audio chunks with configurable count
+/// - isFirst/isLast markers on chunks
+/// - Input validation (empty text)
+/// - Error simulation
+/// - Realistic PCM Float32 audio data
+actor MockTTSService: TTSService { // ALLOWED: paid external API mock (TTS providers cost per character or require hardware)
+    // MARK: - TTSService Protocol Properties
+
+    public private(set) var metrics = TTSMetrics(medianTTFB: 0.05, p99TTFB: 0.15)
+    public var costPerCharacter: Decimal = 0.000015
+    public private(set) var voiceConfig: TTSVoiceConfig = .default
+
+    // MARK: - Test Configuration
+
+    /// Number of chunks to emit per synthesize call
+    var chunksPerSynthesize: Int = 1
+
+    /// Audio data size per chunk in bytes (PCM Float32 samples)
+    var bytesPerChunk: Int = 9600  // 100ms at 24kHz mono float32
+
+    /// Sample rate for generated audio
+    var sampleRate: Double = 24000
+
+    /// Error to simulate (nil = success)
+    var simulatedError: TTSError?
+
+    /// Whether to simulate latency
+    var simulateLatency: Bool = false
+
+    /// Latency per chunk in milliseconds
+    var chunkLatencyMs: Int = 10
+
+    // MARK: - Call Tracking
+
+    /// Number of times synthesize was called
+    private(set) var synthesizeCallCount: Int = 0
+
+    /// All texts passed to synthesize
+    private(set) var synthesizedTexts: [String] = []
+
+    /// Number of times flush was called
+    private(set) var flushCallCount: Int = 0
+
+    /// Number of times configure was called
+    private(set) var configureCallCount: Int = 0
+
+    // MARK: - TTSService Protocol Methods
+
+    public func configure(_ config: TTSVoiceConfig) async {
+        configureCallCount += 1
+        voiceConfig = config
+    }
+
+    public func synthesize(text: String) async throws -> AsyncStream<TTSAudioChunk> {
+        synthesizeCallCount += 1
+        synthesizedTexts.append(text)
+
+        // VALIDATION: Empty text
+        guard !text.isEmpty else {
+            throw TTSError.synthesizeFailed("Text cannot be empty")
+        }
+
+        // ERROR SIMULATION
+        if let error = simulatedError {
+            throw error
+        }
+
+        let chunks = chunksPerSynthesize
+        let bytes = bytesPerChunk
+        let rate = sampleRate
+        let latency = simulateLatency
+        let latencyMs = chunkLatencyMs
+
+        return AsyncStream { continuation in
+            Task {
+                for i in 0..<chunks {
+                    if latency {
+                        try? await Task.sleep(for: .milliseconds(latencyMs))
+                    }
+
+                    // Generate deterministic audio data (silence as PCM Float32)
+                    let audioData = Data(count: bytes)
+
+                    let chunk = TTSAudioChunk(
+                        audioData: audioData,
+                        format: .pcmFloat32(sampleRate: rate, channels: 1),
+                        sequenceNumber: i,
+                        isFirst: i == 0,
+                        isLast: i == chunks - 1,
+                        timeToFirstByte: i == 0 ? 0.05 : nil
+                    )
+                    continuation.yield(chunk)
+                }
+                continuation.finish()
+            }
+        }
+    }
+
+    public func flush() async throws {
+        flushCallCount += 1
+    }
+
+    // MARK: - Test Helpers
+
+    /// Reset all state between tests
+    func reset() {
+        synthesizeCallCount = 0
+        synthesizedTexts = []
+        flushCallCount = 0
+        configureCallCount = 0
+        simulatedError = nil
+        simulateLatency = false
+        chunksPerSynthesize = 1
+        bytesPerChunk = 9600
+        sampleRate = 24000
+        chunkLatencyMs = 10
+        voiceConfig = .default
+    }
+
+    /// Configure to fail with a specific error
+    func configureToFail(with error: TTSError) {
+        simulatedError = error
+    }
+
+    /// Configure multi-chunk streaming
+    func configureStreaming(chunks: Int, bytesPerChunk: Int = 9600) {
+        self.chunksPerSynthesize = chunks
+        self.bytesPerChunk = bytesPerChunk
+    }
+
+    /// Enable latency simulation with configurable delays
+    func enableLatencySimulation(ttftMs: Int = 50, tokenDelayMs: Int = 10) {
+        simulateLatency = true
+        chunkLatencyMs = tokenDelayMs
+    }
+}
+
 // MARK: - NSManagedObjectContext Test Extension
 
 extension NSManagedObjectContext {

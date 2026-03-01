@@ -262,16 +262,15 @@ public final class SessionManager: ObservableObject {
     private var pendingUtteranceTask: Task<Void, Never>?
 
     /// Sentence-level TTS streaming
-    private var ttsSentenceQueue: [String] = []
-    private var isTTSPlaying: Bool = false
     private var sentenceBuffer: String = ""
-    private var ttsQueueTask: Task<Void, Never>?
     private var isLLMStreamingComplete: Bool = false
+    private var sentenceIndex: Int = 0
 
-    /// TTS Prefetching state
-    private var prefetchedAudioCache: [String: TTSAudioChunk] = [:]  // sentence -> audio chunk
-    private var prefetchTasks: [String: Task<TTSAudioChunk?, Never>] = [:]  // sentence -> prefetch task
-    private var currentPrefetchCount: Int = 0
+    /// TTS playback orchestrator (replaces manual queue/prefetch)
+    private var ttsOrchestrator: AudioPlaybackOrchestrator?
+
+    /// Delegate bridge for orchestrator events
+    private var ttsOrchestratorDelegate: SessionOrchestratorDelegate?
 
     /// Metrics upload
     private let metricsUploadService: MetricsUploadService
@@ -459,11 +458,10 @@ public final class SessionManager: ObservableObject {
         // Cancel LLM first to stop new tokens from being generated
         llmStreamTask?.cancel()
 
-        // Cancel TTS queue processor to stop it from picking up new sentences
-        ttsQueueTask?.cancel()
-
-        // Cancel prefetch tasks BEFORE they can add more audio to cache
-        clearPrefetchState()
+        // Stop TTS orchestrator to halt playback and prefetch
+        if let orch = ttsOrchestrator {
+            Task { await orch.stopPlayback() }
+        }
 
         // Cancel STT stream
         sttStreamTask?.cancel()
@@ -479,7 +477,6 @@ public final class SessionManager: ObservableObject {
 
         // STEP 2: Nil out task references after cancellation
         llmStreamTask = nil
-        ttsQueueTask = nil
         sttStreamTask = nil
         ttsStreamTask = nil
         pendingUtteranceTask = nil
@@ -518,10 +515,11 @@ public final class SessionManager: ObservableObject {
         conversationHistory.removeAll()
         silenceStartTime = nil
         hasDetectedSpeech = false
-        ttsSentenceQueue.removeAll()
         sentenceBuffer = ""
-        isTTSPlaying = false
+        sentenceIndex = 0
         isLLMStreamingComplete = false
+        ttsOrchestrator = nil
+        ttsOrchestratorDelegate = nil
 
         // Clear service references so they can be re-created on next session
         audioEngine = nil
@@ -964,13 +962,12 @@ public final class SessionManager: ObservableObject {
             var fullResponse = ""
             var isFirstToken = true
 
-            // Reset sentence buffer and TTS queue for new response
+            // Reset sentence buffer and orchestrator for new response
             self.sentenceBuffer = ""
-            self.ttsSentenceQueue = []
-            self.isTTSPlaying = false
+            self.sentenceIndex = 0
 
-            // Start the TTS queue processor
-            self.startTTSQueueProcessor()
+            // Start the TTS playback orchestrator for this turn
+            self.startTTSOrchestrator()
 
             llmStreamTask = Task {
                 for await token in stream {
@@ -1005,10 +1002,15 @@ public final class SessionManager: ObservableObject {
                 }
 
                 // Queue any remaining text in the buffer
-                if !self.sentenceBuffer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    self.ttsSentenceQueue.append(self.sentenceBuffer.trimmingCharacters(in: .whitespacesAndNewlines))
+                let remaining = self.sentenceBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !remaining.isEmpty {
+                    let segment = SessionSentenceSegment(index: self.sentenceIndex, text: remaining)
+                    self.sentenceIndex += 1
                     self.sentenceBuffer = ""
                     logger.info("Queued final sentence fragment for TTS")
+                    if let orch = self.ttsOrchestrator {
+                        await orch.appendSegments([segment])
+                    }
                 }
 
                 // Check if we got any response
@@ -1023,10 +1025,13 @@ public final class SessionManager: ObservableObject {
                 // Add AI response to history
                 self.conversationHistory.append(LLMMessage(role: .assistant, content: fullResponse))
 
-                // Signal that LLM streaming is complete - TTS queue processor will finish
-                // when all sentences have been played
+                // Signal that LLM streaming is complete; orchestrator will finish
+                // when all segments have been played
                 self.isLLMStreamingComplete = true
-                logger.info("LLM streaming complete - TTS queue will finish when all sentences played")
+                if let orch = self.ttsOrchestrator {
+                    await orch.signalNoMoreSegments()
+                }
+                logger.info("LLM streaming complete - orchestrator will finish when all sentences played")
 
                 // Record LLM cost based on token usage delta
                 let metricsAfter = await llmService.metrics
@@ -1122,22 +1127,13 @@ public final class SessionManager: ObservableObject {
                 let sentence = String(sentenceBuffer[..<nextIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
 
                 if !sentence.isEmpty {
-                    ttsSentenceQueue.append(sentence)
-                    logger.info("🔊 Queued sentence for TTS (\(ttsSentenceQueue.count) in queue): \"\(sentence.prefix(50))...\"")
+                    // Append to orchestrator as a dynamic segment
+                    let segment = SessionSentenceSegment(index: sentenceIndex, text: sentence)
+                    sentenceIndex += 1
+                    logger.info("🔊 Queued sentence for TTS (index \(segment.segmentIndex)): \"\(sentence.prefix(50))...\"")
 
-                    // Start prefetching this sentence immediately if not already being prefetched
-                    // This ensures prefetch starts as soon as sentences are queued, not just when dequeued
-                    if config.ttsPlayback.enablePrefetch && prefetchedAudioCache[sentence] == nil && prefetchTasks[sentence] == nil {
-                        let sentenceToFetch = sentence
-                        logger.info("🔊 Prefetch: Immediate prefetch for newly queued \"\(sentenceToFetch.prefix(30))...\"")
-                        prefetchTasks[sentenceToFetch] = Task { [weak self] in
-                            guard let self = self else { return nil }
-                            let chunk = await self.prefetchSentence(sentenceToFetch)
-                            if let chunk = chunk {
-                                self.prefetchedAudioCache[sentenceToFetch] = chunk
-                            }
-                            return chunk
-                        }
+                    if let orch = ttsOrchestrator {
+                        Task { await orch.appendSegments([segment]) }
                     }
                 }
 
@@ -1153,272 +1149,72 @@ public final class SessionManager: ObservableObject {
         }
     }
 
-    /// Start the TTS queue processor that plays sentences as they're queued
-    private func startTTSQueueProcessor() {
-        ttsQueueTask?.cancel()
+    /// Start the TTS playback orchestrator for a new AI turn.
+    /// Sentences are appended dynamically as LLM tokens arrive.
+    private func startTTSOrchestrator() {
+        guard let ttsService = ttsService, let audioEngine = audioEngine else {
+            logger.error("Cannot start TTS orchestrator: services not available")
+            return
+        }
+
+        // Stop any previous orchestrator
+        if let prev = ttsOrchestrator {
+            Task { await prev.stopPlayback() }
+        }
+
         isLLMStreamingComplete = false
 
-        ttsQueueTask = Task {
-            logger.info("🔊 TTS queue processor started")
-            var isFirstSentence = true
+        let orch = AudioPlaybackOrchestrator(
+            config: .session,
+            ttsService: ttsService,
+            audioEngine: audioEngine
+        )
 
-            while !Task.isCancelled {
-                // Check cancellation at the top of each iteration
-                if Task.isCancelled {
-                    logger.info("🔊 TTS queue processor cancelled")
-                    break
-                }
-
-                // If paused, wait until resumed or cancelled
-                while state.isPaused && !Task.isCancelled {
-                    try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-                }
-
-                // Check again after potentially waiting for pause
-                if Task.isCancelled {
-                    logger.info("🔊 TTS queue processor cancelled during pause")
-                    break
-                }
-
-                // Wait for items in the queue
-                if ttsSentenceQueue.isEmpty {
-                    // Check if LLM is done AND we've finished all sentences
-                    if isLLMStreamingComplete {
-                        // Double-check the queue is still empty (might have been filled during last play)
-                        if ttsSentenceQueue.isEmpty {
-                            logger.info("🔊 LLM complete and queue empty, finishing TTS processor")
-                            break
-                        }
-                    }
-                    // Wait a bit for more sentences
-                    try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
-                    continue
-                }
-
-                // Dequeue the next sentence
-                let sentence = ttsSentenceQueue.removeFirst()
-                logger.info("🔊 Processing TTS for: \"\(sentence.prefix(50))...\" (\(ttsSentenceQueue.count) remaining in queue)")
-
-                // Check cancellation before starting TTS
-                if Task.isCancelled {
-                    logger.info("🔊 TTS queue processor cancelled before synthesizing")
-                    break
-                }
-
-                // Start prefetching upcoming sentences while we play the current one
-                startPrefetchingIfNeeded()
-
-                // Record TTFB on first sentence
-                if isFirstSentence {
-                    isFirstSentence = false
-                    if let turnStart = currentTurnStartTime {
-                        let ttsTTFB = Date().timeIntervalSince(turnStart)
-                        await telemetry.recordLatency(.ttsTTFB, ttsTTFB)
-                        logger.info("🔊 TTS TTFB (first sentence queued): \(String(format: "%.3f", ttsTTFB))s")
-                    }
-                }
-
-                // Synthesize and play this sentence - WAIT for it to complete before getting next
-                isTTSPlaying = true
-                await synthesizeAndPlaySentence(sentence)
-                isTTSPlaying = false
-
-                // Check cancellation after playback
-                if Task.isCancelled {
-                    logger.info("🔊 TTS queue processor cancelled after playing sentence")
-                    break
-                }
-
-                logger.info("🔊 Finished playing sentence")
-            }
-
-            // Only do cleanup if we completed normally (not cancelled)
-            guard !Task.isCancelled else {
-                logger.info("🔊 TTS queue processor exiting due to cancellation")
-                return
-            }
-
-            logger.info("🔊 TTS queue processor finished - all sentences played")
-
-            // Clear prefetch state
-            clearPrefetchState()
-
-            // Record end-to-end latency
-            if let turnStart = currentTurnStartTime {
-                let e2e = Date().timeIntervalSince(turnStart)
-                await telemetry.recordLatency(.endToEndTurn, e2e)
-                logger.info("Turn E2E latency: \(String(format: "%.3f", e2e))s")
-            }
-
-            // Ready for next user turn
-            await telemetry.recordEvent(.aiFinishedSpeaking)
-            logger.info("AI finished speaking")
-
-            // Add a brief cooldown before accepting new speech
-            // This prevents echo/feedback from the just-finished TTS being picked up as user speech
-            logger.info("🔇 Cooldown period before accepting new speech...")
-            try? await Task.sleep(nanoseconds: 500_000_000) // 500ms cooldown
-
-            // Reset silence tracking for new turn
-            hasDetectedSpeech = false
-            silenceStartTime = nil
-
-            // Clear current transcript for new turn (conversation history already saved)
-            await MainActor.run {
-                userTranscript = ""
-            }
-
-            await setState(.userSpeaking)
-            logger.info("Ready for user to speak")
-
-            // NOTE: aiResponse is NOT cleared so user can still see the AI's last response
+        let delegate = SessionOrchestratorDelegate(sessionManager: self)
+        Task {
+            await orch.setDelegate(delegate)
+            await orch.setExpectsMoreSegments(true)
+            await orch.startPlayback(from: 0)
         }
+
+        ttsOrchestrator = orch
+        ttsOrchestratorDelegate = delegate
+
+        logger.info("🔊 TTS orchestrator started for new AI turn")
     }
 
-    /// Prefetch TTS audio for a sentence (does not play, just caches)
-    private func prefetchSentence(_ text: String) async -> TTSAudioChunk? {
-        guard let ttsService = ttsService else {
-            logger.warning("🔊 Prefetch: TTS service is nil")
-            return nil
+    /// Called by orchestrator delegate when all sentences have been played
+    func handleTTSPlaybackComplete() async {
+        logger.info("🔊 TTS orchestrator finished - all sentences played")
+
+        // Record end-to-end latency
+        if let turnStart = currentTurnStartTime {
+            let e2e = Date().timeIntervalSince(turnStart)
+            await telemetry.recordLatency(.endToEndTurn, e2e)
+            logger.info("Turn E2E latency: \(String(format: "%.3f", e2e))s")
         }
 
-        logger.info("🔊 Prefetch: Starting for \"\(text.prefix(30))...\"")
-        let startTime = Date()
+        // Ready for next user turn
+        await telemetry.recordEvent(.aiFinishedSpeaking)
+        logger.info("AI finished speaking")
 
-        do {
-            let stream = try await ttsService.synthesize(text: text)
-            for await chunk in stream {
-                if chunk.isLast {
-                    let elapsed = Date().timeIntervalSince(startTime)
-                    logger.info("🔊 Prefetch: Completed in \(String(format: "%.3f", elapsed))s for \"\(text.prefix(30))...\"")
+        // Add a brief cooldown before accepting new speech
+        logger.info("🔇 Cooldown period before accepting new speech...")
+        try? await Task.sleep(nanoseconds: 500_000_000) // 500ms cooldown
 
-                    // Record TTS cost
-                    await recordTTSCost(for: text)
+        // Reset silence tracking for new turn
+        hasDetectedSpeech = false
+        silenceStartTime = nil
 
-                    return chunk  // Return the full audio chunk
-                }
-            }
-        } catch {
-            logger.error("🔊 Prefetch: Failed for \"\(text.prefix(30))...\": \(error.localizedDescription)")
-        }
-        return nil
-    }
-
-    /// Start prefetching for upcoming sentences in the queue
-    private func startPrefetchingIfNeeded() {
-        guard config.ttsPlayback.enablePrefetch else { return }
-
-        let maxPrefetch = config.ttsPlayback.prefetchQueueDepth
-        // Prefetch the next N sentences in the queue (the current one is already being played)
-        let sentencesToPrefetch = Array(ttsSentenceQueue.prefix(maxPrefetch))
-
-        for sentence in sentencesToPrefetch {
-            // Skip if already cached or being prefetched
-            if prefetchedAudioCache[sentence] != nil || prefetchTasks[sentence] != nil {
-                continue
-            }
-
-            // Start prefetch task - capture sentence for the closure
-            let sentenceToFetch = sentence
-            logger.info("🔊 Prefetch: Queueing prefetch for \"\(sentenceToFetch.prefix(30))...\"")
-            prefetchTasks[sentenceToFetch] = Task { [weak self] in
-                guard let self = self else { return nil }
-                let chunk = await self.prefetchSentence(sentenceToFetch)
-                // Cache the result when done - store directly in actor's cache
-                if let chunk = chunk {
-                    self.prefetchedAudioCache[sentenceToFetch] = chunk
-                }
-                return chunk
-            }
-        }
-    }
-
-    /// Clear prefetch state (call when stopping session or after AI finishes)
-    private func clearPrefetchState() {
-        // Cancel any pending prefetch tasks
-        for (_, task) in prefetchTasks {
-            task.cancel()
-        }
-        prefetchTasks.removeAll()
-        prefetchedAudioCache.removeAll()
-        currentPrefetchCount = 0
-    }
-
-    /// Synthesize and play a single sentence (uses prefetched audio if available)
-    private func synthesizeAndPlaySentence(_ text: String) async {
-        guard let ttsService = ttsService else {
-            logger.error("TTS service is nil - cannot synthesize sentence")
-            return
+        // Clear current transcript for new turn (conversation history already saved)
+        await MainActor.run {
+            userTranscript = ""
         }
 
-        // Check if we have prefetched audio for this sentence
-        if let cachedChunk = prefetchedAudioCache[text] {
-            logger.info("🔊 Using prefetched audio for \"\(text.prefix(30))...\"")
-            prefetchedAudioCache.removeValue(forKey: text)
-            prefetchTasks.removeValue(forKey: text)
+        await setState(.userSpeaking)
+        logger.info("Ready for user to speak")
 
-            if let audioEngine = audioEngine {
-                do {
-                    try await audioEngine.playAudio(cachedChunk)
-                } catch {
-                    logger.error("Failed to play prefetched audio: \(error.localizedDescription)")
-                }
-            }
-
-            // Add inter-sentence silence if configured
-            if config.ttsPlayback.interSentenceSilenceMs > 0 {
-                try? await Task.sleep(nanoseconds: UInt64(config.ttsPlayback.interSentenceSilenceMs) * 1_000_000)
-            }
-            return
-        }
-
-        // Wait for prefetch task if it's in progress
-        if let prefetchTask = prefetchTasks[text] {
-            logger.info("🔊 Waiting for in-progress prefetch for \"\(text.prefix(30))...\"")
-            if let chunk = await prefetchTask.value {
-                prefetchedAudioCache.removeValue(forKey: text)
-                prefetchTasks.removeValue(forKey: text)
-
-                if let audioEngine = audioEngine {
-                    do {
-                        try await audioEngine.playAudio(chunk)
-                    } catch {
-                        logger.error("Failed to play prefetched audio: \(error.localizedDescription)")
-                    }
-                }
-
-                // Add inter-sentence silence if configured
-                if config.ttsPlayback.interSentenceSilenceMs > 0 {
-                    try? await Task.sleep(nanoseconds: UInt64(config.ttsPlayback.interSentenceSilenceMs) * 1_000_000)
-                }
-                return
-            }
-        }
-
-        // No cached audio - synthesize and play directly (fallback)
-        logger.info("🔊 No prefetch available, synthesizing directly for \"\(text.prefix(30))...\"")
-        do {
-            let stream = try await ttsService.synthesize(text: text)
-
-            for await chunk in stream {
-                if let audioEngine = audioEngine {
-                    try await audioEngine.playAudio(chunk)
-                }
-
-                if chunk.isLast {
-                    // Record TTS cost for fallback synthesis
-                    await recordTTSCost(for: text)
-                    break
-                }
-            }
-        } catch {
-            logger.error("Failed to synthesize sentence: \(error.localizedDescription)")
-        }
-
-        // Add inter-sentence silence if configured
-        if config.ttsPlayback.interSentenceSilenceMs > 0 {
-            try? await Task.sleep(nanoseconds: UInt64(config.ttsPlayback.interSentenceSilenceMs) * 1_000_000)
-        }
+        // NOTE: aiResponse is NOT cleared so user can still see the AI's last response
     }
 
     // MARK: - TTS Handling (Legacy - Full Response)
@@ -1572,12 +1368,10 @@ public final class SessionManager: ObservableObject {
         // Now fully stop everything
         ttsStreamTask?.cancel()
         llmStreamTask?.cancel()
-        ttsQueueTask?.cancel()
+        if let orch = ttsOrchestrator {
+            await orch.stopPlayback()
+        }
         await audioEngine?.stopPlayback()
-
-        // Clear TTS queue and prefetch cache
-        ttsSentenceQueue.removeAll()
-        clearPrefetchState()
 
         // Clear buffers if configured
         if config.audio.ttsClearOnInterrupt {
@@ -1634,6 +1428,51 @@ public enum SessionError: Error, LocalizedError {
             return "No active session"
         case .maintenanceMode:
             return "System is in maintenance mode. Please try again later."
+        }
+    }
+}
+
+// MARK: - Session Sentence Segment
+
+/// A single sentence extracted from the LLM stream, conforming to PlayableSegment
+/// for use with AudioPlaybackOrchestrator.
+struct SessionSentenceSegment: PlayableSegment {
+    let segmentIndex: Int
+    let segmentText: String
+    let cachedAudio: CachedSegmentAudio? = nil
+
+    init(index: Int, text: String) {
+        self.segmentIndex = index
+        self.segmentText = text
+    }
+}
+
+// MARK: - Session Orchestrator Delegate
+
+/// Bridges AudioPlaybackOrchestrator events back to SessionManager.
+/// Marked @MainActor because SessionManager is @MainActor.
+@MainActor
+final class SessionOrchestratorDelegate: PlaybackOrchestratorDelegate {
+    private weak var sessionManager: SessionManager?
+    private let logger = Logger(label: "com.unamentis.session.orchestrator")
+
+    init(sessionManager: SessionManager) {
+        self.sessionManager = sessionManager
+    }
+
+    nonisolated func orchestratorDidComplete() async {
+        await MainActor.run { [weak self] in
+            guard let self, let manager = self.sessionManager else { return }
+            Task {
+                await manager.handleTTSPlaybackComplete()
+            }
+        }
+    }
+
+    nonisolated func orchestratorDidEncounterError(_ error: Error) async {
+        let errorMsg = error.localizedDescription
+        await MainActor.run { [weak self] in
+            self?.logger.error("TTS orchestrator error: \(errorMsg)")
         }
     }
 }

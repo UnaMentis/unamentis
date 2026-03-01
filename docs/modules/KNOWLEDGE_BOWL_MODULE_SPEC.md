@@ -1328,21 +1328,17 @@ Knowledge Bowl oral round practice requires high-quality on-device voice service
 
 #### 4.5.1 Text-to-Speech (TTS)
 
-**Current Implementation:** AVSpeechSynthesizer (iOS built-in)
-- ✅ Zero storage requirement
-- ✅ Instant availability on all devices
-- ✅ Adjustable speed and pitch
-- ⚠️ Limited voice quality (robotic)
-- ⚠️ Not suitable for competition simulation
+**Current Implementation:** `KBVoiceCoordinator` uses the shared `AudioPlaybackOrchestrator` (`.knowledgeBowl` preset) for all TTS playback. Each `speak()` call creates a single-segment orchestrator with a `KBTextSegment`, which can carry optional server-cached audio via `CachedSegmentAudio`. The TTS provider is selected from user preferences (Kyutai Pocket TTS, Apple TTS, or others with Apple TTS fallback).
 
-**Planned Upgrade:** Kyutai Pocket TTS (January 2026)
-- ✅ **100M parameters** - Lightweight (~100MB storage)
-- ✅ **Sub-50ms latency** - Real-time speech generation
-- ✅ **CPU-only** - Runs on all iOS devices without GPU
-- ✅ **High-quality voice cloning** - Using just 5 seconds of audio
-- ✅ **Open source** - MIT license, free to integrate
-- ✅ **Competition-grade quality** - Can simulate actual moderator voices
-- ✅ **Python 3.10+ / PyTorch 2.5+** - Mobile deployment via CoreML conversion
+Server-cached audio is fetched via `KBAudioCache` and passed through the segment's `cachedAudio` property, skipping TTS synthesis entirely for zero-latency playback.
+
+**Kyutai Pocket TTS (shipped):**
+- ✅ **100M parameters**, lightweight (~100MB storage)
+- ✅ **Sub-50ms latency**, real-time speech generation
+- ✅ **CPU-only**, runs on all iOS devices without GPU
+- ✅ **8 voices** with voice cloning support
+- ✅ **Open source** (MIT license)
+- ✅ Fully integrated via `KyutaiPocketTTSService` with automatic fallback to Apple TTS
 
 **Implementation Strategy:**
 

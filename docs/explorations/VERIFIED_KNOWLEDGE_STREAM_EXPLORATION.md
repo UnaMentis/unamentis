@@ -124,11 +124,31 @@ The closest competitors would need to merge Ground News's bias detection, Snipd'
 
 ## 3. Design Philosophy
 
-### 3.1 Scientific Rigor, Not Opinion
+### 3.1 Evidence Only: The Unimpeachable Line
 
-VKS does not tell users what to think. It does not label content as "true" or "false." It provides evidence, provenance, methodology assessment, and alternative perspectives. The user makes their own judgments with better information.
+This is the single most important design principle in VKS, and it is absolute.
 
-This mirrors how the scientific method itself works: it doesn't declare absolute truth. It establishes confidence levels based on evidence, reproducibility, and peer scrutiny. A claim supported by three independent meta-analyses gets a high confidence score. A claim from a single unreviewed source gets a low one. The system reports both without editorializing.
+**VKS never passes judgment.** It never says a claim is wrong, false, misleading, inaccurate, or a lie. It never uses softer versions of those words. It never crosses the line from presenting evidence to drawing conclusions. The user always draws the conclusion. Always.
+
+This is not a matter of choosing gentler language. VKS simply does not go there. It presents what the evidence says, from how many credible sources, using what methodologies, with what level of agreement. If zero credible sources support a claim and twelve contradict it, VKS reports exactly that. The user sees the evidence and makes their own determination.
+
+**What VKS says:**
+- "No peer-reviewed sources supporting this claim were found in a search of 4 academic databases."
+- "12 independent sources contradict this figure. The range reported across credible sources is 8-15%, not 50%."
+- "This claim originates from a single blog post. No corroborating sources were identified."
+- "Three meta-analyses report findings consistent with this claim. One dissenting analysis found a smaller effect."
+
+**What VKS never says:**
+- "This claim is false."
+- "This is misleading."
+- "This source is unreliable."
+- "This information is wrong."
+- "This has been debunked."
+- Any synonym, euphemism, or softened version of these statements.
+
+One could argue that presenting overwhelming counter-evidence is functionally the same as calling something false. But the difference is everything. VKS provides the raw material for judgment. The user exercises the judgment. This makes VKS unimpeachable: it is a research tool, not an arbiter. Nobody can credibly accuse it of bias when all it does is show what credible sources say and let the user decide.
+
+This mirrors how the scientific method itself works. Science doesn't declare absolute truth. It establishes confidence levels based on evidence, reproducibility, and peer scrutiny. A claim supported by three independent meta-analyses gets a high confidence score. A claim from a single unreviewed source gets a low one. The system reports both without editorializing. The evidence speaks for itself.
 
 ### 3.2 Voice-Native Verification
 
@@ -142,7 +162,23 @@ User content is sensitive. Newsletter subscriptions, browsing history, and podca
 
 VKS processes content on-device wherever possible. Email content never leaves the device. When server-side verification is needed (for web search cross-referencing), only extracted claims are sent, not full articles. The existing on-device Ministral-3B model handles claim extraction and basic verification locally. Server-side LLMs handle complex cross-referencing with anonymized claims.
 
-### 3.4 Configurable Depth
+### 3.4 Radical Transparency: The VKS Web Application
+
+If VKS asks users to trust its process, users must be able to verify that process themselves.
+
+Beyond the browser extension (which captures content), VKS should include a full companion web application that provides the same core functionality as the mobile app plus something the mobile app cannot easily offer: a transparency platform. This is not a marketing site. It is a functional tool where users can:
+
+**Use VKS on the web.** Read and listen to verified content, manage subscriptions, configure settings, and explore their content library from a full-screen desktop experience. The web app serves as a first-class client alongside iOS, not a secondary interface.
+
+**See the methodology in action.** Every verification report includes a full decision trace: what claims were extracted, what searches were performed, what sources were found, how each source was scored, and how the confidence score was calculated. Nothing is hidden. The user can follow the entire chain from raw content to final evidence report.
+
+**Experiment with the process.** Users can paste any URL or text into the web app and watch VKS process it in real time, with each pipeline stage visible. They can adjust parameters (change verification depth, add or remove source databases, modify credibility thresholds) and see how results change. This turns the verification methodology from a black box into an interactive, explorable process.
+
+**Understand source credibility scoring.** The web app exposes the full source reputation database: every domain, every score, every data point that contributed to the score, and the methodology used. Users can look up any source, see its rating history, compare it to similar sources, and understand exactly why it received its score.
+
+**Verify VKS itself.** The source code is open for inspection in the repository, but most users won't read code. The web app provides the same transparency in a usable form. If a user disagrees with a verification result, they can trace every step and see exactly where their assessment diverges from the system's evidence. This is how trust is built: not by asking for it, but by making it unnecessary through total transparency.
+
+### 3.5 Configurable Depth
 
 Not every piece of content needs the same level of scrutiny. A recipe doesn't need the same verification as a health claim. Users control depth through:
 
@@ -294,7 +330,8 @@ VKS actively monitors for biases, both in the content and in the user's consumpt
 | RSS/Podcast Feeds | 2 | Server-side feed parser plugin | Pluggy framework (`server/importers/core/plugin.py`) |
 | Email Newsletter | 2 | On-device IMAP/JMAP client | `HTMLArticleExtractor` reusable for email HTML |
 | Safari Web Extension | 3 | Safari Web Extension API | Web article fetching infrastructure |
-| MCP Server/Tool | 3 | MCP protocol handler | Existing MCP infrastructure in dev workflow |
+| VKS Web Application | 3 | Next.js (extends existing `server/web/`) | Next.js 16 + React 19 + Tailwind CSS 4 stack |
+| MCP Server/Tool | 5 | MCP protocol handler | Existing MCP infrastructure in dev workflow |
 
 ### 5.2 Unified Content Model
 
@@ -348,7 +385,7 @@ public enum ContentType: String, Codable, Sendable {
 public enum VerificationStatus: String, Codable, Sendable {
     case pending        // Awaiting verification
     case inProgress     // Verification running
-    case verified       // Verification complete
+    case complete       // Verification complete, evidence report available
     case skipped        // User chose to skip
     case failed         // Verification could not complete
 }
@@ -511,7 +548,45 @@ Multi-layer verification with graceful degradation:
 
 **Academic search:** For claims citing research, the engine queries academic databases (Semantic Scholar API, CrossRef) to locate the original study and its citation context (supporting, contradicting, or contextualizing references).
 
-### 6.3 Source Reputation Database
+### 6.3 Source & Author Credibility: Grounded in Peer Review Methodology
+
+The credibility assessment in VKS must itself follow scientific method. This means using the same concrete criteria that academic institutions, funding agencies, and journal editors use to determine whether a person or organization is qualified to speak on a topic.
+
+**What constitutes credibility (concrete, verifiable signals):**
+
+| Signal | How It's Assessed | Why It Matters |
+|--------|-------------------|----------------|
+| **Academic credentials** | Degrees, certifications, institutional affiliation | Formal training in the subject matter |
+| **Publication record** | Peer-reviewed papers, h-index, citation count | Work has survived expert scrutiny |
+| **Journal quality** | Impact factor, indexing (PubMed, Scopus, Web of Science), retraction rates | Published in venues with editorial standards |
+| **Peer review participation** | Reviewer for journals, grant panels (NIH, NSF, NASA) | Recognized by peers as competent to evaluate work |
+| **Funding track record** | Research grants obtained and managed | Proposals survived competitive merit review |
+| **Conflict of interest disclosure** | Funding sources, affiliations, financial relationships | Transparency about potential biases |
+| **Correction and retraction history** | Frequency and nature of corrections | Willingness to self-correct indicates integrity |
+| **ORCID profile** | Verified researcher identity with linked publications | Authenticated, not self-claimed |
+
+**What does NOT constitute credibility (and VKS explicitly ignores):**
+
+| Non-Signal | Why It's Irrelevant |
+|------------|---------------------|
+| Social media followers | Popularity is not expertise |
+| YouTube subscriber count | Audience size has no bearing on accuracy |
+| Substack subscriber count | Commercial success is not peer review |
+| Blog post volume | Quantity of output is not quality of evidence |
+| Media appearances | Being interviewed does not mean being correct |
+| Celebrity endorsement | Fame in one domain does not transfer to another |
+| Virality of content | Widely shared is not widely verified |
+| Self-published books | Bypasses editorial review entirely |
+
+This distinction is critical. A nutrition claim from a registered dietitian with peer-reviewed publications in the American Journal of Clinical Nutrition carries weight. The same claim from a fitness influencer with 2 million YouTube subscribers but no peer-reviewed work does not, regardless of how confidently it is presented or how many people believe it. VKS treats both claims with the same process: check the evidence, check the source's concrete credentials, report what was found.
+
+**How VKS applies institutional credibility standards:**
+
+Academic institutions have well-established frameworks for evaluating expertise. NSF requires reviewers to have "special knowledge of the science and engineering subfields relevant to the proposals." NIH evaluates whether investigators have "demonstrated background, training, and expertise appropriate to their career stage." Journal editors assess publication records, institutional affiliations, h-index, funding history, and conflict of interest disclosures. Web of Science applies 28 compliance criteria to index a journal. Scopus requires peer review processes, registered ISSNs, and visible ethics statements.
+
+VKS adapts these same standards to evaluate the sources behind everyday content. When a news article cites "researchers at Stanford," VKS traces the citation to the actual paper, checks whether it was published in a peer-reviewed journal, assesses the journal's indexing and impact factor, and checks the author's credentials. When a newsletter makes a health claim, VKS looks for the claim in peer-reviewed literature and evaluates the quality of any cited studies.
+
+### 6.4 Source Reputation Database
 
 A curated, transparent database of source quality scores:
 
@@ -534,9 +609,9 @@ Initial data sources:
 - Ad Fontes Media reliability/bias chart
 - AllSides bias ratings
 
-The database is transparent: users can see why a source has its score and override it for their own use ("I trust this source" / "I don't trust this source").
+The database is transparent: users can see why a source has its score and override it for their own use ("I trust this source" / "I don't trust this source"). The full methodology is visible on the VKS web application, where users can explore any source's rating, trace it back to the data that produced it, and compare across rating organizations.
 
-### 6.4 On-Device vs. Server Processing
+### 6.5 On-Device vs. Server Processing
 
 | Operation | On-Device (Ministral-3B) | Server-Side (Cloud LLM) | Decision Criteria |
 |-----------|:------------------------:|:-----------------------:|-------------------|
@@ -563,7 +638,7 @@ The defining user experience: listening to content with inline verification wove
 **Minimal** (quick badges, interrupts only for problems):
 > "A new study found that coffee reduces cancer risk by 30%." *[No interruption, claim is well-supported]*
 >
-> "A new breakthrough pill cures diabetes in one week." *[Verification note: This claim could not be verified. The cited study has not been peer-reviewed.]*
+> "A new breakthrough pill cures diabetes in one week." *[Note: No peer-reviewed sources supporting this claim were found. The cited study has not appeared in any indexed journal.]*
 
 **Standard** (brief context for key claims):
 > "A new study found that coffee reduces cancer risk by 30%. *By the way, this figure comes from a large observational study and is specifically about colorectal cancer. Three meta-analyses support a protective effect, though estimates range from 12% to 30%.*"
@@ -613,12 +688,12 @@ When the user has screen access, a visual layer overlays the reading experience:
 └─────────────────────────────────────────────────┘
 ```
 
-Claim badges are color-coded:
-- **Green:** Well-supported by multiple quality sources
-- **Yellow:** Partially supported or context-dependent
-- **Orange:** Disputed or limited evidence
-- **Red:** Contradicted by stronger evidence
-- **Gray:** Opinion, not a factual claim
+Claim badges reflect the evidence found, not a judgment:
+- **Green:** Multiple independent credible sources found with consistent findings
+- **Yellow:** Some credible sources found, with additional context available
+- **Orange:** Few credible sources found, or sources report inconsistent findings
+- **Red:** No credible supporting sources found, or multiple credible sources report contradicting data
+- **Gray:** Identified as opinion or prediction, not a falsifiable factual claim
 
 ### 7.4 Learning Integration
 
@@ -765,7 +840,7 @@ VerifiedClaim
 ├── reportId: UUID (foreign key to VerificationReport)
 ├── claimText: String
 ├── claimType: String (factual, statistical, causal, attribution, opinion, prediction)
-├── verificationStatus: String (verified, disputed, unverifiable, opinion, insufficient_evidence)
+├── evidenceStatus: String (supported, mixed_findings, no_support_found, unverifiable, opinion, insufficient_evidence)
 ├── confidenceScore: Float (0-100)
 ├── evidenceSummary: String
 ├── sourcesJSON: String (array of citation objects)
@@ -897,10 +972,10 @@ For verified content that enters the curriculum, optional UMCF metadata:
 
 **Success criteria:** Users can listen to articles with inline verification at their chosen depth and ask follow-up questions about specific claims.
 
-### Phase 3: Multi-Channel Ingestion
+### Phase 3: Multi-Channel Ingestion & Web Application
 
-**Duration:** 4-6 weeks
-**Goal:** RSS, email, and browser extension support
+**Duration:** 6-8 weeks
+**Goal:** RSS, email, browser extension, and VKS web application
 
 - RSS/podcast feed engine as server-side importer plugin
 - Podcast transcription using existing STT providers
@@ -909,8 +984,11 @@ For verified content that enters the curriculum, optional UMCF metadata:
 - Feed subscription management UI
 - Background processing with notification of newly verified content
 - Processing schedule options (immediate, batch, manual)
+- **VKS web application** with full content management, reading, and verification features
+- **Methodology transparency tools**: explorable verification decision traces, source reputation browser, interactive pipeline visualization
+- **Verification playground**: paste any URL or text, watch the pipeline process it in real time with adjustable parameters
 
-**Success criteria:** Users receive a daily verified digest of their subscriptions, accessible hands-free.
+**Success criteria:** Users receive a daily verified digest of their subscriptions, accessible hands-free. Users can explore their full content library and verification methodology on the web.
 
 ### Phase 4: Learning Integration
 
@@ -1011,22 +1089,26 @@ Real-time web search verification has costs and rate limits.
 
 ### This IS:
 
-- A **verification system** that helps users understand the quality and context of information they consume
-- A **voice-native experience** that delivers insights through natural conversation
+- An **evidence presentation system** that shows users what credible sources say about the information they consume
+- A **voice-native experience** that delivers context through natural conversation
 - An **extension of UnaMentis's learning mission** to all information, not just formal curriculum
+- A **radically transparent platform** where every step of the process is visible and explorable
 - A **configurable system** where users control depth, topics, and trusted sources
 - A **privacy-first design** that processes sensitive content on-device
 - Built on **existing infrastructure** (Reading List, TTS pipeline, LLM providers, importer plugins)
 - Grounded in **established verification frameworks** (SIFT, CRAAP, scientific method, triangulation)
+- A system that uses **concrete credibility signals** (peer review, publication record, institutional credentials) rather than popularity metrics
 
 ### This IS NOT:
 
-- A **fact-checker** that declares content "true" or "false"
+- A **judge** that declares content true, false, misleading, or wrong (VKS presents evidence; the user draws conclusions)
+- A **fact-checker** in the traditional sense (it does not render verdicts)
 - A **political bias detector** that tells users what to think
 - A **news aggregator** or social media feed
 - A **replacement for critical thinking** (it strengthens critical thinking by providing better inputs)
-- A **content filter or censor** (all content is presented, verification is additive)
-- A **single source of truth** (it surfaces evidence and lets users decide)
+- A **content filter or censor** (all content is presented; verification is additive, never subtractive)
+- A **single source of truth** (it surfaces what credible sources say and lets users decide)
+- A system that treats **popularity as credibility** (follower counts, viral reach, and celebrity endorsement are explicitly not credibility signals)
 
 ---
 
@@ -1079,6 +1161,18 @@ Real-time web search verification has costs and rate limits.
 
 26. Sage Journals (2025). "Fact-Checking as Epistemic Infrastructure." https://journals.sagepub.com/doi/10.1177/27523543251344972
 27. Springer (2025). "Automating Epistemology." https://link.springer.com/article/10.1007/s00146-025-02560-y
+
+### Peer Review & Academic Credibility
+
+28. NSF. "Proposal Processing and Review (PAPPG 24-1)." https://www.nsf.gov/policies/pappg/24-1/ch-3-proposal-processing-review
+29. NIH. "Simplified Review Framework for Research Project Grants." https://grants.nih.gov/grants/guide/notice-files/NOT-OD-24-010.html
+30. Editage. "How Journal Editors Select Peer Reviewers." https://www.editage.com/insights/how-to-select-peer-reviewers-advice-from-an-expert-journal-editor
+31. Clarivate. "Journal Citation Reports 2025: Research Integrity Changes." https://clarivate.com/academia-government/blog/the-upcoming-journal-citation-reports-release-and-changes-to-uphold-research-integrity-in-2025/
+32. Elsevier. "Scopus Content Policy and Selection." https://www.elsevier.com/products/scopus/content/content-policy-and-selection
+33. Web of Science. "Master Journal List." https://mjl.clarivate.com/home
+34. MIT Quantitative Science Studies (2021). "Credibility of Scientific Information on Social Media." https://direct.mit.edu/qss/article/2/3/845/107044
+35. COPE. "Ethical Guidelines for Peer Reviewers." https://publicationethics.org/guidance/guideline/ethical-guidelines-peer-reviewers
+36. ORCID. "ORCID for Publishers." https://info.orcid.org/orcid-for-publishers/
 
 ---
 

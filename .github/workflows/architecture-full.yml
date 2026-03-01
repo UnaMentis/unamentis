@@ -1,0 +1,193 @@
+name: Advanced Architecture Visualization
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: architecture-full-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  visualize:
+    name: Generate & Deploy Advanced Architecture Viz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: sirfifer/solution-explorer@main
+        with:
+          config: solution-explorer.json
+          deploy-to: artifact-only
+          cloudflare-project-name: solution-explorer-unamentis
+
+      - name: Add live-config for viewer
+        run: |
+          cat > .solution-explorer/viewer/dist/live-config.json << 'LIVEEOF'
+          {
+            "enabled": true,
+            "data_url": "https://unamentis.github.io/unamentis",
+            "backend_mode": "github",
+            "polling": {
+              "default_interval_seconds": 30,
+              "min_interval_seconds": 15,
+              "idle_interval_seconds": 120,
+              "adaptive": true,
+              "pause_when_hidden": true
+            },
+            "features": {
+              "activity_log": true,
+              "admin_dashboard": true,
+              "version_history": true,
+              "ci_status_overlay": true,
+              "realtime_ci_webhooks": false,
+              "realtime_push": false
+            }
+          }
+          LIVEEOF
+
+      - name: Create Cloudflare Pages project (if needed)
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # Check if project exists
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/solution-explorer-unamentis" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}")
+
+          if [ "$STATUS" = "200" ]; then
+            echo "Pages project already exists"
+          else
+            echo "Creating Pages project solution-explorer-unamentis..."
+            curl -s -X POST \
+              "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects" \
+              -H "Authorization: Bearer ${CF_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data '{
+                "name": "solution-explorer-unamentis",
+                "production_branch": "main"
+              }' | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          if data.get('success'):
+              print('Pages project created successfully')
+          else:
+              for e in data.get('errors', []):
+                  print(f'Error: {e.get(\"message\", str(e))}')
+              sys.exit(1)
+          "
+          fi
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy .solution-explorer/viewer/dist --project-name=solution-explorer-unamentis --branch=main --commit-dirty=true
+
+      - name: Remove domain from old project (if exists)
+        continue-on-error: true
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          curl -s -X DELETE \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/um-solution-explorer/domains/solution-explorer.unamentis.org" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json"
+
+      - name: Add custom domain to new project
+        continue-on-error: true
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # Check if domain already exists on this project
+          EXISTING=$(curl -s \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/solution-explorer-unamentis/domains" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          domains = [d['name'] for d in data.get('result', [])]
+          print('yes' if 'solution-explorer.unamentis.org' in domains else 'no')
+          " 2>/dev/null || echo "no")
+
+          if [ "$EXISTING" = "yes" ]; then
+            echo "Custom domain already configured"
+          else
+            echo "Adding custom domain solution-explorer.unamentis.org..."
+            RESULT=$(curl -s -X POST \
+              "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/solution-explorer-unamentis/domains" \
+              -H "Authorization: Bearer ${CF_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data '{"name": "solution-explorer.unamentis.org"}')
+            echo "$RESULT" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          if data.get('success'):
+              print('Custom domain added successfully')
+              r = data.get('result', {})
+              print(f'  Status: {r.get(\"status\", \"unknown\")}')
+              print(f'  Zone tag: {r.get(\"zone_tag\", \"none\")}')
+          else:
+              errors = data.get('errors', [])
+              for e in errors:
+                  print(f'Error: {e.get(\"message\", str(e))}')
+          " 2>/dev/null || echo "$RESULT"
+          fi
+
+      - name: Create DNS record
+        continue-on-error: true
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          ZONE_ID="8187e1e6b3b194f2ecc55ebc754389b8"
+
+          # Check if CNAME already exists
+          EXISTING=$(curl -s \
+            "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?name=solution-explorer.unamentis.org&type=CNAME" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          records = data.get('result', [])
+          print('yes' if records else 'no')
+          " 2>/dev/null || echo "unknown")
+
+          if [ "$EXISTING" = "yes" ]; then
+            echo "DNS CNAME record already exists"
+          else
+            echo "Creating DNS CNAME record..."
+            RESULT=$(curl -s -X POST \
+              "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records" \
+              -H "Authorization: Bearer ${CF_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data '{
+                "type": "CNAME",
+                "name": "solution-explorer",
+                "content": "solution-explorer-unamentis.pages.dev",
+                "proxied": true,
+                "ttl": 1
+              }')
+            echo "$RESULT" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          if data.get('success'):
+              print('DNS CNAME record created successfully')
+          else:
+              errors = data.get('errors', [])
+              for e in errors:
+                  print(f'DNS Error: {e.get(\"message\", str(e))}')
+              print('')
+              print('If DNS creation failed due to permissions, manually add:')
+              print('  Type: CNAME')
+              print('  Name: solution-explorer')
+              print('  Target: solution-explorer-unamentis.pages.dev')
+              print('  Proxy: On')
+          " 2>/dev/null || echo "$RESULT"
+          fi
