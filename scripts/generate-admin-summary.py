@@ -162,9 +162,7 @@ def compute_daily_counts(activity: list) -> dict:
     return counts
 
 
-def build_admin_summary(
-    arch: dict, version: dict, repo: str, sha: str
-) -> dict:
+def build_admin_summary(arch: dict, version: dict, repo: str, sha: str) -> dict:
     """Build the AdminSummary JSON."""
     repo_name = repo.split("/")[-1] if "/" in repo else repo
 

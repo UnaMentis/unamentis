@@ -592,7 +592,7 @@ class SettingsViewModel: ObservableObject {
            let stt = STTProvider(rawValue: sttRaw) {
             self.sttProvider = stt
         } else {
-            self.sttProvider = .glmASROnDevice  // Default to on-device
+            self.sttProvider = .glmASRNano  // Default to server-based GLM-ASR (on-device requires LLAMA_AVAILABLE)
         }
 
         if let llmRaw = UserDefaults.standard.string(forKey: "llmProvider"),

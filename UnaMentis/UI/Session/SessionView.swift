@@ -1436,7 +1436,7 @@ class SessionViewModel: ObservableObject {
 
         // Read user settings from UserDefaults
         let sttProviderSetting = UserDefaults.standard.string(forKey: "sttProvider")
-            .flatMap { STTProvider(rawValue: $0) } ?? .glmASROnDevice
+            .flatMap { STTProvider(rawValue: $0) } ?? .glmASRNano
         let llmProviderSetting = UserDefaults.standard.string(forKey: "llmProvider")
             .flatMap { LLMProvider(rawValue: $0) } ?? .localMLX
         let ttsProviderSetting = UserDefaults.standard.string(forKey: "ttsProvider")
@@ -1480,6 +1480,24 @@ class SessionViewModel: ObservableObject {
                 sttService = AssemblyAISTTService(apiKey: apiKey)
             } else {
                 logger.warning("AssemblyAI API key not configured, falling back to Apple Speech")
+                sttService = AppleSpeechSTTService()
+            }
+        case .glmASRNano:
+            if selfHostedEnabled && !serverIP.isEmpty,
+               let serverURL = URL(string: "wss://\(serverIP):8081/v1/audio/stream") {
+                let config = GLMASRSTTService.Configuration(
+                    serverURL: serverURL,
+                    authToken: nil,
+                    language: "auto",
+                    interimResults: true,
+                    punctuate: true,
+                    reconnectAttempts: 3,
+                    reconnectDelayMs: 1000
+                )
+                logger.info("Using GLM-ASR-Nano STT at \(serverIP):8081")
+                sttService = GLMASRSTTService(configuration: config, telemetry: appState.telemetry)
+            } else {
+                logger.warning("GLM-ASR-Nano selected but no server IP configured, falling back to Apple Speech")
                 sttService = AppleSpeechSTTService()
             }
         default:

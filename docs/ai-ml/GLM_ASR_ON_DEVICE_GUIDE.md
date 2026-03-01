@@ -2,7 +2,7 @@
 
 **Purpose:** Complete guide for implementing and using the on-device GLM-ASR-Nano speech recognition service in UnaMentis iOS.
 
-**Last Updated:** December 2025
+**Last Updated:** February 2026
 
 ---
 
@@ -23,7 +23,7 @@
 
 ### 1.1 What is On-Device GLM-ASR?
 
-UnaMentis supports running GLM-ASR-Nano directly on the device using CoreML for the neural network components and llama.cpp for the text decoder. This provides:
+UnaMentis supports running GLM-ASR-Nano directly on the device using a unified GGUF model via llama.cpp. This provides:
 
 - **Zero latency** - No network round-trip
 - **Complete privacy** - Audio never leaves the device
@@ -34,16 +34,18 @@ UnaMentis supports running GLM-ASR-Nano directly on the device using CoreML for 
 
 | Requirement | Minimum | Recommended |
 |-------------|---------|-------------|
-| Device | iPhone 15 Pro | iPhone 17 Pro Max |
-| RAM | 8GB | 12GB |
+| Device | iPhone 17 Pro | iPhone 17 Pro Max |
+| RAM | 8GB (12GB recommended) | 12GB |
 | iOS | 18.0 | 18.0+ |
-| Storage | 2.5GB free | 5GB free |
+| Storage | 1.5GB free | 3GB free |
+
+The unified GGUF approach requires only ~1.06GB of storage for the model file, but 12GB of RAM is needed to accommodate runtime activations during inference.
 
 ### 1.3 When to Use On-Device
 
 The `GLMASROnDeviceSTTService` is automatically selected when:
 
-1. Device has sufficient RAM (12GB+ for optimal, 8GB minimum)
+1. Device has sufficient RAM (12GB recommended, 8GB minimum)
 2. Model files are present in the app bundle
 3. Thermal state is nominal (not overheating)
 4. User has enabled on-device mode in settings
@@ -54,8 +56,13 @@ The `GLMASROnDeviceSTTService` is automatically selected when:
 
 ### 2.1 Component Overview
 
+> **Architecture Change:** The original design decomposed GLM-ASR into multiple CoreML components
+> (Whisper encoder, audio adapter, embed head) plus a GGUF text decoder, totaling ~2.4GB. The
+> updated approach uses a unified GGUF model via llama.cpp's libmtmd audio support. A single
+> Q4_K_M quantized file handles the full audio-to-text pipeline at ~1.06GB.
+
 ```
-                    GLM-ASR On-Device Pipeline
+                 GLM-ASR On-Device Pipeline (Unified GGUF)
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
 │  Audio Input                                                    │
@@ -63,32 +70,11 @@ The `GLMASROnDeviceSTTService` is automatically selected when:
 │       │                                                         │
 │       ▼                                                         │
 │  ┌─────────────────────────────────────────┐                   │
-│  │     GLMASRWhisperEncoder (CoreML)       │                   │
-│  │     - Mel spectrogram extraction         │                   │
-│  │     - Whisper encoder (1.2GB model)      │                   │
-│  │     - Outputs: audio embeddings          │                   │
-│  └─────────────────────────────────────────┘                   │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────────────────────────────────┐                   │
-│  │     GLMASRAudioAdapter (CoreML)         │                   │
-│  │     - Adapter network (56MB model)       │                   │
-│  │     - Aligns audio features to LLM space │                   │
-│  └─────────────────────────────────────────┘                   │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────────────────────────────────┐                   │
-│  │     GLMASREmbedHead (CoreML)            │                   │
-│  │     - Embedding head (232MB model)       │                   │
-│  │     - Produces token embeddings          │                   │
-│  └─────────────────────────────────────────┘                   │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────────────────────────────────┐                   │
-│  │     GLM-4 Text Decoder (llama.cpp)      │                   │
-│  │     - Q4_K_M quantized (935MB model)     │                   │
-│  │     - Autoregressive text generation     │                   │
-│  │     - Streaming token output             │                   │
+│  │     llama.cpp (unified GGUF)            │                   │
+│  │     - Audio encoding via libmtmd        │                   │
+│  │     - Whisper-based feature extraction  │                   │
+│  │     - Autoregressive text decoding      │                   │
+│  │     - Q4_K_M quantized (~1.06GB)        │                   │
 │  └─────────────────────────────────────────┘                   │
 │       │                                                         │
 │       ▼                                                         │
@@ -102,10 +88,7 @@ The `GLMASROnDeviceSTTService` is automatically selected when:
 | Class | File | Purpose |
 |-------|------|---------|
 | `GLMASROnDeviceSTTService` | [GLMASROnDeviceSTTService.swift](../UnaMentis/Services/STT/GLMASROnDeviceSTTService.swift) | Main STT service implementation |
-| `GLMWhisperEncoder` | (internal) | CoreML Whisper encoder wrapper |
-| `GLMAudioAdapter` | (internal) | CoreML adapter wrapper |
-| `GLMEmbedHead` | (internal) | CoreML embed head wrapper |
-| `GLMTextDecoder` | (internal) | llama.cpp decoder wrapper |
+| `GLMTextDecoder` | (internal) | llama.cpp unified GGUF wrapper (handles full pipeline) |
 
 ### 2.3 Protocol Conformance
 
@@ -131,59 +114,51 @@ public actor GLMASROnDeviceSTTService: STTServiceProtocol {
 
 ### 3.1 Required Models
 
+A single GGUF file is required:
+
 | Model | Size | Format | Purpose |
 |-------|------|--------|---------|
-| GLMASRWhisperEncoder | 1.2 GB | .mlpackage | Audio feature extraction |
-| GLMASRAudioAdapter | 56 MB | .mlpackage | Feature alignment |
-| GLMASREmbedHead | 232 MB | .mlpackage | Token embedding |
-| glm-asr-nano-q4km | 935 MB | .gguf | Text decoding (llama.cpp) |
+| glm-asr-nano-2512-q4km | ~1.06 GB | .gguf | Full audio-to-text pipeline (unified) |
 
-**Total:** ~2.4 GB
+### 3.2 Quantization Options
 
-### 3.2 Model Location
+| Quantization | File Size | Quality | Use Case |
+|-------------|-----------|---------|---------|
+| Q4_K_M | ~1.06 GB | Recommended | On-device (best balance) |
+| Q4_K_S | ~976 MB | Good | On-device (smaller) |
+| IQ4_XS | ~925 MB | Acceptable | On-device (smallest usable) |
+| Q8_0 | 1.7 GB | High | Server/development |
 
-Models should be placed in:
+### 3.3 Model Location
+
+Place the model at:
 
 ```
 models/glm-asr-nano/
-├── GLMASRWhisperEncoder.mlpackage/
-├── GLMASRAudioAdapter.mlpackage/
-├── GLMASREmbedHead.mlpackage/
-└── glm-asr-nano-q4km.gguf
+└── glm-asr-nano-2512-q4km.gguf
 ```
 
-### 3.3 Obtaining Models
-
-Models are available from:
-
-1. **Hugging Face:** https://huggingface.co/zai-org/GLM-ASR-Nano-2512
-2. **Project scripts:** `./scripts/download-glm-models.sh` (if available)
-
-### 3.4 CoreML Conversion
-
-If you have the original PyTorch models, convert to CoreML:
+### 3.4 Downloading Models
 
 ```bash
-# Install coremltools
-pip install coremltools torch
-
-# Run conversion script
-python scripts/convert_glm_to_coreml.py \
-    --input-dir /path/to/pytorch/models \
-    --output-dir models/glm-asr-nano
+# Download the Q4_K_M GGUF from community repository
+huggingface-cli download Mungert/GLM-ASR-Nano-2512-GGUF \
+    --include "glm-asr-nano-2512-q4km.gguf" \
+    --local-dir models/glm-asr-nano
 ```
 
-### 3.5 GGUF Quantization
+### 3.5 Deprecated: Multi-Component CoreML Pipeline
 
-The text decoder uses Q4_K_M quantization for optimal size/quality balance:
+The following four-file approach is no longer used:
 
-```bash
-# If you have the F16 model, quantize it:
-/path/to/llama.cpp/build/bin/llama-quantize \
-    models/glm-asr-nano/glm-asr-nano-f16.gguf \
-    models/glm-asr-nano/glm-asr-nano-q4km.gguf \
-    Q4_K_M
-```
+| File | Size | Status |
+|------|------|--------|
+| `GLMASRWhisperEncoder.mlpackage` | 1.2 GB | Deprecated |
+| `GLMASRAudioAdapter.mlpackage` | 56 MB | Deprecated |
+| `GLMASREmbedHead.mlpackage` | 232 MB | Deprecated |
+| `glm-asr-nano-q4km.gguf` (old decoder only) | 935 MB | Deprecated |
+
+The unified GGUF approach replaces all four components with a single file and eliminates the CoreML conversion requirement.
 
 ---
 
@@ -192,16 +167,15 @@ The text decoder uses Q4_K_M quantization for optimal size/quality balance:
 ### 4.1 Service Initialization
 
 ```swift
-let config = GLMASROnDeviceConfiguration(
-    encoderModelPath: Bundle.main.path(forResource: "GLMASRWhisperEncoder", ofType: "mlpackage"),
-    adapterModelPath: Bundle.main.path(forResource: "GLMASRAudioAdapter", ofType: "mlpackage"),
-    embedHeadModelPath: Bundle.main.path(forResource: "GLMASREmbedHead", ofType: "mlpackage"),
-    decoderModelPath: Bundle.main.path(forResource: "glm-asr-nano-q4km", ofType: "gguf"),
-    computeUnits: .cpuAndNeuralEngine,
-    maxContextLength: 4096
+// Unified GGUF approach: single model file handles the full pipeline
+let config = GLMASROnDeviceSTTService.Configuration(
+    modelDirectory: Bundle.main.resourceURL!.appendingPathComponent("models/glm-asr-nano"),
+    maxAudioDuration: 30.0,
+    useNeuralEngine: true,
+    gpuLayers: 99
 )
 
-let sttService = try await GLMASROnDeviceSTTService(configuration: config)
+let sttService = GLMASROnDeviceSTTService(configuration: config)
 ```
 
 ### 4.2 Audio Processing
@@ -239,7 +213,7 @@ Before initializing, check if the device supports on-device inference:
 ```swift
 if GLMASROnDeviceSTTService.isDeviceSupported {
     // Initialize on-device service
-    let service = try await GLMASROnDeviceSTTService(configuration: config)
+    let service = GLMASROnDeviceSTTService(configuration: config)
 } else {
     // Fall back to server-based service
     let service = GLMASRSTTService(configuration: serverConfig)
@@ -248,14 +222,14 @@ if GLMASROnDeviceSTTService.isDeviceSupported {
 
 ### 4.4 Simulator Support
 
-For simulator testing, on-device mode is enabled when models are present:
+For simulator testing, on-device mode is enabled when the GGUF model file is present:
 
 ```swift
 #if targetEnvironment(simulator)
-// Check if models exist in the expected location
+// Check if the unified GGUF model exists in the expected location
 let modelDir = Configuration.default.modelDirectory
-let encoderPath = modelDir.appendingPathComponent("GLMASRWhisperEncoder.mlpackage").path
-return FileManager.default.fileExists(atPath: encoderPath)
+let ggufPath = modelDir.appendingPathComponent("glm-asr-nano-2512-q4km.gguf").path
+return FileManager.default.fileExists(atPath: ggufPath)
 #else
 return true
 #endif
@@ -271,7 +245,7 @@ return true
 2. **Right-click** on the UnaMentis folder in the navigator
 3. **Select "Add Files to UnaMentis..."**
 4. **Navigate** to `models/glm-asr-nano/`
-5. **Select all model files** (.mlpackage folders and .gguf file)
+5. **Select the model file** (`glm-asr-nano-2512-q4km.gguf`)
 6. **Check** "Copy items if needed"
 7. **Check** "Add to targets: UnaMentis"
 8. **Click Add**
@@ -291,7 +265,7 @@ Swift Compiler - Custom Flags:
 
 ### 5.3 Package Dependencies
 
-The project's Package.swift already includes llama.cpp:
+The project's Package.swift includes llama.cpp:
 
 ```swift
 dependencies: [
@@ -311,6 +285,12 @@ targets: [
 ]
 ```
 
+> **Blocker (February 2026):** StanfordBDHG/llama.cpp v0.3.3 was packaged before audio/multimodal
+> support landed in upstream llama.cpp. The relevant upstream PRs are #17901 and #18142. Until
+> the Swift wrapper is updated to a revision that includes those PRs, on-device audio inference
+> via libmtmd is not available. The service can be built and tested structurally, but model
+> loading will fail at runtime until this dependency is updated.
+
 ### 5.4 Entitlements
 
 No special entitlements are required for on-device inference. Standard microphone access is already configured.
@@ -322,62 +302,48 @@ No special entitlements are required for on-device inference. Standard microphon
 ### 6.1 Configuration Options
 
 ```swift
-public struct GLMASROnDeviceConfiguration {
-    /// Path to the Whisper encoder CoreML model
-    public var encoderModelPath: String?
+public struct Configuration: Sendable {
+    /// Directory containing the unified GGUF model file
+    public var modelDirectory: URL
 
-    /// Path to the audio adapter CoreML model
-    public var adapterModelPath: String?
+    /// Maximum audio duration in seconds (default: 30.0)
+    public var maxAudioDuration: TimeInterval = 30.0
 
-    /// Path to the embed head CoreML model
-    public var embedHeadModelPath: String?
+    /// Use Neural Engine for acceleration (default: true)
+    public var useNeuralEngine: Bool = true
 
-    /// Path to the GGUF decoder model
-    public var decoderModelPath: String?
-
-    /// CoreML compute units (default: cpuAndNeuralEngine)
-    public var computeUnits: MLComputeUnits = .cpuAndNeuralEngine
-
-    /// Maximum context length for decoder (default: 4096)
-    public var maxContextLength: Int = 4096
-
-    /// Number of threads for llama.cpp (default: 4)
-    public var decoderThreads: Int = 4
-
-    /// Enable streaming results (default: true)
-    public var streamingEnabled: Bool = true
-
-    /// Language hint (default: "auto")
-    public var language: String = "auto"
+    /// Number of GPU layers for llama.cpp (default: 99)
+    public var gpuLayers: Int = 99
 }
 ```
 
 ### 6.2 Compute Unit Selection
 
-| Compute Units | Description | Best For |
+| Configuration | Description | Best For |
 |---------------|-------------|----------|
-| `.cpuOnly` | CPU only | Debugging |
-| `.cpuAndGPU` | CPU + GPU | Not recommended |
-| `.cpuAndNeuralEngine` | CPU + Neural Engine | **Recommended** |
-| `.all` | All available | Maximum performance |
+| `useNeuralEngine: false, gpuLayers: 0` | CPU only | Debugging |
+| `useNeuralEngine: true, gpuLayers: 33` | Neural Engine + limited GPU | 8GB devices |
+| `useNeuralEngine: true, gpuLayers: 99` | Neural Engine + full GPU offload | **Recommended** (12GB devices) |
 
 ### 6.3 Memory Management
 
 For devices with limited RAM, configure conservatively:
 
 ```swift
-// For 8GB devices (iPhone 15 Pro)
-let config = GLMASROnDeviceConfiguration(
-    computeUnits: .cpuAndNeuralEngine,
-    maxContextLength: 2048,  // Reduced
-    decoderThreads: 2        // Reduced
+// For 8GB devices (conservative)
+let config = GLMASROnDeviceSTTService.Configuration(
+    modelDirectory: Bundle.main.resourceURL!.appendingPathComponent("models/glm-asr-nano"),
+    maxAudioDuration: 15.0,
+    useNeuralEngine: true,
+    gpuLayers: 33   // Offload fewer layers to GPU
 )
 
-// For 12GB devices (iPhone 17 Pro Max)
-let config = GLMASROnDeviceConfiguration(
-    computeUnits: .all,
-    maxContextLength: 4096,
-    decoderThreads: 4
+// For 12GB devices (iPhone 17 Pro/Pro Max)
+let config = GLMASROnDeviceSTTService.Configuration(
+    modelDirectory: Bundle.main.resourceURL!.appendingPathComponent("models/glm-asr-nano"),
+    maxAudioDuration: 30.0,
+    useNeuralEngine: true,
+    gpuLayers: 99   // Full GPU offload
 )
 ```
 
@@ -402,7 +368,7 @@ Note: Simulator performance will be slower than real devices.
 
 For accurate performance testing, use a physical device:
 
-1. **Connect** iPhone 15 Pro or later
+1. **Connect** iPhone 17 Pro or later (minimum supported device)
 2. **Select device** as build target
 3. **Build and run** (Cmd+R)
 4. **Test with real speech**
@@ -457,8 +423,8 @@ if let resourcePath = Bundle.main.resourcePath {
 **Symptom:** App crashes or system kills app
 
 **Solution:**
-1. Reduce `maxContextLength`
-2. Use fewer `decoderThreads`
+1. Reduce `gpuLayers` (e.g., from 99 to 33) to lower memory usage
+2. Reduce `maxAudioDuration` to process shorter chunks
 3. Ensure no other memory-heavy apps running
 4. Consider server-based fallback for older devices
 
@@ -467,20 +433,21 @@ if let resourcePath = Bundle.main.resourcePath {
 **Symptom:** High latency, choppy audio
 
 **Solution:**
-1. Use `.cpuAndNeuralEngine` compute units
+1. Ensure `useNeuralEngine: true` in Configuration
 2. Check thermal state (throttling when hot)
-3. Ensure models are optimized (CoreML compiled)
+3. Reduce `gpuLayers` if memory-constrained
 4. Profile with Instruments
 
-### 8.4 CoreML Errors
+### 8.4 GGUF Model Errors
 
-**Symptom:** `CoreML model failed to load`
+**Symptom:** `Failed to load GGUF model` or `llama_model_load failed`
 
 **Solution:**
-1. Verify iOS version (18.0+ required)
-2. Check model format (.mlpackage not .mlmodel)
-3. Recompile models with latest coremltools
-4. Check Xcode console for detailed errors
+1. Verify the GGUF file is not corrupted (re-download if needed)
+2. Check quantization format matches expectations (Q4_K_M recommended)
+3. Verify the file name matches `glm-asr-nano-2512-q4km.gguf`
+4. Ensure sufficient free memory for model loading (~1.5GB at runtime)
+5. Consider server-based fallback for unsupported devices
 
 ### 8.5 llama.cpp Errors
 
@@ -518,3 +485,4 @@ if let resourcePath = Bundle.main.resourcePath {
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | December 2025 | Claude | Initial document |
+| 2.0 | February 2026 | Claude | Revised to unified GGUF architecture, updated model sizes, documented llama.cpp Swift wrapper blocker, deprecated multi-component pipeline |

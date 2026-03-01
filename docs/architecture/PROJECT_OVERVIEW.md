@@ -89,7 +89,8 @@ All components are **protocol-based and swappable**. The system supports multipl
 | Provider | Model | Type | Notes |
 |----------|-------|------|-------|
 | **Apple Speech** | Native | On-device | Zero cost, always available, ~150ms latency |
-| **GLM-ASR** | GLM-ASR-Nano | On-device (CoreML) | Requires A17+ chip, ~2.4GB download |
+| **GLM-ASR (Server)** | GLM-ASR-Nano-2512 | Self-hosted (SGLang/vLLM) | Zero cost, WebSocket streaming, health-based failover to Deepgram |
+| **GLM-ASR (On-device)** | GLM-ASR-Nano-2512 Q4_K_M | On-device (GGUF) | Unified GGUF ~1.06GB, requires iPhone 17 Pro+ (12GB RAM), blocked on llama.cpp wrapper update |
 | **Deepgram** | Nova-3 | Cloud (WebSocket) | ~300ms latency, streaming |
 | **AssemblyAI** | Universal-2 | Cloud | Word-level timestamps |
 | **Groq** | Whisper-large-v3-turbo | Cloud | Free tier (14,400 req/day), 300x real-time |
@@ -519,7 +520,8 @@ UnaMentis can connect to local/LAN servers for zero-cost inference:
 | Ollama | 11434 | LLM inference (primary) |
 | llama.cpp | 8080 | LLM inference |
 | vLLM | 8000 | High-throughput LLM |
-| GLM-ASR server | 11401 | STT (WebSocket streaming) |
+| SGLang | 30000 | GLM-ASR-Nano inference (recommended) |
+| GLM-ASR gateway | 8081 | STT WebSocket streaming (bridges to SGLang/vLLM) |
 | Chatterbox TTS | 8004 | Expressive TTS |
 | VibeVoice TTS | 11403 | Real-time TTS |
 | Piper TTS | 11402 | Lightweight TTS |
@@ -1117,7 +1119,7 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 ### Pending User Setup
 - API key configuration (OpenAI, Anthropic, Deepgram, ElevenLabs, AssemblyAI, Groq)
 - Physical device testing (iPhone 16/17 Pro Max)
-- On-device GLM-ASR model download (~2.4GB)
+- On-device GLM-ASR model download (~1.06GB unified GGUF Q4_K_M)
 - Long-session stability validation (90+ minutes)
 - Curriculum content creation
 

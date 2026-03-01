@@ -116,6 +116,7 @@ public struct VoiceSettingsView: View {
                 Text("24 kHz").tag(24000.0)
                 Text("48 kHz").tag(48000.0)
             }
+            .pickerStyle(.navigationLink)
             .accessibilityHint("Audio quality setting. Higher rates sound better but use more data.")
 
             Toggle("Voice Processing", isOn: $viewModel.enableVoiceProcessing)
@@ -174,11 +175,13 @@ public struct VoiceSettingsView: View {
         Section {
             Picker("Provider", selection: $viewModel.sttProvider) {
                 Text("GLM-ASR (On-Device)").tag(STTProvider.glmASROnDevice)
+                Text("GLM-ASR-Nano (Server)").tag(STTProvider.glmASRNano)
                 Text("Groq Whisper (Free)").tag(STTProvider.groqWhisper)
                 Text("Deepgram Nova-3").tag(STTProvider.deepgramNova3)
                 Text("AssemblyAI").tag(STTProvider.assemblyAI)
                 Text("Apple Speech").tag(STTProvider.appleSpeech)
             }
+            .pickerStyle(.navigationLink)
 
             if !viewModel.sttProvider.requiresNetwork {
                 HStack {
@@ -204,6 +207,7 @@ public struct VoiceSettingsView: View {
                 Text("OpenAI").tag(LLMProvider.openAI)
                 Text("Self-Hosted").tag(LLMProvider.selfHosted)
             }
+            .pickerStyle(.navigationLink)
             .accessibilityHint("Choose where AI processing happens")
 
             if viewModel.llmProvider != .localMLX {
@@ -223,6 +227,7 @@ public struct VoiceSettingsView: View {
                         }
                     }
                 }
+                .pickerStyle(.navigationLink)
                 .accessibilityHint("Larger models are smarter but slower and more expensive")
 
                 // Show selected model context window if available
@@ -290,6 +295,7 @@ public struct VoiceSettingsView: View {
                 Text("ElevenLabs").tag(TTSProvider.elevenLabsFlash)
                 Text("Deepgram Aura").tag(TTSProvider.deepgramAura2)
             }
+            .pickerStyle(.navigationLink)
             .accessibilityHint("Choose the voice synthesis provider")
 
             // Voice picker for self-hosted TTS providers (not Chatterbox, which has its own settings)
@@ -300,6 +306,7 @@ public struct VoiceSettingsView: View {
                         Text(viewModel.voiceDisplayName(voice)).tag(voice)
                     }
                 }
+                .pickerStyle(.navigationLink)
                 .accessibilityHint("Select the AI's voice")
             }
 
@@ -589,7 +596,7 @@ class VoiceSettingsViewModel: ObservableObject {
            let stt = STTProvider(rawValue: sttRaw) {
             self.sttProvider = stt
         } else {
-            self.sttProvider = .glmASROnDevice
+            self.sttProvider = .glmASRNano
         }
 
         if let llmRaw = defaults.string(forKey: "llmProvider"),
@@ -717,7 +724,7 @@ class VoiceSettingsViewModel: ObservableObject {
             maxTokens = 2048
 
         case .costOptimized:
-            sttProvider = .glmASROnDevice
+            sttProvider = .glmASRNano
             llmProvider = .localMLX
             ttsProvider = .appleTTS
             sampleRate = 16000

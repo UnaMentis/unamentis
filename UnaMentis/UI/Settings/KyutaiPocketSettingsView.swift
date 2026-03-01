@@ -203,7 +203,7 @@ struct KyutaiPocketSettingsView: View {
                     Text(preset.displayName).tag(preset)
                 }
             }
-            .pickerStyle(.menu)
+            .pickerStyle(.navigationLink)
 
             if viewModel.selectedPreset != .custom {
                 Text(viewModel.selectedPreset.description)

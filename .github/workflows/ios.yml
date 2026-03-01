@@ -125,12 +125,28 @@ jobs:
     - name: Generate Xcode project
       run: xcodegen generate
 
+    - name: Resolve Simulator
+      id: sim
+      run: |
+        # Find best available iPhone simulator with fallback
+        for name in "iPhone 16 Pro" "iPhone 17 Pro" "iPhone 15 Pro" "iPhone 14 Pro"; do
+          if xcrun simctl list devices available 2>/dev/null | grep -q "$name"; then
+            echo "simulator=$name" >> "$GITHUB_OUTPUT"
+            echo "Using simulator: $name"
+            exit 0
+          fi
+        done
+        # Last resort: first available iPhone
+        FALLBACK=$(xcrun simctl list devices available 2>/dev/null | grep -o 'iPhone [^(]*' | head -1 | xargs)
+        echo "simulator=$FALLBACK" >> "$GITHUB_OUTPUT"
+        echo "Using fallback simulator: $FALLBACK"
+
     - name: Build
       run: |
         set -o pipefail
         xcodebuild build \
           -scheme UnaMentis \
-          -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+          -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.simulator }}' \
           -skipPackagePluginValidation \
           CODE_SIGNING_ALLOWED=NO \
           | xcbeautify --renderer github-actions
@@ -141,7 +157,7 @@ jobs:
         # Use unified test runner script for CI/local parity
         CI=true \
         TEST_TYPE=unit \
-        SIMULATOR="iPhone 16 Pro" \
+        SIMULATOR="${{ steps.sim.outputs.simulator }}" \
         ENABLE_COVERAGE=true \
         ENFORCE_COVERAGE=true \
         COVERAGE_THRESHOLD=80 \
@@ -263,12 +279,28 @@ jobs:
     - name: Generate Xcode project
       run: xcodegen generate
 
+    - name: Resolve Simulator
+      id: sim
+      run: |
+        # Find best available iPhone simulator with fallback
+        for name in "iPhone 16 Pro" "iPhone 17 Pro" "iPhone 15 Pro" "iPhone 14 Pro"; do
+          if xcrun simctl list devices available 2>/dev/null | grep -q "$name"; then
+            echo "simulator=$name" >> "$GITHUB_OUTPUT"
+            echo "Using simulator: $name"
+            exit 0
+          fi
+        done
+        # Last resort: first available iPhone
+        FALLBACK=$(xcrun simctl list devices available 2>/dev/null | grep -o 'iPhone [^(]*' | head -1 | xargs)
+        echo "simulator=$FALLBACK" >> "$GITHUB_OUTPUT"
+        echo "Using fallback simulator: $FALLBACK"
+
     - name: Build
       run: |
         set -o pipefail
         xcodebuild build \
           -scheme UnaMentis \
-          -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+          -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.simulator }}' \
           -skipPackagePluginValidation \
           CODE_SIGNING_ALLOWED=NO \
           | xcbeautify --renderer github-actions
@@ -278,7 +310,7 @@ jobs:
         # Use unified test runner script for CI/local parity
         CI=true \
         TEST_TYPE=integration \
-        SIMULATOR="iPhone 16 Pro" \
+        SIMULATOR="${{ steps.sim.outputs.simulator }}" \
         ENABLE_COVERAGE=false \
         ENFORCE_COVERAGE=false \
         RESULT_BUNDLE_PATH=IntegrationTestResults.xcresult \

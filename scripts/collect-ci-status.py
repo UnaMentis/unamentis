@@ -35,6 +35,9 @@ CONCLUSION_MAP = {
 
 def github_api_get(url: str, token: str) -> dict:
     """Make an authenticated GET request to the GitHub API."""
+    if not url.startswith("https://"):
+        raise ValueError(f"Only HTTPS URLs are permitted, got: {url}")
+
     headers = {
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
@@ -43,7 +46,7 @@ def github_api_get(url: str, token: str) -> dict:
         headers["Authorization"] = f"Bearer {token}"
 
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 - URL scheme validated above
         return json.loads(resp.read().decode("utf-8"))
 
 
@@ -188,9 +191,7 @@ def empty_overlay(sha: str) -> dict:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Collect CI/CD status from GitHub API"
-    )
+    parser = argparse.ArgumentParser(description="Collect CI/CD status from GitHub API")
     parser.add_argument(
         "--repo",
         required=True,
