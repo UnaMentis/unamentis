@@ -16,7 +16,7 @@ repository = "https://github.com/unamentis/unamentis"
 
 [workspace.dependencies]
 # Async runtime
-tokio = { version = "1.35", features = ["full"] }
+tokio = { version = "1.50", features = ["full"] }
 
 # HTTP/WebSocket server
 axum = { version = "0.7", features = ["ws"] }

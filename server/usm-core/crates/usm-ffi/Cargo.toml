@@ -10,7 +10,7 @@ crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 usm-core = { path = "../usm-core" }
-tokio = { version = "1.35", features = ["rt-multi-thread"] }
+tokio = { version = "1.50", features = ["rt-multi-thread"] }
 libc = "0.2"
 serde_json = "1.0"
 
