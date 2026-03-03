@@ -233,7 +233,12 @@
 }
 
 .shimmer {
-  background: linear-gradient(90deg, var(--shimmer-from) 25%, var(--shimmer-via) 50%, var(--shimmer-from) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--shimmer-from) 25%,
+    var(--shimmer-via) 50%,
+    var(--shimmer-from) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }

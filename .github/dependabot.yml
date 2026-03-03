@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # Web client (Next.js) - uses pnpm
+  # package-lock.json has been removed; Dependabot auto-detects pnpm via pnpm-lock.yaml
+  - package-ecosystem: "npm"
+    directory: "/server/web"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      next:
+        patterns:
+          - "next"
+          - "eslint-config-next"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+
+  # USM Core (Rust)
+  - package-ecosystem: "cargo"
+    directory: "/server/usm-core"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
