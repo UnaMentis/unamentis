@@ -18,6 +18,7 @@ jobs:
   visualize:
     name: Generate & Deploy Architecture Viz
     runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
     steps:
       - uses: actions/checkout@v4
       - uses: sirfifer/solution-explorer@main
