@@ -548,6 +548,37 @@ enum HelpContent {
         """
     }
 
+    // MARK: - Reading List Help
+    enum ReadingList {
+        static let overview = """
+        Import PDFs, text files, markdown, or web articles and listen to them read aloud with AI-powered text-to-speech.
+        """
+
+        static let importing = """
+        Tap the + button to import documents. Supported formats: PDF, plain text, markdown, and web URLs. PDFs are chunked into audio segments automatically.
+        """
+
+        static let playback = """
+        Tap the headphones icon to listen. Use skip controls to move between segments, and add bookmarks to save your place.
+        """
+
+        static let inlineImages = """
+        Images extracted from PDFs appear alongside the text as each segment plays. Tap an image to view it fullscreen.
+        """
+
+        static let bookmarks = """
+        Add bookmarks during playback to save your place. Access saved bookmarks from the menu button in the top right.
+        """
+
+        static let formats = """
+        Supported formats: PDF (with image extraction and OCR), plain text, markdown (formatting stripped for natural speech), and web URLs (article text extracted automatically).
+        """
+
+        static let progress = """
+        Swipe right on an item to mark it complete. Swipe left to archive or delete. Your reading position is saved automatically.
+        """
+    }
+
     // MARK: - General Help
     enum General {
         static let onboarding = """

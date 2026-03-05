@@ -1106,7 +1106,7 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 - **USM-FFI** macOS menu bar app (Swift, real-time WebSocket, 16 tests)
 - **Knowledge Bowl Question Pack API** (full CRUD for packs/questions, bundle creation with deduplication, module import)
 - **KB Pack Management UI** (Operations Console: pack browser, question browser, pack creation, bulk operations)
-- **Reading List** with file and URL import, markdown stripping, HTML article extraction (swift-readability/Mozilla Readability), Vision OCR for scanned PDFs, TTS-friendly text chunking
+- **Reading List** with file and URL import, markdown stripping, HTML article extraction (swift-readability/Mozilla Readability), Vision OCR for scanned PDFs, TTS-friendly text chunking, PDF inline image extraction (CGPDF content stream scanning, JPEG and raw pixel format support, automatic image-to-chunk mapping, tap-to-fullscreen viewing)
 - **AudioPlaybackOrchestrator** (shared TTS playback actor used by Voice Session, Reading List, and Knowledge Bowl, with configurable prefetch, inter-segment silence, pause/resume/suspend, dynamic segment append, and warm audio engine + TTS caching)
 
 ### In Progress

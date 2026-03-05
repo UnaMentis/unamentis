@@ -59,6 +59,7 @@ struct ReadingInlineImageView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(asset.altText ?? "Image from page \(asset.chunkIndex + 1)")
+        .accessibilityHint("Double-tap to view fullscreen")
     }
 
     // MARK: - Subviews

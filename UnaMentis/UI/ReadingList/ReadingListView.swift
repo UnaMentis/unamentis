@@ -76,12 +76,19 @@ public struct ReadingListView: View {
     // MARK: - List Views
 
     private var activeListView: some View {
-        List {
-            ForEach(viewModel.activeItems) { item in
-                ReadingItemRow(item: item, viewModel: viewModel)
+        VStack(spacing: 0) {
+            ContextualHelpBanner(
+                message: "Tap the headphones icon to listen, or tap an item to read. PDF images appear during playback.",
+                storageKey: "reading_list_tips"
+            )
+
+            List {
+                ForEach(viewModel.activeItems) { item in
+                    ReadingItemRow(item: item, viewModel: viewModel)
+                }
             }
+            .listStyle(.plain)
         }
-        .listStyle(.plain)
     }
 
     private var completedListView: some View {
@@ -108,7 +115,7 @@ public struct ReadingListView: View {
         ContentUnavailableView {
             Label("No Reading Items", systemImage: "book.pages")
         } description: {
-            Text("Add PDFs, text files, markdown, or web articles to your reading list.")
+            Text("Add PDFs, text files, markdown, or web articles to your reading list. Images from PDFs are extracted and displayed during playback.")
         } actions: {
             Button {
                 showImportOptions = true
