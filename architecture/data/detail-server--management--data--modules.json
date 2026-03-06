@@ -1,0 +1,25 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/management/data/modules/knowledge-bowl.json",
+      "language": "json",
+      "lines": 1151,
+      "size_bytes": 37183,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/data/modules/registry.json",
+      "language": "json",
+      "lines": 18,
+      "size_bytes": 789,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

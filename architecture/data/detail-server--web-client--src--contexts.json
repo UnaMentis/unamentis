@@ -1,0 +1,106 @@
+{
+  "symbols": [
+    {
+      "id": "server/web-client/src/contexts/SessionContext.tsx:SessionContext:48",
+      "name": "SessionContext",
+      "kind": "component",
+      "file": "server/web-client/src/contexts/SessionContext.tsx",
+      "line": 48,
+      "end_line": 48,
+      "code_preview": "const SessionContext = React.createContext<SessionContextValue | null>(null);\n\n// ===== Provider =====\n\nexport function SessionProvider({ children }: { children: React.ReactNode }) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/contexts/SessionContext.tsx:SessionProvider:52",
+      "name": "SessionProvider",
+      "kind": "component",
+      "file": "server/web-client/src/contexts/SessionContext.tsx",
+      "line": 52,
+      "end_line": 275,
+      "code_preview": "export function SessionProvider({ children }: { children: React.ReactNode }) {\n  // State\n  const [state, setState] = React.useState<SessionState>('idle');\n  const [conversationHistory, setConversationHistory] = React.useState<Message[]>([]);\n  const [currentUtterance, setCurrentUtterance] = React.useState('');\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/contexts/SessionContext.tsx:SessionContextValue:16",
+      "name": "SessionContextValue",
+      "kind": "interface",
+      "file": "server/web-client/src/contexts/SessionContext.tsx",
+      "line": 16,
+      "end_line": 37,
+      "code_preview": "interface SessionContextValue {\n  // State\n  state: SessionState;\n  conversationHistory: Message[];\n  currentUtterance: string;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/contexts/SessionContext.tsx:SessionConfig:39",
+      "name": "SessionConfig",
+      "kind": "interface",
+      "file": "server/web-client/src/contexts/SessionContext.tsx",
+      "line": 39,
+      "end_line": 44,
+      "code_preview": "interface SessionConfig {\n  curriculumId?: string;\n  topicId?: string;\n  instructions?: string;\n  voice?: 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse';\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/contexts/SessionContext.tsx:useSession:279",
+      "name": "useSession",
+      "kind": "function",
+      "file": "server/web-client/src/contexts/SessionContext.tsx",
+      "line": 279,
+      "end_line": 285,
+      "code_preview": "export function useSession(): SessionContextValue {\n  const context = React.useContext(SessionContext);\n  if (!context) {\n    throw new Error('useSession must be used within a SessionProvider');\n  }",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web-client/src/contexts/SessionContext.tsx",
+      "language": "typescript",
+      "lines": 290,
+      "size_bytes": 7585,
+      "symbols": [
+        "server/web-client/src/contexts/SessionContext.tsx:SessionContextValue:16",
+        "server/web-client/src/contexts/SessionContext.tsx:SessionConfig:39",
+        "server/web-client/src/contexts/SessionContext.tsx:SessionContext:48",
+        "server/web-client/src/contexts/SessionContext.tsx:SessionProvider:52",
+        "server/web-client/src/contexts/SessionContext.tsx:useSession:279"
+      ],
+      "imports": [
+        "@/lib",
+        "@/types",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Session Context\nProvides voice session state management using the ProviderManager.\nHandles WebRTC connection, state machine, and conversation history."
+    },
+    {
+      "path": "server/web-client/src/contexts/index.ts",
+      "language": "typescript",
+      "lines": 2,
+      "size_bytes": 80,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

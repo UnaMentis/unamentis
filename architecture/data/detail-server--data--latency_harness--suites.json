@@ -1,0 +1,25 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/data/latency_harness/suites/provider_comparison.json",
+      "language": "json",
+      "lines": 108,
+      "size_bytes": 2429,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/data/latency_harness/suites/quick_validation.json",
+      "language": "json",
+      "lines": 56,
+      "size_bytes": 1216,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

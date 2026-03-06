@@ -1,0 +1,55 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/AGENTS.md",
+      "language": "markdown",
+      "lines": 60,
+      "size_bytes": 2161,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/CLAUDE.md",
+      "language": "markdown",
+      "lines": 56,
+      "size_bytes": 2167,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/setup.sh",
+      "language": "shell",
+      "lines": 891,
+      "size_bytes": 27116,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/start-all.sh",
+      "language": "shell",
+      "lines": 132,
+      "size_bytes": 5104,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/data/latency_harness/baselines/32aae57e.json",
+      "language": "json",
+      "lines": 34,
+      "size_bytes": 1115,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

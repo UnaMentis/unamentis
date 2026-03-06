@@ -1,0 +1,92 @@
+{
+  "symbols": [
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/Views/PopoverContent.swift:openURL:235",
+      "name": "openURL",
+      "kind": "function",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/Views/PopoverContent.swift",
+      "line": 235,
+      "end_line": 238,
+      "code_preview": "    private func openURL(_ urlString: String) {\n        guard let url = URL(string: urlString) else { return }\n        NSWorkspace.shared.open(url)\n    }\n}",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/Views/ServiceRow.swift:ServiceRow:6",
+      "name": "ServiceRow",
+      "kind": "struct",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/Views/ServiceRow.swift",
+      "line": 6,
+      "end_line": 100,
+      "code_preview": "struct ServiceRow: View {\n    let service: ServiceInfo\n    let nameWidth: CGFloat\n    @ObservedObject var manager: USMCoreManager\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/Views/ServiceRow.swift:ServiceRow_Previews:105",
+      "name": "ServiceRow_Previews",
+      "kind": "struct",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/Views/ServiceRow.swift",
+      "line": 105,
+      "end_line": 142,
+      "code_preview": "struct ServiceRow_Previews: PreviewProvider {\n    static var previews: some View {\n        let runningService = ServiceInfo(\n            id: \"management-api\",\n            templateId: \"management-api\",\n    ...",
+      "visibility": "internal",
+      "docstring": "if DEBUG",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/Views/PopoverContent.swift:PopoverContent:6",
+      "name": "PopoverContent",
+      "kind": "struct",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/Views/PopoverContent.swift",
+      "line": 6,
+      "end_line": 239,
+      "code_preview": "struct PopoverContent: View {\n    @ObservedObject var manager: USMCoreManager\n    @State private var devToolsExpanded = true\n\n    /// Max width for service names (for alignment)\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/server-manager/USMXcode-FFI/USMFFI/Views/PopoverContent.swift",
+      "language": "swift",
+      "lines": 240,
+      "size_bytes": 7482,
+      "symbols": [
+        "server/server-manager/USMXcode-FFI/USMFFI/Views/PopoverContent.swift:PopoverContent:6",
+        "server/server-manager/USMXcode-FFI/USMFFI/Views/PopoverContent.swift:openURL:235"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "Main popover UI for USM-FFI menu bar app"
+    },
+    {
+      "path": "server/server-manager/USMXcode-FFI/USMFFI/Views/ServiceRow.swift",
+      "language": "swift",
+      "lines": 144,
+      "size_bytes": 4774,
+      "symbols": [
+        "server/server-manager/USMXcode-FFI/USMFFI/Views/ServiceRow.swift:ServiceRow:6",
+        "server/server-manager/USMXcode-FFI/USMFFI/Views/ServiceRow.swift:ServiceRow_Previews:105"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "Individual service row in the popover list"
+    }
+  ]
+}

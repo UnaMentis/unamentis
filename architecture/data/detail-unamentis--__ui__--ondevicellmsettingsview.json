@@ -1,0 +1,169 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:cancelDownload:411",
+      "name": "cancelDownload",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift",
+      "line": 411,
+      "end_line": 416,
+      "code_preview": "    func cancelDownload() async {\n        guard let manager = modelManager else { return }\n        await manager.cancelDownload()\n        refreshTask?.cancel()\n        await refreshState()\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:deleteModel:418",
+      "name": "deleteModel",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift",
+      "line": 418,
+      "end_line": 428,
+      "code_preview": "    func deleteModel() async {\n        guard let manager = modelManager else { return }\n\n        do {\n            try await manager.deleteModel()\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:unloadModel:438",
+      "name": "unloadModel",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift",
+      "line": 438,
+      "end_line": 442,
+      "code_preview": "    func unloadModel() async {\n        guard let manager = modelManager else { return }\n        await manager.markUnloaded()\n        await refreshState()\n    }",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:setupModelManager:338",
+      "name": "setupModelManager",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift",
+      "line": 338,
+      "end_line": 341,
+      "code_preview": "    private func setupModelManager() async {\n        modelManager = OnDeviceLLMModelManager.shared\n        await refreshState()\n    }\n",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:refreshState:343",
+      "name": "refreshState",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift",
+      "line": 343,
+      "end_line": 352,
+      "code_preview": "    func refreshState() async {\n        guard let manager = modelManager else { return }\n\n        modelState = await manager.currentState()\n        modelSizeMB = await manager.modelSizeMB()\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:downloadModel:389",
+      "name": "downloadModel",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift",
+      "line": 389,
+      "end_line": 409,
+      "code_preview": "    func downloadModel() async {\n        guard let manager = modelManager else { return }\n\n        // Start progress monitoring\n        refreshTask = Task {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:OnDeviceLLMSettingsViewModel:322",
+      "name": "OnDeviceLLMSettingsViewModel",
+      "kind": "class",
+      "file": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift",
+      "line": 322,
+      "end_line": 443,
+      "code_preview": "@MainActor\nfinal class OnDeviceLLMSettingsViewModel: ObservableObject {\n    @Published var modelState: OnDeviceLLMModelManager.ModelState = .notDownloaded\n    @Published var progress: Float = 0.0\n    @Published var modelSizeMB: Int = 0\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:OnDeviceLLMSettingsView:15",
+      "name": "OnDeviceLLMSettingsView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift",
+      "line": 15,
+      "end_line": 318,
+      "code_preview": "struct OnDeviceLLMSettingsView: View {\n\n    @StateObject private var viewModel = OnDeviceLLMSettingsViewModel()\n    @Environment(\\.dismiss) private var dismiss\n    @State private var showDeleteConfirmation = false\n    ...",
+      "visibility": "internal",
+      "docstring": "Settings view for on-device LLM model management\n\nFeatures:\n- Download model from Hugging Face\n- View download progress\n- Delete model with clear warnings\n- Show model information and benefits",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:loadModel:430",
+      "name": "loadModel",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift",
+      "line": 430,
+      "end_line": 436,
+      "code_preview": "    func loadModel() async {\n        // TODO: Integrate with OnDeviceLLMService\n        // For now, just mark as loaded\n        guard let manager = modelManager else { return }\n        await manager.markLoaded()\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:InfoRow:447",
+      "name": "InfoRow",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift",
+      "line": 447,
+      "end_line": 460,
+      "code_preview": "private struct InfoRow: View {\n    let label: String\n    let value: String\n\n    var body: some View {\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift",
+      "language": "swift",
+      "lines": 469,
+      "size_bytes": 14563,
+      "symbols": [
+        "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:OnDeviceLLMSettingsView:15",
+        "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:OnDeviceLLMSettingsViewModel:322",
+        "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:setupModelManager:338",
+        "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:refreshState:343",
+        "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:downloadModel:389",
+        "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:cancelDownload:411",
+        "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:deleteModel:418",
+        "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:loadModel:430",
+        "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:unloadModel:438",
+        "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift:InfoRow:447"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - On-Device LLM Settings View\nSettings UI for managing the on-device LLM model\nPart of UI/Settings"
+    }
+  ]
+}

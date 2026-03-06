@@ -1,0 +1,34 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/Settings/ChatterboxSettingsView.swift:ChatterboxSettingsView:17",
+      "name": "ChatterboxSettingsView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/ChatterboxSettingsView.swift",
+      "line": 17,
+      "end_line": 465,
+      "code_preview": "struct ChatterboxSettingsView: View {\n\n    @StateObject private var viewModel = ChatterboxSettingsViewModel()\n    @Environment(\\.dismiss) private var dismiss\n\n    ...",
+      "visibility": "internal",
+      "docstring": "Advanced settings view for Chatterbox TTS provider\n\nExposes all Chatterbox \"nerd knobs\" for experimentation:\n- Emotion control (exaggeration, CFG weight)\n- Speed control\n- Paralinguistic tags\n- Multilingual language selection\n- Streaming mode\n- Seed for reproducibility",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/Settings/ChatterboxSettingsView.swift",
+      "language": "swift",
+      "lines": 474,
+      "size_bytes": 16293,
+      "symbols": [
+        "UnaMentis/UI/Settings/ChatterboxSettingsView.swift:ChatterboxSettingsView:17"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Chatterbox Settings View\nAdvanced settings UI for Chatterbox TTS provider\nPart of UI/Settings"
+    }
+  ]
+}

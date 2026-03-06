@@ -1,0 +1,65 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/Modules/KnowledgeBowl/Views/KBPracticeLauncherView.swift:loadQuestions:147",
+      "name": "loadQuestions",
+      "kind": "function",
+      "file": "UnaMentis/Modules/KnowledgeBowl/Views/KBPracticeLauncherView.swift",
+      "line": 147,
+      "end_line": 168,
+      "code_preview": "    private func loadQuestions() async {\n        isLoading = true\n        errorMessage = nil\n        loadedQuestions = []  // Clear stale data before loading\n\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Modules/KnowledgeBowl/Views/KBPracticeLauncherView.swift:InfoRow:227",
+      "name": "InfoRow",
+      "kind": "struct",
+      "file": "UnaMentis/Modules/KnowledgeBowl/Views/KBPracticeLauncherView.swift",
+      "line": 227,
+      "end_line": 240,
+      "code_preview": "private struct InfoRow: View {\n    let label: String\n    let value: String\n\n    var body: some View {\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Modules/KnowledgeBowl/Views/KBPracticeLauncherView.swift:KBPracticeLauncherView:11",
+      "name": "KBPracticeLauncherView",
+      "kind": "struct",
+      "file": "UnaMentis/Modules/KnowledgeBowl/Views/KBPracticeLauncherView.swift",
+      "line": 11,
+      "end_line": 223,
+      "code_preview": "struct KBPracticeLauncherView: View {\n    let mode: KBStudyMode\n    let questionService: KBQuestionService\n    let onStart: ([KBQuestion]) -> Void\n    let onCancel: () -> Void\n    ...",
+      "visibility": "internal",
+      "docstring": "View shown before starting a practice session",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/Modules/KnowledgeBowl/Views/KBPracticeLauncherView.swift",
+      "language": "swift",
+      "lines": 252,
+      "size_bytes": 8157,
+      "symbols": [
+        "UnaMentis/Modules/KnowledgeBowl/Views/KBPracticeLauncherView.swift:KBPracticeLauncherView:11",
+        "UnaMentis/Modules/KnowledgeBowl/Views/KBPracticeLauncherView.swift:loadQuestions:147",
+        "UnaMentis/Modules/KnowledgeBowl/Views/KBPracticeLauncherView.swift:InfoRow:227"
+      ],
+      "imports": [
+        "SwiftUI",
+        "Logging"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Knowledge Bowl Practice Launcher View\nSetup screen before starting a practice session\nShows mode information, loads questions, and lets\nthe user start when ready."
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/tools/CODERABBIT.md",
+      "language": "markdown",
+      "lines": 394,
+      "size_bytes": 12793,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/tools/CROSS_REPO_ACCESS.md",
+      "language": "markdown",
+      "lines": 172,
+      "size_bytes": 5768,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/tools/GITHUB_WIKI.md",
+      "language": "markdown",
+      "lines": 305,
+      "size_bytes": 8124,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

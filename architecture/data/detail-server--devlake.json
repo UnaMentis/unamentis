@@ -1,0 +1,45 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/devlake/README.md",
+      "language": "markdown",
+      "lines": 229,
+      "size_bytes": 7152,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/devlake/blueprint.json",
+      "language": "json",
+      "lines": 73,
+      "size_bytes": 2631,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/devlake/docker-compose.yml",
+      "language": "yaml",
+      "lines": 131,
+      "size_bytes": 3530,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/devlake/dashboards/unamentis-quality.json",
+      "language": "json",
+      "lines": 479,
+      "size_bytes": 14974,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

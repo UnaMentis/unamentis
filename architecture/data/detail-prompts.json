@@ -1,0 +1,55 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "prompts/FINDINGS_TEMPLATE.md",
+      "language": "markdown",
+      "lines": 90,
+      "size_bytes": 1594,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "prompts/README.md",
+      "language": "markdown",
+      "lines": 89,
+      "size_bytes": 3049,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "prompts/daily-code-quality-scout.md",
+      "language": "markdown",
+      "lines": 402,
+      "size_bytes": 11481,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "prompts/daily-tech-scout.md",
+      "language": "markdown",
+      "lines": 321,
+      "size_bytes": 10032,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "prompts/tech-scout-quick.md",
+      "language": "markdown",
+      "lines": 168,
+      "size_bytes": 4678,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

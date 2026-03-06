@@ -1,0 +1,89 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis Watch App/Views/ActiveSessionView.swift:ActiveSessionView:6",
+      "name": "ActiveSessionView",
+      "kind": "struct",
+      "file": "UnaMentis Watch App/Views/ActiveSessionView.swift",
+      "line": 6,
+      "end_line": 33,
+      "code_preview": "struct ActiveSessionView: View {\n    let state: WatchSessionState\n    @EnvironmentObject var connectivity: WatchConnectivityService\n\n    var body: some View {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/ActiveSessionView.swift:SessionHeaderView:37",
+      "name": "SessionHeaderView",
+      "kind": "struct",
+      "file": "UnaMentis Watch App/Views/ActiveSessionView.swift",
+      "line": 37,
+      "end_line": 62,
+      "code_preview": "struct SessionHeaderView: View {\n    let state: WatchSessionState\n\n    var body: some View {\n        VStack(spacing: 2) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/IdleView.swift:IdleView:6",
+      "name": "IdleView",
+      "kind": "struct",
+      "file": "UnaMentis Watch App/Views/IdleView.swift",
+      "line": 6,
+      "end_line": 30,
+      "code_preview": "struct IdleView: View {\n    @EnvironmentObject var connectivity: WatchConnectivityService\n\n    var body: some View {\n        VStack(spacing: 16) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis Watch App/Views/ActiveSessionView.swift",
+      "language": "swift",
+      "lines": 78,
+      "size_bytes": 2215,
+      "symbols": [
+        "UnaMentis Watch App/Views/ActiveSessionView.swift:ActiveSessionView:6",
+        "UnaMentis Watch App/Views/ActiveSessionView.swift:SessionHeaderView:37"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis Watch App - Active Session View\nDisplays session progress and controls"
+    },
+    {
+      "path": "UnaMentis Watch App/Views/ContentView.swift",
+      "language": "swift",
+      "lines": 59,
+      "size_bytes": 1810,
+      "symbols": [],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis Watch App - Content View\nRoot view showing active session or idle state"
+    },
+    {
+      "path": "UnaMentis Watch App/Views/IdleView.swift",
+      "language": "swift",
+      "lines": 36,
+      "size_bytes": 903,
+      "symbols": [
+        "UnaMentis Watch App/Views/IdleView.swift:IdleView:6"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis Watch App - Idle View\nShown when no tutoring session is active"
+    }
+  ]
+}

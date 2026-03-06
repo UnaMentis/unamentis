@@ -1,0 +1,138 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/Services/WebSearch/WebSearchProvider.swift:WebSearchResult:11",
+      "name": "WebSearchResult",
+      "kind": "struct",
+      "file": "UnaMentis/Services/WebSearch/WebSearchProvider.swift",
+      "line": 11,
+      "end_line": 31,
+      "code_preview": "public struct WebSearchResult: Codable, Sendable {\n    /// Title of the web page\n    public let title: String\n\n    /// URL of the result\n    ...",
+      "visibility": "public",
+      "docstring": "A single web search result",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Services/WebSearch/WebSearchProvider.swift:WebSearchError:83",
+      "name": "WebSearchError",
+      "kind": "enum",
+      "file": "UnaMentis/Services/WebSearch/WebSearchProvider.swift",
+      "line": 83,
+      "end_line": 104,
+      "code_preview": "public enum WebSearchError: Error, Sendable, LocalizedError {\n    case apiKeyMissing\n    case requestFailed(String)\n    case invalidResponse\n    case rateLimited\n    ...",
+      "visibility": "public",
+      "docstring": "Errors that can occur during web search",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Services/WebSearch/BraveSearchService.swift:search:47",
+      "name": "search",
+      "kind": "function",
+      "file": "UnaMentis/Services/WebSearch/BraveSearchService.swift",
+      "line": 47,
+      "end_line": 101,
+      "code_preview": "    public func search(query: String, maxResults: Int = 5) async throws -> WebSearchResponse {\n        guard !apiKey.isEmpty else {\n            throw WebSearchError.apiKeyMissing\n        }\n",
+      "visibility": "public",
+      "docstring": "Perform a web search using Brave Search API",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Services/WebSearch/WebSearchProvider.swift:WebSearchProvider:71",
+      "name": "WebSearchProvider",
+      "kind": "protocol",
+      "file": "UnaMentis/Services/WebSearch/WebSearchProvider.swift",
+      "line": 71,
+      "end_line": 78,
+      "code_preview": "public protocol WebSearchProvider: Actor {\n    /// Perform a web search\n    /// - Parameters:\n    ///   - query: Search query string\n    ///   - maxResults: Maximum number of results to return\n    ...",
+      "visibility": "public",
+      "docstring": "Protocol for web search service implementations",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Services/WebSearch/WebSearchProvider.swift:WebSearchResponse:36",
+      "name": "WebSearchResponse",
+      "kind": "struct",
+      "file": "UnaMentis/Services/WebSearch/WebSearchProvider.swift",
+      "line": 36,
+      "end_line": 66,
+      "code_preview": "public struct WebSearchResponse: Sendable {\n    /// The original query\n    public let query: String\n\n    /// Search results\n    ...",
+      "visibility": "public",
+      "docstring": "Response from a web search query",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Services/WebSearch/BraveSearchService.swift:parseResponse:106",
+      "name": "parseResponse",
+      "kind": "function",
+      "file": "UnaMentis/Services/WebSearch/BraveSearchService.swift",
+      "line": 106,
+      "end_line": 139,
+      "code_preview": "    private func parseResponse(data: Data, query: String) throws -> WebSearchResponse {\n        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {\n            throw WebSearchError.invalidResponse\n        }\n",
+      "visibility": "private",
+      "docstring": "Parse Brave Search API response",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Services/WebSearch/BraveSearchService.swift:BraveSearchService:20",
+      "name": "BraveSearchService",
+      "kind": "actor",
+      "file": "UnaMentis/Services/WebSearch/BraveSearchService.swift",
+      "line": 20,
+      "end_line": 140,
+      "code_preview": "public actor BraveSearchService: WebSearchProvider {\n\n    // MARK: - Properties\n\n    private let logger = Logger(label: \"com.unamentis.websearch.brave\")\n    ...",
+      "visibility": "public",
+      "docstring": "Web search service using the Brave Search API\n\nFeatures:\n- 2000 free queries/month\n- No tracking\n- Independent index",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/Services/WebSearch/BraveSearchService.swift",
+      "language": "swift",
+      "lines": 141,
+      "size_bytes": 4378,
+      "symbols": [
+        "UnaMentis/Services/WebSearch/BraveSearchService.swift:BraveSearchService:20",
+        "UnaMentis/Services/WebSearch/BraveSearchService.swift:search:47",
+        "UnaMentis/Services/WebSearch/BraveSearchService.swift:parseResponse:106"
+      ],
+      "imports": [
+        "Foundation",
+        "Logging"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Brave Search Service\nWeb search implementation using Brave Search API\nBrave Search offers 2000 free queries/month\nAPI docs: https://api.search.brave.com/app/documentation/web-search\nPart of Services/WebSearch"
+    },
+    {
+      "path": "UnaMentis/Services/WebSearch/WebSearchProvider.swift",
+      "language": "swift",
+      "lines": 105,
+      "size_bytes": 2924,
+      "symbols": [
+        "UnaMentis/Services/WebSearch/WebSearchProvider.swift:WebSearchResult:11",
+        "UnaMentis/Services/WebSearch/WebSearchProvider.swift:WebSearchResponse:36",
+        "UnaMentis/Services/WebSearch/WebSearchProvider.swift:WebSearchProvider:71",
+        "UnaMentis/Services/WebSearch/WebSearchProvider.swift:WebSearchError:83"
+      ],
+      "imports": [
+        "Foundation"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Web Search Provider Protocol\nProtocol for web search implementations\nPart of Services/WebSearch"
+    }
+  ]
+}

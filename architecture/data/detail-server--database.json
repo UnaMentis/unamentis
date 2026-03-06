@@ -1,0 +1,219 @@
+{
+  "symbols": [
+    {
+      "id": "server/database/migrate.py:main:148",
+      "name": "main",
+      "kind": "function",
+      "file": "server/database/migrate.py",
+      "line": 148,
+      "end_line": 193,
+      "code_preview": "def main():\n    parser = argparse.ArgumentParser(\n        description=\"Migrate UMCF files to PostgreSQL\",\n        formatter_class=argparse.RawDescriptionHelpFormatter,\n        epilog=__doc__\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/database/curriculum_db.py:PostgreSQLStorage:337",
+      "name": "PostgreSQLStorage",
+      "kind": "class",
+      "file": "server/database/curriculum_db.py",
+      "line": 337,
+      "end_line": 870,
+      "code_preview": "class PostgreSQLStorage(CurriculumStorage):\n    \"\"\"\n    PostgreSQL-based curriculum storage with normalized tables.\n    Provides granular editing and fast JSON export.\n    \"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "PostgreSQL-based curriculum storage with normalized tables.\n    Provides granular editing and fast JSON export.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/database/curriculum_db.py:CurriculumSummary:29",
+      "name": "CurriculumSummary",
+      "kind": "class",
+      "file": "server/database/curriculum_db.py",
+      "line": 29,
+      "end_line": 42,
+      "code_preview": "@dataclass\nclass CurriculumSummary:\n    \"\"\"Summary of a curriculum for listing.\"\"\"\n    id: str\n    title: str\n    ...",
+      "visibility": "public",
+      "docstring": "Summary of a curriculum for listing.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/database/migrate.py:run_migration:49",
+      "name": "run_migration",
+      "kind": "function",
+      "file": "server/database/migrate.py",
+      "line": 49,
+      "end_line": 120,
+      "code_preview": "async def run_migration(\n    db_url: str,\n    curriculum_dir: Path,\n    dry_run: bool = False\n) -> int:\n    ...",
+      "visibility": "public",
+      "docstring": "Migrate UMCF files to PostgreSQL.\n\n    Returns:\n        Number of curricula migrated",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/database/curriculum_db.py:CurriculumStorage:58",
+      "name": "CurriculumStorage",
+      "kind": "class",
+      "file": "server/database/curriculum_db.py",
+      "line": 58,
+      "end_line": 104,
+      "code_preview": "class CurriculumStorage:\n    \"\"\"\n    Abstract base class for curriculum storage.\n    Implementations can use files, PostgreSQL, or other backends.\n    \"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Abstract base class for curriculum storage.\n    Implementations can use files, PostgreSQL, or other backends.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/database/curriculum_db.py:FileBasedStorage:107",
+      "name": "FileBasedStorage",
+      "kind": "class",
+      "file": "server/database/curriculum_db.py",
+      "line": 107,
+      "end_line": 334,
+      "code_preview": "class FileBasedStorage(CurriculumStorage):\n    \"\"\"\n    File-based curriculum storage using UMCF JSON files.\n    Suitable for development and simple deployments.\n    \"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "File-based curriculum storage using UMCF JSON files.\n    Suitable for development and simple deployments.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/database/curriculum_db.py:create_storage:873",
+      "name": "create_storage",
+      "kind": "function",
+      "file": "server/database/curriculum_db.py",
+      "line": 873,
+      "end_line": 899,
+      "code_preview": "def create_storage(\n    storage_type: str = \"file\",\n    curriculum_dir: Optional[Path] = None,\n    connection_string: Optional[str] = None\n) -> CurriculumStorage:\n    ...",
+      "visibility": "public",
+      "docstring": "Factory function to create the appropriate storage backend.\n\n    Args:\n        storage_type: \"file\" or \"postgresql\"\n        curriculum_dir: Directory for file-based storage\n        connection_string: PostgreSQL connection string for DB storage\n\n    Returns:\n        CurriculumStorage instance",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/database/migrate.py:verify_migration:123",
+      "name": "verify_migration",
+      "kind": "function",
+      "file": "server/database/migrate.py",
+      "line": 123,
+      "end_line": 145,
+      "code_preview": "async def verify_migration(db_url: str) -> bool:\n    \"\"\"Verify that migration was successful.\"\"\"\n    try:\n        conn = await asyncpg.connect(db_url)\n\n    ...",
+      "visibility": "public",
+      "docstring": "Verify that migration was successful.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/database/curriculum_db.py:TopicSummary:45",
+      "name": "TopicSummary",
+      "kind": "class",
+      "file": "server/database/curriculum_db.py",
+      "line": 45,
+      "end_line": 55,
+      "code_preview": "@dataclass\nclass TopicSummary:\n    \"\"\"Summary of a topic within a curriculum.\"\"\"\n    id: str\n    title: str\n    ...",
+      "visibility": "public",
+      "docstring": "Summary of a topic within a curriculum.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/database/README.md",
+      "language": "markdown",
+      "lines": 142,
+      "size_bytes": 3838,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/database/__init__.py",
+      "language": "python",
+      "lines": 3,
+      "size_bytes": 95,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/database/curriculum_db.py",
+      "language": "python",
+      "lines": 900,
+      "size_bytes": 35448,
+      "symbols": [
+        "server/database/curriculum_db.py:CurriculumSummary:29",
+        "server/database/curriculum_db.py:TopicSummary:45",
+        "server/database/curriculum_db.py:CurriculumStorage:58",
+        "server/database/curriculum_db.py:FileBasedStorage:107",
+        "server/database/curriculum_db.py:PostgreSQLStorage:337",
+        "server/database/curriculum_db.py:create_storage:873"
+      ],
+      "imports": [
+        "pathlib",
+        "datetime",
+        "uuid",
+        "os",
+        "logging",
+        "dataclasses",
+        "typing",
+        "json"
+      ],
+      "exports": [],
+      "module_doc": "UMCF Curriculum Database Module\nProvides PostgreSQL storage for curricula with normalized tables and JSON export.\nThis module supports both file-based storage (for development/simple deployments)\nand PostgreSQL (for production/enterprise deployments)."
+    },
+    {
+      "path": "server/database/docker-compose.yml",
+      "language": "yaml",
+      "lines": 24,
+      "size_bytes": 545,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/database/migrate.py",
+      "language": "python",
+      "lines": 198,
+      "size_bytes": 5205,
+      "symbols": [
+        "server/database/migrate.py:run_migration:49",
+        "server/database/migrate.py:verify_migration:123",
+        "server/database/migrate.py:main:148"
+      ],
+      "imports": [
+        "pathlib",
+        "sys",
+        "asyncio",
+        "os",
+        "argparse",
+        "json"
+      ],
+      "exports": [],
+      "module_doc": "UMCF Migration Script\nMigrates existing UMCF curriculum files to PostgreSQL database.\nUsage:\npython migrate.py                    # Uses environment variables\npython migrate.py --dry-run          # Preview without committing\npython migrate.py --db-url URL       # Explicit database URL\nEnvironment Variables:\nUMCF_DATABASE_URL - PostgreSQL connection string\n(default: postgresql://localhost/unamentis)\nSteps to use:\n1. Install PostgreSQL and create database:\ncreatedb unamentis\n2. Run schema:\npsql unamentis < schema.sql\n3. Run migration:\npython migrate.py\n4. Set environment variable in server:\nexport UMCF_STORAGE_TYPE=postgresql\nexport UMCF_DATABASE_URL=postgresql://localhost/unamentis"
+    },
+    {
+      "path": "server/database/schema.sql",
+      "language": "sql",
+      "lines": 1371,
+      "size_bytes": 52083,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

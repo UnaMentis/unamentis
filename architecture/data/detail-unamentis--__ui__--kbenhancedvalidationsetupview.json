@@ -1,0 +1,65 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBEnhancedValidationSetupView.swift:ext_KBEnhancedValidationSetupView:231",
+      "name": "extension KBEnhancedValidationSetupView",
+      "kind": "extension",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBEnhancedValidationSetupView.swift",
+      "line": 231,
+      "end_line": 298,
+      "code_preview": "extension KBEnhancedValidationSetupView {\n    @MainActor\n    class ViewModel: ObservableObject {\n        private let logger = Logger(subsystem: \"com.unamentis\", category: \"KBEnhancedValidationSetup\")\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBEnhancedValidationSetupView.swift:KBEnhancedValidationSetupView:15",
+      "name": "KBEnhancedValidationSetupView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBEnhancedValidationSetupView.swift",
+      "line": 15,
+      "end_line": 227,
+      "code_preview": "struct KBEnhancedValidationSetupView: View {\n    @StateObject private var viewModel = ViewModel()\n\n    var body: some View {\n        List {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBEnhancedValidationSetupView.swift:KBEnhancedValidationSetupView_Previews:303",
+      "name": "KBEnhancedValidationSetupView_Previews",
+      "kind": "struct",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBEnhancedValidationSetupView.swift",
+      "line": 303,
+      "end_line": 309,
+      "code_preview": "struct KBEnhancedValidationSetupView_Previews: PreviewProvider {\n    static var previews: some View {\n        NavigationStack {\n            KBEnhancedValidationSetupView()\n        }",
+      "visibility": "internal",
+      "docstring": "if DEBUG",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/KnowledgeBowl/KBEnhancedValidationSetupView.swift",
+      "language": "swift",
+      "lines": 311,
+      "size_bytes": 10443,
+      "symbols": [
+        "UnaMentis/UI/KnowledgeBowl/KBEnhancedValidationSetupView.swift:KBEnhancedValidationSetupView:15",
+        "UnaMentis/UI/KnowledgeBowl/KBEnhancedValidationSetupView.swift:ext_KBEnhancedValidationSetupView:231",
+        "UnaMentis/UI/KnowledgeBowl/KBEnhancedValidationSetupView.swift:KBEnhancedValidationSetupView_Previews:303"
+      ],
+      "imports": [
+        "SwiftUI",
+        "OSLog"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis\nSetup view for enhanced answer validation (Tier 2 & 3)\nAllows users to download embeddings model and enable LLM validation\nFeatures are controlled by server administrator via feature flags"
+    }
+  ]
+}

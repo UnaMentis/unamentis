@@ -1,0 +1,929 @@
+{
+  "symbols": [
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-card.test.tsx:createMockJob:6",
+      "name": "createMockJob",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/batch-job-card.test.tsx",
+      "line": 6,
+      "end_line": 24,
+      "code_preview": "const createMockJob = (overrides: Partial<TTSPregenJob> = {}): TTSPregenJob => ({\n  id: 'job-1',\n  name: 'Test Batch Job',\n  job_type: 'batch',\n  status: 'pending',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/rating-widget.tsx:RatingWidget:21",
+      "name": "RatingWidget",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/rating-widget.tsx",
+      "line": 21,
+      "end_line": 90,
+      "code_preview": "export function RatingWidget({\n  rating = 0,\n  onChange,\n  readonly = false,\n  size = 'md',\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/waveform-display.tsx:generatePlaceholderWaveform:166",
+      "name": "generatePlaceholderWaveform",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/waveform-display.tsx",
+      "line": 166,
+      "end_line": 175,
+      "code_preview": "function generatePlaceholderWaveform(): number[] {\n  const numBars = 50;\n  const bars: number[] = [];\n  for (let i = 0; i < numBars; i++) {\n    // Generate a simple sine-like pattern\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/profile-editor.tsx:USE_CASES:29",
+      "name": "USE_CASES",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/profile-editor.tsx",
+      "line": 29,
+      "end_line": 35,
+      "code_preview": "const USE_CASES = [\n  { value: 'tutoring', label: 'Tutoring' },\n  { value: 'questions', label: 'Questions' },\n  { value: 'explanations', label: 'Explanations' },\n  { value: 'hints', label: 'Hints' },\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/profile-editor.tsx:DEFAULT_SETTINGS:37",
+      "name": "DEFAULT_SETTINGS",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/profile-editor.tsx",
+      "line": 37,
+      "end_line": 41,
+      "code_preview": "const DEFAULT_SETTINGS: TTSProfileSettings = {\n  speed: 1.0,\n  exaggeration: 0.5,\n  cfg_weight: 0.5,\n};\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/comparison-player.tsx:VariantPlayer:23",
+      "name": "VariantPlayer",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/comparison-player.tsx",
+      "line": 23,
+      "end_line": 239,
+      "code_preview": "function VariantPlayer({\n  variant,\n  rating,\n  configName,\n  isSelected,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-items-list.tsx:BatchJobItemsList:54",
+      "name": "BatchJobItemsList",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/batch-job-items-list.tsx",
+      "line": 54,
+      "end_line": 242,
+      "code_preview": "export function BatchJobItemsList({ jobId, onClose }: BatchJobItemsListProps) {\n  const [items, setItems] = useState<TTSJobItem[]>([]);\n  const [loading, setLoading] = useState(true);\n  const [error, setError] = useState<string | null>(null);\n  const [filter, setFilter] = useState<string>('all');\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/profile-card.tsx:ProfileCard:24",
+      "name": "ProfileCard",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/profile-card.tsx",
+      "line": 24,
+      "end_line": 232,
+      "code_preview": "export function ProfileCard({\n  profile,\n  onEdit,\n  onDuplicate,\n  onDelete,\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/rating-widget.tsx:RatingWidgetProps:7",
+      "name": "RatingWidgetProps",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/rating-widget.tsx",
+      "line": 7,
+      "end_line": 13,
+      "code_preview": "interface RatingWidgetProps {\n  rating?: number;\n  onChange?: (rating: number) => void;\n  readonly?: boolean;\n  size?: 'sm' | 'md' | 'lg';\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/waveform-display.tsx:WaveformDisplayProps:6",
+      "name": "WaveformDisplayProps",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/waveform-display.tsx",
+      "line": 6,
+      "end_line": 17,
+      "code_preview": "interface WaveformDisplayProps {\n  audioUrl?: string;\n  audioData?: number[];\n  progress?: number;\n  height?: number;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/comparison-panel.tsx:ComparisonPanel:50",
+      "name": "ComparisonPanel",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/comparison-panel.tsx",
+      "line": 50,
+      "end_line": 521,
+      "code_preview": "export function ComparisonPanel({ onSessionCreated }: ComparisonPanelProps) {\n  const [sessions, setSessions] = useState<TTSComparisonSession[]>([]);\n  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);\n  const [sessionDetails, setSessionDetails] = useState<{\n    session: TTSComparisonSession;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/comparison-panel.tsx:statusColors:43",
+      "name": "statusColors",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/comparison-panel.tsx",
+      "line": 43,
+      "end_line": 48,
+      "code_preview": "const statusColors: Record<string, string> = {\n  draft: 'bg-gray-500/20 text-gray-400 border-gray-500/30',\n  generating: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',\n  ready: 'bg-green-500/20 text-green-400 border-green-500/30',\n  archived: 'bg-slate-500/20 text-slate-400 border-slate-500/30',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/comparison-panel.tsx:ComparisonPanelProps:39",
+      "name": "ComparisonPanelProps",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/comparison-panel.tsx",
+      "line": 39,
+      "end_line": 41,
+      "code_preview": "interface ComparisonPanelProps {\n  onSessionCreated?: (session: TTSComparisonSession) => void;\n}\n\nconst statusColors: Record<string, string> = {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/comparison-player.tsx:VariantPlayerProps:13",
+      "name": "VariantPlayerProps",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/comparison-player.tsx",
+      "line": 13,
+      "end_line": 21,
+      "code_preview": "interface VariantPlayerProps {\n  variant: TTSComparisonVariant;\n  rating?: TTSComparisonRating;\n  configName?: string;\n  isSelected?: boolean;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-card.tsx:formatSourceType:86",
+      "name": "formatSourceType",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/batch-job-card.tsx",
+      "line": 86,
+      "end_line": 97,
+      "code_preview": "function formatSourceType(sourceType: string): string {\n  switch (sourceType) {\n    case 'knowledge-bowl':\n      return 'Knowledge Bowl';\n    case 'curriculum':\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-create-form.test.tsx:mockProfiles:18",
+      "name": "mockProfiles",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/batch-job-create-form.test.tsx",
+      "line": 18,
+      "end_line": 40,
+      "code_preview": "const mockProfiles: TTSProfile[] = [\n  createTestProfile({\n    id: 'profile-1',\n    name: 'Default Voice',\n    provider: 'chatterbox',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-create-form.tsx:BatchJobCreateFormProps:14",
+      "name": "BatchJobCreateFormProps",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/batch-job-create-form.tsx",
+      "line": 14,
+      "end_line": 18,
+      "code_preview": "interface BatchJobCreateFormProps {\n  profiles: TTSProfile[];\n  onComplete: () => void;\n  onCancel: () => void;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-panel.test.tsx:mockJobs:18",
+      "name": "mockJobs",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/batch-job-panel.test.tsx",
+      "line": 18,
+      "end_line": 41,
+      "code_preview": "const mockJobs: TTSPregenJob[] = [\n  createTestJob({\n    id: 'job-1',\n    name: 'Test Running Job',\n    status: 'running',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/profile-editor.tsx:ProfileEditor:43",
+      "name": "ProfileEditor",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/profile-editor.tsx",
+      "line": 43,
+      "end_line": 353,
+      "code_preview": "export function ProfileEditor({ profile, onSave, onCancel, isLoading }: ProfileEditorProps) {\n  const isEditing = Boolean(profile);\n\n  const [name, setName] = useState(profile?.name || '');\n  const [description, setDescription] = useState(profile?.description || '');\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-items-list.tsx:BatchJobItemsListProps:21",
+      "name": "BatchJobItemsListProps",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/batch-job-items-list.tsx",
+      "line": 21,
+      "end_line": 24,
+      "code_preview": "interface BatchJobItemsListProps {\n  jobId: string;\n  onClose: () => void;\n}\n",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/profiles-panel.tsx:PROVIDERS:18",
+      "name": "PROVIDERS",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/profiles-panel.tsx",
+      "line": 18,
+      "end_line": 23,
+      "code_preview": "const PROVIDERS = [\n  { value: '', label: 'All Providers' },\n  { value: 'chatterbox', label: 'Chatterbox' },\n  { value: 'vibevoice', label: 'VibeVoice' },\n  { value: 'piper', label: 'Piper' },\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-items-list.tsx:statusConfig:26",
+      "name": "statusConfig",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/batch-job-items-list.tsx",
+      "line": 26,
+      "end_line": 52,
+      "code_preview": "const statusConfig: Record<ItemStatus, { icon: typeof Clock; color: string; label: string }> = {\n  pending: {\n    icon: Clock,\n    color: 'bg-slate-500/20 text-slate-400 border-slate-500/30',\n    label: 'Pending',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/comparison-player.tsx:ComparisonPlayerProps:241",
+      "name": "ComparisonPlayerProps",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/comparison-player.tsx",
+      "line": 241,
+      "end_line": 248,
+      "code_preview": "interface ComparisonPlayerProps {\n  variants: TTSComparisonVariant[];\n  ratings: Record<string, TTSComparisonRating>;\n  configNames?: string[];\n  sampleText?: string;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/comparison-panel.tsx:SessionSummary:22",
+      "name": "SessionSummary",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/comparison-panel.tsx",
+      "line": 22,
+      "end_line": 37,
+      "code_preview": "interface SessionSummary {\n  session_id: string;\n  session_name: string;\n  status: string;\n  total_samples: number;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-card.tsx:statusConfig:34",
+      "name": "statusConfig",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/batch-job-card.tsx",
+      "line": 34,
+      "end_line": 65,
+      "code_preview": "const statusConfig: Record<JobStatus, { icon: typeof Clock; color: string; label: string }> = {\n  pending: {\n    icon: Clock,\n    color: 'bg-slate-500/20 text-slate-400 border-slate-500/30',\n    label: 'Pending',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-create-form.tsx:FormData:22",
+      "name": "FormData",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/batch-job-create-form.tsx",
+      "line": 22,
+      "end_line": 32,
+      "code_preview": "interface FormData {\n  name: string;\n  sourceType: SourceType;\n  profileId: string;\n  includeQuestions: boolean;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/profile-editor.tsx:ProfileEditorProps:16",
+      "name": "ProfileEditorProps",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/profile-editor.tsx",
+      "line": 16,
+      "end_line": 21,
+      "code_preview": "interface ProfileEditorProps {\n  profile?: TTSProfile | null;\n  onSave: (data: CreateProfileData | UpdateProfileData) => Promise<void>;\n  onCancel: () => void;\n  isLoading?: boolean;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-card.tsx:formatDuration:67",
+      "name": "formatDuration",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/batch-job-card.tsx",
+      "line": 67,
+      "end_line": 84,
+      "code_preview": "function formatDuration(startedAt?: string, endedAt?: string): string {\n  if (!startedAt) return '-';\n  const start = new Date(startedAt).getTime();\n  const end = endedAt ? new Date(endedAt).getTime() : Date.now();\n  const durationMs = end - start;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-card.tsx:BatchJobCard:99",
+      "name": "BatchJobCard",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/batch-job-card.tsx",
+      "line": 99,
+      "end_line": 317,
+      "code_preview": "export function BatchJobCard({\n  job,\n  progress,\n  profileName,\n  onStart,\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/profiles-panel.tsx:ProfilesPanel:25",
+      "name": "ProfilesPanel",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/profiles-panel.tsx",
+      "line": 25,
+      "end_line": 292,
+      "code_preview": "export function ProfilesPanel() {\n  const [profiles, setProfiles] = useState<TTSProfile[]>([]);\n  const [isLoading, setIsLoading] = useState(true);\n  const [error, setError] = useState<string | null>(null);\n\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/comparison-player.tsx:ComparisonPlayer:250",
+      "name": "ComparisonPlayer",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/comparison-player.tsx",
+      "line": 250,
+      "end_line": 288,
+      "code_preview": "export function ComparisonPlayer({\n  variants,\n  ratings,\n  configNames,\n  sampleText,\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/profile-card.tsx:ProfileCardProps:10",
+      "name": "ProfileCardProps",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/profile-card.tsx",
+      "line": 10,
+      "end_line": 16,
+      "code_preview": "interface ProfileCardProps {\n  profile: TTSProfile;\n  onEdit?: (profile: TTSProfile) => void;\n  onDuplicate?: (profile: TTSProfile) => void;\n  onDelete?: (profile: TTSProfile) => void;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-panel.test.tsx:mockProgress:66",
+      "name": "mockProgress",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/batch-job-panel.test.tsx",
+      "line": 66,
+      "end_line": 76,
+      "code_preview": "const mockProgress: JobProgress = createTestProgress({\n  job_id: 'job-1',\n  status: 'running',\n  percentage: 45.5,\n  completed_items: 45,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/profile-card.tsx:providerColors:18",
+      "name": "providerColors",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/profile-card.tsx",
+      "line": 18,
+      "end_line": 22,
+      "code_preview": "const providerColors: Record<string, string> = {\n  chatterbox: 'bg-purple-500/20 text-purple-400 border-purple-500/30',\n  vibevoice: 'bg-blue-500/20 text-blue-400 border-blue-500/30',\n  piper: 'bg-green-500/20 text-green-400 border-green-500/30',\n};\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-panel.tsx:BatchJobPanel:24",
+      "name": "BatchJobPanel",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/batch-job-panel.tsx",
+      "line": 24,
+      "end_line": 322,
+      "code_preview": "export function BatchJobPanel() {\n  const [jobs, setJobs] = useState<TTSPregenJob[]>([]);\n  const [profiles, setProfiles] = useState<TTSProfile[]>([]);\n  const [progressMap, setProgressMap] = useState<Record<string, JobProgress>>({});\n  const [loading, setLoading] = useState(true);\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-card.tsx:BatchJobCardProps:21",
+      "name": "BatchJobCardProps",
+      "kind": "interface",
+      "file": "server/web/src/components/tts-pregen/batch-job-card.tsx",
+      "line": 21,
+      "end_line": 32,
+      "code_preview": "interface BatchJobCardProps {\n  job: TTSPregenJob;\n  progress?: JobProgress;\n  profileName: string;\n  onStart: () => void;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/profile-editor.tsx:TTS_PROVIDERS:23",
+      "name": "TTS_PROVIDERS",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/profile-editor.tsx",
+      "line": 23,
+      "end_line": 27,
+      "code_preview": "const TTS_PROVIDERS = [\n  { value: 'chatterbox', label: 'Chatterbox' },\n  { value: 'vibevoice', label: 'VibeVoice' },\n  { value: 'piper', label: 'Piper' },\n];\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-panel.test.tsx:mockProfiles:43",
+      "name": "mockProfiles",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/batch-job-panel.test.tsx",
+      "line": 43,
+      "end_line": 64,
+      "code_preview": "const mockProfiles: TTSProfile[] = [\n  createTestProfile({\n    id: 'profile-1',\n    name: 'Default Voice',\n    provider: 'chatterbox',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-create-form.tsx:SourceType:20",
+      "name": "SourceType",
+      "kind": "type",
+      "file": "server/web/src/components/tts-pregen/batch-job-create-form.tsx",
+      "line": 20,
+      "end_line": 20,
+      "code_preview": "type SourceType = 'knowledge-bowl' | 'curriculum' | 'custom';\n\ninterface FormData {\n  name: string;\n  sourceType: SourceType;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-items-list.test.tsx:mockItems:18",
+      "name": "mockItems",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/batch-job-items-list.test.tsx",
+      "line": 18,
+      "end_line": 49,
+      "code_preview": "const mockItems: TTSJobItem[] = [\n  createTestItem({\n    id: 'item-1',\n    job_id: 'job-1',\n    item_index: 0,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-card.test.tsx:createMockProgress:26",
+      "name": "createMockProgress",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/batch-job-card.test.tsx",
+      "line": 26,
+      "end_line": 37,
+      "code_preview": "const createMockProgress = (overrides: Partial<JobProgress> = {}): JobProgress => ({\n  job_id: 'job-1',\n  status: 'running',\n  percentage: 50,\n  completed_items: 50,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/batch-job-create-form.tsx:BatchJobCreateForm:34",
+      "name": "BatchJobCreateForm",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/batch-job-create-form.tsx",
+      "line": 34,
+      "end_line": 581,
+      "code_preview": "export function BatchJobCreateForm({ profiles, onComplete, onCancel }: BatchJobCreateFormProps) {\n  const [step, setStep] = useState(1);\n  const [formData, setFormData] = useState<FormData>({\n    name: '',\n    sourceType: 'knowledge-bowl',\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/rating-widget.tsx:sizeClasses:15",
+      "name": "sizeClasses",
+      "kind": "function",
+      "file": "server/web/src/components/tts-pregen/rating-widget.tsx",
+      "line": 15,
+      "end_line": 19,
+      "code_preview": "const sizeClasses = {\n  sm: 'w-4 h-4',\n  md: 'w-5 h-5',\n  lg: 'w-6 h-6',\n};\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/tts-pregen/waveform-display.tsx:WaveformDisplay:19",
+      "name": "WaveformDisplay",
+      "kind": "component",
+      "file": "server/web/src/components/tts-pregen/waveform-display.tsx",
+      "line": 19,
+      "end_line": 164,
+      "code_preview": "export function WaveformDisplay({\n  audioUrl,\n  audioData: externalData,\n  progress = 0,\n  height = 48,\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web/src/components/tts-pregen/batch-job-card.test.tsx",
+      "language": "typescript",
+      "lines": 192,
+      "size_bytes": 6534,
+      "symbols": [
+        "server/web/src/components/tts-pregen/batch-job-card.test.tsx:createMockJob:6",
+        "server/web/src/components/tts-pregen/batch-job-card.test.tsx:createMockProgress:26"
+      ],
+      "imports": [
+        "./batch-job-card",
+        "@/types",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/batch-job-card.tsx",
+      "language": "typescript",
+      "lines": 318,
+      "size_bytes": 11062,
+      "symbols": [
+        "server/web/src/components/tts-pregen/batch-job-card.tsx:BatchJobCardProps:21",
+        "server/web/src/components/tts-pregen/batch-job-card.tsx:statusConfig:34",
+        "server/web/src/components/tts-pregen/batch-job-card.tsx:formatDuration:67",
+        "server/web/src/components/tts-pregen/batch-job-card.tsx:formatSourceType:86",
+        "server/web/src/components/tts-pregen/batch-job-card.tsx:BatchJobCard:99"
+      ],
+      "imports": [
+        "@/components",
+        "@/types",
+        "lucide-react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/batch-job-create-form.test.tsx",
+      "language": "typescript",
+      "lines": 309,
+      "size_bytes": 8894,
+      "symbols": [
+        "server/web/src/components/tts-pregen/batch-job-create-form.test.tsx:mockProfiles:18"
+      ],
+      "imports": [
+        "./batch-job-create-form",
+        "@/test",
+        "@/types",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "exports": [],
+      "module_doc": "BatchJobCreateForm Component Tests\nTests the REAL component with MSW for network-level HTTP mocking.\nNo vi.mock of internal modules - per \"Real Over Mock\" philosophy."
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/batch-job-create-form.tsx",
+      "language": "typescript",
+      "lines": 582,
+      "size_bytes": 24071,
+      "symbols": [
+        "server/web/src/components/tts-pregen/batch-job-create-form.tsx:BatchJobCreateFormProps:14",
+        "server/web/src/components/tts-pregen/batch-job-create-form.tsx:SourceType:20",
+        "server/web/src/components/tts-pregen/batch-job-create-form.tsx:FormData:22",
+        "server/web/src/components/tts-pregen/batch-job-create-form.tsx:BatchJobCreateForm:34"
+      ],
+      "imports": [
+        "@/components",
+        "@/lib",
+        "@/types",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/batch-job-items-list.test.tsx",
+      "language": "typescript",
+      "lines": 215,
+      "size_bytes": 7132,
+      "symbols": [
+        "server/web/src/components/tts-pregen/batch-job-items-list.test.tsx:mockItems:18"
+      ],
+      "imports": [
+        "./batch-job-items-list",
+        "@/test",
+        "@/types",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "exports": [],
+      "module_doc": "BatchJobItemsList Component Tests\nTests the REAL component with MSW for network-level HTTP mocking.\nNo vi.mock of internal modules - per \"Real Over Mock\" philosophy."
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/batch-job-items-list.tsx",
+      "language": "typescript",
+      "lines": 243,
+      "size_bytes": 8897,
+      "symbols": [
+        "server/web/src/components/tts-pregen/batch-job-items-list.tsx:BatchJobItemsListProps:21",
+        "server/web/src/components/tts-pregen/batch-job-items-list.tsx:statusConfig:26",
+        "server/web/src/components/tts-pregen/batch-job-items-list.tsx:BatchJobItemsList:54"
+      ],
+      "imports": [
+        "@/components",
+        "@/lib",
+        "@/types",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/batch-job-panel.test.tsx",
+      "language": "typescript",
+      "lines": 164,
+      "size_bytes": 4948,
+      "symbols": [
+        "server/web/src/components/tts-pregen/batch-job-panel.test.tsx:mockJobs:18",
+        "server/web/src/components/tts-pregen/batch-job-panel.test.tsx:mockProfiles:43",
+        "server/web/src/components/tts-pregen/batch-job-panel.test.tsx:mockProgress:66"
+      ],
+      "imports": [
+        "./batch-job-panel",
+        "@/test",
+        "@/types",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "exports": [],
+      "module_doc": "BatchJobPanel Component Tests\nTests the REAL component with MSW for network-level HTTP mocking.\nNo vi.mock of internal modules - per \"Real Over Mock\" philosophy."
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/batch-job-panel.tsx",
+      "language": "typescript",
+      "lines": 323,
+      "size_bytes": 11271,
+      "symbols": [
+        "server/web/src/components/tts-pregen/batch-job-panel.tsx:BatchJobPanel:24"
+      ],
+      "imports": [
+        "./batch-job-card",
+        "./batch-job-create-form",
+        "./batch-job-items-list",
+        "@/components",
+        "@/lib",
+        "@/types",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/comparison-panel.tsx",
+      "language": "typescript",
+      "lines": 522,
+      "size_bytes": 19534,
+      "symbols": [
+        "server/web/src/components/tts-pregen/comparison-panel.tsx:SessionSummary:22",
+        "server/web/src/components/tts-pregen/comparison-panel.tsx:ComparisonPanelProps:39",
+        "server/web/src/components/tts-pregen/comparison-panel.tsx:statusColors:43",
+        "server/web/src/components/tts-pregen/comparison-panel.tsx:ComparisonPanel:50"
+      ],
+      "imports": [
+        "./comparison-player",
+        "@/components",
+        "@/lib",
+        "@/types",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/comparison-player.tsx",
+      "language": "typescript",
+      "lines": 289,
+      "size_bytes": 8652,
+      "symbols": [
+        "server/web/src/components/tts-pregen/comparison-player.tsx:VariantPlayerProps:13",
+        "server/web/src/components/tts-pregen/comparison-player.tsx:VariantPlayer:23",
+        "server/web/src/components/tts-pregen/comparison-player.tsx:ComparisonPlayerProps:241",
+        "server/web/src/components/tts-pregen/comparison-player.tsx:ComparisonPlayer:250"
+      ],
+      "imports": [
+        "./rating-widget",
+        "./waveform-display",
+        "@/components",
+        "@/lib",
+        "@/types",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/index.ts",
+      "language": "typescript",
+      "lines": 19,
+      "size_bytes": 687,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": "TTS Pre-Generation Components"
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/profile-card.tsx",
+      "language": "typescript",
+      "lines": 233,
+      "size_bytes": 8293,
+      "symbols": [
+        "server/web/src/components/tts-pregen/profile-card.tsx:ProfileCardProps:10",
+        "server/web/src/components/tts-pregen/profile-card.tsx:providerColors:18",
+        "server/web/src/components/tts-pregen/profile-card.tsx:ProfileCard:24"
+      ],
+      "imports": [
+        "@/components",
+        "@/types",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/profile-editor.tsx",
+      "language": "typescript",
+      "lines": 354,
+      "size_bytes": 13678,
+      "symbols": [
+        "server/web/src/components/tts-pregen/profile-editor.tsx:ProfileEditorProps:16",
+        "server/web/src/components/tts-pregen/profile-editor.tsx:TTS_PROVIDERS:23",
+        "server/web/src/components/tts-pregen/profile-editor.tsx:USE_CASES:29",
+        "server/web/src/components/tts-pregen/profile-editor.tsx:DEFAULT_SETTINGS:37",
+        "server/web/src/components/tts-pregen/profile-editor.tsx:ProfileEditor:43"
+      ],
+      "imports": [
+        "@/components",
+        "@/types",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/profiles-panel.tsx",
+      "language": "typescript",
+      "lines": 293,
+      "size_bytes": 9520,
+      "symbols": [
+        "server/web/src/components/tts-pregen/profiles-panel.tsx:PROVIDERS:18",
+        "server/web/src/components/tts-pregen/profiles-panel.tsx:ProfilesPanel:25"
+      ],
+      "imports": [
+        "./profile-card",
+        "./profile-editor",
+        "@/components",
+        "@/lib",
+        "@/types",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/rating-widget.tsx",
+      "language": "typescript",
+      "lines": 91,
+      "size_bytes": 2236,
+      "symbols": [
+        "server/web/src/components/tts-pregen/rating-widget.tsx:RatingWidgetProps:7",
+        "server/web/src/components/tts-pregen/rating-widget.tsx:sizeClasses:15",
+        "server/web/src/components/tts-pregen/rating-widget.tsx:RatingWidget:21"
+      ],
+      "imports": [
+        "@/lib",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/tts-pregen/waveform-display.tsx",
+      "language": "typescript",
+      "lines": 176,
+      "size_bytes": 5239,
+      "symbols": [
+        "server/web/src/components/tts-pregen/waveform-display.tsx:WaveformDisplayProps:6",
+        "server/web/src/components/tts-pregen/waveform-display.tsx:WaveformDisplay:19",
+        "server/web/src/components/tts-pregen/waveform-display.tsx:generatePlaceholderWaveform:166"
+      ],
+      "imports": [
+        "@/lib",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "symbols": [
+    {
+      "id": "server/server-manager/USMXcode/USMUITests/USMUITests.swift:tearDownWithError:14",
+      "name": "tearDownWithError",
+      "kind": "function",
+      "file": "server/server-manager/USMXcode/USMUITests/USMUITests.swift",
+      "line": 14,
+      "end_line": 16,
+      "code_preview": "    override func tearDownWithError() throws {\n        // Put teardown code here. This method is called after the invocation of each test method in the class.\n    }\n\n    @MainActor\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode/USMUITests/USMUITests.swift:USMUITests:3",
+      "name": "USMUITests",
+      "kind": "class",
+      "file": "server/server-manager/USMXcode/USMUITests/USMUITests.swift",
+      "line": 3,
+      "end_line": 27,
+      "code_preview": "final class USMUITests: XCTestCase {\n\n    override func setUpWithError() throws {\n        // Put setup code here. This method is called before the invocation of each test method in the class.\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode/USMUITests/USMUITests.swift:testExample:18",
+      "name": "testExample",
+      "kind": "function",
+      "file": "server/server-manager/USMXcode/USMUITests/USMUITests.swift",
+      "line": 18,
+      "end_line": 26,
+      "code_preview": "    @MainActor\n    func testExample() throws {\n        // UI tests must launch the application that they test.\n        let app = XCUIApplication()\n        app.launch()\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode/USMUITests/USMUITests.swift:setUpWithError:5",
+      "name": "setUpWithError",
+      "kind": "function",
+      "file": "server/server-manager/USMXcode/USMUITests/USMUITests.swift",
+      "line": 5,
+      "end_line": 12,
+      "code_preview": "    override func setUpWithError() throws {\n        // Put setup code here. This method is called before the invocation of each test method in the class.\n\n        // In UI tests it is usually best to stop immediately when a failure occurs.\n        continueAfterFailure = false\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/server-manager/USMXcode/README.md",
+      "language": "markdown",
+      "lines": 129,
+      "size_bytes": 4007,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USMXcode/SPEC.md",
+      "language": "markdown",
+      "lines": 85,
+      "size_bytes": 2605,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USMXcode/USM_INSTALL_GUIDE.md",
+      "language": "markdown",
+      "lines": 182,
+      "size_bytes": 4872,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USMXcode/USMUITests/USMUITests.swift",
+      "language": "swift",
+      "lines": 28,
+      "size_bytes": 991,
+      "symbols": [
+        "server/server-manager/USMXcode/USMUITests/USMUITests.swift:USMUITests:3",
+        "server/server-manager/USMXcode/USMUITests/USMUITests.swift:setUpWithError:5",
+        "server/server-manager/USMXcode/USMUITests/USMUITests.swift:tearDownWithError:14",
+        "server/server-manager/USMXcode/USMUITests/USMUITests.swift:testExample:18"
+      ],
+      "imports": [
+        "XCTest"
+      ],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

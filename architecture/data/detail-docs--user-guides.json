@@ -1,0 +1,25 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/user-guides/KNOWLEDGE_BOWL_ENHANCED_VALIDATION.md",
+      "language": "markdown",
+      "lines": 239,
+      "size_bytes": 7926,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/user-guides/KNOWLEDGE_BOWL_USER_GUIDE.md",
+      "language": "markdown",
+      "lines": 312,
+      "size_bytes": 9508,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

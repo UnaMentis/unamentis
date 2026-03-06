@@ -1,0 +1,25 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/archive/CLOUD_HOSTING_ARCHITECTURE.old.md",
+      "language": "markdown",
+      "lines": 268,
+      "size_bytes": 12567,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/archive/SCALING_SECURITY_MULTITENANCY_ANALYSIS.md",
+      "language": "markdown",
+      "lines": 1065,
+      "size_bytes": 61470,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

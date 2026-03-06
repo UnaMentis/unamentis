@@ -1,0 +1,48 @@
+{
+  "symbols": [
+    {
+      "id": "server/lambda/services/kb/handler.py:lambda_handler:25",
+      "name": "lambda_handler",
+      "kind": "function",
+      "file": "server/lambda/services/kb/handler.py",
+      "line": 25,
+      "end_line": 41,
+      "code_preview": "def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:\n    \"\"\"Main Lambda handler - placeholder for KB service.\"\"\"\n    http_method = event.get(\"httpMethod\", \"\")\n    path = event.get(\"path\", \"\")\n\n    ...",
+      "visibility": "public",
+      "docstring": "Main Lambda handler - placeholder for KB service.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/lambda/services/kb/__init__.py",
+      "language": "python",
+      "lines": 6,
+      "size_bytes": 100,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": "Knowledge Base (KB) service for UnaMentis.\nHandles question packs, questions, and domains."
+    },
+    {
+      "path": "server/lambda/services/kb/handler.py",
+      "language": "python",
+      "lines": 42,
+      "size_bytes": 992,
+      "symbols": [
+        "server/lambda/services/kb/handler.py:lambda_handler:25"
+      ],
+      "imports": [
+        "sys",
+        "os",
+        "logging",
+        "shared",
+        "typing"
+      ],
+      "exports": [],
+      "module_doc": "KB service Lambda handler.\nHandles question packs, questions, and domains.\nThis is a placeholder - full implementation in Phase C."
+    }
+  ]
+}

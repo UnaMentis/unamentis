@@ -1,0 +1,95 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/explorations/AGNO_IOS_AGENT_ARCHITECTURE_EXPLORATION.md",
+      "language": "markdown",
+      "lines": 318,
+      "size_bytes": 13820,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/explorations/LEARNER_PROFILE_EXPLORATION.md",
+      "language": "markdown",
+      "lines": 867,
+      "size_bytes": 34536,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/explorations/MCP_SETUP.md",
+      "language": "markdown",
+      "lines": 530,
+      "size_bytes": 12425,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/explorations/MCP_SETUP_PLAN.md",
+      "language": "markdown",
+      "lines": 108,
+      "size_bytes": 3336,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/explorations/MULTILINGUAL_VOICE_LEARNING_EXPLORATION.md",
+      "language": "markdown",
+      "lines": 482,
+      "size_bytes": 19822,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/explorations/VERIFIED_KNOWLEDGE_STREAM_EXPLORATION.md",
+      "language": "markdown",
+      "lines": 1180,
+      "size_bytes": 69405,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/explorations/WATCH_APP_EXPLORATION.md",
+      "language": "markdown",
+      "lines": 765,
+      "size_bytes": 22716,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/explorations/commercial-stt-tts-providers.md",
+      "language": "markdown",
+      "lines": 593,
+      "size_bytes": 19792,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/explorations/voicelearn-model-evaluation-research.md",
+      "language": "markdown",
+      "lines": 505,
+      "size_bytes": 25142,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

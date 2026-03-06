@@ -1,0 +1,59 @@
+{
+  "symbols": [
+    {
+      "id": "server/importers/docs/examples/example_source_plugin.py:ExampleSourcePlugin:78",
+      "name": "ExampleSourcePlugin",
+      "kind": "class",
+      "file": "server/importers/docs/examples/example_source_plugin.py",
+      "line": 78,
+      "end_line": 650,
+      "code_preview": "@PluginRegistry.register  # Optional: auto-register when module is imported\nclass ExampleSourcePlugin(BaseImporterPlugin):\n    \"\"\"\n    Example Source Plugin\n\n    ...",
+      "visibility": "public",
+      "docstring": "Example Source Plugin\n\n    This plugin demonstrates how to implement a compliant source plugin\n    for the UnaMentis curriculum importer framework.\n\n    Configuration:\n        api_key: str (required)\n            API key for authentication with Example Source\n\n        timeout: int (default: 30)\n            HTTP request timeout in seconds\n\n        max_retries: int (default: 3)\n            Number of retry attempts for failed requests",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/importers/docs/PLUGIN_ARCHITECTURE.md",
+      "language": "markdown",
+      "lines": 387,
+      "size_bytes": 15183,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/importers/docs/PLUGIN_SPEC.md",
+      "language": "markdown",
+      "lines": 979,
+      "size_bytes": 27573,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/importers/docs/examples/example_source_plugin.py",
+      "language": "python",
+      "lines": 690,
+      "size_bytes": 23523,
+      "symbols": [
+        "server/importers/docs/examples/example_source_plugin.py:ExampleSourcePlugin:78"
+      ],
+      "imports": [
+        "pathlib",
+        "aiohttp",
+        "asyncio",
+        "logging",
+        "typing",
+        "importers"
+      ],
+      "exports": [],
+      "module_doc": "Example Source Plugin Template\nThis is a complete, runnable example of a compliant source plugin.\nCopy this file and modify it to create your own source plugin.\nUsage:\n1. Copy this file to your project\n2. Rename the class and update plugin_id\n3. Implement the TODO sections\n4. Add tests\n5. Register via pyproject.toml entry points\nSee docs/PLUGIN_SPEC.md for the complete specification."
+    }
+  ]
+}

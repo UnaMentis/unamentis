@@ -1,0 +1,125 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/client-spec/01-NAVIGATION_ARCHITECTURE.md",
+      "language": "markdown",
+      "lines": 312,
+      "size_bytes": 9696,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/client-spec/02-SESSION_TAB.md",
+      "language": "markdown",
+      "lines": 354,
+      "size_bytes": 11562,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/client-spec/03-CURRICULUM_TAB.md",
+      "language": "markdown",
+      "lines": 358,
+      "size_bytes": 10621,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/client-spec/04-TODO_TAB.md",
+      "language": "markdown",
+      "lines": 323,
+      "size_bytes": 9155,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/client-spec/05-HISTORY_TAB.md",
+      "language": "markdown",
+      "lines": 295,
+      "size_bytes": 7980,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/client-spec/06-ANALYTICS_TAB.md",
+      "language": "markdown",
+      "lines": 240,
+      "size_bytes": 6654,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/client-spec/07-SETTINGS.md",
+      "language": "markdown",
+      "lines": 379,
+      "size_bytes": 8786,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/client-spec/08-SIRI_SHORTCUTS.md",
+      "language": "markdown",
+      "lines": 307,
+      "size_bytes": 6886,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/client-spec/09-UI_COMPONENTS.md",
+      "language": "markdown",
+      "lines": 520,
+      "size_bytes": 8695,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/client-spec/10-ACCESSIBILITY.md",
+      "language": "markdown",
+      "lines": 457,
+      "size_bytes": 8744,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/client-spec/11-KNOWLEDGE_BOWL.md",
+      "language": "markdown",
+      "lines": 627,
+      "size_bytes": 27838,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/client-spec/README.md",
+      "language": "markdown",
+      "lines": 151,
+      "size_bytes": 6959,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

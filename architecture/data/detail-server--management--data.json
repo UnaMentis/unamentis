@@ -1,0 +1,85 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/management/data/metrics_daily.json",
+      "language": "json",
+      "lines": 1,
+      "size_bytes": 2,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/data/metrics_hourly.json",
+      "language": "json",
+      "lines": 1,
+      "size_bytes": 2,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/data/model_params.json",
+      "language": "json",
+      "lines": 6,
+      "size_bytes": 63,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/data/plugins.json",
+      "language": "json",
+      "lines": 27,
+      "size_bytes": 419,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/data/power_profiles.json",
+      "language": "json",
+      "lines": 1,
+      "size_bytes": 2,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/data/kb_packs/questions.json",
+      "language": "json",
+      "lines": 19,
+      "size_bytes": 281,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/data/kb_audio/knowledge-bowl/manifest.json",
+      "language": "json",
+      "lines": 11,
+      "size_bytes": 258,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/data/tts_cache/index.json",
+      "language": "json",
+      "lines": 12,
+      "size_bytes": 205,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

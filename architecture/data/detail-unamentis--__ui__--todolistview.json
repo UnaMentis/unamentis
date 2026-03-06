@@ -1,0 +1,95 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/TodoList/TodoListView.swift:CompletedTodoListView:177",
+      "name": "CompletedTodoListView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/TodoList/TodoListView.swift",
+      "line": 177,
+      "end_line": 212,
+      "code_preview": "struct CompletedTodoListView: View {\n    @ObservedObject var viewModel: TodoListViewModel\n\n    var body: some View {\n        List {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/TodoList/TodoListView.swift:TodoListView:10",
+      "name": "TodoListView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/TodoList/TodoListView.swift",
+      "line": 10,
+      "end_line": 131,
+      "code_preview": "public struct TodoListView: View {\n    @StateObject private var viewModel = TodoListViewModel()\n    @State private var showingHelp = false\n    @State private var editingItem: TodoItem?\n\n    ...",
+      "visibility": "public",
+      "docstring": "Main to-do list view showing active items with options to view completed/archived",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/TodoList/TodoListView.swift:ActiveTodoListView:135",
+      "name": "ActiveTodoListView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/TodoList/TodoListView.swift",
+      "line": 135,
+      "end_line": 173,
+      "code_preview": "struct ActiveTodoListView: View {\n    @ObservedObject var viewModel: TodoListViewModel\n    let onEdit: (TodoItem) -> Void\n\n    var body: some View {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/TodoList/TodoListView.swift:ArchivedTodoListView:216",
+      "name": "ArchivedTodoListView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/TodoList/TodoListView.swift",
+      "line": 216,
+      "end_line": 244,
+      "code_preview": "struct ArchivedTodoListView: View {\n    @ObservedObject var viewModel: TodoListViewModel\n\n    var body: some View {\n        List {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/TodoList/TodoListView.swift:EmptyTodoView:248",
+      "name": "EmptyTodoView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/TodoList/TodoListView.swift",
+      "line": 248,
+      "end_line": 292,
+      "code_preview": "struct EmptyTodoView: View {\n    let filter: TodoFilter\n    let onAddTapped: (() -> Void)?\n\n    var body: some View {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/TodoList/TodoListView.swift",
+      "language": "swift",
+      "lines": 299,
+      "size_bytes": 10431,
+      "symbols": [
+        "UnaMentis/UI/TodoList/TodoListView.swift:TodoListView:10",
+        "UnaMentis/UI/TodoList/TodoListView.swift:ActiveTodoListView:135",
+        "UnaMentis/UI/TodoList/TodoListView.swift:CompletedTodoListView:177",
+        "UnaMentis/UI/TodoList/TodoListView.swift:ArchivedTodoListView:216",
+        "UnaMentis/UI/TodoList/TodoListView.swift:EmptyTodoView:248"
+      ],
+      "imports": [
+        "SwiftUI",
+        "Logging"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Todo List View\nMain view for managing to-do items\nPart of Todo System"
+    }
+  ]
+}

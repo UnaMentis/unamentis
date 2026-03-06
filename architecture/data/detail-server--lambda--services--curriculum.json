@@ -1,0 +1,48 @@
+{
+  "symbols": [
+    {
+      "id": "server/lambda/services/curriculum/handler.py:lambda_handler:22",
+      "name": "lambda_handler",
+      "kind": "function",
+      "file": "server/lambda/services/curriculum/handler.py",
+      "line": 22,
+      "end_line": 37,
+      "code_preview": "def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:\n    \"\"\"Main Lambda handler - placeholder for Curriculum service.\"\"\"\n    http_method = event.get(\"httpMethod\", \"\")\n    path = event.get(\"path\", \"\")\n\n    ...",
+      "visibility": "public",
+      "docstring": "Main Lambda handler - placeholder for Curriculum service.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/lambda/services/curriculum/__init__.py",
+      "language": "python",
+      "lines": 6,
+      "size_bytes": 94,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": "Curriculum service for UnaMentis.\nHandles curriculum metadata and progress tracking."
+    },
+    {
+      "path": "server/lambda/services/curriculum/handler.py",
+      "language": "python",
+      "lines": 38,
+      "size_bytes": 958,
+      "symbols": [
+        "server/lambda/services/curriculum/handler.py:lambda_handler:22"
+      ],
+      "imports": [
+        "sys",
+        "os",
+        "logging",
+        "shared",
+        "typing"
+      ],
+      "exports": [],
+      "module_doc": "Curriculum service Lambda handler.\nHandles curriculum metadata and progress.\nThis is a placeholder - full implementation in Phase D."
+    }
+  ]
+}

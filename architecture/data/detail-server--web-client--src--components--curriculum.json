@@ -1,0 +1,248 @@
+{
+  "symbols": [
+    {
+      "id": "server/web-client/src/components/curriculum/CurriculumCard.tsx:formatDate:33",
+      "name": "formatDate",
+      "kind": "function",
+      "file": "server/web-client/src/components/curriculum/CurriculumCard.tsx",
+      "line": 33,
+      "end_line": 39,
+      "code_preview": "function formatDate(dateString: string): string {\n  return new Date(dateString).toLocaleDateString(undefined, {\n    year: 'numeric',\n    month: 'short',\n    day: 'numeric',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/curriculum/CurriculumCard.tsx:CurriculumCard:43",
+      "name": "CurriculumCard",
+      "kind": "component",
+      "file": "server/web-client/src/components/curriculum/CurriculumCard.tsx",
+      "line": 43,
+      "end_line": 134,
+      "code_preview": "function CurriculumCard({ curriculum, onClick, isSelected, className }: CurriculumCardProps) {\n  const handleClick = React.useCallback(() => {\n    onClick?.(curriculum);\n  }, [curriculum, onClick]);\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/curriculum/TopicSelector.tsx:TopicSelectorProps:10",
+      "name": "TopicSelectorProps",
+      "kind": "interface",
+      "file": "server/web-client/src/components/curriculum/TopicSelector.tsx",
+      "line": 10,
+      "end_line": 16,
+      "code_preview": "export interface TopicSelectorProps {\n  topics: ContentNode[];\n  selectedTopicId?: string;\n  onSelect?: (topic: ContentNode) => void;\n  className?: string;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/curriculum/TopicSelector.tsx:TopicNodeProps:43",
+      "name": "TopicNodeProps",
+      "kind": "interface",
+      "file": "server/web-client/src/components/curriculum/TopicSelector.tsx",
+      "line": 43,
+      "end_line": 49,
+      "code_preview": "interface TopicNodeProps {\n  node: ContentNode;\n  selectedTopicId?: string;\n  onSelect?: (topic: ContentNode) => void;\n  level?: number;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/curriculum/TopicSelector.tsx:TopicNode:51",
+      "name": "TopicNode",
+      "kind": "component",
+      "file": "server/web-client/src/components/curriculum/TopicSelector.tsx",
+      "line": 51,
+      "end_line": 161,
+      "code_preview": "function TopicNode({\n  node,\n  selectedTopicId,\n  onSelect,\n  level = 0,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/curriculum/CurriculumCard.tsx:_getDifficultyColor:20",
+      "name": "_getDifficultyColor",
+      "kind": "function",
+      "file": "server/web-client/src/components/curriculum/CurriculumCard.tsx",
+      "line": 20,
+      "end_line": 31,
+      "code_preview": "function _getDifficultyColor(difficulty?: string): string {\n  switch (difficulty) {\n    case 'beginner':\n      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';\n    case 'intermediate':\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/curriculum/TopicSelector.tsx:TopicSelector:165",
+      "name": "TopicSelector",
+      "kind": "component",
+      "file": "server/web-client/src/components/curriculum/TopicSelector.tsx",
+      "line": 165,
+      "end_line": 194,
+      "code_preview": "function TopicSelector({\n  topics,\n  selectedTopicId,\n  onSelect,\n  className,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/curriculum/CurriculumBrowser.tsx:CurriculumBrowserProps:13",
+      "name": "CurriculumBrowserProps",
+      "kind": "interface",
+      "file": "server/web-client/src/components/curriculum/CurriculumBrowser.tsx",
+      "line": 13,
+      "end_line": 22,
+      "code_preview": "export interface CurriculumBrowserProps {\n  curricula: CurriculumSummary[];\n  selectedCurriculum?: Curriculum | null;\n  selectedTopicId?: string;\n  onCurriculumSelect?: (curriculum: CurriculumSummary) => void;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/curriculum/CurriculumCard.tsx:CurriculumCardProps:11",
+      "name": "CurriculumCardProps",
+      "kind": "interface",
+      "file": "server/web-client/src/components/curriculum/CurriculumCard.tsx",
+      "line": 11,
+      "end_line": 16,
+      "code_preview": "export interface CurriculumCardProps {\n  curriculum: CurriculumSummary;\n  onClick?: (curriculum: CurriculumSummary) => void;\n  isSelected?: boolean;\n  className?: string;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/curriculum/TopicSelector.tsx:isSelectable:37",
+      "name": "isSelectable",
+      "kind": "function",
+      "file": "server/web-client/src/components/curriculum/TopicSelector.tsx",
+      "line": 37,
+      "end_line": 39,
+      "code_preview": "function isSelectable(type: NodeType): boolean {\n  return ['topic', 'subtopic', 'lesson'].includes(type);\n}\n\n// ===== Topic Node Component =====\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/curriculum/TopicSelector.tsx:getNodeIcon:20",
+      "name": "getNodeIcon",
+      "kind": "function",
+      "file": "server/web-client/src/components/curriculum/TopicSelector.tsx",
+      "line": 20,
+      "end_line": 35,
+      "code_preview": "function getNodeIcon(type: NodeType) {\n  switch (type) {\n    case 'curriculum':\n    case 'unit':\n      return Layers;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/curriculum/CurriculumBrowser.tsx:CurriculumBrowser:26",
+      "name": "CurriculumBrowser",
+      "kind": "component",
+      "file": "server/web-client/src/components/curriculum/CurriculumBrowser.tsx",
+      "line": 26,
+      "end_line": 198,
+      "code_preview": "function CurriculumBrowser({\n  curricula,\n  selectedCurriculum,\n  selectedTopicId,\n  onCurriculumSelect,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web-client/src/components/curriculum/CurriculumBrowser.tsx",
+      "language": "typescript",
+      "lines": 201,
+      "size_bytes": 6552,
+      "symbols": [
+        "server/web-client/src/components/curriculum/CurriculumBrowser.tsx:CurriculumBrowserProps:13",
+        "server/web-client/src/components/curriculum/CurriculumBrowser.tsx:CurriculumBrowser:26"
+      ],
+      "imports": [
+        "./CurriculumCard",
+        "./TopicSelector",
+        "@/components",
+        "@/lib",
+        "@/types",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/src/components/curriculum/CurriculumCard.tsx",
+      "language": "typescript",
+      "lines": 137,
+      "size_bytes": 4343,
+      "symbols": [
+        "server/web-client/src/components/curriculum/CurriculumCard.tsx:CurriculumCardProps:11",
+        "server/web-client/src/components/curriculum/CurriculumCard.tsx:_getDifficultyColor:20",
+        "server/web-client/src/components/curriculum/CurriculumCard.tsx:formatDate:33",
+        "server/web-client/src/components/curriculum/CurriculumCard.tsx:CurriculumCard:43"
+      ],
+      "imports": [
+        "@/components",
+        "@/lib",
+        "@/types",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/src/components/curriculum/TopicSelector.tsx",
+      "language": "typescript",
+      "lines": 197,
+      "size_bytes": 5325,
+      "symbols": [
+        "server/web-client/src/components/curriculum/TopicSelector.tsx:TopicSelectorProps:10",
+        "server/web-client/src/components/curriculum/TopicSelector.tsx:getNodeIcon:20",
+        "server/web-client/src/components/curriculum/TopicSelector.tsx:isSelectable:37",
+        "server/web-client/src/components/curriculum/TopicSelector.tsx:TopicNodeProps:43",
+        "server/web-client/src/components/curriculum/TopicSelector.tsx:TopicNode:51",
+        "server/web-client/src/components/curriculum/TopicSelector.tsx:TopicSelector:165"
+      ],
+      "imports": [
+        "@/lib",
+        "@/types",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/src/components/curriculum/index.ts",
+      "language": "typescript",
+      "lines": 12,
+      "size_bytes": 291,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": "Curriculum Components\nRe-exports all curriculum-related UI components:\nimport { CurriculumBrowser, TopicSelector, CurriculumCard } from '@/components/curriculum';"
+    }
+  ]
+}

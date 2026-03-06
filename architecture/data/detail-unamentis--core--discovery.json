@@ -1,0 +1,287 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:QRCodeServerInfo:230",
+      "name": "QRCodeServerInfo",
+      "kind": "struct",
+      "file": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift",
+      "line": 230,
+      "end_line": 258,
+      "code_preview": "private struct QRCodeServerInfo: Codable {\n    let host: String\n    let port: Int\n    let name: String?\n    let timestamp: Date?\n    ...",
+      "visibility": "private",
+      "docstring": "Server information encoded in QR code",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:DeviceDiscoveryManager:11",
+      "name": "DeviceDiscoveryManager",
+      "kind": "class",
+      "file": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift",
+      "line": 11,
+      "end_line": 225,
+      "code_preview": "@MainActor\npublic final class DeviceDiscoveryManager: ObservableObject {\n\n    // MARK: - Singleton\n\n    ...",
+      "visibility": "public",
+      "docstring": "Orchestrates multi-tier server discovery",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DiscoveryTier.swift:DiscoveryError:62",
+      "name": "DiscoveryError",
+      "kind": "enum",
+      "file": "UnaMentis/Core/Discovery/DiscoveryTier.swift",
+      "line": 62,
+      "end_line": 86,
+      "code_preview": "public enum DiscoveryError: Error, LocalizedError, Sendable {\n    case timeout\n    case networkUnavailable\n    case invalidResponse\n    case healthCheckFailed(String)\n    ...",
+      "visibility": "public",
+      "docstring": "Errors that can occur during discovery",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:configureManually:137",
+      "name": "configureManually",
+      "kind": "function",
+      "file": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift",
+      "line": 137,
+      "end_line": 155,
+      "code_preview": "    public func configureManually(host: String, port: Int, name: String? = nil) async -> DiscoveredServer? {\n        let server = DiscoveredServer(\n            name: name ?? \"UnaMentis Server\",\n            host: host,\n            port: port,\n    ...",
+      "visibility": "public",
+      "docstring": "Manually configure a server\n- Parameters:\n- host: Server hostname or IP\n- port: Server port\n- name: Optional display name\n- Returns: The configured server if validation succeeds",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DiscoveryTier.swift:DiscoveryTier:11",
+      "name": "DiscoveryTier",
+      "kind": "enum",
+      "file": "UnaMentis/Core/Discovery/DiscoveryTier.swift",
+      "line": 11,
+      "end_line": 41,
+      "code_preview": "public enum DiscoveryTier: Int, CaseIterable, Sendable {\n    case cached = 1\n    case bonjour = 2\n    case multipeer = 3\n    case subnetScan = 4\n    ...",
+      "visibility": "public",
+      "docstring": "Discovery tiers in order of preference",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:configureFromQRCode:160",
+      "name": "configureFromQRCode",
+      "kind": "function",
+      "file": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift",
+      "line": 160,
+      "end_line": 185,
+      "code_preview": "    public func configureFromQRCode(_ qrData: Data) async -> DiscoveredServer? {\n        do {\n            let decoder = JSONDecoder()\n            let qrInfo = try decoder.decode(QRCodeServerInfo.self, from: qrData)\n\n    ...",
+      "visibility": "public",
+      "docstring": "Configure from QR code data\n- Parameter qrData: JSON data from QR code\n- Returns: The configured server if validation succeeds",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DiscoveryTier.swift:DiscoveryTierProtocol:46",
+      "name": "DiscoveryTierProtocol",
+      "kind": "protocol",
+      "file": "UnaMentis/Core/Discovery/DiscoveryTier.swift",
+      "line": 46,
+      "end_line": 57,
+      "code_preview": "public protocol DiscoveryTierProtocol: Sendable {\n    /// The tier this implementation represents\n    var tier: DiscoveryTier { get }\n\n    /// Attempt to discover servers using this method\n    ...",
+      "visibility": "public",
+      "docstring": "Protocol for implementing a discovery tier",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/Models/DiscoveredServer.swift:DiscoveredServer:9",
+      "name": "DiscoveredServer",
+      "kind": "struct",
+      "file": "UnaMentis/Core/Discovery/Models/DiscoveredServer.swift",
+      "line": 9,
+      "end_line": 45,
+      "code_preview": "public struct DiscoveredServer: Identifiable, Codable, Sendable, Equatable {\n    public let id: UUID\n    public let name: String\n    public let host: String\n    public let port: Int\n    ...",
+      "visibility": "public",
+      "docstring": "A server discovered through automatic discovery",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/Models/DiscoveredServer.swift:DiscoveryMethod:50",
+      "name": "DiscoveryMethod",
+      "kind": "enum",
+      "file": "UnaMentis/Core/Discovery/Models/DiscoveredServer.swift",
+      "line": 50,
+      "end_line": 68,
+      "code_preview": "public enum DiscoveryMethod: String, Codable, Sendable {\n    case cached = \"cached\"\n    case bonjour = \"bonjour\"\n    case multipeer = \"multipeer\"\n    case subnetScan = \"subnet_scan\"\n    ...",
+      "visibility": "public",
+      "docstring": "How a server was discovered",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:retryDiscovery:123",
+      "name": "retryDiscovery",
+      "kind": "function",
+      "file": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift",
+      "line": 123,
+      "end_line": 127,
+      "code_preview": "    @discardableResult\n    public func retryDiscovery() async -> DiscoveredServer? {\n        await cancelDiscovery()\n        return await startDiscovery()\n    }",
+      "visibility": "public",
+      "docstring": "Retry discovery from the beginning",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:validateServer:199",
+      "name": "validateServer",
+      "kind": "function",
+      "file": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift",
+      "line": 199,
+      "end_line": 224,
+      "code_preview": "    private func validateServer(_ server: DiscoveredServer) async -> Bool {\n        guard let healthURL = server.healthURL else {\n            return false\n        }\n",
+      "visibility": "private",
+      "docstring": "Validate that a server is reachable and healthy",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:startDiscovery:47",
+      "name": "startDiscovery",
+      "kind": "function",
+      "file": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift",
+      "line": 47,
+      "end_line": 99,
+      "code_preview": "    @discardableResult\n    public func startDiscovery() async -> DiscoveredServer? {\n        // Cancel any existing discovery\n        await cancelDiscovery()\n\n    ...",
+      "visibility": "public",
+      "docstring": "Start automatic server discovery through all tiers\n- Returns: The first successfully discovered and validated server, or nil",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:clearCache:190",
+      "name": "clearCache",
+      "kind": "function",
+      "file": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift",
+      "line": 190,
+      "end_line": 194,
+      "code_preview": "    public func clearCache() async {\n        await cachedDiscovery.clearCache()\n        connectedServer = nil\n        state = .idle\n    }",
+      "visibility": "public",
+      "docstring": "Clear the cached server",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:startDiscoveryInBackground:102",
+      "name": "startDiscoveryInBackground",
+      "kind": "function",
+      "file": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift",
+      "line": 102,
+      "end_line": 106,
+      "code_preview": "    public func startDiscoveryInBackground() {\n        discoveryTask = Task {\n            await startDiscovery()\n        }\n    }",
+      "visibility": "public",
+      "docstring": "Start discovery in the background",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/Models/DiscoveredServer.swift:DiscoveryState:73",
+      "name": "DiscoveryState",
+      "kind": "enum",
+      "file": "UnaMentis/Core/Discovery/Models/DiscoveredServer.swift",
+      "line": 73,
+      "end_line": 96,
+      "code_preview": "public enum DiscoveryState: Equatable, Sendable {\n    case idle\n    case discovering\n    case tryingTier(DiscoveryTier)\n    case connected(DiscoveredServer)\n    ...",
+      "visibility": "public",
+      "docstring": "Current state of the discovery process",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:cancelDiscovery:109",
+      "name": "cancelDiscovery",
+      "kind": "function",
+      "file": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift",
+      "line": 109,
+      "end_line": 120,
+      "code_preview": "    public func cancelDiscovery() async {\n        discoveryTask?.cancel()\n        discoveryTask = nil\n\n        for tier in tiers {\n    ...",
+      "visibility": "public",
+      "docstring": "Cancel any ongoing discovery",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift",
+      "language": "swift",
+      "lines": 259,
+      "size_bytes": 8412,
+      "symbols": [
+        "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:DeviceDiscoveryManager:11",
+        "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:startDiscovery:47",
+        "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:startDiscoveryInBackground:102",
+        "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:cancelDiscovery:109",
+        "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:retryDiscovery:123",
+        "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:configureManually:137",
+        "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:configureFromQRCode:160",
+        "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:clearCache:190",
+        "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:validateServer:199",
+        "UnaMentis/Core/Discovery/DeviceDiscoveryManager.swift:QRCodeServerInfo:230"
+      ],
+      "imports": [
+        "Foundation",
+        "Combine",
+        "Logging"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Device Discovery Manager\nOrchestrates multi-tier server discovery with fallback hierarchy\nPart of Core/Discovery"
+    },
+    {
+      "path": "UnaMentis/Core/Discovery/DiscoveryTier.swift",
+      "language": "swift",
+      "lines": 87,
+      "size_bytes": 2461,
+      "symbols": [
+        "UnaMentis/Core/Discovery/DiscoveryTier.swift:DiscoveryTier:11",
+        "UnaMentis/Core/Discovery/DiscoveryTier.swift:DiscoveryTierProtocol:46",
+        "UnaMentis/Core/Discovery/DiscoveryTier.swift:DiscoveryError:62"
+      ],
+      "imports": [
+        "Foundation"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Discovery Tier Protocol\nDefines the interface for discovery tiers in the fallback hierarchy\nPart of Core/Discovery"
+    },
+    {
+      "path": "UnaMentis/Core/Discovery/Models/DiscoveredServer.swift",
+      "language": "swift",
+      "lines": 97,
+      "size_bytes": 2422,
+      "symbols": [
+        "UnaMentis/Core/Discovery/Models/DiscoveredServer.swift:DiscoveredServer:9",
+        "UnaMentis/Core/Discovery/Models/DiscoveredServer.swift:DiscoveryMethod:50",
+        "UnaMentis/Core/Discovery/Models/DiscoveredServer.swift:DiscoveryState:73"
+      ],
+      "imports": [
+        "Foundation"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Discovered Server Model\nRepresents a server found through automatic discovery\nPart of Core/Discovery"
+    }
+  ]
+}

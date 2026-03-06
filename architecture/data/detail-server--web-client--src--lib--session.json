@@ -1,0 +1,212 @@
+{
+  "symbols": [
+    {
+      "id": "server/web-client/src/lib/session/hooks.ts:UseSessionReturn:38",
+      "name": "UseSessionReturn",
+      "kind": "interface",
+      "file": "server/web-client/src/lib/session/hooks.ts",
+      "line": 38,
+      "end_line": 75,
+      "code_preview": "export interface UseSessionReturn {\n  /** Current session state */\n  state: SessionState;\n  /** Whether currently listening to user */\n  isListening: boolean;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/session/machine.ts:SessionMachine:351",
+      "name": "SessionMachine",
+      "kind": "type",
+      "file": "server/web-client/src/lib/session/machine.ts",
+      "line": 351,
+      "end_line": 351,
+      "code_preview": "export type SessionMachine = typeof sessionMachine;\n",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/session/hooks.ts:UseSessionStateReturn:274",
+      "name": "UseSessionStateReturn",
+      "kind": "interface",
+      "file": "server/web-client/src/lib/session/hooks.ts",
+      "line": 274,
+      "end_line": 281,
+      "code_preview": "export interface UseSessionStateReturn {\n  state: SessionState;\n  isActive: boolean;\n  isListening: boolean;\n  isAISpeaking: boolean;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/session/machine.ts:SessionMachineEvent:19",
+      "name": "SessionMachineEvent",
+      "kind": "type",
+      "file": "server/web-client/src/lib/session/machine.ts",
+      "line": 19,
+      "end_line": 34,
+      "code_preview": "export type SessionMachineEvent =\n  | { type: 'START_SESSION'; topicId?: string }\n  | { type: 'STOP_SESSION' }\n  | { type: 'STT_INTERIM'; text: string }\n  | { type: 'STT_FINAL'; text: string }",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/session/machine.ts:SessionMachineContext:13",
+      "name": "SessionMachineContext",
+      "kind": "interface",
+      "file": "server/web-client/src/lib/session/machine.ts",
+      "line": 13,
+      "end_line": 17,
+      "code_preview": "export interface SessionMachineContext extends SessionContext {\n  // Additional machine-specific context\n  retryCount: number;\n  maxRetries: number;\n}",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/session/machine.ts:createInitialContext:61",
+      "name": "createInitialContext",
+      "kind": "function",
+      "file": "server/web-client/src/lib/session/machine.ts",
+      "line": 61,
+      "end_line": 76,
+      "code_preview": "function createInitialContext(): SessionMachineContext {\n  return {\n    state: 'idle',\n    sessionId: null,\n    conversationHistory: [],\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/session/machine.ts:createInitialMetrics:38",
+      "name": "createInitialMetrics",
+      "kind": "function",
+      "file": "server/web-client/src/lib/session/machine.ts",
+      "line": 38,
+      "end_line": 59,
+      "code_preview": "function createInitialMetrics(): SessionMetrics {\n  return {\n    sessionId: '',\n    startTime: new Date(),\n    duration: 0,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/session/hooks.ts:useSession:79",
+      "name": "useSession",
+      "kind": "function",
+      "file": "server/web-client/src/lib/session/hooks.ts",
+      "line": 79,
+      "end_line": 270,
+      "code_preview": "export function useSession(options: UseSessionOptions): UseSessionReturn {\n  const {\n    providers,\n    autoStart = false,\n    topicId,\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/session/hooks.ts:useSessionState:286",
+      "name": "useSessionState",
+      "kind": "function",
+      "file": "server/web-client/src/lib/session/hooks.ts",
+      "line": 286,
+      "end_line": 299,
+      "code_preview": "export function useSessionState(): UseSessionStateReturn {\n  const [state, _setState] = React.useState<SessionState>('idle');\n\n  // This would typically subscribe to a global session store\n  // For now, return defaults\n    ...",
+      "visibility": "public",
+      "docstring": "Lightweight hook for components that only need to read session state.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/session/hooks.ts:UseSessionOptions:19",
+      "name": "UseSessionOptions",
+      "kind": "interface",
+      "file": "server/web-client/src/lib/session/hooks.ts",
+      "line": 19,
+      "end_line": 36,
+      "code_preview": "export interface UseSessionOptions {\n  /** Provider configuration */\n  providers: ProviderConfig;\n  /** Auto-start session when hook mounts */\n  autoStart?: boolean;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/session/machine.ts:sessionMachine:80",
+      "name": "sessionMachine",
+      "kind": "function",
+      "file": "server/web-client/src/lib/session/machine.ts",
+      "line": 80,
+      "end_line": 347,
+      "code_preview": "export const sessionMachine = setup({\n  types: {\n    context: {} as SessionMachineContext,\n    events: {} as SessionMachineEvent,\n  },\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web-client/src/lib/session/hooks.ts",
+      "language": "typescript",
+      "lines": 300,
+      "size_bytes": 8439,
+      "symbols": [
+        "server/web-client/src/lib/session/hooks.ts:UseSessionOptions:19",
+        "server/web-client/src/lib/session/hooks.ts:UseSessionReturn:38",
+        "server/web-client/src/lib/session/hooks.ts:useSession:79",
+        "server/web-client/src/lib/session/hooks.ts:UseSessionStateReturn:274",
+        "server/web-client/src/lib/session/hooks.ts:useSessionState:286"
+      ],
+      "imports": [
+        "./machine",
+        "@/lib",
+        "@/types",
+        "@xstate/react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Session Hooks\nReact hooks for interacting with the session state machine.\nProvides a clean API for components to manage voice sessions."
+    },
+    {
+      "path": "server/web-client/src/lib/session/index.ts",
+      "language": "typescript",
+      "lines": 24,
+      "size_bytes": 467,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": "Session Layer\nXState-based session state machine and React hooks for managing\nvoice learning sessions. Provides the same session states as iOS."
+    },
+    {
+      "path": "server/web-client/src/lib/session/machine.ts",
+      "language": "typescript",
+      "lines": 352,
+      "size_bytes": 8334,
+      "symbols": [
+        "server/web-client/src/lib/session/machine.ts:SessionMachineContext:13",
+        "server/web-client/src/lib/session/machine.ts:SessionMachineEvent:19",
+        "server/web-client/src/lib/session/machine.ts:createInitialMetrics:38",
+        "server/web-client/src/lib/session/machine.ts:createInitialContext:61",
+        "server/web-client/src/lib/session/machine.ts:sessionMachine:80",
+        "server/web-client/src/lib/session/machine.ts:SessionMachine:351"
+      ],
+      "imports": [
+        "@/types",
+        "xstate"
+      ],
+      "exports": [],
+      "module_doc": "Session State Machine\nXState v5 state machine for managing voice learning sessions.\nMirrors the iOS client session states for consistency."
+    }
+  ]
+}

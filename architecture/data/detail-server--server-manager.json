@@ -1,0 +1,335 @@
+{
+  "symbols": [
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift:tearDownWithError:14",
+      "name": "tearDownWithError",
+      "kind": "function",
+      "file": "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift",
+      "line": 14,
+      "end_line": 16,
+      "code_preview": "    override func tearDownWithError() throws {\n        // Put teardown code here. This method is called after the invocation of each test method in the class.\n    }\n\n    @MainActor\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:ServiceInfo:84",
+      "name": "ServiceInfo",
+      "kind": "struct",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift",
+      "line": 84,
+      "end_line": 133,
+      "code_preview": "struct ServiceInfo: Identifiable, Equatable {\n    let id: String\n    let templateId: String\n    let displayName: String\n    let port: Int\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:ServiceEvent:137",
+      "name": "ServiceEvent",
+      "kind": "enum",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift",
+      "line": 137,
+      "end_line": 251,
+      "code_preview": "enum ServiceEvent: Codable {\n    case statusChanged(instanceId: String, status: ServiceStatus, pid: Int?)\n    case metricsUpdated(instanceId: String, cpuPercent: Double, memoryMB: UInt64)\n    case healthChanged(instanceId: String, healthy: Bool, message: String?)\n    case instanceCreated(instanceId: String, templateId: String)\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:encode:211",
+      "name": "encode",
+      "kind": "function",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift",
+      "line": 211,
+      "end_line": 250,
+      "code_preview": "    func encode(to encoder: Encoder) throws {\n        var container = encoder.container(keyedBy: CodingKeys.self)\n\n        switch self {\n        case .statusChanged(let instanceId, let status, let pid):\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift:setUpWithError:5",
+      "name": "setUpWithError",
+      "kind": "function",
+      "file": "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift",
+      "line": 5,
+      "end_line": 12,
+      "code_preview": "    override func setUpWithError() throws {\n        // Put setup code here. This method is called before the invocation of each test method in the class.\n\n        // In UI tests it is usually best to stop immediately when a failure occurs.\n        continueAfterFailure = false\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:ServiceCategory:64",
+      "name": "ServiceCategory",
+      "kind": "enum",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift",
+      "line": 64,
+      "end_line": 80,
+      "code_preview": "enum ServiceCategory: String, Codable, CaseIterable {\n    case core\n    case development\n    case database\n    case infrastructure\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:ServiceStatus:8",
+      "name": "ServiceStatus",
+      "kind": "enum",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift",
+      "line": 8,
+      "end_line": 60,
+      "code_preview": "enum ServiceStatus: Int, Codable, CaseIterable {\n    case stopped = 0\n    case running = 1\n    case error = 2\n    case starting = 3\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift:USMFFIUITests:3",
+      "name": "USMFFIUITests",
+      "kind": "class",
+      "file": "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift",
+      "line": 3,
+      "end_line": 27,
+      "code_preview": "final class USMFFIUITests: XCTestCase {\n\n    override func setUpWithError() throws {\n        // Put setup code here. This method is called before the invocation of each test method in the class.\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift:testExample:18",
+      "name": "testExample",
+      "kind": "function",
+      "file": "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift",
+      "line": 18,
+      "end_line": 26,
+      "code_preview": "    @MainActor\n    func testExample() throws {\n        // UI tests must launch the application that they test.\n        let app = XCUIApplication()\n        app.launch()\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:from:38",
+      "name": "from",
+      "kind": "function",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift",
+      "line": 38,
+      "end_line": 47,
+      "code_preview": "    static func from(string: String) -> ServiceStatus {\n        switch string.lowercased() {\n        case \"stopped\": return .stopped\n        case \"running\": return .running\n        case \"starting\": return .starting\n    ...",
+      "visibility": "internal",
+      "docstring": "Create from API string representation",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/USMFFIApp.swift:SettingsView:28",
+      "name": "SettingsView",
+      "kind": "struct",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/USMFFIApp.swift",
+      "line": 28,
+      "end_line": 82,
+      "code_preview": "struct SettingsView: View {\n    @ObservedObject var manager: USMCoreManager\n\n    var body: some View {\n        VStack(alignment: .leading, spacing: 12) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode-FFI/USMFFI/USMFFIApp.swift:USMFFIApp:6",
+      "name": "USMFFIApp",
+      "kind": "struct",
+      "file": "server/server-manager/USMXcode-FFI/USMFFI/USMFFIApp.swift",
+      "line": 6,
+      "end_line": 24,
+      "code_preview": "@main\nstruct USMFFIApp: App {\n    @StateObject private var manager = USMCoreManager()\n\n    var body: some Scene {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/server-manager/CLAUDE.md",
+      "language": "markdown",
+      "lines": 131,
+      "size_bytes": 3900,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/FRESH_SESSION_TASKS.md",
+      "language": "markdown",
+      "lines": 188,
+      "size_bytes": 4874,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/MACOS26_MENUBAR_TDD.md",
+      "language": "markdown",
+      "lines": 449,
+      "size_bytes": 13159,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/MACOS_26_MENUBAR_SPEC.md",
+      "language": "markdown",
+      "lines": 367,
+      "size_bytes": 11099,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USM_DIAGNOSTIC_REPORT.md",
+      "language": "markdown",
+      "lines": 272,
+      "size_bytes": 8057,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USMXcode-FFI/README.md",
+      "language": "markdown",
+      "lines": 135,
+      "size_bytes": 4377,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USMXcode-FFI/USMFFI/USMFFIApp.swift",
+      "language": "swift",
+      "lines": 83,
+      "size_bytes": 2142,
+      "symbols": [
+        "server/server-manager/USMXcode-FFI/USMFFI/USMFFIApp.swift:USMFFIApp:6",
+        "server/server-manager/USMXcode-FFI/USMFFI/USMFFIApp.swift:SettingsView:28"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "USM-FFI: Rust-based service manager using USM Core FFI"
+    },
+    {
+      "path": "server/server-manager/USMXcode-FFI/USMFFI/Bridge/usm_ffi.h",
+      "language": "c",
+      "lines": 65,
+      "size_bytes": 1884,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USMXcode-FFI/USMFFI/Assets.xcassets/Contents.json",
+      "language": "json",
+      "lines": 7,
+      "size_bytes": 63,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USMXcode-FFI/USMFFI/Assets.xcassets/MenuBarIcon.imageset/Contents.json",
+      "language": "json",
+      "lines": 21,
+      "size_bytes": 343,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USMXcode-FFI/USMFFI/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "language": "json",
+      "lines": 59,
+      "size_bytes": 904,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USMXcode-FFI/USMFFI/Assets.xcassets/AccentColor.colorset/Contents.json",
+      "language": "json",
+      "lines": 21,
+      "size_bytes": 329,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift",
+      "language": "swift",
+      "lines": 252,
+      "size_bytes": 9117,
+      "symbols": [
+        "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:ServiceStatus:8",
+        "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:from:38",
+        "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:ServiceCategory:64",
+        "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:ServiceInfo:84",
+        "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:ServiceEvent:137",
+        "server/server-manager/USMXcode-FFI/USMFFI/Models/Service.swift:encode:211"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "Service models for USM-FFI"
+    },
+    {
+      "path": "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift",
+      "language": "swift",
+      "lines": 28,
+      "size_bytes": 994,
+      "symbols": [
+        "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift:USMFFIUITests:3",
+        "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift:setUpWithError:5",
+        "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift:tearDownWithError:14",
+        "server/server-manager/USMXcode-FFI/USMFFIUITests/USMFFIUITests.swift:testExample:18"
+      ],
+      "imports": [
+        "XCTest"
+      ],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

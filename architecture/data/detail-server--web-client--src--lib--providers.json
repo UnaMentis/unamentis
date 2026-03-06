@@ -1,0 +1,381 @@
+{
+  "symbols": [
+    {
+      "id": "server/web-client/src/lib/providers/openai-realtime.ts:instance:342",
+      "name": "instance",
+      "kind": "function",
+      "file": "server/web-client/src/lib/providers/openai-realtime.ts",
+      "line": 342,
+      "end_line": 342,
+      "code_preview": "let instance: OpenAIRealtimeProvider | null = null;\n\nexport function getOpenAIRealtimeProvider(): OpenAIRealtimeProvider {\n  if (!instance) {\n    instance = new OpenAIRealtimeProvider();\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/deepgram-stt.ts:DeepgramSTTProvider:41",
+      "name": "DeepgramSTTProvider",
+      "kind": "class",
+      "file": "server/web-client/src/lib/providers/deepgram-stt.ts",
+      "line": 41,
+      "end_line": 228,
+      "code_preview": "export class DeepgramSTTProvider implements STTProvider {\n  readonly name = 'deepgram';\n  readonly costPerHour = 0.0043; // $0.0043/min Nova-2\n  readonly isStreaming = true;\n\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/elevenlabs-tts.ts:ElevenLabsConfig:12",
+      "name": "ElevenLabsConfig",
+      "kind": "interface",
+      "file": "server/web-client/src/lib/providers/elevenlabs-tts.ts",
+      "line": 12,
+      "end_line": 19,
+      "code_preview": "interface ElevenLabsConfig extends TTSConfig {\n  voiceId?: string;\n  modelId?: string;\n  stability?: number;\n  similarityBoost?: number;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/manager.ts:getProviderManager:404",
+      "name": "getProviderManager",
+      "kind": "function",
+      "file": "server/web-client/src/lib/providers/manager.ts",
+      "line": 404,
+      "end_line": 409,
+      "code_preview": "export function getProviderManager(): ProviderManager {\n  if (!instance) {\n    instance = new ProviderManager();\n  }\n  return instance;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/deepgram-stt.ts:DeepgramConfig:31",
+      "name": "DeepgramConfig",
+      "kind": "interface",
+      "file": "server/web-client/src/lib/providers/deepgram-stt.ts",
+      "line": 31,
+      "end_line": 37,
+      "code_preview": "interface DeepgramConfig extends STTConfig {\n  model?: string;\n  punctuate?: boolean;\n  smartFormat?: boolean;\n  diarize?: boolean;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/deepgram-stt.ts:instance:232",
+      "name": "instance",
+      "kind": "function",
+      "file": "server/web-client/src/lib/providers/deepgram-stt.ts",
+      "line": 232,
+      "end_line": 232,
+      "code_preview": "let instance: DeepgramSTTProvider | null = null;\n\nexport function getDeepgramSTTProvider(): DeepgramSTTProvider {\n  if (!instance) {\n    instance = new DeepgramSTTProvider();\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/deepgram-stt.ts:getDeepgramSTTProvider:234",
+      "name": "getDeepgramSTTProvider",
+      "kind": "function",
+      "file": "server/web-client/src/lib/providers/deepgram-stt.ts",
+      "line": 234,
+      "end_line": 239,
+      "code_preview": "export function getDeepgramSTTProvider(): DeepgramSTTProvider {\n  if (!instance) {\n    instance = new DeepgramSTTProvider();\n  }\n  return instance;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/openai-realtime.ts:RealtimeEvent:43",
+      "name": "RealtimeEvent",
+      "kind": "type",
+      "file": "server/web-client/src/lib/providers/openai-realtime.ts",
+      "line": 43,
+      "end_line": 53,
+      "code_preview": "type RealtimeEvent =\n  | { type: 'session.created'; session: { id: string; model: string } }\n  | { type: 'session.updated'; session: { id: string } }\n  | { type: 'conversation.item.input_audio_transcription.completed'; transcript: string }\n  | { type: 'response.created'; response: { id: string } }",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/manager.ts:ProviderManagerEvents:27",
+      "name": "ProviderManagerEvents",
+      "kind": "interface",
+      "file": "server/web-client/src/lib/providers/manager.ts",
+      "line": 27,
+      "end_line": 36,
+      "code_preview": "export interface ProviderManagerEvents {\n  onSTTConnected?: () => void;\n  onSTTDisconnected?: () => void;\n  onSTTResult?: (result: STTResult) => void;\n  onTTSStart?: () => void;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/manager.ts:instance:402",
+      "name": "instance",
+      "kind": "function",
+      "file": "server/web-client/src/lib/providers/manager.ts",
+      "line": 402,
+      "end_line": 402,
+      "code_preview": "let instance: ProviderManager | null = null;\n\nexport function getProviderManager(): ProviderManager {\n  if (!instance) {\n    instance = new ProviderManager();\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/openai-realtime.ts:OpenAIRealtimeProvider:57",
+      "name": "OpenAIRealtimeProvider",
+      "kind": "class",
+      "file": "server/web-client/src/lib/providers/openai-realtime.ts",
+      "line": 57,
+      "end_line": 338,
+      "code_preview": "export class OpenAIRealtimeProvider {\n  readonly name = 'openai-realtime';\n  readonly costPerHour = 0.06; // Approximate cost\n\n  private peerConnection: RTCPeerConnection | null = null;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/openai-realtime.ts:getOpenAIRealtimeProvider:344",
+      "name": "getOpenAIRealtimeProvider",
+      "kind": "function",
+      "file": "server/web-client/src/lib/providers/openai-realtime.ts",
+      "line": 344,
+      "end_line": 349,
+      "code_preview": "export function getOpenAIRealtimeProvider(): OpenAIRealtimeProvider {\n  if (!instance) {\n    instance = new OpenAIRealtimeProvider();\n  }\n  return instance;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/openai-realtime.ts:RealtimeConfig:16",
+      "name": "RealtimeConfig",
+      "kind": "interface",
+      "file": "server/web-client/src/lib/providers/openai-realtime.ts",
+      "line": 16,
+      "end_line": 30,
+      "code_preview": "export interface RealtimeConfig {\n  /** Voice to use for TTS */\n  voice?: 'alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse';\n  /** Model to use */\n  model?: string;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/openai-realtime.ts:RealtimeEventHandlers:32",
+      "name": "RealtimeEventHandlers",
+      "kind": "interface",
+      "file": "server/web-client/src/lib/providers/openai-realtime.ts",
+      "line": 32,
+      "end_line": 41,
+      "code_preview": "export interface RealtimeEventHandlers {\n  onSessionCreated?: (sessionId: string) => void;\n  onTranscript?: (result: STTResult) => void;\n  onResponseStart?: () => void;\n  onResponseText?: (token: LLMToken) => void;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/elevenlabs-tts.ts:ElevenLabsMessage:21",
+      "name": "ElevenLabsMessage",
+      "kind": "interface",
+      "file": "server/web-client/src/lib/providers/elevenlabs-tts.ts",
+      "line": 21,
+      "end_line": 34,
+      "code_preview": "interface ElevenLabsMessage {\n  audio?: string; // Base64 encoded audio\n  isFinal?: boolean;\n  normalizedAlignment?: {\n    char_start_times_ms: number[];\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/elevenlabs-tts.ts:ElevenLabsTTSProvider:38",
+      "name": "ElevenLabsTTSProvider",
+      "kind": "class",
+      "file": "server/web-client/src/lib/providers/elevenlabs-tts.ts",
+      "line": 38,
+      "end_line": 247,
+      "code_preview": "export class ElevenLabsTTSProvider implements TTSProvider {\n  readonly name = 'elevenlabs';\n  readonly costPerCharacter = 0.00003; // Approximate\n\n  private socket: WebSocket | null = null;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/manager.ts:ProviderManager:40",
+      "name": "ProviderManager",
+      "kind": "class",
+      "file": "server/web-client/src/lib/providers/manager.ts",
+      "line": 40,
+      "end_line": 398,
+      "code_preview": "export class ProviderManager {\n  private state: ProviderManagerState = {\n    stt: {\n      provider: 'deepgram',\n      isConnected: false,\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/deepgram-stt.ts:DeepgramResponse:12",
+      "name": "DeepgramResponse",
+      "kind": "interface",
+      "file": "server/web-client/src/lib/providers/deepgram-stt.ts",
+      "line": 12,
+      "end_line": 29,
+      "code_preview": "interface DeepgramResponse {\n  type: 'Results' | 'Metadata' | 'Error';\n  channel?: {\n    alternatives: Array<{\n      transcript: string;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/elevenlabs-tts.ts:instance:251",
+      "name": "instance",
+      "kind": "function",
+      "file": "server/web-client/src/lib/providers/elevenlabs-tts.ts",
+      "line": 251,
+      "end_line": 251,
+      "code_preview": "let instance: ElevenLabsTTSProvider | null = null;\n\nexport function getElevenLabsTTSProvider(): ElevenLabsTTSProvider {\n  if (!instance) {\n    instance = new ElevenLabsTTSProvider();\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/providers/elevenlabs-tts.ts:getElevenLabsTTSProvider:253",
+      "name": "getElevenLabsTTSProvider",
+      "kind": "function",
+      "file": "server/web-client/src/lib/providers/elevenlabs-tts.ts",
+      "line": 253,
+      "end_line": 258,
+      "code_preview": "export function getElevenLabsTTSProvider(): ElevenLabsTTSProvider {\n  if (!instance) {\n    instance = new ElevenLabsTTSProvider();\n  }\n  return instance;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web-client/src/lib/providers/deepgram-stt.ts",
+      "language": "typescript",
+      "lines": 240,
+      "size_bytes": 6460,
+      "symbols": [
+        "server/web-client/src/lib/providers/deepgram-stt.ts:DeepgramResponse:12",
+        "server/web-client/src/lib/providers/deepgram-stt.ts:DeepgramConfig:31",
+        "server/web-client/src/lib/providers/deepgram-stt.ts:DeepgramSTTProvider:41",
+        "server/web-client/src/lib/providers/deepgram-stt.ts:instance:232",
+        "server/web-client/src/lib/providers/deepgram-stt.ts:getDeepgramSTTProvider:234"
+      ],
+      "imports": [
+        "./types"
+      ],
+      "exports": [],
+      "module_doc": "Deepgram STT Provider\nWebSocket-based provider for Deepgram's speech-to-text API.\nSupports real-time transcription with interim results."
+    },
+    {
+      "path": "server/web-client/src/lib/providers/elevenlabs-tts.ts",
+      "language": "typescript",
+      "lines": 259,
+      "size_bytes": 6673,
+      "symbols": [
+        "server/web-client/src/lib/providers/elevenlabs-tts.ts:ElevenLabsConfig:12",
+        "server/web-client/src/lib/providers/elevenlabs-tts.ts:ElevenLabsMessage:21",
+        "server/web-client/src/lib/providers/elevenlabs-tts.ts:ElevenLabsTTSProvider:38",
+        "server/web-client/src/lib/providers/elevenlabs-tts.ts:instance:251",
+        "server/web-client/src/lib/providers/elevenlabs-tts.ts:getElevenLabsTTSProvider:253"
+      ],
+      "imports": [
+        "./types"
+      ],
+      "exports": [],
+      "module_doc": "ElevenLabs TTS Provider\nStreaming text-to-speech provider using ElevenLabs API.\nSupports WebSocket streaming for low-latency audio."
+    },
+    {
+      "path": "server/web-client/src/lib/providers/index.ts",
+      "language": "typescript",
+      "lines": 112,
+      "size_bytes": 2199,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": "Voice Providers Module\nThis module provides the voice pipeline infrastructure for the UnaMentis web client.\nIt includes STT (Speech-to-Text), TTS (Text-to-Speech), and combined providers.\n@module lib/providers\n@example\n```tsx\nimport { getProviderManager, type ProviderConfig } from '@/lib/providers';\nconst manager = getProviderManager();\nawait manager.configure({\nstt: { provider: 'deepgram', model: 'nova-2' },\nllm: { provider: 'openai', model: 'gpt-4o' },\ntts: { provider: 'elevenlabs', voice: 'EXAVITQu4vr4xnSDxMaL' },\n}, {\nonSTTResult: (result) => console.log('Transcript:', result.text),\nonTTSChunk: (chunk) => playAudio(chunk),\n});\nawait manager.connectSTT();\nawait manager.startSTTStreaming();\n```"
+    },
+    {
+      "path": "server/web-client/src/lib/providers/manager.ts",
+      "language": "typescript",
+      "lines": 410,
+      "size_bytes": 10536,
+      "symbols": [
+        "server/web-client/src/lib/providers/manager.ts:ProviderManagerEvents:27",
+        "server/web-client/src/lib/providers/manager.ts:ProviderManager:40",
+        "server/web-client/src/lib/providers/manager.ts:instance:402",
+        "server/web-client/src/lib/providers/manager.ts:getProviderManager:404"
+      ],
+      "imports": [
+        "./deepgram-stt",
+        "./elevenlabs-tts",
+        "./openai-realtime",
+        "./types"
+      ],
+      "exports": [],
+      "module_doc": "Provider Manager\nManages the lifecycle and switching of STT, LLM, and TTS providers.\nProvides a unified interface for voice pipeline operations."
+    },
+    {
+      "path": "server/web-client/src/lib/providers/openai-realtime.ts",
+      "language": "typescript",
+      "lines": 350,
+      "size_bytes": 9742,
+      "symbols": [
+        "server/web-client/src/lib/providers/openai-realtime.ts:RealtimeConfig:16",
+        "server/web-client/src/lib/providers/openai-realtime.ts:RealtimeEventHandlers:32",
+        "server/web-client/src/lib/providers/openai-realtime.ts:RealtimeEvent:43",
+        "server/web-client/src/lib/providers/openai-realtime.ts:OpenAIRealtimeProvider:57",
+        "server/web-client/src/lib/providers/openai-realtime.ts:instance:342",
+        "server/web-client/src/lib/providers/openai-realtime.ts:getOpenAIRealtimeProvider:344"
+      ],
+      "imports": [
+        "./types"
+      ],
+      "exports": [],
+      "module_doc": "OpenAI Realtime Provider\nWebRTC-based provider for OpenAI's Realtime API.\nHandles bidirectional voice conversation with lowest latency."
+    },
+    {
+      "path": "server/web-client/src/lib/providers/types.ts",
+      "language": "typescript",
+      "lines": 60,
+      "size_bytes": 984,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": "Provider Types\nRe-export all provider types from the centralized types module.\nThis allows components to import provider types from @/lib/providers."
+    }
+  ]
+}

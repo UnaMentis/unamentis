@@ -1,0 +1,124 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/Settings/VoiceSettingsView.swift:voiceDisplayName:557",
+      "name": "voiceDisplayName",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/VoiceSettingsView.swift",
+      "line": 557,
+      "end_line": 574,
+      "code_preview": "    func voiceDisplayName(_ voiceId: String) -> String {\n        switch voiceId.lowercased() {\n        case \"alloy\": return \"Alloy - Carter - Male, Neutral\"\n        case \"echo\": return \"Echo - Davis - Male, Warm\"\n        case \"fable\": return \"Fable - Emma - Female, Storyteller\"\n    ...",
+      "visibility": "internal",
+      "docstring": "Voice display names",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/VoiceSettingsView.swift:modelInfo:524",
+      "name": "modelInfo",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/VoiceSettingsView.swift",
+      "line": 524,
+      "end_line": 526,
+      "code_preview": "    func modelInfo(for name: String) -> ManagementModelInfo? {\n        managementModels.first { $0.name == name }\n    }\n\n    /// Chatterbox preset display name\n    ...",
+      "visibility": "internal",
+      "docstring": "Get management model info for a model name",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/VoiceSettingsView.swift:checkPocketTTSModelStatus:650",
+      "name": "checkPocketTTSModelStatus",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/VoiceSettingsView.swift",
+      "line": 650,
+      "end_line": 692,
+      "code_preview": "    private func checkPocketTTSModelStatus() async {\n        let fm = FileManager.default\n        let documentsPath = fm.urls(for: .documentDirectory, in: .userDomainMask).first!\n        let modelDir = documentsPath.appendingPathComponent(\"models/PocketTTS\")\n        let modelPath = modelDir.appendingPathComponent(\"model.safetensors\")\n    ...",
+      "visibility": "private",
+      "docstring": "Check Pocket TTS model availability, copying from bundle if needed",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/VoiceSettingsView.swift:applyPreset:700",
+      "name": "applyPreset",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/VoiceSettingsView.swift",
+      "line": 700,
+      "end_line": 744,
+      "code_preview": "    func applyPreset(_ preset: Preset) {\n        switch preset {\n        case .balanced:\n            llmProvider = .openAI\n            sampleRate = 48000\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/VoiceSettingsView.swift:VoiceSettingsView:18",
+      "name": "VoiceSettingsView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/VoiceSettingsView.swift",
+      "line": 18,
+      "end_line": 453,
+      "code_preview": "public struct VoiceSettingsView: View {\n    @StateObject private var viewModel = VoiceSettingsViewModel()\n    @Environment(\\.dismiss) private var dismiss\n\n    /// Whether to show the done button (true when presented as sheet, false when pushed)\n    ...",
+      "visibility": "public",
+      "docstring": "Consolidated voice settings view containing all voice model controls.\nThis view is accessible from both the main Settings and during voice sessions.\n\nContains:\n- Audio Settings (Sample Rate, Voice Processing, Echo Cancellation, Noise Suppression)\n- Voice Detection (VAD Threshold, Interruption Threshold, Barge-In)\n- Speech Recognition (STT Provider)\n- Language Model (LLM Provider, Model, Temperature, Max Tokens)\n- Voice Output (TTS Provider, Voice, Speaking Rate, Chatterbox settings)\n- Presets for quick configuration",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/VoiceSettingsView.swift:VoiceSettingsViewModel:457",
+      "name": "VoiceSettingsViewModel",
+      "kind": "class",
+      "file": "UnaMentis/UI/Settings/VoiceSettingsView.swift",
+      "line": 457,
+      "end_line": 745,
+      "code_preview": "@MainActor\nclass VoiceSettingsViewModel: ObservableObject {\n    private let defaults = UserDefaults.standard\n\n    // Audio\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/VoiceSettingsView.swift:loadAsync:618",
+      "name": "loadAsync",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/VoiceSettingsView.swift",
+      "line": 618,
+      "end_line": 647,
+      "code_preview": "    func loadAsync() async {\n        // Check Pocket TTS model availability\n        await checkPocketTTSModelStatus()\n\n        if selfHostedEnabled {\n    ...",
+      "visibility": "internal",
+      "docstring": "Load async data (capabilities discovery)",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/Settings/VoiceSettingsView.swift",
+      "language": "swift",
+      "lines": 758,
+      "size_bytes": 29683,
+      "symbols": [
+        "UnaMentis/UI/Settings/VoiceSettingsView.swift:VoiceSettingsView:18",
+        "UnaMentis/UI/Settings/VoiceSettingsView.swift:VoiceSettingsViewModel:457",
+        "UnaMentis/UI/Settings/VoiceSettingsView.swift:modelInfo:524",
+        "UnaMentis/UI/Settings/VoiceSettingsView.swift:voiceDisplayName:557",
+        "UnaMentis/UI/Settings/VoiceSettingsView.swift:loadAsync:618",
+        "UnaMentis/UI/Settings/VoiceSettingsView.swift:checkPocketTTSModelStatus:650",
+        "UnaMentis/UI/Settings/VoiceSettingsView.swift:applyPreset:700"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Voice Settings View\nConsolidated voice model controls for STT, TTS, VAD, Audio, and LLM\nPart of UI/Settings"
+    }
+  ]
+}

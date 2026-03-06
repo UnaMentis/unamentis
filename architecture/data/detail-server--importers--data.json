@@ -1,0 +1,45 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/importers/data/ck12_catalog.json",
+      "language": "json",
+      "lines": 1134,
+      "size_bytes": 45240,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/importers/data/coreknowledge_catalog.json",
+      "language": "json",
+      "lines": 568,
+      "size_bytes": 27809,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/importers/data/engageny_catalog.json",
+      "language": "json",
+      "lines": 398,
+      "size_bytes": 22516,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/importers/data/mit_ocw_catalog.json",
+      "language": "json",
+      "lines": 1809,
+      "size_bytes": 59780,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

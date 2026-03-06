@@ -1,0 +1,55 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/web-client/docs/API_REFERENCE.md",
+      "language": "markdown",
+      "lines": 1705,
+      "size_bytes": 26761,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/docs/AUTHENTICATION.md",
+      "language": "markdown",
+      "lines": 452,
+      "size_bytes": 12600,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/docs/PROVIDER_GUIDE.md",
+      "language": "markdown",
+      "lines": 808,
+      "size_bytes": 17776,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/docs/UMCF_SPECIFICATION.md",
+      "language": "markdown",
+      "lines": 762,
+      "size_bytes": 17387,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/docs/WEBSOCKET_PROTOCOL.md",
+      "language": "markdown",
+      "lines": 829,
+      "size_bytes": 17250,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

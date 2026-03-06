@@ -1,0 +1,45 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/quality/co-agent/work/QUALITY_CO_AGENT_MASTER.md",
+      "language": "markdown",
+      "lines": 593,
+      "size_bytes": 27543,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/quality/co-agent/work/QUALITY_CO_AGENT_PLAN.md",
+      "language": "markdown",
+      "lines": 1776,
+      "size_bytes": 72373,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/quality/co-agent/work/comparative_analysis_of_goose_and_rigour.md",
+      "language": "markdown",
+      "lines": 266,
+      "size_bytes": 24720,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/quality/co-agent/work/comprehensive_analysis_of_local_agent_frameworks.md",
+      "language": "markdown",
+      "lines": 305,
+      "size_bytes": 28141,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

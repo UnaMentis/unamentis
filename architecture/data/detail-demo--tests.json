@@ -1,0 +1,156 @@
+{
+  "symbols": [
+    {
+      "id": "demo/tests/test_generator.py:TestScene:67",
+      "name": "TestScene",
+      "kind": "class",
+      "file": "demo/tests/test_generator.py",
+      "line": 67,
+      "end_line": 91,
+      "code_preview": "class TestScene:\n    \"\"\"Tests for Scene dataclass.\"\"\"\n\n    def test_default_scene(self):\n        \"\"\"Test default scene values.\"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for Scene dataclass.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "demo/tests/test_generator.py:TestShotstack:233",
+      "name": "TestShotstack",
+      "kind": "class",
+      "file": "demo/tests/test_generator.py",
+      "line": 233,
+      "end_line": 277,
+      "code_preview": "class TestShotstack:\n    \"\"\"Tests for Shotstack API client.\"\"\"\n\n    def test_missing_api_key(self):\n        \"\"\"Test that ShotstackError is raised when API key is missing.\"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for Shotstack API client.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "demo/tests/test_generator.py:TestScriptLoading:99",
+      "name": "TestScriptLoading",
+      "kind": "class",
+      "file": "demo/tests/test_generator.py",
+      "line": 99,
+      "end_line": 144,
+      "code_preview": "class TestScriptLoading:\n    \"\"\"Tests for markdown script loading.\"\"\"\n\n    def test_load_script_from_markdown(self):\n        \"\"\"Test loading narration from markdown file.\"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for markdown script loading.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "demo/tests/test_generator.py:TestTTS:152",
+      "name": "TestTTS",
+      "kind": "class",
+      "file": "demo/tests/test_generator.py",
+      "line": 152,
+      "end_line": 200,
+      "code_preview": "class TestTTS:\n    \"\"\"Tests for TTS engine.\"\"\"\n\n    def test_tts_none_returns_zero_duration(self):\n        \"\"\"Test that TTS method 'none' returns 0 duration.\"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for TTS engine.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "demo/tests/test_generator.py:TestSimulator:208",
+      "name": "TestSimulator",
+      "kind": "class",
+      "file": "demo/tests/test_generator.py",
+      "line": 208,
+      "end_line": 225,
+      "code_preview": "class TestSimulator:\n    \"\"\"Tests for Simulator control.\"\"\"\n\n    @pytest.mark.skipif(\n        os.system(\"xcrun simctl list devices 2>/dev/null | grep -q 'iPhone'\") != 0,\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for Simulator control.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "demo/tests/test_generator.py:TestConfig:46",
+      "name": "TestConfig",
+      "kind": "class",
+      "file": "demo/tests/test_generator.py",
+      "line": 46,
+      "end_line": 64,
+      "code_preview": "class TestConfig:\n    \"\"\"Tests for Config dataclass.\"\"\"\n\n    def test_default_config(self):\n        \"\"\"Test default configuration values.\"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for Config dataclass.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "demo/tests/test_generator.py:TestPreflight:285",
+      "name": "TestPreflight",
+      "kind": "class",
+      "file": "demo/tests/test_generator.py",
+      "line": 285,
+      "end_line": 307,
+      "code_preview": "class TestPreflight:\n    \"\"\"Tests for pre-flight checks.\"\"\"\n\n    def test_preflight_with_invalid_tts_server(self):\n        \"\"\"Test that preflight fails with invalid TTS server.\"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for pre-flight checks.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "demo/tests/test_generator.py:TestGenerator:315",
+      "name": "TestGenerator",
+      "kind": "class",
+      "file": "demo/tests/test_generator.py",
+      "line": 315,
+      "end_line": 342,
+      "code_preview": "class TestGenerator:\n    \"\"\"Tests for main Generator class.\"\"\"\n\n    def test_generator_creates_output_directory(self):\n        \"\"\"Test that generator creates output directory.\"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for main Generator class.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "demo/tests/__init__.py",
+      "language": "python",
+      "lines": 2,
+      "size_bytes": 29,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "demo/tests/test_generator.py",
+      "language": "python",
+      "lines": 347,
+      "size_bytes": 11472,
+      "symbols": [
+        "demo/tests/test_generator.py:TestConfig:46",
+        "demo/tests/test_generator.py:TestScene:67",
+        "demo/tests/test_generator.py:TestScriptLoading:99",
+        "demo/tests/test_generator.py:TestTTS:152",
+        "demo/tests/test_generator.py:TestSimulator:208",
+        "demo/tests/test_generator.py:TestShotstack:233",
+        "demo/tests/test_generator.py:TestPreflight:285",
+        "demo/tests/test_generator.py:TestGenerator:315"
+      ],
+      "imports": [
+        "unittest",
+        "pathlib",
+        "tempfile",
+        "sys",
+        "pytest",
+        "ios_demo_video_generator",
+        "os",
+        "json"
+      ],
+      "exports": [],
+      "module_doc": "Tests for iOS Demo Video Generator.\nThese tests verify the core functionality of the demo video generation pipeline.\nRun with: pytest demo/tests/test_generator.py -v\nNote: Some tests require:\n- UnaMentis management-api running (for TTS tests)\n- iOS Simulator installed (for simulator tests)\n- SHOTSTACK_API_KEY environment variable (for Shotstack tests)"
+    }
+  ]
+}

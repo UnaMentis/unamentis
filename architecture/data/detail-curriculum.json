@@ -1,0 +1,181 @@
+{
+  "symbols": [
+    {
+      "id": "curriculum/tools/create_umcfz.py:main:137",
+      "name": "main",
+      "kind": "function",
+      "file": "curriculum/tools/create_umcfz.py",
+      "line": 137,
+      "end_line": 169,
+      "code_preview": "def main():\n    parser = argparse.ArgumentParser(\n        description='Create .umcfz packages from UMCF files',\n        formatter_class=argparse.RawDescriptionHelpFormatter,\n        epilog=\"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "curriculum/tools/create_umcfz.py:create_umcfz:60",
+      "name": "create_umcfz",
+      "kind": "function",
+      "file": "curriculum/tools/create_umcfz.py",
+      "line": 60,
+      "end_line": 111,
+      "code_preview": "def create_umcfz(input_file: str, output_file: str, assets_dir: str = None):\n    \"\"\"Create a .umcfz package from a .umcf file and optional assets.\"\"\"\n\n    # Load the UMCF document\n    print(f\"Loading UMCF document: {input_file}\")\n    ...",
+      "visibility": "public",
+      "docstring": "Create a .umcfz package from a .umcf file and optional assets.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "curriculum/tools/create_umcfz.py:load_assets:38",
+      "name": "load_assets",
+      "kind": "function",
+      "file": "curriculum/tools/create_umcfz.py",
+      "line": 38,
+      "end_line": 57,
+      "code_preview": "def load_assets(assets_dir: str) -> dict:\n    \"\"\"Load all image assets from a directory.\"\"\"\n    assets = {}\n    assets_path = Path(assets_dir)\n\n    ...",
+      "visibility": "public",
+      "docstring": "Load all image assets from a directory.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "curriculum/tools/create_umcfz.py:create_simple_umcfz:114",
+      "name": "create_simple_umcfz",
+      "kind": "function",
+      "file": "curriculum/tools/create_umcfz.py",
+      "line": 114,
+      "end_line": 134,
+      "code_preview": "def create_simple_umcfz(input_file: str, output_file: str):\n    \"\"\"Create a simple .umcfz package (just compressed JSON, no assets).\"\"\"\n\n    print(f\"Loading UMCF document: {input_file}\")\n    with open(input_file, 'r', encoding='utf-8') as f:\n    ...",
+      "visibility": "public",
+      "docstring": "Create a simple .umcfz package (just compressed JSON, no assets).",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "curriculum/tools/create_umcfz.py:get_mime_type:24",
+      "name": "get_mime_type",
+      "kind": "function",
+      "file": "curriculum/tools/create_umcfz.py",
+      "line": 24,
+      "end_line": 35,
+      "code_preview": "def get_mime_type(filename: str) -> str:\n    \"\"\"Get MIME type from file extension.\"\"\"\n    ext = Path(filename).suffix.lower()\n    mime_types = {\n        '.png': 'image/png',\n    ...",
+      "visibility": "public",
+      "docstring": "Get MIME type from file extension.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "curriculum/AGENTS.md",
+      "language": "markdown",
+      "lines": 58,
+      "size_bytes": 2131,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/AI_PROMPT_LEARNING_SOURCE_CONVERSION.md",
+      "language": "markdown",
+      "lines": 599,
+      "size_bytes": 18088,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/CLAUDE.md",
+      "language": "markdown",
+      "lines": 54,
+      "size_bytes": 1977,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/CURRICULUM_FOREIGN_LANGUAGE_ANALYSIS.md",
+      "language": "markdown",
+      "lines": 569,
+      "size_bytes": 21277,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/CURRICULUM_SOURCES.md",
+      "language": "markdown",
+      "lines": 537,
+      "size_bytes": 13662,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/ChatGPT-Create own format.md",
+      "language": "markdown",
+      "lines": 175,
+      "size_bytes": 13465,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/MULTILINGUAL_TECHNOLOGY_EVALUATION.md",
+      "language": "markdown",
+      "lines": 606,
+      "size_bytes": 21889,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/README.md",
+      "language": "markdown",
+      "lines": 630,
+      "size_bytes": 24447,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/tools/create_umcfz.py",
+      "language": "python",
+      "lines": 174,
+      "size_bytes": 5290,
+      "symbols": [
+        "curriculum/tools/create_umcfz.py:get_mime_type:24",
+        "curriculum/tools/create_umcfz.py:load_assets:38",
+        "curriculum/tools/create_umcfz.py:create_umcfz:60",
+        "curriculum/tools/create_umcfz.py:create_simple_umcfz:114",
+        "curriculum/tools/create_umcfz.py:main:137"
+      ],
+      "imports": [
+        "pathlib",
+        "sys",
+        "datetime",
+        "gzip",
+        "os",
+        "base64",
+        "argparse",
+        "json"
+      ],
+      "exports": [],
+      "module_doc": "UMCF Packaging Tool\nCreates .umcfz compressed packages from .umcf files and optional image assets.\nUsage:\npython create_umcfz.py input.umcf output.umcfz [--assets assets_dir]\nExample:\npython create_umcfz.py color-theory.umcf color-theory.umcfz --assets ./images"
+    }
+  ]
+}

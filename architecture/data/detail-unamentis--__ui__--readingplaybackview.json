@@ -1,0 +1,34 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingPlaybackView.swift:ReadingPlaybackView:11",
+      "name": "ReadingPlaybackView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/ReadingList/ReadingPlaybackView.swift",
+      "line": 11,
+      "end_line": 224,
+      "code_preview": "public struct ReadingPlaybackView: View {\n    let item: ReadingListItem\n    @StateObject private var viewModel: ReadingPlaybackViewModel\n    @Environment(\\.dismiss) private var dismiss\n\n    ...",
+      "visibility": "public",
+      "docstring": "Full playback interface for reading a document aloud",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/ReadingList/ReadingPlaybackView.swift",
+      "language": "swift",
+      "lines": 232,
+      "size_bytes": 7826,
+      "symbols": [
+        "UnaMentis/UI/ReadingList/ReadingPlaybackView.swift:ReadingPlaybackView:11"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Reading Playback View\nFull-featured playback interface for reading list items\nPart of UI/ReadingList"
+    }
+  ]
+}

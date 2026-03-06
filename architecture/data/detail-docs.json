@@ -1,0 +1,265 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/ABOUT.md",
+      "language": "markdown",
+      "lines": 92,
+      "size_bytes": 5503,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/AI_MODEL_SELECTION_2026.md",
+      "language": "markdown",
+      "lines": 760,
+      "size_bytes": 25003,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/AI_TASK_ANALYSIS.md",
+      "language": "markdown",
+      "lines": 614,
+      "size_bytes": 31587,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/APP_STORE_COMPLIANCE.md",
+      "language": "markdown",
+      "lines": 591,
+      "size_bytes": 20207,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/CONTRIBUTING.md",
+      "language": "markdown",
+      "lines": 357,
+      "size_bytes": 6367,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/CURRICULUM_SESSION_UX.md",
+      "language": "markdown",
+      "lines": 215,
+      "size_bytes": 7984,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/CURRICULUM_SOURCE_API_RESEARCH.md",
+      "language": "markdown",
+      "lines": 1696,
+      "size_bytes": 58571,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/FEATURE_FLAGS.md",
+      "language": "markdown",
+      "lines": 415,
+      "size_bytes": 11723,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/FEATURE_FLAGS_ARCHITECTURE.md",
+      "language": "markdown",
+      "lines": 352,
+      "size_bytes": 15596,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/LATENCY_TEST_HARNESS_GUIDE.md",
+      "language": "markdown",
+      "lines": 882,
+      "size_bytes": 23771,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/PHILOSOPHY.md",
+      "language": "markdown",
+      "lines": 63,
+      "size_bytes": 4521,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/PRIVACY_PRESERVING_USER_DATA.md",
+      "language": "markdown",
+      "lines": 1283,
+      "size_bytes": 69247,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/QUICKSTART.md",
+      "language": "markdown",
+      "lines": 287,
+      "size_bytes": 8195,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/README.md",
+      "language": "markdown",
+      "lines": 209,
+      "size_bytes": 8853,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/REMOTE_LOGGING.md",
+      "language": "markdown",
+      "lines": 157,
+      "size_bytes": 4723,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/TASK_STATUS.md",
+      "language": "markdown",
+      "lines": 390,
+      "size_bytes": 21909,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/TRANSCRIPT_DRIVEN_TUTORING.md",
+      "language": "markdown",
+      "lines": 545,
+      "size_bytes": 26263,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/UMCF_CURRICULUM_PROMPT.md",
+      "language": "markdown",
+      "lines": 816,
+      "size_bytes": 26277,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/parallel_agent_curriculum_prompt.md",
+      "language": "markdown",
+      "lines": 129,
+      "size_bytes": 4517,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/walkthrough.md",
+      "language": "markdown",
+      "lines": 59,
+      "size_bytes": 2785,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/watch-testing/WATCH_APP_TESTING.md",
+      "language": "markdown",
+      "lines": 191,
+      "size_bytes": 5939,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/plans/OUTSTANDING_WORK.md",
+      "language": "markdown",
+      "lines": 134,
+      "size_bytes": 5352,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/planning/CURRICULUM_REPROCESSING_IMPLEMENTATION.md",
+      "language": "markdown",
+      "lines": 998,
+      "size_bytes": 35221,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/integrations/POCKET_TTS.md",
+      "language": "markdown",
+      "lines": 221,
+      "size_bytes": 8355,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/prompts/scheduled_market_intelligence.md",
+      "language": "markdown",
+      "lines": 167,
+      "size_bytes": 5101,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/proposals/FEATURE_FLAGS_ADOPTION.md",
+      "language": "markdown",
+      "lines": 266,
+      "size_bytes": 8597,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

@@ -1,0 +1,196 @@
+{
+  "symbols": [
+    {
+      "id": "server/web/src/components/charts/chart-theme.ts:latencyColors:294",
+      "name": "latencyColors",
+      "kind": "function",
+      "file": "server/web/src/components/charts/chart-theme.ts",
+      "line": 294,
+      "end_line": 315,
+      "code_preview": "export const latencyColors = {\n  // Status colors\n  success: '#10b981', // emerald-500\n  warning: '#f59e0b', // amber-500\n  error: '#ef4444', // red-500\n    ...",
+      "visibility": "public",
+      "docstring": "Color utilities for latency visualization.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/charts/chart-theme.ts:baseChartOptions:278",
+      "name": "baseChartOptions",
+      "kind": "function",
+      "file": "server/web/src/components/charts/chart-theme.ts",
+      "line": 278,
+      "end_line": 289,
+      "code_preview": "export const baseChartOptions: Partial<EChartsOption> = {\n  animation: true,\n  animationDuration: 300,\n  animationEasing: 'cubicOut',\n  grid: {\n    ...",
+      "visibility": "public",
+      "docstring": "Common chart options that match project styling.\nMerge these with specific chart options.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/charts/EChartsWrapper.tsx:EChartsWrapperComponent:49",
+      "name": "EChartsWrapperComponent",
+      "kind": "component",
+      "file": "server/web/src/components/charts/EChartsWrapper.tsx",
+      "line": 49,
+      "end_line": 117,
+      "code_preview": "function EChartsWrapperComponent({\n  option,\n  height = 400,\n  loading = false,\n  onEvents,\n    ...",
+      "visibility": "internal",
+      "docstring": "Wrapper component for ECharts with light/dark theme and consistent styling.\n@example\n```tsx\n<EChartsWrapper\n  option={{\n    xAxis: { type: 'category', data: ['A', 'B', 'C'] },\n    yAxis: { type: 'value' },\n    series: [{ type: 'line', data: [1, 2, 3] }]\n  }}\n  height={400}\n/>\n```",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/charts/chart-theme.ts:networkProfileColors:329",
+      "name": "networkProfileColors",
+      "kind": "function",
+      "file": "server/web/src/components/charts/chart-theme.ts",
+      "line": 329,
+      "end_line": 335,
+      "code_preview": "export const networkProfileColors: Record<string, string> = {\n  localhost: '#6366f1', // Indigo\n  wifi: '#10b981', // Emerald\n  cellular_us: '#f59e0b', // Amber\n  cellular_eu: '#8b5cf6', // Violet\n    ...",
+      "visibility": "public",
+      "docstring": "Network profile colors for consistent visualization.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/charts/chart-theme.ts:getChartTheme:142",
+      "name": "getChartTheme",
+      "kind": "function",
+      "file": "server/web/src/components/charts/chart-theme.ts",
+      "line": 142,
+      "end_line": 144,
+      "code_preview": "export function getChartTheme(isDark: boolean) {\n  return isDark ? latencyDarkTheme : latencyLightTheme;\n}\n\n/**\n    ...",
+      "visibility": "public",
+      "docstring": "Returns the appropriate ECharts theme based on the current color mode.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/charts/chart-theme.ts:latencyDarkTheme:150",
+      "name": "latencyDarkTheme",
+      "kind": "function",
+      "file": "server/web/src/components/charts/chart-theme.ts",
+      "line": 150,
+      "end_line": 272,
+      "code_preview": "export const latencyDarkTheme = {\n  // Background is transparent to let Card handle it\n  backgroundColor: 'transparent',\n\n  // Text styling\n    ...",
+      "visibility": "public",
+      "docstring": "Dark theme configuration for ECharts.\nMatches the existing Tailwind slate-950 dark theme.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/charts/EChartsWrapper.tsx:EChartsWrapperProps:17",
+      "name": "EChartsWrapperProps",
+      "kind": "interface",
+      "file": "server/web/src/components/charts/EChartsWrapper.tsx",
+      "line": 17,
+      "end_line": 32,
+      "code_preview": "interface EChartsWrapperProps {\n  /** ECharts option configuration */\n  option: EChartsOption;\n  /** Chart height (CSS value or number in pixels) */\n  height?: string | number;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/charts/chart-theme.ts:getLatencyColor:320",
+      "name": "getLatencyColor",
+      "kind": "function",
+      "file": "server/web/src/components/charts/chart-theme.ts",
+      "line": 320,
+      "end_line": 324,
+      "code_preview": "export function getLatencyColor(ms: number, target = 500): string {\n  if (ms <= target) return latencyColors.belowTarget;\n  if (ms <= target * 1.5) return latencyColors.nearTarget;\n  return latencyColors.aboveTarget;\n}",
+      "visibility": "public",
+      "docstring": "Get color for a latency value based on target thresholds.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/charts/EChartsWrapper.tsx:EChartsWrapper:120",
+      "name": "EChartsWrapper",
+      "kind": "component",
+      "file": "server/web/src/components/charts/EChartsWrapper.tsx",
+      "line": 120,
+      "end_line": 120,
+      "code_preview": "export const EChartsWrapper = memo(EChartsWrapperComponent);\n",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/charts/chart-theme.ts:latencyLightTheme:15",
+      "name": "latencyLightTheme",
+      "kind": "function",
+      "file": "server/web/src/components/charts/chart-theme.ts",
+      "line": 15,
+      "end_line": 137,
+      "code_preview": "export const latencyLightTheme = {\n  // Background is transparent to let Card handle it\n  backgroundColor: 'transparent',\n\n  // Text styling\n    ...",
+      "visibility": "public",
+      "docstring": "Light theme configuration for ECharts.\nMatches light mode with slate-based neutrals.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web/src/components/charts/EChartsWrapper.tsx",
+      "language": "typescript",
+      "lines": 121,
+      "size_bytes": 3185,
+      "symbols": [
+        "server/web/src/components/charts/EChartsWrapper.tsx:EChartsWrapperProps:17",
+        "server/web/src/components/charts/EChartsWrapper.tsx:EChartsWrapperComponent:49",
+        "server/web/src/components/charts/EChartsWrapper.tsx:EChartsWrapper:120"
+      ],
+      "imports": [
+        "./chart-theme",
+        "echarts",
+        "echarts-for-react",
+        "next-themes",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "ECharts Wrapper Component\n=========================\nBase wrapper component for Apache ECharts that applies the appropriate\nlight/dark theme and provides consistent configuration across all charts."
+    },
+    {
+      "path": "server/web/src/components/charts/chart-theme.ts",
+      "language": "typescript",
+      "lines": 336,
+      "size_bytes": 7022,
+      "symbols": [
+        "server/web/src/components/charts/chart-theme.ts:latencyLightTheme:15",
+        "server/web/src/components/charts/chart-theme.ts:getChartTheme:142",
+        "server/web/src/components/charts/chart-theme.ts:latencyDarkTheme:150",
+        "server/web/src/components/charts/chart-theme.ts:baseChartOptions:278",
+        "server/web/src/components/charts/chart-theme.ts:latencyColors:294",
+        "server/web/src/components/charts/chart-theme.ts:getLatencyColor:320",
+        "server/web/src/components/charts/chart-theme.ts:networkProfileColors:329"
+      ],
+      "imports": [
+        "echarts"
+      ],
+      "exports": [],
+      "module_doc": "ECharts Theme Configuration\n===========================\nLight and dark theme definitions for the ECharts-based charts\nused throughout the UnaMentis web management interface."
+    },
+    {
+      "path": "server/web/src/components/charts/index.ts",
+      "language": "typescript",
+      "lines": 16,
+      "size_bytes": 297,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": "Chart Components\n================\nBarrel export for chart-related components and utilities."
+    }
+  ]
+}

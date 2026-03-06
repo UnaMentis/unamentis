@@ -1,0 +1,25 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "curriculum/examples/sat-prep/README.md",
+      "language": "markdown",
+      "lines": 97,
+      "size_bytes": 2641,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/examples/sat-prep/math-algebra-sample.json",
+      "language": "json",
+      "lines": 496,
+      "size_bytes": 20155,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

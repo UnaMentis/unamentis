@@ -1,0 +1,215 @@
+{
+  "symbols": [
+    {
+      "id": "server/web/src/hooks/useLatencyData.ts:useAggregatedResults:262",
+      "name": "useAggregatedResults",
+      "kind": "function",
+      "file": "server/web/src/hooks/useLatencyData.ts",
+      "line": 262,
+      "end_line": 292,
+      "code_preview": "export function useAggregatedResults(runs: TestRun[]) {\n  return useMemo(() => {\n    const allResults = runs.flatMap((r) => r.results || []);\n\n    if (allResults.length === 0) {\n    ...",
+      "visibility": "public",
+      "docstring": "Hook that aggregates results from multiple runs.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/hooks/useLatencyData.ts:useRunAnalysis:144",
+      "name": "useRunAnalysis",
+      "kind": "function",
+      "file": "server/web/src/hooks/useLatencyData.ts",
+      "line": 144,
+      "end_line": 191,
+      "code_preview": "export function useRunAnalysis(runId: string | null): UseRunAnalysisReturn {\n  const [analysisData, setAnalysisData] = useState<AnalysisSummary | null>(null);\n  const [loading, setLoading] = useState(false);\n  const [error, setError] = useState<string | null>(null);\n\n    ...",
+      "visibility": "public",
+      "docstring": "Hook for fetching analysis for a specific run.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/hooks/useLatencyData.ts:UseLatencyDataReturn:40",
+      "name": "UseLatencyDataReturn",
+      "kind": "interface",
+      "file": "server/web/src/hooks/useLatencyData.ts",
+      "line": 40,
+      "end_line": 53,
+      "code_preview": "interface UseLatencyDataReturn {\n  /** List of test runs */\n  runs: TestRun[];\n  /** Loading state */\n  loading: boolean;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/hooks/useLatencyData.ts:API_BASE:23",
+      "name": "API_BASE",
+      "kind": "function",
+      "file": "server/web/src/hooks/useLatencyData.ts",
+      "line": 23,
+      "end_line": 23,
+      "code_preview": "const API_BASE = process.env.NEXT_PUBLIC_MANAGEMENT_API_URL || 'http://localhost:8766';\nconst DEFAULT_REFRESH_INTERVAL = 30000; // 30 seconds\nconst DEFAULT_LIMIT = 50;\n\n// ============================================================================\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/hooks/useLatencyData.ts:DEFAULT_LIMIT:25",
+      "name": "DEFAULT_LIMIT",
+      "kind": "function",
+      "file": "server/web/src/hooks/useLatencyData.ts",
+      "line": 25,
+      "end_line": 25,
+      "code_preview": "const DEFAULT_LIMIT = 50;\n\n// ============================================================================\n// Types\n// ============================================================================\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/hooks/useScrollRestoration.ts:useMainScrollRestoration:154",
+      "name": "useMainScrollRestoration",
+      "kind": "function",
+      "file": "server/web/src/hooks/useScrollRestoration.ts",
+      "line": 154,
+      "end_line": 181,
+      "code_preview": "export function useMainScrollRestoration(key: string) {\n  const scrollRef = useRef<HTMLElement | null>(null);\n\n  useEffect(() => {\n    // Find the main scrollable element\n    ...",
+      "visibility": "public",
+      "docstring": "Hook for managing scroll restoration on the main content area.\nThis is useful when you want to track scroll on the parent container\nand pass it down to children.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/hooks/useScrollRestoration.ts:useScrollRestoration:25",
+      "name": "useScrollRestoration",
+      "kind": "function",
+      "file": "server/web/src/hooks/useScrollRestoration.ts",
+      "line": 25,
+      "end_line": 147,
+      "code_preview": "export function useScrollRestoration<T extends HTMLElement = HTMLDivElement>(\n  key: string,\n  options: {\n    /** Delay in ms before restoring scroll (useful for async content) */\n    restoreDelay?: number;\n    ...",
+      "visibility": "public",
+      "docstring": "Hook for persisting and restoring scroll position across navigation and refreshes.\n@param key - Unique identifier for the scroll container (e.g., \"curricula-list\")\n@param options - Configuration options\n@returns Object with scrollRef to attach to the scrollable container\n@example\n```tsx\nfunction MyList() {\n  const { scrollRef } = useScrollRestoration('my-list');\n  return (\n    <div ref={scrollRef} className=\"overflow-y-auto\">\n      {items.map(...)}\n    </div>\n  );\n}\n```",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/hooks/useLatencyData.ts:UseRunAnalysisReturn:55",
+      "name": "UseRunAnalysisReturn",
+      "kind": "interface",
+      "file": "server/web/src/hooks/useLatencyData.ts",
+      "line": 55,
+      "end_line": 62,
+      "code_preview": "interface UseRunAnalysisReturn {\n  /** Analysis data */\n  analysis: AnalysisSummary | null;\n  /** Loading state */\n  loading: boolean;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/hooks/useLatencyData.ts:DEFAULT_REFRESH_INTERVAL:24",
+      "name": "DEFAULT_REFRESH_INTERVAL",
+      "kind": "function",
+      "file": "server/web/src/hooks/useLatencyData.ts",
+      "line": 24,
+      "end_line": 24,
+      "code_preview": "const DEFAULT_REFRESH_INTERVAL = 30000; // 30 seconds\nconst DEFAULT_LIMIT = 50;\n\n// ============================================================================\n// Types\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/hooks/useLatencyData.ts:UseLatencyDataOptions:31",
+      "name": "UseLatencyDataOptions",
+      "kind": "interface",
+      "file": "server/web/src/hooks/useLatencyData.ts",
+      "line": 31,
+      "end_line": 38,
+      "code_preview": "interface UseLatencyDataOptions {\n  /** Enable automatic refresh */\n  autoRefresh?: boolean;\n  /** Refresh interval in milliseconds */\n  refreshInterval?: number;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/hooks/useLatencyData.ts:useMultipleRuns:200",
+      "name": "useMultipleRuns",
+      "kind": "function",
+      "file": "server/web/src/hooks/useLatencyData.ts",
+      "line": 200,
+      "end_line": 253,
+      "code_preview": "export function useMultipleRuns(runIds: string[]): {\n  runs: TestRun[];\n  loading: boolean;\n  error: string | null;\n} {\n    ...",
+      "visibility": "public",
+      "docstring": "Hook for fetching multiple specific runs by ID.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/hooks/useLatencyData.ts:useLatencyData:79",
+      "name": "useLatencyData",
+      "kind": "function",
+      "file": "server/web/src/hooks/useLatencyData.ts",
+      "line": 79,
+      "end_line": 135,
+      "code_preview": "export function useLatencyData(options: UseLatencyDataOptions = {}): UseLatencyDataReturn {\n  const {\n    autoRefresh = true,\n    refreshInterval = DEFAULT_REFRESH_INTERVAL,\n    limit = DEFAULT_LIMIT,\n    ...",
+      "visibility": "public",
+      "docstring": "Hook for fetching latency test runs with auto-refresh support.\n@example\n```tsx\nconst { runs, loading, error, refetch } = useLatencyData({\n  autoRefresh: true,\n  refreshInterval: 30000,\n});\n```",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web/src/hooks/useLatencyData.ts",
+      "language": "typescript",
+      "lines": 293,
+      "size_bytes": 8408,
+      "symbols": [
+        "server/web/src/hooks/useLatencyData.ts:API_BASE:23",
+        "server/web/src/hooks/useLatencyData.ts:DEFAULT_REFRESH_INTERVAL:24",
+        "server/web/src/hooks/useLatencyData.ts:DEFAULT_LIMIT:25",
+        "server/web/src/hooks/useLatencyData.ts:UseLatencyDataOptions:31",
+        "server/web/src/hooks/useLatencyData.ts:UseLatencyDataReturn:40",
+        "server/web/src/hooks/useLatencyData.ts:UseRunAnalysisReturn:55",
+        "server/web/src/hooks/useLatencyData.ts:useLatencyData:79",
+        "server/web/src/hooks/useLatencyData.ts:useRunAnalysis:144",
+        "server/web/src/hooks/useLatencyData.ts:useMultipleRuns:200",
+        "server/web/src/hooks/useLatencyData.ts:useAggregatedResults:262"
+      ],
+      "imports": [
+        "@/lib",
+        "@/types",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Latency Data Hook\n=================\nCustom hook for fetching and managing latency test data\nwith caching and optional auto-refresh."
+    },
+    {
+      "path": "server/web/src/hooks/useScrollRestoration.ts",
+      "language": "typescript",
+      "lines": 182,
+      "size_bytes": 5190,
+      "symbols": [
+        "server/web/src/hooks/useScrollRestoration.ts:useScrollRestoration:25",
+        "server/web/src/hooks/useScrollRestoration.ts:useMainScrollRestoration:154"
+      ],
+      "imports": [
+        "@/lib",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

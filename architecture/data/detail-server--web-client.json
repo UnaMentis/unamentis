@@ -1,0 +1,429 @@
+{
+  "symbols": [
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockExpiredTokenPair:43",
+      "name": "mockExpiredTokenPair",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 43,
+      "end_line": 46,
+      "code_preview": "export const mockExpiredTokenPair: TokenPair = {\n  ...mockTokenPair,\n  expires_in: 0,\n};\n\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/lib/utils.ts:cn:8",
+      "name": "cn",
+      "kind": "function",
+      "file": "server/web-client/src/lib/utils.ts",
+      "line": 8,
+      "end_line": 10,
+      "code_preview": "export function cn(...inputs: ClassValue[]) {\n  return twMerge(clsx(inputs));\n}\n",
+      "visibility": "public",
+      "docstring": "Combines class names with Tailwind CSS class merging.\nUses clsx for conditional classes and tailwind-merge for deduplication.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/next.config.ts:nextConfig:3",
+      "name": "nextConfig",
+      "kind": "function",
+      "file": "server/web-client/next.config.ts",
+      "line": 3,
+      "end_line": 60,
+      "code_preview": "const nextConfig: NextConfig = {\n  // Enable React strict mode for better development experience\n  reactStrictMode: true,\n\n  // Experimental features\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockCurricula:72",
+      "name": "mockCurricula",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 72,
+      "end_line": 86,
+      "code_preview": "export const mockCurricula: CurriculumSummary[] = [\n  mockCurriculumSummary,\n  {\n    ...mockCurriculumSummary,\n    id: 'curriculum-456',\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockTopicId:88",
+      "name": "mockTopicId",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 88,
+      "end_line": 91,
+      "code_preview": "const mockTopicId: CatalogId = {\n  catalog: 'umcf',\n  value: 'topic-1',\n};\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockTopic:93",
+      "name": "mockTopic",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 93,
+      "end_line": 99,
+      "code_preview": "const mockTopic: Topic = {\n  id: mockTopicId,\n  title: 'Introduction',\n  type: 'topic',\n  description: 'An introduction to the subject',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockCurriculum:101",
+      "name": "mockCurriculum",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 101,
+      "end_line": 113,
+      "code_preview": "export const mockCurriculum: Curriculum = {\n  ...mockCurriculumSummary,\n  topics: [\n    mockTopic,\n    {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockCurriculumSummary:60",
+      "name": "mockCurriculumSummary",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 60,
+      "end_line": 70,
+      "code_preview": "export const mockCurriculumSummary: CurriculumSummary = {\n  id: 'curriculum-123',\n  title: 'Introduction to Physics',\n  description: 'A comprehensive introduction to physics concepts',\n  author: 'Test Author',\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockHealthResponse:117",
+      "name": "mockHealthResponse",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 117,
+      "end_line": 122,
+      "code_preview": "export const mockHealthResponse = {\n  status: 'healthy' as const,\n  server_time: '2024-01-15T12:00:00Z',\n  uptime_seconds: 86400,\n  version: '1.0.0',\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:createTestWrapper:155",
+      "name": "createTestWrapper",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 155,
+      "end_line": 157,
+      "code_preview": "export function createTestWrapper({ children }: { children: React.ReactNode }) {\n  return children;\n}\n",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockErrorResponse:124",
+      "name": "mockErrorResponse",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 124,
+      "end_line": 128,
+      "code_preview": "export const mockErrorResponse = {\n  error: 'error_code',\n  message: 'An error occurred',\n  code: 'ERROR_CODE',\n};\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockAuthResponse:50",
+      "name": "mockAuthResponse",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 50,
+      "end_line": 56,
+      "code_preview": "export const mockAuthResponse: AuthResponse = {\n  user: mockUser,\n  device: {\n    id: 'device-123',\n  },\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockUser:12",
+      "name": "mockUser",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 12,
+      "end_line": 24,
+      "code_preview": "export const mockUser: User = {\n  id: 'user-123',\n  email: 'test@example.com',\n  email_verified: true,\n  display_name: 'Test User',\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:createMockResponse:132",
+      "name": "createMockResponse",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 132,
+      "end_line": 143,
+      "code_preview": "export function createMockResponse<T>(data: T, status = 200): Response {\n  return {\n    ok: status >= 200 && status < 300,\n    status,\n    statusText: status === 200 ? 'OK' : 'Error',\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockAdminUser:26",
+      "name": "mockAdminUser",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 26,
+      "end_line": 32,
+      "code_preview": "export const mockAdminUser: User = {\n  ...mockUser,\n  id: 'admin-123',\n  email: 'admin@example.com',\n  display_name: 'Admin User',\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:mockTokenPair:36",
+      "name": "mockTokenPair",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 36,
+      "end_line": 41,
+      "code_preview": "export const mockTokenPair: TokenPair = {\n  access_token: 'mock-access-token-12345',\n  refresh_token: 'mock-refresh-token-67890',\n  token_type: 'Bearer',\n  expires_in: 900, // 15 minutes\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/__tests__/mocks/index.ts:createMockErrorResponse:145",
+      "name": "createMockErrorResponse",
+      "kind": "function",
+      "file": "server/web-client/src/__tests__/mocks/index.ts",
+      "line": 145,
+      "end_line": 151,
+      "code_preview": "export function createMockErrorResponse(\n  error: string,\n  message: string,\n  status = 400\n): Response {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web-client/.prettierrc.json",
+      "language": "json",
+      "lines": 14,
+      "size_bytes": 274,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/BOOTSTRAP.md",
+      "language": "markdown",
+      "lines": 1496,
+      "size_bytes": 33845,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/CLAUDE.md",
+      "language": "markdown",
+      "lines": 202,
+      "size_bytes": 5697,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/PARALLEL_DEVELOPMENT.md",
+      "language": "markdown",
+      "lines": 440,
+      "size_bytes": 13833,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/README.md",
+      "language": "markdown",
+      "lines": 313,
+      "size_bytes": 11450,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/WEB_CLIENT_TDD.md",
+      "language": "markdown",
+      "lines": 2064,
+      "size_bytes": 59763,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/next-env.d.ts",
+      "language": "typescript",
+      "lines": 7,
+      "size_bytes": 262,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/next.config.ts",
+      "language": "typescript",
+      "lines": 63,
+      "size_bytes": 1266,
+      "symbols": [
+        "server/web-client/next.config.ts:nextConfig:3"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/package-lock.json",
+      "language": "json",
+      "lines": 12725,
+      "size_bytes": 449385,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/package.json",
+      "language": "json",
+      "lines": 95,
+      "size_bytes": 2882,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/tsconfig.json",
+      "language": "json",
+      "lines": 33,
+      "size_bytes": 622,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/vitest.config.ts",
+      "language": "typescript",
+      "lines": 68,
+      "size_bytes": 1632,
+      "symbols": [],
+      "imports": [
+        "@vitejs/plugin-react",
+        "path",
+        "vitest"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/src/__tests__/setup.ts",
+      "language": "typescript",
+      "lines": 88,
+      "size_bytes": 1967,
+      "symbols": [],
+      "imports": [
+        "@testing-library/jest-dom",
+        "vitest"
+      ],
+      "exports": [],
+      "module_doc": "Vitest Test Setup\nThis file runs before each test file."
+    },
+    {
+      "path": "server/web-client/src/__tests__/mocks/index.ts",
+      "language": "typescript",
+      "lines": 158,
+      "size_bytes": 3459,
+      "symbols": [
+        "server/web-client/src/__tests__/mocks/index.ts:mockUser:12",
+        "server/web-client/src/__tests__/mocks/index.ts:mockAdminUser:26",
+        "server/web-client/src/__tests__/mocks/index.ts:mockTokenPair:36",
+        "server/web-client/src/__tests__/mocks/index.ts:mockExpiredTokenPair:43",
+        "server/web-client/src/__tests__/mocks/index.ts:mockAuthResponse:50",
+        "server/web-client/src/__tests__/mocks/index.ts:mockCurriculumSummary:60",
+        "server/web-client/src/__tests__/mocks/index.ts:mockCurricula:72",
+        "server/web-client/src/__tests__/mocks/index.ts:mockTopicId:88",
+        "server/web-client/src/__tests__/mocks/index.ts:mockTopic:93",
+        "server/web-client/src/__tests__/mocks/index.ts:mockCurriculum:101",
+        "server/web-client/src/__tests__/mocks/index.ts:mockHealthResponse:117",
+        "server/web-client/src/__tests__/mocks/index.ts:mockErrorResponse:124",
+        "server/web-client/src/__tests__/mocks/index.ts:createMockResponse:132",
+        "server/web-client/src/__tests__/mocks/index.ts:createMockErrorResponse:145",
+        "server/web-client/src/__tests__/mocks/index.ts:createTestWrapper:155"
+      ],
+      "imports": [
+        "@/types",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Test Mocks\nCentralized mock data and utilities for testing."
+    },
+    {
+      "path": "server/web-client/src/lib/utils.ts",
+      "language": "typescript",
+      "lines": 11,
+      "size_bytes": 309,
+      "symbols": [
+        "server/web-client/src/lib/utils.ts:cn:8"
+      ],
+      "imports": [
+        "clsx",
+        "tailwind-merge"
+      ],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

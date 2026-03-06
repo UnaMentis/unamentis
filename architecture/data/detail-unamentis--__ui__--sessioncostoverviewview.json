@@ -1,0 +1,154 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/Settings/APIProviderDetailView.swift:APIProviderDetailView:9",
+      "name": "APIProviderDetailView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/APIProviderDetailView.swift",
+      "line": 9,
+      "end_line": 344,
+      "code_preview": "public struct APIProviderDetailView: View {\n    let keyType: APIKeyManager.KeyType\n    let isConfigured: Bool\n    let onSave: (APIKeyManager.KeyType, String) -> Void\n\n    ...",
+      "visibility": "public",
+      "docstring": "Detailed view for a specific API provider showing pricing, usage, and configuration",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/APIProviderDetailView.swift:CostSummaryCard:579",
+      "name": "CostSummaryCard",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/APIProviderDetailView.swift",
+      "line": 579,
+      "end_line": 602,
+      "code_preview": "private struct CostSummaryCard: View {\n    let estimate: CombinedCostEstimator.SessionCostEstimate\n    let color: Color\n\n    var body: some View {\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/APIProviderDetailView.swift:CategoryBadge:358",
+      "name": "CategoryBadge",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/APIProviderDetailView.swift",
+      "line": 358,
+      "end_line": 376,
+      "code_preview": "struct CategoryBadge: View {\n    let category: LMAPIProviderCategory\n\n    var body: some View {\n        HStack(spacing: 4) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/APIProviderDetailView.swift:SectionHeader:348",
+      "name": "SectionHeader",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/APIProviderDetailView.swift",
+      "line": 348,
+      "end_line": 356,
+      "code_preview": "private struct SectionHeader: View {\n    let title: String\n    let icon: String\n\n    var body: some View {\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/APIProviderDetailView.swift:SessionCostOverviewView:448",
+      "name": "SessionCostOverviewView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/APIProviderDetailView.swift",
+      "line": 448,
+      "end_line": 577,
+      "code_preview": "public struct SessionCostOverviewView: View {\n    public init() {}\n\n    private let balanced10 = CombinedCostEstimator.balancedEstimate10Min\n    private let balanced60 = CombinedCostEstimator.balancedEstimate60Min\n    ...",
+      "visibility": "public",
+      "docstring": "Shows estimated total session costs across all providers",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/APIProviderDetailView.swift:CostCard:378",
+      "name": "CostCard",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/APIProviderDetailView.swift",
+      "line": 378,
+      "end_line": 402,
+      "code_preview": "private struct CostCard: View {\n    let duration: String\n    let cost: String\n    let color: Color\n\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/APIProviderDetailView.swift:ModelRow:404",
+      "name": "ModelRow",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/APIProviderDetailView.swift",
+      "line": 404,
+      "end_line": 443,
+      "code_preview": "private struct ModelRow: View {\n    let model: LMAPIProviderInfo.ModelInfo\n\n    var body: some View {\n        VStack(alignment: .leading, spacing: 6) {\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/APIProviderDetailView.swift:costEstimateSection:196",
+      "name": "costEstimateSection",
+      "kind": "function",
+      "file": "UnaMentis/UI/Settings/APIProviderDetailView.swift",
+      "line": 196,
+      "end_line": 219,
+      "code_preview": "    private func costEstimateSection(_ estimate: ConversationCostEstimate) -> some View {\n        VStack(alignment: .leading, spacing: 12) {\n            SectionHeader(title: \"Estimated Session Costs\", icon: \"clock\")\n\n            HStack(spacing: 16) {\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/APIProviderDetailView.swift:CostBreakdownRow:604",
+      "name": "CostBreakdownRow",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/APIProviderDetailView.swift",
+      "line": 604,
+      "end_line": 633,
+      "code_preview": "private struct CostBreakdownRow: View {\n    let category: LMAPIProviderCategory\n    let provider: String\n    let portion: String\n    let note: String\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/Settings/APIProviderDetailView.swift",
+      "language": "swift",
+      "lines": 662,
+      "size_bytes": 19947,
+      "symbols": [
+        "UnaMentis/UI/Settings/APIProviderDetailView.swift:APIProviderDetailView:9",
+        "UnaMentis/UI/Settings/APIProviderDetailView.swift:costEstimateSection:196",
+        "UnaMentis/UI/Settings/APIProviderDetailView.swift:SectionHeader:348",
+        "UnaMentis/UI/Settings/APIProviderDetailView.swift:CategoryBadge:358",
+        "UnaMentis/UI/Settings/APIProviderDetailView.swift:CostCard:378",
+        "UnaMentis/UI/Settings/APIProviderDetailView.swift:ModelRow:404",
+        "UnaMentis/UI/Settings/APIProviderDetailView.swift:SessionCostOverviewView:448",
+        "UnaMentis/UI/Settings/APIProviderDetailView.swift:CostSummaryCard:579",
+        "UnaMentis/UI/Settings/APIProviderDetailView.swift:CostBreakdownRow:604"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - API Provider Detail View\nComprehensive information about each LM API provider\nPart of UI/UX (TDD Section 10)"
+    }
+  ]
+}

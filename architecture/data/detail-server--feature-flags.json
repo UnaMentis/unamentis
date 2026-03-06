@@ -1,0 +1,55 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/feature-flags/README.md",
+      "language": "markdown",
+      "lines": 325,
+      "size_bytes": 9646,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/feature-flags/docker-compose.yml",
+      "language": "yaml",
+      "lines": 114,
+      "size_bytes": 3196,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/feature-flags/flag_metadata.json",
+      "language": "json",
+      "lines": 37,
+      "size_bytes": 989,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/feature-flags/init.sql",
+      "language": "sql",
+      "lines": 143,
+      "size_bytes": 5368,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/feature-flags/proxy-config.json",
+      "language": "json",
+      "lines": 35,
+      "size_bytes": 934,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}
