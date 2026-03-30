@@ -99,6 +99,13 @@ public struct ReadingPlaybackView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         // Inline images for this chunk
+                        if !viewModel.currentChunkImages.isEmpty {
+                            ContextualHelpBanner(
+                                message: "Images from this PDF appear as you listen. Tap an image to view it fullscreen.",
+                                storageKey: "reading_inline_images"
+                            )
+                        }
+
                         ForEach(viewModel.currentChunkImages) { asset in
                             ReadingInlineImageView(asset: asset)
                         }
@@ -142,6 +149,11 @@ public struct ReadingPlaybackView: View {
                 Label("\(item.totalChunks) segments", systemImage: "text.justify.left")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                InfoButton(
+                    title: "Playback",
+                    content: HelpContent.ReadingList.playback
+                )
             }
         }
     }

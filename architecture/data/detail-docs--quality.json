@@ -1,0 +1,55 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/quality/CODE_QUALITY_INITIATIVE.md",
+      "language": "markdown",
+      "lines": 684,
+      "size_bytes": 23494,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/quality/DEVELOPMENT_EXCELLENCE.md",
+      "language": "markdown",
+      "lines": 349,
+      "size_bytes": 10487,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/quality/QUALITY_INFRASTRUCTURE_PLAN.md",
+      "language": "markdown",
+      "lines": 485,
+      "size_bytes": 16593,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/quality/TOOL_TRUST_DOCTRINE.md",
+      "language": "markdown",
+      "lines": 202,
+      "size_bytes": 7103,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/quality/co-agent/COLLABORATIVE_INTELLIGENCE_VISION.md",
+      "language": "markdown",
+      "lines": 1095,
+      "size_bytes": 83364,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

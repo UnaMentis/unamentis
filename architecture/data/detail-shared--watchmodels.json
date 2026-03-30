@@ -1,0 +1,61 @@
+{
+  "symbols": [
+    {
+      "id": "Shared/WatchModels/SessionCommand.swift:SessionCommand:9",
+      "name": "SessionCommand",
+      "kind": "enum",
+      "file": "Shared/WatchModels/SessionCommand.swift",
+      "line": 9,
+      "end_line": 26,
+      "code_preview": "public enum SessionCommand: String, Codable, Sendable, CaseIterable {\n    case pause = \"pause\"\n    case resume = \"resume\"\n    case mute = \"mute\"\n    case unmute = \"unmute\"\n    ...",
+      "visibility": "public",
+      "docstring": "Commands that can be sent from Watch to iOS",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "Shared/WatchModels/SessionCommand.swift:CommandResponse:29",
+      "name": "CommandResponse",
+      "kind": "struct",
+      "file": "Shared/WatchModels/SessionCommand.swift",
+      "line": 29,
+      "end_line": 46,
+      "code_preview": "public struct CommandResponse: Codable, Sendable {\n    public let command: SessionCommand\n    public let success: Bool\n    public let error: String?\n    public let updatedState: WatchSessionState?\n    ...",
+      "visibility": "public",
+      "docstring": "Response sent back to Watch after command execution",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "Shared/WatchModels/SessionCommand.swift",
+      "language": "swift",
+      "lines": 47,
+      "size_bytes": 1322,
+      "symbols": [
+        "Shared/WatchModels/SessionCommand.swift:SessionCommand:9",
+        "Shared/WatchModels/SessionCommand.swift:CommandResponse:29"
+      ],
+      "imports": [
+        "Foundation"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Session Command\nCommands sent from Watch to iOS to control session\nUsed by both iOS and watchOS targets via target membership"
+    },
+    {
+      "path": "Shared/WatchModels/WatchSessionState.swift",
+      "language": "swift",
+      "lines": 124,
+      "size_bytes": 3389,
+      "symbols": [],
+      "imports": [
+        "Foundation"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Watch Session State\nShared model for iOS <-> Watch state synchronization\nUsed by both iOS and watchOS targets via target membership"
+    }
+  ]
+}

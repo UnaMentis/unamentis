@@ -1,0 +1,49 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBQuickstartSettingsView.swift:KBQuickstartSettingsView:12",
+      "name": "KBQuickstartSettingsView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBQuickstartSettingsView.swift",
+      "line": 12,
+      "end_line": 243,
+      "code_preview": "struct KBQuickstartSettingsView: View {\n    let roundType: KBRoundType\n    @Binding var questionCount: Int\n    @Binding var timePerQuestion: TimeInterval  // Only used for written\n    @Binding var domainMix: KBDomainMix\n    ...",
+      "visibility": "internal",
+      "docstring": "Settings view for Quickstart modes (Oral/Written).",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBQuickstartSettingsView.swift:presetButton:104",
+      "name": "presetButton",
+      "kind": "function",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBQuickstartSettingsView.swift",
+      "line": 104,
+      "end_line": 120,
+      "code_preview": "    private func presetButton(count: Int) -> some View {\n        Button {\n            withAnimation {\n                questionCount = count\n                questionCountDouble = Double(count)\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/KnowledgeBowl/KBQuickstartSettingsView.swift",
+      "language": "swift",
+      "lines": 292,
+      "size_bytes": 9509,
+      "symbols": [
+        "UnaMentis/UI/KnowledgeBowl/KBQuickstartSettingsView.swift:KBQuickstartSettingsView:12",
+        "UnaMentis/UI/KnowledgeBowl/KBQuickstartSettingsView.swift:presetButton:104"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis\nSettings sheet for configuring Quickstart practice sessions.\nAllows adjustment of question count, time limit, pack, and domain mix."
+    }
+  ]
+}

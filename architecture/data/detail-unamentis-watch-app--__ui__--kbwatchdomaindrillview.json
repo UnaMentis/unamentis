@@ -1,0 +1,139 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:KBWatchDomainDrillViewModel:141",
+      "name": "KBWatchDomainDrillViewModel",
+      "kind": "class",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift",
+      "line": 141,
+      "end_line": 223,
+      "code_preview": "@MainActor\n@Observable\nfinal class KBWatchDomainDrillViewModel: ObservableObject {\n    let domain: KBDomain\n    let totalQuestions = 10\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:start:169",
+      "name": "start",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift",
+      "line": 169,
+      "end_line": 190,
+      "code_preview": "    func start() {\n        // Load domain-specific questions\n        questions = KBWatchQuestion.sampleQuestions\n            .filter { $0.domain == domain }\n            .shuffled()\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:answerView:81",
+      "name": "answerView",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift",
+      "line": 81,
+      "end_line": 106,
+      "code_preview": "    private func answerView(_ question: KBWatchQuestion) -> some View {\n        VStack(spacing: 8) {\n            Text(question.answer)\n                .font(.headline)\n                .foregroundStyle(.blue)\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:saveDomainStats:213",
+      "name": "saveDomainStats",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift",
+      "line": 213,
+      "end_line": 222,
+      "code_preview": "    private func saveDomainStats() {\n        let defaults = UserDefaults.standard\n        let key = \"kb_watch_domain_\\(domain.rawValue)\"\n\n        let prevAttempts = defaults.integer(forKey: \"\\(key)_drill_attempts\")\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:questionView:58",
+      "name": "questionView",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift",
+      "line": 58,
+      "end_line": 79,
+      "code_preview": "    private func questionView(_ question: KBWatchQuestion) -> some View {\n        VStack(spacing: 8) {\n            ScrollView {\n                Text(question.text)\n                    .font(.body)\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:KBWatchDomainDrillView:14",
+      "name": "KBWatchDomainDrillView",
+      "kind": "struct",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift",
+      "line": 14,
+      "end_line": 137,
+      "code_preview": "struct KBWatchDomainDrillView: View {\n    let domain: KBDomain\n    @StateObject private var viewModel: KBWatchDomainDrillViewModel\n    @Environment(\\.dismiss) private var dismiss\n\n    ...",
+      "visibility": "internal",
+      "docstring": "Domain-specific practice session for watchOS",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:markAnswer:196",
+      "name": "markAnswer",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift",
+      "line": 196,
+      "end_line": 211,
+      "code_preview": "    func markAnswer(correct: Bool) {\n        if correct {\n            correctCount += 1\n        }\n",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:revealAnswer:192",
+      "name": "revealAnswer",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift",
+      "line": 192,
+      "end_line": 194,
+      "code_preview": "    func revealAnswer() {\n        showingAnswer = true\n    }\n\n    func markAnswer(correct: Bool) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift",
+      "language": "swift",
+      "lines": 232,
+      "size_bytes": 6534,
+      "symbols": [
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:KBWatchDomainDrillView:14",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:questionView:58",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:answerView:81",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:KBWatchDomainDrillViewModel:141",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:start:169",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:revealAnswer:192",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:markAnswer:196",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchDomainDrillView.swift:saveDomainStats:213"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis Watch App\nDomain-focused practice for Knowledge Bowl on watchOS.\nAllows users to drill specific subject areas."
+    }
+  ]
+}

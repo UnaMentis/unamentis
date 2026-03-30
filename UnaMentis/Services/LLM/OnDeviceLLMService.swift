@@ -4,10 +4,12 @@
 // This service provides fully on-device LLM inference with no network required.
 // Uses llama.cpp XCFramework with C++ interop for efficient inference on Apple Silicon.
 //
-// Primary model (December 2025):
-// - Ministral 3 3B (Ministral-3-3B-Instruct-2512-Q4_K_M.gguf) ~2.15GB
-//   Downloaded from Hugging Face: mistralai/Ministral-3-3B-Instruct-2512-GGUF
-//   Stored in: Documents/models/LLM/
+// Supported models (GGUF Q4_K_M, stored in Documents/models/LLM/):
+// - Falcon-H1 1.5B Deep (default) ~938MB - hybrid Mamba-2, rivals 3B quality
+// - Qwen3.5 2B ~1.28GB - multimodal, 262K context
+// - Qwen3 1.7B ~1.11GB - compact, matches 3B quality
+// - SmolLM3 3B ~1.92GB - best-in-class 3B
+// - Ministral 3 3B ~2.15GB - legacy
 
 import Foundation
 import Logging
@@ -77,17 +79,33 @@ public actor OnDeviceLLMService: LLMService, LLMLoadableService {
         }
 
         public static var `default`: Configuration {
-            // Primary: Check Documents/models/LLM/ for downloaded Ministral 3 3B (Dec 2025)
+            // Resolve selected model from UserDefaults
+            let selectedRaw = UserDefaults.standard.string(forKey: OnDeviceLLMModel.selectedModelKey)
+                ?? OnDeviceLLMModel.defaultModel.rawValue
+            let selectedModel = OnDeviceLLMModel(rawValue: selectedRaw) ?? .defaultModel
+            let config = selectedModel.config
+
+            // Primary: Check Documents/models/LLM/ for the selected model
             let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
             let downloadedModelPath = documentsPath
                 .appendingPathComponent("models/LLM")
-                .appendingPathComponent(OnDeviceLLMModel.ministral3_3B.config.filename)
+                .appendingPathComponent(config.filename)
 
             if FileManager.default.fileExists(atPath: downloadedModelPath.path) {
-                return Configuration(modelPath: downloadedModelPath, contextSize: 4096)
+                return Configuration(modelPath: downloadedModelPath, contextSize: config.contextSize)
             }
 
-            // Fallback: Check bundle for older bundled model (legacy support)
+            // Fallback: Check if any other downloaded model is available
+            for model in OnDeviceLLMModel.allCases where model != selectedModel {
+                let path = documentsPath
+                    .appendingPathComponent("models/LLM")
+                    .appendingPathComponent(model.config.filename)
+                if FileManager.default.fileExists(atPath: path.path) {
+                    return Configuration(modelPath: path, contextSize: model.config.contextSize)
+                }
+            }
+
+            // Legacy fallback: Check bundle for older bundled model
             if let bundleMinistralPath = Bundle.main.url(
                 forResource: "ministral-3b-instruct-q4_k_m",
                 withExtension: "gguf"
@@ -101,8 +119,8 @@ public actor OnDeviceLLMService: LLMService, LLMLoadableService {
                 return Configuration(modelPath: URL(fileURLWithPath: devPath), contextSize: 4096)
             }
 
-            // Last resort: Return path to downloaded model location (will fail if not downloaded)
-            return Configuration(modelPath: downloadedModelPath, contextSize: 4096)
+            // Last resort: Return path to selected model location (will fail if not downloaded)
+            return Configuration(modelPath: downloadedModelPath, contextSize: config.contextSize)
         }
     }
 
@@ -190,7 +208,7 @@ public actor OnDeviceLLMService: LLMService, LLMLoadableService {
         logger.info("Running on device, n_gpu_layers = \(configuration.gpuLayers)")
         #endif
 
-        logger.info("Loading model file (this may take a while for 2GB file)...")
+        logger.info("Loading model file (this may take a moment)...")
         model = llama_load_model_from_file(modelPath, modelParams)
         guard model != nil else {
             logger.error("llama_load_model_from_file failed")
@@ -394,8 +412,11 @@ public actor OnDeviceLLMService: LLMService, LLMLoadableService {
 
         if modelName.contains("ministral") || modelName.contains("mistral") {
             return formatMistralPrompt(messages: messages, systemPrompt: systemPrompt)
+        } else if modelName.contains("qwen") || modelName.contains("smollm") || modelName.contains("falcon") {
+            return formatChatMLPrompt(messages: messages, systemPrompt: systemPrompt)
         } else {
-            return formatTinyLlamaPrompt(messages: messages, systemPrompt: systemPrompt)
+            // Default to ChatML as the most common modern format
+            return formatChatMLPrompt(messages: messages, systemPrompt: systemPrompt)
         }
     }
 
@@ -457,6 +478,47 @@ public actor OnDeviceLLMService: LLMService, LLMLoadableService {
         return prompt
     }
 
+    /// Format prompt for ChatML models (Qwen3, SmolLM3, etc.)
+    /// Uses <|im_start|> / <|im_end|> tokens
+    private func formatChatMLPrompt(messages: [LLMMessage], systemPrompt: String?) -> String {
+        var prompt = ""
+
+        // Add system prompt with /no_think to disable verbose reasoning by default
+        let system = systemPrompt ?? messages.first(where: { $0.role == .system })?.content
+        if let system = system {
+            prompt += "<|im_start|>system\n\(system) /no_think<|im_end|>\n"
+        } else {
+            prompt += "<|im_start|>system\n/no_think<|im_end|>\n"
+        }
+
+        // Add conversation messages
+        for message in messages where message.role != .system {
+            let role = message.role == .user ? "user" : "assistant"
+            prompt += "<|im_start|>\(role)\n\(message.content)<|im_end|>\n"
+        }
+
+        // Add assistant prompt for generation
+        prompt += "<|im_start|>assistant\n"
+
+        return prompt
+    }
+
+    /// Strip thinking blocks (<think>...</think>) from generated text
+    /// Both Qwen3 and SmolLM3 can emit thinking blocks even with /no_think
+    static func stripThinkingBlocks(from text: String) -> String {
+        var result = text
+        // Remove <think>...</think> blocks including any whitespace around them
+        while let thinkStart = result.range(of: "<think>"),
+              let thinkEnd = result.range(of: "</think>") {
+            guard thinkStart.lowerBound < thinkEnd.upperBound else { break }
+            result.removeSubrange(thinkStart.lowerBound..<thinkEnd.upperBound)
+        }
+        // Clean up any leading whitespace left after stripping
+        return result.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? result
+            : result
+    }
+
     private func tokenize(_ text: String, model: OpaquePointer) -> [llama_token] {
         let utf8Count = text.utf8.count
         let nTokens = utf8Count + 2
@@ -508,9 +570,9 @@ public actor OnDeviceLLMService: LLMService, LLMLoadableService {
 extension OnDeviceLLMService {
     /// Check if the current device supports on-device LLM
     public static var isDeviceSupported: Bool {
-        // Check available memory (need ~4GB free for 3B model)
+        // Minimum RAM check: smallest model (Qwen3 1.7B) needs 3GB, plus OS overhead
         let memoryGB = ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024)
-        guard memoryGB >= 6 else {
+        guard memoryGB >= 4 else {
             return false
         }
 
@@ -526,28 +588,31 @@ extension OnDeviceLLMService {
 
     /// Check if on-device models are available
     public static var areModelsAvailable: Bool {
-        // Primary: Check Documents/models/LLM/ for downloaded Ministral 3 3B (Dec 2025)
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let downloadedModelPath = documentsPath
-            .appendingPathComponent("models/LLM")
-            .appendingPathComponent(OnDeviceLLMModel.ministral3_3B.config.filename)
+        let modelsDir = documentsPath.appendingPathComponent("models/LLM")
 
-        if FileManager.default.fileExists(atPath: downloadedModelPath.path) {
-            staticLogger.debug("Downloaded Ministral 3 3B found at: \(downloadedModelPath.path)")
-            return true
+        // Check if any registered model is downloaded
+        for model in OnDeviceLLMModel.allCases {
+            let path = modelsDir.appendingPathComponent(model.config.filename)
+            if FileManager.default.fileExists(atPath: path.path) {
+                staticLogger.debug("Found downloaded model: \(model.config.displayName)")
+                return true
+            }
         }
 
         // Legacy: Check for older bundled Ministral 3B
         if let bundleURL = Bundle.main.url(forResource: "ministral-3b-instruct-q4_k_m", withExtension: "gguf") {
             let exists = FileManager.default.fileExists(atPath: bundleURL.path)
-            staticLogger.debug("Ministral 3B bundle URL: \(bundleURL.path), exists: \(exists)")
-            if exists { return true }
+            if exists {
+                staticLogger.debug("Legacy bundled model found")
+                return true
+            }
         }
 
         // Development fallback
         let devPath = "models/ministral-3b-instruct-q4_k_m.gguf"
         if FileManager.default.fileExists(atPath: devPath) {
-            staticLogger.debug("Ministral 3B dev path exists: \(devPath)")
+            staticLogger.debug("Dev model found")
             return true
         }
 

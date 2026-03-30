@@ -1,0 +1,25 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/tasks/KB_LOCALIZATION_ISSUES.md",
+      "language": "markdown",
+      "lines": 162,
+      "size_bytes": 5530,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/tasks/KB_TESTING_GAPS.md",
+      "language": "markdown",
+      "lines": 477,
+      "size_bytes": 13853,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

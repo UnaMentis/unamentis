@@ -1,0 +1,62 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis Watch App/Views/Components/ControlButtonsView.swift:ControlButtonsView:6",
+      "name": "ControlButtonsView",
+      "kind": "struct",
+      "file": "UnaMentis Watch App/Views/Components/ControlButtonsView.swift",
+      "line": 6,
+      "end_line": 39,
+      "code_preview": "struct ControlButtonsView: View {\n    let state: WatchSessionState\n    @EnvironmentObject var connectivity: WatchConnectivityService\n\n    var body: some View {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/Components/ProgressRingView.swift:ProgressRingView:6",
+      "name": "ProgressRingView",
+      "kind": "struct",
+      "file": "UnaMentis Watch App/Views/Components/ProgressRingView.swift",
+      "line": 6,
+      "end_line": 24,
+      "code_preview": "struct ProgressRingView: View {\n    let progress: Double\n\n    var body: some View {\n        Gauge(value: progress, in: 0...1) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis Watch App/Views/Components/ControlButtonsView.swift",
+      "language": "swift",
+      "lines": 70,
+      "size_bytes": 1960,
+      "symbols": [
+        "UnaMentis Watch App/Views/Components/ControlButtonsView.swift:ControlButtonsView:6"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis Watch App - Control Buttons View\nSession control buttons: Mute, Pause/Resume, Stop"
+    },
+    {
+      "path": "UnaMentis Watch App/Views/Components/ProgressRingView.swift",
+      "language": "swift",
+      "lines": 37,
+      "size_bytes": 798,
+      "symbols": [
+        "UnaMentis Watch App/Views/Components/ProgressRingView.swift:ProgressRingView:6"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis Watch App - Progress Ring View\nCircular gauge showing session progress"
+    }
+  ]
+}

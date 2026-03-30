@@ -1,0 +1,25 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/database/migrations/002_tts_pregen_tables.sql",
+      "language": "sql",
+      "lines": 300,
+      "size_bytes": 11610,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/database/migrations/003_kb_questions_tables.sql",
+      "language": "sql",
+      "lines": 279,
+      "size_bytes": 12529,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

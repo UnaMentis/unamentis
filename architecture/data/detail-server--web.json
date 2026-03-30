@@ -1,0 +1,195 @@
+{
+  "symbols": [
+    {
+      "id": "server/web/next.config.ts:nextConfig:3",
+      "name": "nextConfig",
+      "kind": "function",
+      "file": "server/web/next.config.ts",
+      "line": 3,
+      "end_line": 5,
+      "code_preview": "const nextConfig: NextConfig = {\n  /* config options here */\n};\n\nexport default nextConfig;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/theme-provider.tsx:ThemeProvider:9",
+      "name": "ThemeProvider",
+      "kind": "component",
+      "file": "server/web/src/components/theme-provider.tsx",
+      "line": 9,
+      "end_line": 20,
+      "code_preview": "export function ThemeProvider({ children }: ThemeProviderProps) {\n  return (\n    <NextThemesProvider\n      attribute=\"class\"\n      defaultTheme=\"system\"\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/components/theme-provider.tsx:ThemeProviderProps:5",
+      "name": "ThemeProviderProps",
+      "kind": "interface",
+      "file": "server/web/src/components/theme-provider.tsx",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface ThemeProviderProps {\n  children: React.ReactNode;\n}\n\nexport function ThemeProvider({ children }: ThemeProviderProps) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web/AGENTS.md",
+      "language": "markdown",
+      "lines": 87,
+      "size_bytes": 2293,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/CLAUDE.md",
+      "language": "markdown",
+      "lines": 78,
+      "size_bytes": 2289,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/README.md",
+      "language": "markdown",
+      "lines": 132,
+      "size_bytes": 3485,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/next-env.d.ts",
+      "language": "typescript",
+      "lines": 7,
+      "size_bytes": 251,
+      "symbols": [],
+      "imports": [
+        "./.next/dev/types/routes.d.ts"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/next.config.ts",
+      "language": "typescript",
+      "lines": 8,
+      "size_bytes": 133,
+      "symbols": [
+        "server/web/next.config.ts:nextConfig:3"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/package-lock.json",
+      "language": "json",
+      "lines": 9597,
+      "size_bytes": 331453,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/package.json",
+      "language": "json",
+      "lines": 50,
+      "size_bytes": 1268,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/pnpm-lock.yaml",
+      "language": "yaml",
+      "lines": 6185,
+      "size_bytes": 203551,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/tsconfig.json",
+      "language": "json",
+      "lines": 35,
+      "size_bytes": 670,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/vitest.config.ts",
+      "language": "typescript",
+      "lines": 25,
+      "size_bytes": 586,
+      "symbols": [],
+      "imports": [
+        "@vitejs/plugin-react",
+        "path",
+        "vitest"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/vitest.setup.ts",
+      "language": "typescript",
+      "lines": 19,
+      "size_bytes": 802,
+      "symbols": [],
+      "imports": [
+        "@testing-library/jest-dom"
+      ],
+      "exports": [],
+      "module_doc": "Set environment variables BEFORE any imports that might use them\nThis is crucial for api-client which evaluates USE_MOCK at import time"
+    },
+    {
+      "path": "server/web/public/audio/tts-samples/README.md",
+      "language": "markdown",
+      "lines": 55,
+      "size_bytes": 1775,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/components/theme-provider.tsx",
+      "language": "typescript",
+      "lines": 21,
+      "size_bytes": 406,
+      "symbols": [
+        "server/web/src/components/theme-provider.tsx:ThemeProviderProps:5",
+        "server/web/src/components/theme-provider.tsx:ThemeProvider:9"
+      ],
+      "imports": [
+        "next-themes"
+      ],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

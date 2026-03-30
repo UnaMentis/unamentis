@@ -1,0 +1,49 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/Settings/KyutaiPocketSettingsView.swift:InfoRow:602",
+      "name": "InfoRow",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/KyutaiPocketSettingsView.swift",
+      "line": 602,
+      "end_line": 615,
+      "code_preview": "private struct InfoRow: View {\n    let label: String\n    let value: String\n\n    var body: some View {\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Settings/KyutaiPocketSettingsView.swift:KyutaiPocketSettingsView:19",
+      "name": "KyutaiPocketSettingsView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Settings/KyutaiPocketSettingsView.swift",
+      "line": 19,
+      "end_line": 598,
+      "code_preview": "struct KyutaiPocketSettingsView: View {\n\n    @StateObject private var viewModel = KyutaiPocketSettingsViewModel()\n    @Environment(\\.dismiss) private var dismiss\n\n    ...",
+      "visibility": "internal",
+      "docstring": "Advanced settings view for Pocket TTS\n\nExposes all Pocket TTS configuration options:\n- Model download/load management\n- Voice selection (8 built-in voices)\n- Sampling parameters (temperature, top-p)\n- Speed control\n- Quality settings (consistency steps)\n- Performance options (Neural Engine, prefetch)\n- Voice cloning\n- Test synthesis",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/Settings/KyutaiPocketSettingsView.swift",
+      "language": "swift",
+      "lines": 624,
+      "size_bytes": 21067,
+      "symbols": [
+        "UnaMentis/UI/Settings/KyutaiPocketSettingsView.swift:KyutaiPocketSettingsView:19",
+        "UnaMentis/UI/Settings/KyutaiPocketSettingsView.swift:InfoRow:602"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Pocket TTS Settings View\nAdvanced settings UI for Pocket TTS on-device model\nPart of UI/Settings"
+    }
+  ]
+}

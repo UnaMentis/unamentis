@@ -1,0 +1,207 @@
+{
+  "symbols": [
+    {
+      "id": "Shared/KnowledgeBowl/KBDomain.swift:KBDomain:13",
+      "name": "KBDomain",
+      "kind": "enum",
+      "file": "Shared/KnowledgeBowl/KBDomain.swift",
+      "line": 13,
+      "end_line": 131,
+      "code_preview": "public enum KBDomain: String, CaseIterable, Codable, Identifiable, Sendable {\n    case science\n    case mathematics\n    case literature\n    case history\n    ...",
+      "visibility": "public",
+      "docstring": "The 12 academic domains used in Knowledge Bowl competitions.\nThis is defined in Shared/ so both iOS and watchOS targets can access it.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": ".coderabbit.yaml",
+      "language": "yaml",
+      "lines": 104,
+      "size_bytes": 2973,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": ".mcp.json",
+      "language": "json",
+      "lines": 38,
+      "size_bytes": 643,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": ".swiftlint.yml",
+      "language": "yaml",
+      "lines": 100,
+      "size_bytes": 1967,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "AGENTS.md",
+      "language": "markdown",
+      "lines": 828,
+      "size_bytes": 31151,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "CHANGELOG.md",
+      "language": "markdown",
+      "lines": 38,
+      "size_bytes": 1275,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "CLAUDE.md",
+      "language": "markdown",
+      "lines": 620,
+      "size_bytes": 23289,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md",
+      "language": "markdown",
+      "lines": 26,
+      "size_bytes": 1041,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "Package.swift",
+      "language": "swift",
+      "lines": 70,
+      "size_bytes": 2428,
+      "symbols": [],
+      "imports": [
+        "PackageDescription"
+      ],
+      "exports": [],
+      "module_doc": "swift-tools-version: 6.0\nThe swift-tools-version declares the minimum version of Swift required to build this package."
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "lines": 441,
+      "size_bytes": 18342,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "SECURITY.md",
+      "language": "markdown",
+      "lines": 40,
+      "size_bytes": 1140,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "TRADEMARK.md",
+      "language": "markdown",
+      "lines": 166,
+      "size_bytes": 5970,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "codecov.yml",
+      "language": "yaml",
+      "lines": 75,
+      "size_bytes": 1826,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "project.yml",
+      "language": "yaml",
+      "lines": 235,
+      "size_bytes": 8347,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "renovate.json",
+      "language": "json",
+      "lines": 103,
+      "size_bytes": 2947,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "solution-explorer.json",
+      "language": "json",
+      "lines": 11,
+      "size_bytes": 177,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "ci-logs/README.md",
+      "language": "markdown",
+      "lines": 21,
+      "size_bytes": 590,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "Shared/KnowledgeBowl/KBDomain.swift",
+      "language": "swift",
+      "lines": 132,
+      "size_bytes": 4580,
+      "symbols": [
+        "Shared/KnowledgeBowl/KBDomain.swift:KBDomain:13"
+      ],
+      "imports": [
+        "Foundation",
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis\nKnowledge Bowl domain enumeration - shared between iOS and watchOS targets."
+    },
+    {
+      "path": "baselines/latency.json",
+      "language": "json",
+      "lines": 69,
+      "size_bytes": 1617,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

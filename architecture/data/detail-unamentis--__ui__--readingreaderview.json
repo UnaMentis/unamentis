@@ -1,0 +1,94 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingReaderView.swift:chunkBackground:177",
+      "name": "chunkBackground",
+      "kind": "function",
+      "file": "UnaMentis/UI/ReadingList/ReadingReaderView.swift",
+      "line": 177,
+      "end_line": 185,
+      "code_preview": "    private func chunkBackground(for index: Int32) -> some ShapeStyle {\n        if viewModel.hasActivePlayback && viewModel.currentChunkIndex == index {\n            return AnyShapeStyle(Color.blue.opacity(0.08))\n        }\n        if scrolledChunkIndex == index && !viewModel.hasActivePlayback {\n    ...",
+      "visibility": "private",
+      "docstring": "Background highlight for the currently active chunk",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingReaderView.swift:startAudioFromPosition:388",
+      "name": "startAudioFromPosition",
+      "kind": "function",
+      "file": "UnaMentis/UI/ReadingList/ReadingReaderView.swift",
+      "line": 388,
+      "end_line": 390,
+      "code_preview": "    private func startAudioFromPosition(_ chunkIndex: Int32) async {\n        await viewModel.startPlaybackFromChunk(chunkIndex)\n    }\n}\n",
+      "visibility": "private",
+      "docstring": "Start audio playback from a specific section",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingReaderView.swift:chunkView:133",
+      "name": "chunkView",
+      "kind": "function",
+      "file": "UnaMentis/UI/ReadingList/ReadingReaderView.swift",
+      "line": 133,
+      "end_line": 174,
+      "code_preview": "    private func chunkView(chunk: ReadingChunk, index: Int32) -> some View {\n        VStack(alignment: .leading, spacing: 8) {\n            // Chunk text with tap to set scroll position\n            Text(chunk.text ?? \"\")\n                .font(.body)\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingReaderView.swift:ReadingReaderView:15",
+      "name": "ReadingReaderView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/ReadingList/ReadingReaderView.swift",
+      "line": 15,
+      "end_line": 391,
+      "code_preview": "public struct ReadingReaderView: View {\n    let item: ReadingListItem\n    @StateObject private var viewModel: ReadingPlaybackViewModel\n    @Environment(\\.dismiss) private var dismiss\n    @State private var scrolledChunkIndex: Int32 = 0\n    ...",
+      "visibility": "public",
+      "docstring": "Full-text reader for reading list items with audio integration",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingReaderView.swift:bookmarkIndicator:188",
+      "name": "bookmarkIndicator",
+      "kind": "function",
+      "file": "UnaMentis/UI/ReadingList/ReadingReaderView.swift",
+      "line": 188,
+      "end_line": 208,
+      "code_preview": "    private func bookmarkIndicator(_ bookmark: ReadingBookmarkData) -> some View {\n        HStack(spacing: 6) {\n            Image(systemName: \"bookmark.fill\")\n                .font(.caption2)\n                .foregroundStyle(.orange)\n    ...",
+      "visibility": "private",
+      "docstring": "Small bookmark indicator between chunks",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/ReadingList/ReadingReaderView.swift",
+      "language": "swift",
+      "lines": 398,
+      "size_bytes": 13810,
+      "symbols": [
+        "UnaMentis/UI/ReadingList/ReadingReaderView.swift:ReadingReaderView:15",
+        "UnaMentis/UI/ReadingList/ReadingReaderView.swift:chunkView:133",
+        "UnaMentis/UI/ReadingList/ReadingReaderView.swift:chunkBackground:177",
+        "UnaMentis/UI/ReadingList/ReadingReaderView.swift:bookmarkIndicator:188",
+        "UnaMentis/UI/ReadingList/ReadingReaderView.swift:startAudioFromPosition:388"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Reading Reader View\nFull-text visual reading with bookmark navigation and audio start-from-here\nThis view allows users to read the full text of a reading list item,\nnavigate via bookmarks, scroll freely, and switch to audio playback\nfrom any position in the document.\nPart of UI/ReadingList"
+    }
+  ]
+}

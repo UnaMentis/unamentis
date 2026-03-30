@@ -1,0 +1,75 @@
+{
+  "symbols": [
+    {
+      "id": "server/server-manager/USMXcode/USMPackage/Tests/USMFeatureTests/USMFeatureTests.swift:example:4",
+      "name": "example",
+      "kind": "function",
+      "file": "server/server-manager/USMXcode/USMPackage/Tests/USMFeatureTests/USMFeatureTests.swift",
+      "line": 4,
+      "end_line": 6,
+      "code_preview": "@Test func example() async throws {\n    // Write your test here and use APIs like `#expect(...)` to check expected conditions.\n}\n",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/server-manager/USMXcode/USMPackage/Sources/USMFeature/ContentView.swift:ContentView:3",
+      "name": "ContentView",
+      "kind": "struct",
+      "file": "server/server-manager/USMXcode/USMPackage/Sources/USMFeature/ContentView.swift",
+      "line": 3,
+      "end_line": 9,
+      "code_preview": "public struct ContentView: View {\n    public var body: some View {\n        Text(\"Hello, World!\")\n    }\n    ",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/server-manager/USMXcode/USMPackage/Package.swift",
+      "language": "swift",
+      "lines": 30,
+      "size_bytes": 882,
+      "symbols": [],
+      "imports": [
+        "PackageDescription"
+      ],
+      "exports": [],
+      "module_doc": "swift-tools-version: 6.0\nThe swift-tools-version declares the minimum version of Swift required to build this package."
+    },
+    {
+      "path": "server/server-manager/USMXcode/USMPackage/Tests/USMFeatureTests/USMFeatureTests.swift",
+      "language": "swift",
+      "lines": 7,
+      "size_bytes": 173,
+      "symbols": [
+        "server/server-manager/USMXcode/USMPackage/Tests/USMFeatureTests/USMFeatureTests.swift:example:4"
+      ],
+      "imports": [
+        "Testing",
+        "USMFeature"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/server-manager/USMXcode/USMPackage/Sources/USMFeature/ContentView.swift",
+      "language": "swift",
+      "lines": 10,
+      "size_bytes": 147,
+      "symbols": [
+        "server/server-manager/USMXcode/USMPackage/Sources/USMFeature/ContentView.swift:ContentView:3"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

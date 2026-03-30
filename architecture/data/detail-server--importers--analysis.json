@@ -1,0 +1,52 @@
+{
+  "symbols": [
+    {
+      "id": "server/importers/analysis/curriculum_analyzer.py:CurriculumAnalyzer:47",
+      "name": "CurriculumAnalyzer",
+      "kind": "class",
+      "file": "server/importers/analysis/curriculum_analyzer.py",
+      "line": 47,
+      "end_line": 621,
+      "code_preview": "class CurriculumAnalyzer:\n    \"\"\"\n    Analyzes UMCF curricula for quality issues.\n\n    This analyzer walks the entire curriculum tree and checks for various\n    ...",
+      "visibility": "public",
+      "docstring": "Analyzes UMCF curricula for quality issues.\n\n    This analyzer walks the entire curriculum tree and checks for various\n    quality issues that can be automatically fixed through reprocessing.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/importers/analysis/__init__.py",
+      "language": "python",
+      "lines": 8,
+      "size_bytes": 152,
+      "symbols": [],
+      "imports": [
+        "CurriculumAnalyzer"
+      ],
+      "exports": [],
+      "module_doc": "Curriculum analysis module for detecting quality issues."
+    },
+    {
+      "path": "server/importers/analysis/curriculum_analyzer.py",
+      "language": "python",
+      "lines": 622,
+      "size_bytes": 25222,
+      "symbols": [
+        "server/importers/analysis/curriculum_analyzer.py:CurriculumAnalyzer:47"
+      ],
+      "imports": [
+        "aiohttp",
+        "time",
+        "datetime",
+        "asyncio",
+        "logging",
+        "typing",
+        "AnalysisIssue"
+      ],
+      "exports": [],
+      "module_doc": "Curriculum Analyzer - Detects quality issues in UMCF curricula.\nThis module provides comprehensive analysis of curriculum content to identify:\n- Broken or placeholder images\n- Improperly chunked segments (too long or too short)\n- Missing learning objectives\n- Missing comprehension checkpoints\n- Missing alternative explanations\n- Incomplete metadata"
+    }
+  ]
+}

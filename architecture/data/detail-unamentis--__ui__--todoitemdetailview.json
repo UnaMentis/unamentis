@@ -1,0 +1,64 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/TodoList/TodoItemDetailView.swift:TodoItemDetailView:9",
+      "name": "TodoItemDetailView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/TodoList/TodoItemDetailView.swift",
+      "line": 9,
+      "end_line": 202,
+      "code_preview": "struct TodoItemDetailView: View {\n    let item: TodoItem\n    @ObservedObject var viewModel: TodoListViewModel\n    @Environment(\\.dismiss) private var dismiss\n\n    ...",
+      "visibility": "internal",
+      "docstring": "Detail view for viewing and editing a to-do item",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/TodoList/TodoItemDetailView.swift:saveChanges:187",
+      "name": "saveChanges",
+      "kind": "function",
+      "file": "UnaMentis/UI/TodoList/TodoItemDetailView.swift",
+      "line": 187,
+      "end_line": 201,
+      "code_preview": "    private func saveChanges() {\n        guard hasChanges else { return }\n\n        let context = item.managedObjectContext\n        item.title = editedTitle.trimmingCharacters(in: .whitespacesAndNewlines)\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/TodoList/TodoItemDetailView.swift:formatDate:176",
+      "name": "formatDate",
+      "kind": "function",
+      "file": "UnaMentis/UI/TodoList/TodoItemDetailView.swift",
+      "line": 176,
+      "end_line": 183,
+      "code_preview": "    private func formatDate(_ date: Date?) -> String {\n        guard let date = date else { return \"Unknown\" }\n\n        let formatter = DateFormatter()\n        formatter.dateStyle = .medium\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/TodoList/TodoItemDetailView.swift",
+      "language": "swift",
+      "lines": 209,
+      "size_bytes": 7281,
+      "symbols": [
+        "UnaMentis/UI/TodoList/TodoItemDetailView.swift:TodoItemDetailView:9",
+        "UnaMentis/UI/TodoList/TodoItemDetailView.swift:formatDate:176",
+        "UnaMentis/UI/TodoList/TodoItemDetailView.swift:saveChanges:187"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Todo Item Detail View\nDetail view for viewing and editing a to-do item\nPart of Todo System"
+    }
+  ]
+}

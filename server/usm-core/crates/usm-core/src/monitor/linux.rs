@@ -76,7 +76,7 @@ impl ProcessMonitor for LinuxMonitor {
 
         Some(ProcessInfo {
             pid,
-            name: process.name().to_string(),
+            name: process.name().to_string_lossy().to_string(),
             cpu_percent: process.cpu_usage() as f64,
             memory_bytes: process.memory(),
             threads: 0, // sysinfo doesn't expose thread count directly
@@ -94,12 +94,13 @@ impl ProcessMonitor for LinuxMonitor {
             .filter(|(_, process)| {
                 process
                     .name()
+                    .to_string_lossy()
                     .to_lowercase()
                     .contains(&pattern.to_lowercase())
             })
             .map(|(pid, process)| ProcessInfo {
                 pid: pid.as_u32(),
-                name: process.name().to_string(),
+                name: process.name().to_string_lossy().to_string(),
                 cpu_percent: process.cpu_usage() as f64,
                 memory_bytes: process.memory(),
                 threads: 0,
@@ -129,7 +130,7 @@ impl ProcessMonitor for LinuxMonitor {
         let system = self.system.lock().unwrap();
 
         SystemMetrics {
-            cpu_percent: system.global_cpu_info().cpu_usage() as f64,
+            cpu_percent: system.global_cpu_usage() as f64,
             memory_total_bytes: system.total_memory(),
             memory_used_bytes: system.used_memory(),
             memory_percent: (system.used_memory() as f64 / system.total_memory() as f64) * 100.0,

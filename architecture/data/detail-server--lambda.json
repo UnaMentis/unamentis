@@ -1,0 +1,35 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/lambda/README.md",
+      "language": "markdown",
+      "lines": 213,
+      "size_bytes": 4795,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/lambda/samconfig.toml",
+      "language": "toml",
+      "lines": 63,
+      "size_bytes": 1464,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/lambda/template.yaml",
+      "language": "yaml",
+      "lines": 397,
+      "size_bytes": 11313,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

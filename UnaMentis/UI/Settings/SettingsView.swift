@@ -660,7 +660,7 @@ class SettingsViewModel: ObservableObject {
             }
             return ["qwen2.5:32b", "qwen2.5:7b", "llama3.2:3b", "mistral:7b"]
         case .localMLX:
-            return ["ministral-3b (on-device)"]
+            return OnDeviceLLMModel.allCases.map { "\($0.config.displayName) (on-device)" }
         }
     }
 

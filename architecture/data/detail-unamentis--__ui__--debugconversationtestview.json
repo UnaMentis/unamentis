@@ -1,0 +1,49 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/Debug/DebugConversationTestView.swift:ConversationBubble:302",
+      "name": "ConversationBubble",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Debug/DebugConversationTestView.swift",
+      "line": 302,
+      "end_line": 378,
+      "code_preview": "struct ConversationBubble: View {\n    let entry: ConversationEntry\n\n    var body: some View {\n        HStack(alignment: .top, spacing: 8) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Debug/DebugConversationTestView.swift:DebugConversationTestView:10",
+      "name": "DebugConversationTestView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Debug/DebugConversationTestView.swift",
+      "line": 10,
+      "end_line": 298,
+      "code_preview": "struct DebugConversationTestView: View {\n    @EnvironmentObject var appState: AppState\n    @StateObject private var viewModel = DebugConversationViewModel()\n    @State private var selectedScenario: ConversationTestScenario?\n    @FocusState private var isInputFocused: Bool\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/Debug/DebugConversationTestView.swift",
+      "language": "swift",
+      "lines": 390,
+      "size_bytes": 12497,
+      "symbols": [
+        "UnaMentis/UI/Debug/DebugConversationTestView.swift:DebugConversationTestView:10",
+        "UnaMentis/UI/Debug/DebugConversationTestView.swift:ConversationBubble:302"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Debug Conversation Test View\nUI for testing AI conversations without voice input\nDEBUG only - not included in release builds"
+    }
+  ]
+}

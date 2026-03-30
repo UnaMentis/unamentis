@@ -1,0 +1,125 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/architecture/ARCHITECTURE_FOR_COMMUNICATIONS.md",
+      "language": "markdown",
+      "lines": 649,
+      "size_bytes": 35827,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/architecture/CLOUD_DEPLOYMENT_EXECUTION_PLAN.md",
+      "language": "markdown",
+      "lines": 447,
+      "size_bytes": 14501,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/architecture/CLOUD_HOSTING_ARCHITECTURE.md",
+      "language": "markdown",
+      "lines": 963,
+      "size_bytes": 46476,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/architecture/DEVICE_CAPABILITY_TIERS.md",
+      "language": "markdown",
+      "lines": 475,
+      "size_bytes": 20772,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/architecture/FALLBACK_ARCHITECTURE.md",
+      "language": "markdown",
+      "lines": 233,
+      "size_bytes": 12157,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/architecture/FOV_CONTEXT_MANAGEMENT.md",
+      "language": "markdown",
+      "lines": 402,
+      "size_bytes": 14094,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/architecture/OPENTELEMETRY_SPEC.md",
+      "language": "markdown",
+      "lines": 480,
+      "size_bytes": 19318,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/architecture/PATCH_PANEL_ARCHITECTURE.md",
+      "language": "markdown",
+      "lines": 1158,
+      "size_bytes": 42120,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/architecture/PROJECT_OVERVIEW.md",
+      "language": "markdown",
+      "lines": 1409,
+      "size_bytes": 65467,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/architecture/QUALITY_INFRASTRUCTURE_RESEARCH.md",
+      "language": "markdown",
+      "lines": 616,
+      "size_bytes": 22498,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/architecture/SERVER_INFRASTRUCTURE.md",
+      "language": "markdown",
+      "lines": 524,
+      "size_bytes": 20314,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/architecture/UnaMentis_TDD.md",
+      "language": "markdown",
+      "lines": 4345,
+      "size_bytes": 161286,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

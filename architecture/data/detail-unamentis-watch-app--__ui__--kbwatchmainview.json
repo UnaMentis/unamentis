@@ -1,0 +1,94 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift:loadStats:126",
+      "name": "loadStats",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift",
+      "line": 126,
+      "end_line": 139,
+      "code_preview": "    func loadStats() {\n        // Load available domains (prioritize user's weak areas)\n        availableDomains = [\n            .science,\n            .mathematics,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift:KBWatchMainView:15",
+      "name": "KBWatchMainView",
+      "kind": "struct",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift",
+      "line": 15,
+      "end_line": 101,
+      "code_preview": "struct KBWatchMainView: View {\n    @State private var viewModel = KBWatchMainViewModel()\n\n    var body: some View {\n        NavigationStack {\n    ...",
+      "visibility": "internal",
+      "docstring": "Main entry point for Knowledge Bowl practice on watchOS",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift:loadTodayStats:141",
+      "name": "loadTodayStats",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift",
+      "line": 141,
+      "end_line": 149,
+      "code_preview": "    private func loadTodayStats() {\n        let defaults = UserDefaults.standard\n        let todayKey = todayDateKey()\n\n        todayQuestions = defaults.integer(forKey: \"kb_watch_\\(todayKey)_questions\")\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift:todayDateKey:151",
+      "name": "todayDateKey",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift",
+      "line": 151,
+      "end_line": 155,
+      "code_preview": "    private func todayDateKey() -> String {\n        let formatter = DateFormatter()\n        formatter.dateFormat = \"yyyy-MM-dd\"\n        return formatter.string(from: Date())\n    }",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift:KBWatchMainViewModel:105",
+      "name": "KBWatchMainViewModel",
+      "kind": "class",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift",
+      "line": 105,
+      "end_line": 156,
+      "code_preview": "@MainActor\n@Observable\nfinal class KBWatchMainViewModel {\n    private(set) var availableDomains: [KBDomain] = []\n    private(set) var todayQuestions: Int = 0\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift",
+      "language": "swift",
+      "lines": 163,
+      "size_bytes": 5052,
+      "symbols": [
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift:KBWatchMainView:15",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift:KBWatchMainViewModel:105",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift:loadStats:126",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift:loadTodayStats:141",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchMainView.swift:todayDateKey:151"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis Watch App\nKnowledge Bowl training entry point for watchOS.\nProvides quick practice, domain drills, and flash card modes\noptimized for the watch form factor."
+    }
+  ]
+}

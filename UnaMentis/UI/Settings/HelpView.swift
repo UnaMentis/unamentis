@@ -54,6 +54,20 @@ public struct HelpView: View {
                 }
             }
 
+            // Reading List Section
+            Section("Reading List") {
+                NavigationLink {
+                    ReadingListHelpView()
+                } label: {
+                    HelpRow(
+                        icon: "book.pages.fill",
+                        iconColor: .indigo,
+                        title: "Reading List",
+                        subtitle: "Import and listen to documents"
+                    )
+                }
+            }
+
             // Knowledge Bowl Section
             Section("Knowledge Bowl") {
                 NavigationLink {
@@ -279,6 +293,74 @@ struct HandsFreeHelpView: View {
             }
         }
         .navigationTitle("Hands-Free Learning")
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+// MARK: - Reading List Help
+
+struct ReadingListHelpView: View {
+    var body: some View {
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(HelpContent.ReadingList.overview)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 8)
+            }
+
+            Section("Importing Content") {
+                HelpStepRow(number: 1, text: "Tap the + button in the Reading List tab")
+                HelpStepRow(number: 2, text: "Choose \"Import File\" for PDFs, text, or markdown")
+                HelpStepRow(number: 3, text: "Or choose \"Import URL\" to paste a web article link")
+                HelpStepRow(number: 4, text: "The document is processed into audio segments automatically")
+
+                Text(HelpContent.ReadingList.formats)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
+            }
+
+            Section("Listening to Documents") {
+                HelpStepRow(number: 1, text: "Tap the headphones icon on any item to start playback")
+                HelpStepRow(number: 2, text: "Text appears on screen as each segment plays")
+                HelpStepRow(number: 3, text: "Use skip controls to jump between segments")
+                HelpStepRow(number: 4, text: "Tap the menu button to add bookmarks")
+
+                Text(HelpContent.ReadingList.bookmarks)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
+            }
+
+            Section("PDF Images") {
+                Label("Images are extracted from PDFs automatically", systemImage: "photo.fill")
+                    .foregroundStyle(.indigo, .primary)
+                Label("Images appear alongside text during playback", systemImage: "text.below.photo.fill")
+                    .foregroundStyle(.blue, .primary)
+                Label("Tap any image to view it fullscreen", systemImage: "arrow.up.left.and.arrow.down.right")
+                    .foregroundStyle(.green, .primary)
+
+                Text("Images are mapped to the closest text segment so they appear at the right time during listening.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
+            }
+
+            Section("Managing Items") {
+                Label("Swipe right to mark complete", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green, .primary)
+                Label("Swipe left to archive or delete", systemImage: "archivebox.fill")
+                    .foregroundStyle(.gray, .primary)
+                Label("Tap an item to read it as text", systemImage: "doc.text")
+                    .foregroundStyle(.blue, .primary)
+                Label("Pull down to refresh your list", systemImage: "arrow.clockwise")
+                    .foregroundStyle(.blue, .primary)
+            }
+        }
+        .navigationTitle("Reading List")
         .navigationBarTitleDisplayMode(.large)
     }
 }

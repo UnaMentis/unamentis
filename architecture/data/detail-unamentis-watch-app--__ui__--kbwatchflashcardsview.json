@@ -1,0 +1,139 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:KBWatchFlashCardsView:22",
+      "name": "KBWatchFlashCardsView",
+      "kind": "struct",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift",
+      "line": 22,
+      "end_line": 195,
+      "code_preview": "struct KBWatchFlashCardsView: View {\n    let mode: KBFlashCardMode\n    @StateObject private var viewModel: KBWatchFlashCardsViewModel\n    @Environment(\\.dismiss) private var dismiss\n\n    ...",
+      "visibility": "internal",
+      "docstring": "Flash card style review on watchOS",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:markAndNext:242",
+      "name": "markAndNext",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift",
+      "line": 242,
+      "end_line": 258,
+      "code_preview": "    func markAndNext(correct: Bool) {\n        if correct {\n            masteredCount += 1\n        } else {\n            needsReviewCount += 1\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:start:220",
+      "name": "start",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift",
+      "line": 220,
+      "end_line": 236,
+      "code_preview": "    func start() {\n        switch mode {\n        case .missedQuestions:\n            loadMissedQuestions()\n        case .random:\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:KBWatchFlashCardsViewModel:199",
+      "name": "KBWatchFlashCardsViewModel",
+      "kind": "class",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift",
+      "line": 199,
+      "end_line": 269,
+      "code_preview": "@MainActor\n@Observable\nfinal class KBWatchFlashCardsViewModel: ObservableObject {\n    let mode: KBFlashCardMode\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:flipCard:238",
+      "name": "flipCard",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift",
+      "line": 238,
+      "end_line": 240,
+      "code_preview": "    func flipCard() {\n        isFlipped.toggle()\n    }\n\n    func markAndNext(correct: Bool) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:loadRandomQuestions:266",
+      "name": "loadRandomQuestions",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift",
+      "line": 266,
+      "end_line": 268,
+      "code_preview": "    private func loadRandomQuestions() {\n        cards = KBWatchQuestion.sampleQuestions.shuffled()\n    }\n}\n",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:KBFlashCardMode:14",
+      "name": "KBFlashCardMode",
+      "kind": "enum",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift",
+      "line": 14,
+      "end_line": 17,
+      "code_preview": "enum KBFlashCardMode: Sendable {\n    case missedQuestions  // Review questions user got wrong\n    case random           // Random selection across all domains\n}\n",
+      "visibility": "internal",
+      "docstring": "Mode for flash card practice",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:loadMissedQuestions:260",
+      "name": "loadMissedQuestions",
+      "kind": "function",
+      "file": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift",
+      "line": 260,
+      "end_line": 264,
+      "code_preview": "    private func loadMissedQuestions() {\n        // In production, load from missed questions database\n        // For now, return a subset as \"missed\"\n        cards = Array(KBWatchQuestion.sampleQuestions.shuffled().prefix(8))\n    }",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift",
+      "language": "swift",
+      "lines": 278,
+      "size_bytes": 7804,
+      "symbols": [
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:KBFlashCardMode:14",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:KBWatchFlashCardsView:22",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:KBWatchFlashCardsViewModel:199",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:start:220",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:flipCard:238",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:markAndNext:242",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:loadMissedQuestions:260",
+        "UnaMentis Watch App/Views/KnowledgeBowl/KBWatchFlashCardsView.swift:loadRandomQuestions:266"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis Watch App\nFlash card review mode for Knowledge Bowl on watchOS.\nSupports reviewing missed questions and random practice."
+    }
+  ]
+}

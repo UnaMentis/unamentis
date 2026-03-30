@@ -1,0 +1,115 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "curriculum/spec/CAMBRIDGE_ENGLISH_EXTENSIONS.md",
+      "language": "markdown",
+      "lines": 608,
+      "size_bytes": 16029,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/spec/DELF_DALF_EXTENSIONS.md",
+      "language": "markdown",
+      "lines": 618,
+      "size_bytes": 15125,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/spec/GEOGRAPHY_BEE_EU_EXTENSIONS.md",
+      "language": "markdown",
+      "lines": 656,
+      "size_bytes": 18294,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/spec/GOETHE_TESTDAF_EXTENSIONS.md",
+      "language": "markdown",
+      "lines": 705,
+      "size_bytes": 16408,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/spec/HISTORY_BEE_EU_EXTENSIONS.md",
+      "language": "markdown",
+      "lines": 593,
+      "size_bytes": 16838,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/spec/KNOWLEDGE_BOWL_EXTENSIONS.md",
+      "language": "markdown",
+      "lines": 584,
+      "size_bytes": 14560,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/spec/SAT_EXTENSIONS.md",
+      "language": "markdown",
+      "lines": 717,
+      "size_bytes": 17895,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/spec/STANDARDS_TRACEABILITY.md",
+      "language": "markdown",
+      "lines": 407,
+      "size_bytes": 19571,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/spec/UMCF_FILE_FORMAT.md",
+      "language": "markdown",
+      "lines": 208,
+      "size_bytes": 5552,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/spec/UMCF_SPECIFICATION.md",
+      "language": "markdown",
+      "lines": 1148,
+      "size_bytes": 33422,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/spec/umcf-schema.json",
+      "language": "json",
+      "lines": 2450,
+      "size_bytes": 80074,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

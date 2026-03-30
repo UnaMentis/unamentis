@@ -1,0 +1,4400 @@
+{
+  "symbols": [
+    {
+      "id": "server/web/src/app/api/servers/route.ts:GET:6",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/servers/route.ts",
+      "line": 6,
+      "end_line": 32,
+      "code_preview": "export async function GET() {\n  // Try to fetch from backend first\n  if (BACKEND_URL) {\n    try {\n      const response = await fetch(`${BACKEND_URL}/api/servers`, {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/turns/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/turns/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\ntype Params = Promise<{ sessionId: string }>;\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/extract/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/extract/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/tts/pregen/extract\n * Extract content from a source for preview before job creation\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/route.ts:POST:45",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/route.ts",
+      "line": 45,
+      "end_line": 87,
+      "code_preview": "export async function POST(request: Request) {\n  try {\n    const contentType = request.headers.get('content-type') || '';\n\n    let response: Response;\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/curricula\nImport a new curriculum from file",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/plugins\n * Get all discovered plugins with their status\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/barge-in/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/barge-in/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\ntype Params = Promise<{ sessionId: string }>;\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts",
+      "line": 13,
+      "end_line": 39,
+      "code_preview": "export async function GET(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId, topicId, assetId } = await context.params;\n    const response = await fetch(\n      `${BACKEND_URL}/api/curricula/${curriculumId}/topics/${topicId}/assets/${assetId}`,\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]\nGet a specific visual asset",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/models/page.tsx:onDeviceTTS:266",
+      "name": "onDeviceTTS",
+      "kind": "function",
+      "file": "server/web/src/app/management/models/page.tsx",
+      "line": 266,
+      "end_line": 357,
+      "code_preview": "const onDeviceTTS: ModelInfo[] = [\n  {\n    name: 'Kyutai Pocket TTS',\n    version: '100M',\n    releaseDate: 'Jan 13, 2026',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/enable/route.ts:RouteContext:5",
+      "name": "RouteContext",
+      "kind": "interface",
+      "file": "server/web/src/app/api/plugins/[pluginId]/enable/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteContext {\n  params: Promise<{ pluginId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/logs/route.ts:DELETE:94",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/logs/route.ts",
+      "line": 94,
+      "end_line": 103,
+      "code_preview": "export async function DELETE() {\n  if (BACKEND_URL) {\n    try {\n      await fetch(`${BACKEND_URL}/api/logs`, { method: 'DELETE' });\n    } catch {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/reprocess/jobs/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/reprocess/jobs/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/reprocess/jobs\n * List all reprocessing jobs\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/analyze-response/route.ts:POST:11",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/analyze-response/route.ts",
+      "line": 11,
+      "end_line": 32,
+      "code_preview": "export async function POST(request: NextRequest, { params }: { params: Params }) {\n  const { sessionId } = await params;\n\n  if (!BACKEND_URL) {\n    return NextResponse.json({ error: 'Backend not configured' }, { status: 503 });\n    ...",
+      "visibility": "public",
+      "docstring": "Analyze an LLM response for confidence\nPOST /api/sessions/{sessionId}/analyze-response",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/kb/packs\n * List all question packs with optional filtering\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFDocument:60",
+      "name": "UMCFDocument",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 60,
+      "end_line": 72,
+      "code_preview": "interface UMCFDocument {\n  umcf: string;\n  id: UMCFId;\n  title: string;\n  description?: string;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/topic/route.ts:PUT:11",
+      "name": "PUT",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/topic/route.ts",
+      "line": 11,
+      "end_line": 32,
+      "code_preview": "export async function PUT(request: NextRequest, { params }: { params: Params }) {\n  const { sessionId } = await params;\n\n  if (!BACKEND_URL) {\n    return NextResponse.json({ error: 'Backend not configured' }, { status: 503 });\n    ...",
+      "visibility": "public",
+      "docstring": "Set the current topic\nPUT /api/sessions/{sessionId}/topic",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/[packId]/route.ts:RouteParams:5",
+      "name": "RouteParams",
+      "kind": "interface",
+      "file": "server/web/src/app/api/kb/packs/[packId]/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteParams {\n  params: Promise<{ packId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts:PATCH:45",
+      "name": "PATCH",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts",
+      "line": 45,
+      "end_line": 75,
+      "code_preview": "export async function PATCH(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId, topicId, assetId } = await context.params;\n    const body = await request.json();\n\n    ...",
+      "visibility": "public",
+      "docstring": "PATCH /api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]\nUpdate asset metadata",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/turns/route.ts:Params:5",
+      "name": "Params",
+      "kind": "type",
+      "file": "server/web/src/app/api/sessions/[sessionId]/turns/route.ts",
+      "line": 5,
+      "end_line": 5,
+      "code_preview": "type Params = Promise<{ sessionId: string }>;\n\n/**\n * Add a conversation turn\n * POST /api/sessions/{sessionId}/turns\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/jobs/[jobId]/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/jobs/[jobId]/route.ts",
+      "line": 13,
+      "end_line": 40,
+      "code_preview": "export async function GET(request: NextRequest, { params }: RouteParams) {\n  const { jobId } = await params;\n\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/import/jobs/${jobId}`, {\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/import/jobs/[jobId]\nGet progress for an import job",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/questions/[questionId]/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/questions/[questionId]/route.ts",
+      "line": 13,
+      "end_line": 40,
+      "code_preview": "export async function GET(request: Request, { params }: RouteParams) {\n  try {\n    const { questionId } = await params;\n    const response = await fetch(`${BACKEND_URL}/api/kb/questions/${questionId}`, {\n      headers: {\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/kb/questions/[questionId]\nGet a question by ID",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/sources/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/sources/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/import/sources\n * Get list of all registered curriculum sources\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/enable/route.ts:POST:13",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/[pluginId]/enable/route.ts",
+      "line": 13,
+      "end_line": 35,
+      "code_preview": "export async function POST(request: Request, context: RouteContext) {\n  try {\n    const { pluginId } = await context.params;\n\n    const response = await fetch(`${BACKEND_URL}/api/plugins/${pluginId}/enable`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/plugins/[pluginId]/enable\nEnable a plugin",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFContent:53",
+      "name": "UMCFContent",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 53,
+      "end_line": 58,
+      "code_preview": "interface UMCFContent {\n  id: UMCFId;\n  title: string;\n  type: string;\n  children?: UMCFTopic[];\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/admin/users/[userId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/admin/users/[userId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\nexport async function DELETE(\n  request: NextRequest,\n  { params }: { params: Promise<{ userId: string }> }",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/route.ts:GET:9",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/route.ts",
+      "line": 9,
+      "end_line": 39,
+      "code_preview": "export async function GET(request: Request) {\n  try {\n    const { searchParams } = new URL(request.url);\n    const queryString = searchParams.toString();\n    const url = `${BACKEND_URL}/api/curricula${queryString ? `?${queryString}` : ''}`;\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/curricula\nList all curricula with optional filtering",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\ntype Params = Promise<{ sessionId: string }>;\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/metrics/route.ts:POST:56",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/metrics/route.ts",
+      "line": 56,
+      "end_line": 77,
+      "code_preview": "export async function POST(request: NextRequest) {\n  if (BACKEND_URL) {\n    try {\n      const body = await request.json();\n      const response = await fetch(`${BACKEND_URL}/api/metrics`, {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/route.ts:DELETE:78",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/route.ts",
+      "line": 78,
+      "end_line": 108,
+      "code_preview": "export async function DELETE(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId } = await context.params;\n    const { searchParams } = new URL(request.url);\n    const confirm = searchParams.get('confirm');\n    ...",
+      "visibility": "public",
+      "docstring": "DELETE /api/curricula/[curriculumId]\nDelete curriculum",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/modules/[moduleId]/route.ts:RouteParams:5",
+      "name": "RouteParams",
+      "kind": "interface",
+      "file": "server/web/src/app/api/modules/[moduleId]/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteParams {\n  params: Promise<{ moduleId: string }>;\n}\n\nexport async function GET(request: NextRequest, { params }: RouteParams) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:transformUMCFToCurriculumDetail:77",
+      "name": "transformUMCFToCurriculumDetail",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 77,
+      "end_line": 128,
+      "code_preview": "function transformUMCFToCurriculumDetail(umcf: UMCFDocument): CurriculumDetail {\n  // Extract topics from content structure\n  // UMCF has content -> [curriculum node] -> children -> [topics]\n  const contentNode = umcf.content?.[0];\n  const rawTopics = contentNode?.children || [];\n    ...",
+      "visibility": "internal",
+      "docstring": "Transform UMCF document format to CurriculumDetail format expected by frontend",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFMetadata:32",
+      "name": "UMCFMetadata",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 32,
+      "end_line": 34,
+      "code_preview": "interface UMCFMetadata {\n  keywords?: string[];\n}\n\ninterface UMCFTopic {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/modules/[moduleId]/settings/route.ts:RouteParams:5",
+      "name": "RouteParams",
+      "kind": "interface",
+      "file": "server/web/src/app/api/modules/[moduleId]/settings/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteParams {\n  params: Promise<{ moduleId: string }>;\n}\n\nexport async function PATCH(request: NextRequest, { params }: RouteParams) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/[pluginId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteContext {\n  params: Promise<{ pluginId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts:POST:13",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts",
+      "line": 13,
+      "end_line": 37,
+      "code_preview": "export async function POST(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId } = await context.params;\n    const response = await fetch(`${BACKEND_URL}/api/curricula/${curriculumId}/archive`, {\n      method: 'POST',\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/curricula/[curriculumId]/archive\nArchive a curriculum",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/admin/users/route.ts:GET:5",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/admin/users/route.ts",
+      "line": 5,
+      "end_line": 37,
+      "code_preview": "export async function GET() {\n  if (BACKEND_URL) {\n    try {\n      const response = await fetch(`${BACKEND_URL}/api/admin/users`, {\n        next: { revalidate: 10 },\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/route.ts:GET:9",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/route.ts",
+      "line": 9,
+      "end_line": 39,
+      "code_preview": "export async function GET(\n  request: NextRequest,\n  { params }: { params: Promise<{ jobId: string }> }\n) {\n  const { jobId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/tts/pregen/jobs/[jobId]\nGet details for a specific TTS batch job",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/sources/[sourceId]/courses/[courseId]/route.ts:RouteParams:5",
+      "name": "RouteParams",
+      "kind": "interface",
+      "file": "server/web/src/app/api/import/sources/[sourceId]/courses/[courseId]/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteParams {\n  params: Promise<{ sourceId: string; courseId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/questions/route.ts:GET:9",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/questions/route.ts",
+      "line": 9,
+      "end_line": 39,
+      "code_preview": "export async function GET(request: Request) {\n  try {\n    const { searchParams } = new URL(request.url);\n    const queryString = searchParams.toString();\n    const url = `${BACKEND_URL}/api/kb/questions${queryString ? `?${queryString}` : ''}`;\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/kb/questions\nList questions with optional filtering",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/fov/health/route.ts:GET:9",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/fov/health/route.ts",
+      "line": 9,
+      "end_line": 47,
+      "code_preview": "export async function GET() {\n  if (!BACKEND_URL) {\n    return NextResponse.json({\n      status: 'unavailable',\n      error: 'Backend not configured',\n    ...",
+      "visibility": "public",
+      "docstring": "Get FOV context system health status\nGET /api/fov/health",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/models/page.tsx:serverTTS:178",
+      "name": "serverTTS",
+      "kind": "function",
+      "file": "server/web/src/app/management/models/page.tsx",
+      "line": 178,
+      "end_line": 264,
+      "code_preview": "const serverTTS: ModelInfo[] = [\n  {\n    name: 'Fish Speech V1.5',\n    version: 'V1.5',\n    releaseDate: 'Late 2025',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/metrics/route.ts:GET:6",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/metrics/route.ts",
+      "line": 6,
+      "end_line": 54,
+      "code_preview": "export async function GET(request: NextRequest) {\n  const searchParams = request.nextUrl.searchParams;\n  const limit = parseInt(searchParams.get('limit') || '100');\n  const clientId = searchParams.get('client_id') || '';\n\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/test/route.ts:RouteContext:5",
+      "name": "RouteContext",
+      "kind": "interface",
+      "file": "server/web/src/app/api/plugins/[pluginId]/test/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteContext {\n  params: Promise<{ pluginId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/route.ts:POST:45",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/route.ts",
+      "line": 45,
+      "end_line": 71,
+      "code_preview": "export async function POST(request: Request) {\n  try {\n    const body = await request.json();\n\n    const response = await fetch(`${BACKEND_URL}/api/kb/packs`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/kb/packs\nCreate a new question pack",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/disable/route.ts:RouteContext:5",
+      "name": "RouteContext",
+      "kind": "interface",
+      "file": "server/web/src/app/api/plugins/[pluginId]/disable/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteContext {\n  params: Promise<{ pluginId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/sync-to-database/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/sync-to-database/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\nexport async function POST() {\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/kb/sync-to-database`, {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/route.ts:RouteContext:5",
+      "name": "RouteContext",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteContext {\n  params: Promise<{ curriculumId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/sources/route.ts:GET:9",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/sources/route.ts",
+      "line": 9,
+      "end_line": 32,
+      "code_preview": "export async function GET() {\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/import/sources`, {\n      next: { revalidate: 60 }, // Cache for 1 minute\n    });\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/import/sources\nGet list of all registered curriculum sources",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/start/route.ts:POST:11",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/start/route.ts",
+      "line": 11,
+      "end_line": 29,
+      "code_preview": "export async function POST(_request: NextRequest, { params }: { params: Params }) {\n  const { sessionId } = await params;\n\n  if (!BACKEND_URL) {\n    return NextResponse.json({ error: 'Backend not configured' }, { status: 503 });\n    ...",
+      "visibility": "public",
+      "docstring": "Start a session\nPOST /api/sessions/{sessionId}/start",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/schema/route.ts:RouteContext:5",
+      "name": "RouteContext",
+      "kind": "interface",
+      "file": "server/web/src/app/api/plugins/[pluginId]/schema/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteContext {\n  params: Promise<{ pluginId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/start/route.ts:POST:9",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/start/route.ts",
+      "line": 9,
+      "end_line": 39,
+      "code_preview": "export async function POST(\n  request: NextRequest,\n  { params }: { params: Promise<{ jobId: string }> }\n) {\n  const { jobId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/tts/pregen/jobs/[jobId]/start\nStart a pending TTS batch job",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteContext {\n  params: Promise<{ curriculumId: string; topicId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/tts-lab/page.tsx:defaultConfig:115",
+      "name": "defaultConfig",
+      "kind": "function",
+      "file": "server/web/src/app/management/tts-lab/page.tsx",
+      "line": 115,
+      "end_line": 125,
+      "code_preview": "const defaultConfig: TTSConfig = {\n  model: 'kyutai-tts-1.6b',\n  voice: 'sarah',\n  cfgCoef: 2.0,\n  nQ: 24,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/metrics/route.ts:BACKEND_URL:4",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/metrics/route.ts",
+      "line": 4,
+      "end_line": 4,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\nexport async function GET(request: NextRequest) {\n  const searchParams = request.nextUrl.searchParams;\n  const limit = parseInt(searchParams.get('limit') || '100');\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/bundle/route.ts:POST:9",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/bundle/route.ts",
+      "line": 9,
+      "end_line": 35,
+      "code_preview": "export async function POST(request: Request) {\n  try {\n    const body = await request.json();\n\n    const response = await fetch(`${BACKEND_URL}/api/kb/packs/bundle`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/kb/packs/bundle\nCreate a bundle pack from multiple existing packs",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/models/page.tsx:ModelCard:380",
+      "name": "ModelCard",
+      "kind": "component",
+      "file": "server/web/src/app/management/models/page.tsx",
+      "line": 380,
+      "end_line": 458,
+      "code_preview": "function ModelCard({ model }: { model: ModelInfo }) {\n  return (\n    <Card className={model.status === 'recommended' ? 'border-green-500 border-2' : ''}>\n      <CardHeader>\n        <div className=\"flex items-start justify-between\">\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/tts/pregen/jobs\n * List all TTS batch jobs\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/questions/[questionId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/questions/[questionId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteParams {\n  params: Promise<{ questionId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/barge-in/route.ts:Params:5",
+      "name": "Params",
+      "kind": "type",
+      "file": "server/web/src/app/api/sessions/[sessionId]/barge-in/route.ts",
+      "line": 5,
+      "end_line": 5,
+      "code_preview": "type Params = Promise<{ sessionId: string }>;\n\n/**\n * Handle a barge-in/interruption event\n * POST /api/sessions/{sessionId}/barge-in\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/admin/users/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/admin/users/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\nexport async function GET() {\n  if (BACKEND_URL) {\n    try {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/providers.tsx:Providers:25",
+      "name": "Providers",
+      "kind": "component",
+      "file": "server/web/src/app/providers.tsx",
+      "line": 25,
+      "end_line": 42,
+      "code_preview": "export function Providers({ children }: ProvidersProps) {\n  // Initialize test hooks for automated testing via Playwright\n  useEffect(() => {\n    // Use management server URL (defaults to localhost:8766)\n    const serverUrl = process.env.NEXT_PUBLIC_MANAGEMENT_SERVER_URL || 'http://localhost:8766';\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/route.ts:DELETE:42",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/route.ts",
+      "line": 42,
+      "end_line": 60,
+      "code_preview": "export async function DELETE(_request: NextRequest, { params }: { params: Params }) {\n  const { sessionId } = await params;\n\n  if (!BACKEND_URL) {\n    return NextResponse.json({ error: 'Backend not configured' }, { status: 503 });\n    ...",
+      "visibility": "public",
+      "docstring": "Delete session\nDELETE /api/sessions/{sessionId}",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/route.ts",
+      "line": 13,
+      "end_line": 36,
+      "code_preview": "export async function GET(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId } = await context.params;\n    const response = await fetch(`${BACKEND_URL}/api/curricula/${curriculumId}`, {\n      headers: {\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/curricula/[curriculumId]\nGet curriculum summary by ID",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/sources/[sourceId]/courses/route.ts:RouteParams:5",
+      "name": "RouteParams",
+      "kind": "interface",
+      "file": "server/web/src/app/api/import/sources/[sourceId]/courses/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteParams {\n  params: Promise<{ sourceId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/transcript/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/transcript/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteContext {\n  params: Promise<{ curriculumId: string; topicId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/analyze-response/route.ts:Params:5",
+      "name": "Params",
+      "kind": "type",
+      "file": "server/web/src/app/api/sessions/[sessionId]/analyze-response/route.ts",
+      "line": 5,
+      "end_line": 5,
+      "code_preview": "type Params = Promise<{ sessionId: string }>;\n\n/**\n * Analyze an LLM response for confidence\n * POST /api/sessions/{sessionId}/analyze-response\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/curricula\n * List all curricula with optional filtering\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/models/page.tsx:ModelInfo:24",
+      "name": "ModelInfo",
+      "kind": "interface",
+      "file": "server/web/src/app/management/models/page.tsx",
+      "line": 24,
+      "end_line": 37,
+      "code_preview": "interface ModelInfo {\n  name: string;\n  version: string;\n  releaseDate: string;\n  size: string;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/route.ts:Params:5",
+      "name": "Params",
+      "kind": "type",
+      "file": "server/web/src/app/api/sessions/[sessionId]/route.ts",
+      "line": 5,
+      "end_line": 5,
+      "code_preview": "type Params = Promise<{ sessionId: string }>;\n\n/**\n * Get session details\n * GET /api/sessions/{sessionId}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/debug/route.ts:Params:5",
+      "name": "Params",
+      "kind": "type",
+      "file": "server/web/src/app/api/sessions/[sessionId]/debug/route.ts",
+      "line": 5,
+      "end_line": 5,
+      "code_preview": "type Params = Promise<{ sessionId: string }>;\n\n/**\n * Get detailed debug information for a session\n * GET /api/sessions/{sessionId}/debug\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/sources/[sourceId]/courses/route.ts:GET:21",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/sources/[sourceId]/courses/route.ts",
+      "line": 21,
+      "end_line": 58,
+      "code_preview": "export async function GET(request: NextRequest, { params }: RouteParams) {\n  const { sourceId } = await params;\n  const searchParams = request.nextUrl.searchParams;\n\n  try {\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/import/sources/[sourceId]/courses\nGet course catalog for a source\nQuery parameters:\n- page: Page number (default: 1)\n- pageSize: Items per page (default: 20)\n- search: Search query\n- subject: Subject filter\n- level: Level filter\n- features: Feature filter (comma-separated)",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/progress/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/progress/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/tts/pregen/jobs/[jobId]/progress\n * Get progress for a running TTS batch job\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts:RouteContext:5",
+      "name": "RouteContext",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteContext {\n  params: Promise<{ curriculumId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/barge-in/route.ts:POST:11",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/barge-in/route.ts",
+      "line": 11,
+      "end_line": 32,
+      "code_preview": "export async function POST(request: NextRequest, { params }: { params: Params }) {\n  const { sessionId } = await params;\n\n  if (!BACKEND_URL) {\n    return NextResponse.json({ error: 'Backend not configured' }, { status: 503 });\n    ...",
+      "visibility": "public",
+      "docstring": "Handle a barge-in/interruption event\nPOST /api/sessions/{sessionId}/barge-in",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/models/page.tsx:onDeviceLLMs:39",
+      "name": "onDeviceLLMs",
+      "kind": "function",
+      "file": "server/web/src/app/management/models/page.tsx",
+      "line": 39,
+      "end_line": 101,
+      "code_preview": "const onDeviceLLMs: ModelInfo[] = [\n  {\n    name: 'SmolLM3-3B',\n    version: '3B',\n    releaseDate: 'Dec 2025',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/route.ts:GET:16",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/route.ts",
+      "line": 16,
+      "end_line": 65,
+      "code_preview": "export async function GET(request: NextRequest) {\n  const searchParams = request.nextUrl.searchParams;\n  const params = new URLSearchParams();\n\n  // Forward query parameters\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/tts/pregen/jobs\nList all TTS batch jobs\nQuery parameters:\n- status: Filter by status (optional)\n- source_type: Filter by source type (optional)\n- job_type: Filter by job type (optional)\n- limit: Max results (default 50)\n- offset: Pagination offset (default 0)",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/route.ts:POST:41",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/route.ts",
+      "line": 41,
+      "end_line": 70,
+      "code_preview": "export async function POST(request: Request) {\n  try {\n    const body = await request.json();\n\n    const response = await fetch(`${BACKEND_URL}/api/plugins/initialize`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/plugins\nInitialize plugins (first-run setup)",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/sources/[sourceId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/sources/[sourceId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteParams {\n  params: Promise<{ sourceId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/[packId]/questions/route.ts:POST:13",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/[packId]/questions/route.ts",
+      "line": 13,
+      "end_line": 40,
+      "code_preview": "export async function POST(request: Request, { params }: RouteParams) {\n  try {\n    const { packId } = await params;\n    const body = await request.json();\n\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/kb/packs/[packId]/questions\nAdd questions to a pack",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/context/route.ts:Params:5",
+      "name": "Params",
+      "kind": "type",
+      "file": "server/web/src/app/api/sessions/[sessionId]/context/route.ts",
+      "line": 5,
+      "end_line": 5,
+      "code_preview": "type Params = Promise<{ sessionId: string }>;\n\n/**\n * Get current FOV context state\n * GET /api/sessions/{sessionId}/context\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/reprocess/jobs/[jobId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/reprocess/jobs/[jobId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/reprocess/jobs/[jobId]\n * Get detailed progress for a specific job\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/jobs/[jobId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/jobs/[jobId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteParams {\n  params: Promise<{ jobId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/logs/route.ts:BACKEND_URL:5",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/logs/route.ts",
+      "line": 5,
+      "end_line": 5,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\nexport async function GET(request: NextRequest) {\n  const searchParams = request.nextUrl.searchParams;\n  const limit = parseInt(searchParams.get('limit') || '500');\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/progress/route.ts:GET:19",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/progress/route.ts",
+      "line": 19,
+      "end_line": 49,
+      "code_preview": "export async function GET(\n  request: NextRequest,\n  { params }: { params: Promise<{ jobId: string }> }\n) {\n  const { jobId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/tts/pregen/jobs/[jobId]/progress\nGet progress for a running TTS batch job\nReturns:\n- percentage: Completion percentage\n- completed_items: Number of completed items\n- failed_items: Number of failed items\n- total_items: Total number of items\n- current_item_index: Index of item being processed\n- current_item_text: Text of current item (truncated)\n- status: Current job status\n- estimated_time_remaining: Estimated seconds remaining (optional)",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/modules/[moduleId]/route.ts:GET:9",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/modules/[moduleId]/route.ts",
+      "line": 9,
+      "end_line": 26,
+      "code_preview": "export async function GET(request: NextRequest, { params }: RouteParams) {\n  try {\n    const { moduleId } = await params;\n\n    const response = await fetch(`${BACKEND_URL}/api/modules/${moduleId}`, { cache: 'no-store' });\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts",
+      "line": 13,
+      "end_line": 39,
+      "code_preview": "export async function GET(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId, topicId } = await context.params;\n    const response = await fetch(\n      `${BACKEND_URL}/api/curricula/${curriculumId}/topics/${topicId}/assets`,\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/curricula/[curriculumId]/topics/[topicId]/assets\nGet all visual assets for a topic",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/reprocess/analyze/[curriculumId]/route.ts:POST:9",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/reprocess/analyze/[curriculumId]/route.ts",
+      "line": 9,
+      "end_line": 45,
+      "code_preview": "export async function POST(\n  request: NextRequest,\n  { params }: { params: Promise<{ curriculumId: string }> }\n) {\n  const { curriculumId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/reprocess/analyze/[curriculumId]\nTrigger analysis of a curriculum",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/route.ts:GET:9",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/route.ts",
+      "line": 9,
+      "end_line": 33,
+      "code_preview": "export async function GET() {\n  if (!BACKEND_URL) {\n    return NextResponse.json({\n      sessions: [],\n      error: 'Backend not configured',\n    ...",
+      "visibility": "public",
+      "docstring": "List all FOV sessions\nGET /api/sessions",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/route.ts:POST:39",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/route.ts",
+      "line": 39,
+      "end_line": 58,
+      "code_preview": "export async function POST(request: NextRequest) {\n  if (!BACKEND_URL) {\n    return NextResponse.json({ error: 'Backend not configured' }, { status: 503 });\n  }\n",
+      "visibility": "public",
+      "docstring": "Create a new FOV session\nPOST /api/sessions",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/questions/bulk-update/route.ts:POST:9",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/questions/bulk-update/route.ts",
+      "line": 9,
+      "end_line": 38,
+      "code_preview": "export async function POST(request: Request) {\n  try {\n    const body = await request.json();\n\n    const response = await fetch(`${BACKEND_URL}/api/kb/questions/bulk-update`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/kb/questions/bulk-update\nBulk update multiple questions",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/stats/route.ts:BACKEND_URL:4",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/stats/route.ts",
+      "line": 4,
+      "end_line": 4,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\nexport async function GET() {\n  // Try to fetch from backend first\n  if (BACKEND_URL) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/providers.tsx:featureFlagConfig:17",
+      "name": "featureFlagConfig",
+      "kind": "function",
+      "file": "server/web/src/app/providers.tsx",
+      "line": 17,
+      "end_line": 23,
+      "code_preview": "const featureFlagConfig: FeatureFlagConfig = {\n  proxyUrl: process.env.NEXT_PUBLIC_FEATURE_FLAG_URL || 'http://localhost:3063/proxy',\n  clientKey: process.env.NEXT_PUBLIC_FEATURE_FLAG_KEY || 'proxy-client-key',\n  appName: 'UnaMentis-Web',\n  refreshInterval: 30000,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/test/route.ts:POST:13",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/[pluginId]/test/route.ts",
+      "line": 13,
+      "end_line": 43,
+      "code_preview": "export async function POST(request: Request, context: RouteContext) {\n  try {\n    const { pluginId } = await context.params;\n    const body = await request.json();\n\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/plugins/[pluginId]/test\nTest plugin configuration (e.g., API key validation)",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFId:11",
+      "name": "UMCFId",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 11,
+      "end_line": 14,
+      "code_preview": "interface UMCFId {\n  catalog?: string;\n  value: string;\n}\n",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/jobs/[jobId]/route.ts:DELETE:46",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/jobs/[jobId]/route.ts",
+      "line": 46,
+      "end_line": 68,
+      "code_preview": "export async function DELETE(request: NextRequest, { params }: RouteParams) {\n  const { jobId } = await params;\n\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/import/jobs/${jobId}`, {\n    ...",
+      "visibility": "public",
+      "docstring": "DELETE /api/import/jobs/[jobId]\nCancel an import job",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/models/page.tsx:StatusBadge:359",
+      "name": "StatusBadge",
+      "kind": "component",
+      "file": "server/web/src/app/management/models/page.tsx",
+      "line": 359,
+      "end_line": 378,
+      "code_preview": "function StatusBadge({ status }: { status: ModelInfo['status'] }) {\n  const variants = {\n    current: 'default',\n    recommended: 'default',\n    outdated: 'secondary',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/preview-dedup/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/preview-dedup/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/kb/packs/preview-dedup\n * Preview duplicates before creating a bundle\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/context/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/context/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\ntype Params = Promise<{ sessionId: string }>;\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/sources/[sourceId]/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/sources/[sourceId]/route.ts",
+      "line": 13,
+      "end_line": 40,
+      "code_preview": "export async function GET(request: NextRequest, { params }: RouteParams) {\n  const { sourceId } = await params;\n\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/import/sources/${sourceId}`, {\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/import/sources/[sourceId]\nGet details for a specific source",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/models/page.tsx:ModelsPage:460",
+      "name": "ModelsPage",
+      "kind": "component",
+      "file": "server/web/src/app/management/models/page.tsx",
+      "line": 460,
+      "end_line": 609,
+      "code_preview": "export default function ModelsPage() {\n  return (\n    <div className=\"container mx-auto p-6 space-y-6\">\n      <div>\n        <h1 className=\"text-3xl font-bold mb-2\">AI Model Selection Dashboard</h1>\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/domains/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/domains/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\nexport async function GET() {\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/kb/domains`, {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/questions/[questionId]/route.ts:RouteParams:5",
+      "name": "RouteParams",
+      "kind": "interface",
+      "file": "server/web/src/app/api/kb/questions/[questionId]/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteParams {\n  params: Promise<{ questionId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/start/route.ts:Params:5",
+      "name": "Params",
+      "kind": "type",
+      "file": "server/web/src/app/api/sessions/[sessionId]/start/route.ts",
+      "line": 5,
+      "end_line": 5,
+      "code_preview": "type Params = Promise<{ sessionId: string }>;\n\n/**\n * Start a session\n * POST /api/sessions/{sessionId}/start\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/route.ts:GET:9",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/route.ts",
+      "line": 9,
+      "end_line": 35,
+      "code_preview": "export async function GET() {\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/plugins`, {\n      headers: {\n        'Content-Type': 'application/json',\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/plugins\nGet all discovered plugins with their status",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/modules/route.ts:GET:5",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/modules/route.ts",
+      "line": 5,
+      "end_line": 25,
+      "code_preview": "export async function GET(request: NextRequest) {\n  try {\n    const { searchParams } = new URL(request.url);\n    const includeDisabled = searchParams.get('include_disabled') || 'false';\n\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/jobs/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/jobs/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/import/jobs\n * List all import jobs\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/route.ts:PUT:42",
+      "name": "PUT",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/[pluginId]/route.ts",
+      "line": 42,
+      "end_line": 69,
+      "code_preview": "export async function PUT(request: Request, context: RouteContext) {\n  try {\n    const { pluginId } = await context.params;\n    const body = await request.json();\n\n    ...",
+      "visibility": "public",
+      "docstring": "PUT /api/plugins/[pluginId]\nUpdate plugin settings",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/reprocess/jobs/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/reprocess/jobs/route.ts",
+      "line": 13,
+      "end_line": 45,
+      "code_preview": "export async function GET(request: NextRequest) {\n  const searchParams = request.nextUrl.searchParams;\n  const status = searchParams.get('status');\n  const curriculumId = searchParams.get('curriculumId');\n\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/reprocess/jobs\nList all reprocessing jobs\nQuery parameters:\n- status: Filter by status (optional)\n- curriculumId: Filter by curriculum (optional)",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/modules/[moduleId]/settings/route.ts:PATCH:9",
+      "name": "PATCH",
+      "kind": "function",
+      "file": "server/web/src/app/api/modules/[moduleId]/settings/route.ts",
+      "line": 9,
+      "end_line": 31,
+      "code_preview": "export async function PATCH(request: NextRequest, { params }: RouteParams) {\n  try {\n    const { moduleId } = await params;\n    const body = await request.json();\n\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/first-run/route.ts:GET:9",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/first-run/route.ts",
+      "line": 9,
+      "end_line": 35,
+      "code_preview": "export async function GET() {\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/plugins/first-run`, {\n      headers: {\n        'Content-Type': 'application/json',\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/plugins/first-run\nCheck if first-run setup is needed",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/import-from-module/route.ts:POST:9",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/import-from-module/route.ts",
+      "line": 9,
+      "end_line": 38,
+      "code_preview": "export async function POST(request: Request) {\n  try {\n    const body = await request.json();\n\n    const response = await fetch(`${BACKEND_URL}/api/kb/import-from-module`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/kb/import-from-module\nImport questions from a KB module into a pack",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/route.ts:POST:82",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/route.ts",
+      "line": 82,
+      "end_line": 106,
+      "code_preview": "export async function POST(request: NextRequest) {\n  try {\n    const body = await request.json();\n\n    const response = await fetch(`${BACKEND_URL}/api/tts/pregen/jobs`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/tts/pregen/jobs\nCreate a new TTS batch job\nRequest body:\n- name: Job name (required)\n- source_type: 'knowledge-bowl' | 'curriculum' | 'custom' (required)\n- source_id: Source identifier (optional, for KB/curriculum)\n- profile_id: TTS profile ID (optional, either this or tts_config)\n- tts_config: Inline TTS config (optional)\n- items: Array of items for custom source (optional)\n- output_format: Audio format (default 'wav')\n- normalize_volume: Whether to normalize (default false)\n- include_questions, include_answers, etc. for KB extraction",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/questions/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/questions/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/kb/questions\n * List questions with optional filtering\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/transcript/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/transcript/route.ts",
+      "line": 13,
+      "end_line": 39,
+      "code_preview": "export async function GET(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId, topicId } = await context.params;\n    const response = await fetch(\n      `${BACKEND_URL}/api/curricula/${curriculumId}/topics/${topicId}/transcript`,\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/curricula/[curriculumId]/topics/[topicId]/transcript\nGet transcript for a topic",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/stats/route.ts:GET:6",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/stats/route.ts",
+      "line": 6,
+      "end_line": 24,
+      "code_preview": "export async function GET() {\n  // Try to fetch from backend first\n  if (BACKEND_URL) {\n    try {\n      const response = await fetch(`${BACKEND_URL}/api/stats`, {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts:DELETE:43",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts",
+      "line": 43,
+      "end_line": 67,
+      "code_preview": "export async function DELETE(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId } = await context.params;\n    const response = await fetch(`${BACKEND_URL}/api/curricula/${curriculumId}/archive`, {\n      method: 'DELETE',\n    ...",
+      "visibility": "public",
+      "docstring": "DELETE /api/curricula/[curriculumId]/archive\nUnarchive a curriculum",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/jobs/route.ts:GET:12",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/jobs/route.ts",
+      "line": 12,
+      "end_line": 38,
+      "code_preview": "export async function GET(request: NextRequest) {\n  const searchParams = request.nextUrl.searchParams;\n  const status = searchParams.get('status');\n\n  try {\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/import/jobs\nList all import jobs\nQuery parameters:\n- status: Filter by status (optional)",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/schema/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/[pluginId]/schema/route.ts",
+      "line": 13,
+      "end_line": 39,
+      "code_preview": "export async function GET(request: Request, context: RouteContext) {\n  try {\n    const { pluginId } = await context.params;\n    const response = await fetch(`${BACKEND_URL}/api/plugins/${pluginId}/config-schema`, {\n      headers: {\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/plugins/[pluginId]/schema\nGet the configuration schema for a plugin",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/reprocess/jobs/route.ts:POST:53",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/reprocess/jobs/route.ts",
+      "line": 53,
+      "end_line": 77,
+      "code_preview": "export async function POST(request: NextRequest) {\n  try {\n    const body = await request.json();\n\n    const response = await fetch(`${BACKEND_URL}/api/reprocess/jobs`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/reprocess/jobs\nStart a new reprocessing job\nRequest body: ReprocessConfig",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/route.ts:GET:11",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/route.ts",
+      "line": 11,
+      "end_line": 36,
+      "code_preview": "export async function GET(_request: NextRequest, { params }: { params: Params }) {\n  const { sessionId } = await params;\n\n  if (!BACKEND_URL) {\n    return NextResponse.json({ error: 'Backend not configured' }, { status: 503 });\n    ...",
+      "visibility": "public",
+      "docstring": "Get session details\nGET /api/sessions/{sessionId}",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/resume/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/resume/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/tts/pregen/jobs/[jobId]/resume\n * Resume a paused TTS batch job\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/models/route.ts:GET:6",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/models/route.ts",
+      "line": 6,
+      "end_line": 34,
+      "code_preview": "export async function GET() {\n  // Try to fetch from backend first\n  if (BACKEND_URL) {\n    try {\n      const response = await fetch(`${BACKEND_URL}/api/models`, {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/reprocess/preview/[curriculumId]/route.ts:POST:9",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/reprocess/preview/[curriculumId]/route.ts",
+      "line": 9,
+      "end_line": 45,
+      "code_preview": "export async function POST(\n  request: NextRequest,\n  { params }: { params: Promise<{ curriculumId: string }> }\n) {\n  const { curriculumId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/reprocess/preview/[curriculumId]\nPreview what changes would be made without applying them",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/pause/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/pause/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/tts/pregen/jobs/[jobId]/pause\n * Pause a running TTS batch job\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/reload/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/reload/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/curricula/reload\n * Reload curricula from disk\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/bundle/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/bundle/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/kb/packs/bundle\n * Create a bundle pack from multiple existing packs\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/tts-lab/page.tsx:TTSLabPage:138",
+      "name": "TTSLabPage",
+      "kind": "component",
+      "file": "server/web/src/app/management/tts-lab/page.tsx",
+      "line": 138,
+      "end_line": 618,
+      "code_preview": "export default function TTSLabPage() {\n  const [config, setConfig] = useState<TTSConfig>(defaultConfig);\n  const [testText, setTestText] = useState(\n    'The French Revolution began in 1789 when the Estates-General convened at Versailles.'\n  );\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sources/route.ts:GET:10",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/sources/route.ts",
+      "line": 10,
+      "end_line": 36,
+      "code_preview": "export async function GET() {\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/sources`, {\n      headers: {\n        'Content-Type': 'application/json',\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/sources\nGet generic source UI configuration for dynamic plugin rendering\nThis endpoint allows plugins to define their own UI configuration",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/resume/route.ts:POST:9",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/resume/route.ts",
+      "line": 9,
+      "end_line": 39,
+      "code_preview": "export async function POST(\n  request: NextRequest,\n  { params }: { params: Promise<{ jobId: string }> }\n) {\n  const { jobId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/tts/pregen/jobs/[jobId]/resume\nResume a paused TTS batch job",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/servers/route.ts:POST:34",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/servers/route.ts",
+      "line": 34,
+      "end_line": 51,
+      "code_preview": "export async function POST(request: NextRequest) {\n  if (BACKEND_URL) {\n    try {\n      const body = await request.json();\n      const response = await fetch(`${BACKEND_URL}/api/servers`, {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/disable/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/[pluginId]/disable/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteContext {\n  params: Promise<{ pluginId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/route.ts:DELETE:45",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/route.ts",
+      "line": 45,
+      "end_line": 75,
+      "code_preview": "export async function DELETE(\n  request: NextRequest,\n  { params }: { params: Promise<{ jobId: string }> }\n) {\n  const { jobId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "DELETE /api/tts/pregen/jobs/[jobId]\nDelete a TTS batch job and all its items",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/route.ts:GET:9",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/route.ts",
+      "line": 9,
+      "end_line": 39,
+      "code_preview": "export async function GET(request: Request) {\n  try {\n    const { searchParams } = new URL(request.url);\n    const queryString = searchParams.toString();\n    const url = `${BACKEND_URL}/api/kb/packs${queryString ? `?${queryString}` : ''}`;\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/kb/packs\nList all question packs with optional filtering",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/jobs/route.ts:POST:46",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/jobs/route.ts",
+      "line": 46,
+      "end_line": 67,
+      "code_preview": "export async function POST(request: NextRequest) {\n  try {\n    const body = await request.json();\n\n    const response = await fetch(`${BACKEND_URL}/api/import/jobs`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/import/jobs\nStart a new import job\nRequest body: ImportConfig",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\n/**\n * List all FOV sessions\n * GET /api/sessions\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/enable/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/[pluginId]/enable/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteContext {\n  params: Promise<{ pluginId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/retry-failed/route.ts:POST:12",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/retry-failed/route.ts",
+      "line": 12,
+      "end_line": 42,
+      "code_preview": "export async function POST(\n  request: NextRequest,\n  { params }: { params: Promise<{ jobId: string }> }\n) {\n  const { jobId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/tts/pregen/jobs/[jobId]/retry-failed\nReset all failed items to pending status for retry\nReturns:\n- reset_count: Number of items reset",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/sources/[sourceId]/courses/[courseId]/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/sources/[sourceId]/courses/[courseId]/route.ts",
+      "line": 13,
+      "end_line": 41,
+      "code_preview": "export async function GET(request: NextRequest, { params }: RouteParams) {\n  const { sourceId, courseId } = await params;\n\n  try {\n    const response = await fetch(\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/import/sources/[sourceId]/courses/[courseId]\nGet detailed information for a specific course",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/clients/route.ts:BACKEND_URL:4",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/clients/route.ts",
+      "line": 4,
+      "end_line": 4,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\nexport async function GET() {\n  // Try to fetch from backend first\n  if (BACKEND_URL) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/tts-lab/page.tsx:TTSModel:42",
+      "name": "TTSModel",
+      "kind": "interface",
+      "file": "server/web/src/app/management/tts-lab/page.tsx",
+      "line": 42,
+      "end_line": 49,
+      "code_preview": "interface TTSModel {\n  id: string;\n  name: string;\n  version: string;\n  parameters: string;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteContext {\n  params: Promise<{ curriculumId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/retry-failed/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/retry-failed/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/tts/pregen/jobs/[jobId]/retry-failed\n * Reset all failed items to pending status for retry\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/sync-to-database/route.ts:POST:5",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/sync-to-database/route.ts",
+      "line": 5,
+      "end_line": 22,
+      "code_preview": "export async function POST() {\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/kb/sync-to-database`, {\n      method: 'POST',\n    });\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/disable/route.ts:POST:13",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/[pluginId]/disable/route.ts",
+      "line": 13,
+      "end_line": 38,
+      "code_preview": "export async function POST(request: Request, context: RouteContext) {\n  try {\n    const { pluginId } = await context.params;\n\n    const response = await fetch(`${BACKEND_URL}/api/plugins/${pluginId}/disable`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/plugins/[pluginId]/disable\nDisable a plugin",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/topic/route.ts:Params:5",
+      "name": "Params",
+      "kind": "type",
+      "file": "server/web/src/app/api/sessions/[sessionId]/topic/route.ts",
+      "line": 5,
+      "end_line": 5,
+      "code_preview": "type Params = Promise<{ sessionId: string }>;\n\n/**\n * Set the current topic\n * PUT /api/sessions/{sessionId}/topic\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts:DELETE:81",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts",
+      "line": 81,
+      "end_line": 106,
+      "code_preview": "export async function DELETE(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId, topicId, assetId } = await context.params;\n\n    const response = await fetch(\n    ...",
+      "visibility": "public",
+      "docstring": "DELETE /api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]\nDelete a visual asset",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/test/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/[pluginId]/test/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteContext {\n  params: Promise<{ pluginId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/database-status/route.ts:GET:5",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/database-status/route.ts",
+      "line": 5,
+      "end_line": 22,
+      "code_preview": "export async function GET() {\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/kb/database-status`, {\n      cache: 'no-store',\n    });\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/layout.tsx:metadata:6",
+      "name": "metadata",
+      "kind": "function",
+      "file": "server/web/src/app/layout.tsx",
+      "line": 6,
+      "end_line": 30,
+      "code_preview": "export const metadata: Metadata = {\n  title: 'UnaMentis Server',\n  description: 'Unified console for system management and content administration',\n  icons: {\n    icon: [\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/[packId]/questions/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/[packId]/questions/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteParams {\n  params: Promise<{ packId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/analyze-response/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/analyze-response/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\ntype Params = Promise<{ sessionId: string }>;\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/tts/pregen/jobs/[jobId]\n * Get details for a specific TTS batch job\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/start/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/start/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/tts/pregen/jobs/[jobId]/start\n * Start a pending TTS batch job\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/[packId]/questions/route.ts:RouteParams:5",
+      "name": "RouteParams",
+      "kind": "interface",
+      "file": "server/web/src/app/api/kb/packs/[packId]/questions/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteParams {\n  params: Promise<{ packId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/extract/route.ts:POST:24",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/extract/route.ts",
+      "line": 24,
+      "end_line": 48,
+      "code_preview": "export async function POST(request: NextRequest) {\n  try {\n    const body = await request.json();\n\n    const response = await fetch(`${BACKEND_URL}/api/tts/pregen/extract`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/tts/pregen/extract\nExtract content from a source for preview before job creation\nRequest body:\n- source_type: 'knowledge-bowl' | 'curriculum' | 'custom'\n- source_id: Source identifier (for KB/curriculum)\n- include_questions: Include question text (default true)\n- include_answers: Include answer text (default true)\n- include_hints: Include hint text (default true)\n- include_explanations: Include explanation text (default true)\n- domains: Filter by domains (optional)\n- difficulties: Filter by difficulty tiers (optional)\nReturns:\n- items: Array of extracted items (text, source_ref)\n- total_count: Total items extracted\n- stats: Breakdown by domain, type, etc.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/modules/[moduleId]/settings/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/modules/[moduleId]/settings/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteParams {\n  params: Promise<{ moduleId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/import-from-module/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/import-from-module/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/kb/import-from-module\n * Import questions from a KB module into a pack\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/modules/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/modules/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\nexport async function GET(request: NextRequest) {\n  try {\n    const { searchParams } = new URL(request.url);\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/questions/[questionId]/route.ts:PATCH:46",
+      "name": "PATCH",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/questions/[questionId]/route.ts",
+      "line": 46,
+      "end_line": 76,
+      "code_preview": "export async function PATCH(request: Request, { params }: RouteParams) {\n  try {\n    const { questionId } = await params;\n    const body = await request.json();\n\n    ...",
+      "visibility": "public",
+      "docstring": "PATCH /api/kb/questions/[questionId]\nUpdate a question",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFTopic:36",
+      "name": "UMCFTopic",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 36,
+      "end_line": 51,
+      "code_preview": "interface UMCFTopic {\n  id: UMCFId;\n  title: string;\n  type: string;\n  description?: string;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/[packId]/route.ts:PATCH:43",
+      "name": "PATCH",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/[packId]/route.ts",
+      "line": 43,
+      "end_line": 70,
+      "code_preview": "export async function PATCH(request: Request, { params }: RouteParams) {\n  try {\n    const { packId } = await params;\n    const body = await request.json();\n\n    ...",
+      "visibility": "public",
+      "docstring": "PATCH /api/kb/packs/[packId]\nUpdate pack metadata",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/[pluginId]/route.ts",
+      "line": 13,
+      "end_line": 36,
+      "code_preview": "export async function GET(request: Request, context: RouteContext) {\n  try {\n    const { pluginId } = await context.params;\n    const response = await fetch(`${BACKEND_URL}/api/plugins/${pluginId}`, {\n      headers: {\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/plugins/[pluginId]\nGet plugin details including configuration schema",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/fov/health/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/fov/health/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\n/**\n * Get FOV context system health status\n * GET /api/fov/health\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/models/route.ts:BACKEND_URL:4",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/models/route.ts",
+      "line": 4,
+      "end_line": 4,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\nexport async function GET() {\n  // Try to fetch from backend first\n  if (BACKEND_URL) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/start/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/start/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\ntype Params = Promise<{ sessionId: string }>;\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/[packId]/questions/[questionId]/route.ts:DELETE:13",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/[packId]/questions/[questionId]/route.ts",
+      "line": 13,
+      "end_line": 40,
+      "code_preview": "export async function DELETE(request: Request, { params }: RouteParams) {\n  try {\n    const { packId, questionId } = await params;\n    const response = await fetch(`${BACKEND_URL}/api/kb/packs/${packId}/questions/${questionId}`, {\n      method: 'DELETE',\n    ...",
+      "visibility": "public",
+      "docstring": "DELETE /api/kb/packs/[packId]/questions/[questionId]\nRemove a question from a pack",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/debug/route.ts:GET:11",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/debug/route.ts",
+      "line": 11,
+      "end_line": 36,
+      "code_preview": "export async function GET(_request: NextRequest, { params }: { params: Params }) {\n  const { sessionId } = await params;\n\n  if (!BACKEND_URL) {\n    return NextResponse.json({ error: 'Backend not configured' }, { status: 503 });\n    ...",
+      "visibility": "public",
+      "docstring": "Get detailed debug information for a session\nGET /api/sessions/{sessionId}/debug",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/jobs/[jobId]/route.ts:RouteParams:5",
+      "name": "RouteParams",
+      "kind": "interface",
+      "file": "server/web/src/app/api/import/jobs/[jobId]/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteParams {\n  params: Promise<{ jobId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/servers/route.ts:BACKEND_URL:4",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/servers/route.ts",
+      "line": 4,
+      "end_line": 4,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\nexport async function GET() {\n  // Try to fetch from backend first\n  if (BACKEND_URL) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/first-run/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/first-run/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/plugins/first-run\n * Check if first-run setup is needed\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/clients/route.ts:GET:6",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/clients/route.ts",
+      "line": 6,
+      "end_line": 32,
+      "code_preview": "export async function GET() {\n  // Try to fetch from backend first\n  if (BACKEND_URL) {\n    try {\n      const response = await fetch(`${BACKEND_URL}/api/clients`, {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/tts-lab/page.tsx:TTSConfig:51",
+      "name": "TTSConfig",
+      "kind": "interface",
+      "file": "server/web/src/app/management/tts-lab/page.tsx",
+      "line": 51,
+      "end_line": 61,
+      "code_preview": "interface TTSConfig {\n  model: string;\n  voice: string;\n  cfgCoef: number;\n  nQ: number;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/questions/bulk-update/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/questions/bulk-update/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/kb/questions/bulk-update\n * Bulk update multiple questions\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts:RouteContext:5",
+      "name": "RouteContext",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteContext {\n  params: Promise<{ curriculumId: string; topicId: string; assetId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/logs/route.ts:POST:70",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/logs/route.ts",
+      "line": 70,
+      "end_line": 92,
+      "code_preview": "export async function POST(request: NextRequest) {\n  // Proxy to backend\n  if (BACKEND_URL) {\n    try {\n      const body = await request.json();\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/reprocess/jobs/[jobId]/route.ts:GET:9",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/reprocess/jobs/[jobId]/route.ts",
+      "line": 9,
+      "end_line": 33,
+      "code_preview": "export async function GET(\n  request: NextRequest,\n  { params }: { params: Promise<{ jobId: string }> }\n) {\n  const { jobId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/reprocess/jobs/[jobId]\nGet detailed progress for a specific job",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/pause/route.ts:POST:9",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/pause/route.ts",
+      "line": 9,
+      "end_line": 39,
+      "code_preview": "export async function POST(\n  request: NextRequest,\n  { params }: { params: Promise<{ jobId: string }> }\n) {\n  const { jobId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/tts/pregen/jobs/[jobId]/pause\nPause a running TTS batch job",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/reprocess/analyze/[curriculumId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/reprocess/analyze/[curriculumId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/reprocess/analyze/[curriculumId]\n * Trigger analysis of a curriculum\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sources/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/sources/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/sources\n * Get generic source UI configuration for dynamic plugin rendering\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/domains/route.ts:GET:5",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/domains/route.ts",
+      "line": 5,
+      "end_line": 22,
+      "code_preview": "export async function GET() {\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/kb/domains`, {\n      cache: 'no-store',\n    });\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/questions/route.ts:POST:45",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/questions/route.ts",
+      "line": 45,
+      "end_line": 74,
+      "code_preview": "export async function POST(request: Request) {\n  try {\n    const body = await request.json();\n\n    const response = await fetch(`${BACKEND_URL}/api/kb/questions`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/kb/questions\nCreate a new question",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/reprocess/analyze/[curriculumId]/route.ts:GET:51",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/reprocess/analyze/[curriculumId]/route.ts",
+      "line": 51,
+      "end_line": 75,
+      "code_preview": "export async function GET(\n  request: NextRequest,\n  { params }: { params: Promise<{ curriculumId: string }> }\n) {\n  const { curriculumId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/reprocess/analyze/[curriculumId]\nGet cached analysis results",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/sources/[sourceId]/courses/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/sources/[sourceId]/courses/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteParams {\n  params: Promise<{ sourceId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/route.ts:PUT:42",
+      "name": "PUT",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/route.ts",
+      "line": 42,
+      "end_line": 72,
+      "code_preview": "export async function PUT(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId } = await context.params;\n    const body = await request.json();\n\n    ...",
+      "visibility": "public",
+      "docstring": "PUT /api/curricula/[curriculumId]\nUpdate/save curriculum",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/tts-lab/page.tsx:ttsModels:72",
+      "name": "ttsModels",
+      "kind": "function",
+      "file": "server/web/src/app/management/tts-lab/page.tsx",
+      "line": 72,
+      "end_line": 113,
+      "code_preview": "const ttsModels: TTSModel[] = [\n  {\n    id: 'kyutai-tts-1.6b',\n    name: 'Kyutai TTS 1.6B',\n    version: '1.6B',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/modules/[moduleId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/modules/[moduleId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteParams {\n  params: Promise<{ moduleId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/layout.tsx:RootLayout:32",
+      "name": "RootLayout",
+      "kind": "component",
+      "file": "server/web/src/app/layout.tsx",
+      "line": 32,
+      "end_line": 46,
+      "code_preview": "export default function RootLayout({\n  children,\n}: Readonly<{\n  children: React.ReactNode;\n}>) {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/questions/[questionId]/route.ts:DELETE:82",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/questions/[questionId]/route.ts",
+      "line": 82,
+      "end_line": 109,
+      "code_preview": "export async function DELETE(request: Request, { params }: RouteParams) {\n  try {\n    const { questionId } = await params;\n    const response = await fetch(`${BACKEND_URL}/api/kb/questions/${questionId}`, {\n      method: 'DELETE',\n    ...",
+      "visibility": "public",
+      "docstring": "DELETE /api/kb/questions/[questionId]\nDelete a question",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/[packId]/questions/[questionId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/[packId]/questions/[questionId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteParams {\n  params: Promise<{ packId: string; questionId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFVersion:16",
+      "name": "UMCFVersion",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 16,
+      "end_line": 20,
+      "code_preview": "interface UMCFVersion {\n  number: string;\n  date?: string;\n  changelog?: string;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/logs/route.ts:GET:7",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/logs/route.ts",
+      "line": 7,
+      "end_line": 68,
+      "code_preview": "export async function GET(request: NextRequest) {\n  const searchParams = request.nextUrl.searchParams;\n  const limit = parseInt(searchParams.get('limit') || '500');\n  const offset = parseInt(searchParams.get('offset') || '0');\n  const level = searchParams.get('level') || '';\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/page.tsx:DashboardSkeleton:5",
+      "name": "DashboardSkeleton",
+      "kind": "component",
+      "file": "server/web/src/app/page.tsx",
+      "line": 5,
+      "end_line": 26,
+      "code_preview": "function DashboardSkeleton() {\n  return (\n    <div className=\"h-screen flex flex-col bg-slate-950 text-slate-100\">\n      <div className=\"animate-pulse\">\n        {/* Header skeleton */}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/context/route.ts:GET:11",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/context/route.ts",
+      "line": 11,
+      "end_line": 36,
+      "code_preview": "export async function GET(_request: NextRequest, { params }: { params: Params }) {\n  const { sessionId } = await params;\n\n  if (!BACKEND_URL) {\n    return NextResponse.json({ error: 'Backend not configured' }, { status: 503 });\n    ...",
+      "visibility": "public",
+      "docstring": "Get current FOV context state\nGET /api/sessions/{sessionId}/context",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/providers.tsx:ProvidersProps:11",
+      "name": "ProvidersProps",
+      "kind": "interface",
+      "file": "server/web/src/app/providers.tsx",
+      "line": 11,
+      "end_line": 13,
+      "code_preview": "interface ProvidersProps {\n  children: React.ReactNode;\n}\n\n// Feature flag configuration for development\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/database-status/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/database-status/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\nexport async function GET() {\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/kb/database-status`, {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/sources/[sourceId]/route.ts:RouteParams:5",
+      "name": "RouteParams",
+      "kind": "interface",
+      "file": "server/web/src/app/api/import/sources/[sourceId]/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteParams {\n  params: Promise<{ sourceId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/[packId]/questions/[questionId]/route.ts:RouteParams:5",
+      "name": "RouteParams",
+      "kind": "interface",
+      "file": "server/web/src/app/api/kb/packs/[packId]/questions/[questionId]/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteParams {\n  params: Promise<{ packId: string; questionId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/items/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/items/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * GET /api/tts/pregen/jobs/[jobId]/items\n * Get items for a TTS batch job\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/reprocess/preview/[curriculumId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/reprocess/preview/[curriculumId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\n/**\n * POST /api/reprocess/preview/[curriculumId]\n * Preview what changes would be made without applying them\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFEducational:26",
+      "name": "UMCFEducational",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 26,
+      "end_line": 30,
+      "code_preview": "interface UMCFEducational {\n  typicalAgeRange?: string;\n  difficulty?: string;\n  typicalLearningTime?: string;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/tts-lab/page.tsx:GeneratedAudio:63",
+      "name": "GeneratedAudio",
+      "kind": "interface",
+      "file": "server/web/src/app/management/tts-lab/page.tsx",
+      "line": 63,
+      "end_line": 70,
+      "code_preview": "interface GeneratedAudio {\n  id: string;\n  config: TTSConfig;\n  text: string;\n  url: string;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/preview-dedup/route.ts:POST:9",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/preview-dedup/route.ts",
+      "line": 9,
+      "end_line": 38,
+      "code_preview": "export async function POST(request: Request) {\n  try {\n    const body = await request.json();\n\n    const response = await fetch(`${BACKEND_URL}/api/kb/packs/preview-dedup`, {\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/kb/packs/preview-dedup\nPreview duplicates before creating a bundle",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteContext {\n  params: Promise<{ curriculumId: string; topicId: string; assetId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/tts-lab/page.tsx:kyutaiVoices:127",
+      "name": "kyutaiVoices",
+      "kind": "function",
+      "file": "server/web/src/app/management/tts-lab/page.tsx",
+      "line": 127,
+      "end_line": 136,
+      "code_preview": "const kyutaiVoices = [\n  { id: 'sarah', name: 'Sarah (Neutral)', emotional: false },\n  { id: 'john', name: 'John (Neutral)', emotional: false },\n  { id: 'emma', name: 'Emma (Warm)', emotional: false },\n  { id: 'alex', name: 'Alex (Professional)', emotional: false },\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/tts/pregen/jobs/[jobId]/items/route.ts:GET:14",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/tts/pregen/jobs/[jobId]/items/route.ts",
+      "line": 14,
+      "end_line": 58,
+      "code_preview": "export async function GET(\n  request: NextRequest,\n  { params }: { params: Promise<{ jobId: string }> }\n) {\n  const { jobId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/tts/pregen/jobs/[jobId]/items\nGet items for a TTS batch job\nQuery parameters:\n- status: Filter by item status (optional)\n- limit: Max results (default 50)\n- offset: Pagination offset (default 0)",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/import/sources/[sourceId]/courses/[courseId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/import/sources/[sourceId]/courses/[courseId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteParams {\n  params: Promise<{ sourceId: string; courseId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/[packId]/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/[packId]/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteParams {\n  params: Promise<{ packId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/transcript/route.ts:RouteContext:5",
+      "name": "RouteContext",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/transcript/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteContext {\n  params: Promise<{ curriculumId: string; topicId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/management/models/page.tsx:serverLLMs:103",
+      "name": "serverLLMs",
+      "kind": "function",
+      "file": "server/web/src/app/management/models/page.tsx",
+      "line": 103,
+      "end_line": 176,
+      "code_preview": "const serverLLMs: ModelInfo[] = [\n  {\n    name: 'Qwen3-235B-A22B-Instruct',\n    version: '2507',\n    releaseDate: 'May 2025',\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:GET:134",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 134,
+      "end_line": 159,
+      "code_preview": "export async function GET(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId } = await context.params;\n    const response = await fetch(`${BACKEND_URL}/api/curricula/${curriculumId}/full`, {\n      headers: {\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/curricula/[curriculumId]/full\nGet full curriculum with all topics and content",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteContext {\n  params: Promise<{ curriculumId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:BACKEND_URL:4",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 4,
+      "end_line": 4,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteContext {\n  params: Promise<{ curriculumId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/admin/users/[userId]/route.ts:DELETE:5",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/admin/users/[userId]/route.ts",
+      "line": 5,
+      "end_line": 24,
+      "code_preview": "export async function DELETE(\n  request: NextRequest,\n  { params }: { params: Promise<{ userId: string }> }\n) {\n  const { userId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFLifecycle:22",
+      "name": "UMCFLifecycle",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 22,
+      "end_line": 24,
+      "code_preview": "interface UMCFLifecycle {\n  status?: 'draft' | 'review' | 'final' | 'deprecated';\n}\n\ninterface UMCFEducational {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/route.ts:RouteContext:5",
+      "name": "RouteContext",
+      "kind": "interface",
+      "file": "server/web/src/app/api/plugins/[pluginId]/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteContext {\n  params: Promise<{ pluginId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/turns/route.ts:POST:11",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/turns/route.ts",
+      "line": 11,
+      "end_line": 32,
+      "code_preview": "export async function POST(request: NextRequest, { params }: { params: Params }) {\n  const { sessionId } = await params;\n\n  if (!BACKEND_URL) {\n    return NextResponse.json({ error: 'Backend not configured' }, { status: 503 });\n    ...",
+      "visibility": "public",
+      "docstring": "Add a conversation turn\nPOST /api/sessions/{sessionId}/turns",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/admin/users/route.ts:POST:39",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/admin/users/route.ts",
+      "line": 39,
+      "end_line": 56,
+      "code_preview": "export async function POST(request: NextRequest) {\n  if (BACKEND_URL) {\n    try {\n      const body = await request.json();\n      const response = await fetch(`${BACKEND_URL}/api/admin/users`, {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/debug/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/debug/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\ntype Params = Promise<{ sessionId: string }>;\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:RouteContext:6",
+      "name": "RouteContext",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "line": 6,
+      "end_line": 8,
+      "code_preview": "interface RouteContext {\n  params: Promise<{ curriculumId: string }>;\n}\n\n// UMCF types for transformation\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/plugins/[pluginId]/schema/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/plugins/[pluginId]/schema/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8766';\n\ninterface RouteContext {\n  params: Promise<{ pluginId: string }>;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/[packId]/route.ts:GET:13",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/[packId]/route.ts",
+      "line": 13,
+      "end_line": 37,
+      "code_preview": "export async function GET(request: Request, { params }: RouteParams) {\n  try {\n    const { packId } = await params;\n    const response = await fetch(`${BACKEND_URL}/api/kb/packs/${packId}`, {\n      headers: {\n    ...",
+      "visibility": "public",
+      "docstring": "GET /api/kb/packs/[packId]\nGet detailed information about a pack",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/sessions/[sessionId]/topic/route.ts:BACKEND_URL:3",
+      "name": "BACKEND_URL",
+      "kind": "function",
+      "file": "server/web/src/app/api/sessions/[sessionId]/topic/route.ts",
+      "line": 3,
+      "end_line": 3,
+      "code_preview": "const BACKEND_URL = process.env.BACKEND_URL || '';\n\ntype Params = Promise<{ sessionId: string }>;\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts:POST:45",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts",
+      "line": 45,
+      "end_line": 72,
+      "code_preview": "export async function POST(request: Request, context: RouteContext) {\n  try {\n    const { curriculumId, topicId } = await context.params;\n    const formData = await request.formData();\n\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/curricula/[curriculumId]/topics/[topicId]/assets\nUpload a new visual asset",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/kb/packs/[packId]/route.ts:DELETE:76",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/kb/packs/[packId]/route.ts",
+      "line": 76,
+      "end_line": 100,
+      "code_preview": "export async function DELETE(request: Request, { params }: RouteParams) {\n  try {\n    const { packId } = await params;\n    const response = await fetch(`${BACKEND_URL}/api/kb/packs/${packId}`, {\n      method: 'DELETE',\n    ...",
+      "visibility": "public",
+      "docstring": "DELETE /api/kb/packs/[packId]\nDelete a pack",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/reload/route.ts:POST:9",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web/src/app/api/curricula/reload/route.ts",
+      "line": 9,
+      "end_line": 32,
+      "code_preview": "export async function POST() {\n  try {\n    const response = await fetch(`${BACKEND_URL}/api/curricula/reload`, {\n      method: 'POST',\n    });\n    ...",
+      "visibility": "public",
+      "docstring": "POST /api/curricula/reload\nReload curricula from disk",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/reprocess/jobs/[jobId]/route.ts:DELETE:39",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web/src/app/api/reprocess/jobs/[jobId]/route.ts",
+      "line": 39,
+      "end_line": 61,
+      "code_preview": "export async function DELETE(\n  request: NextRequest,\n  { params }: { params: Promise<{ jobId: string }> }\n) {\n  const { jobId } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": "DELETE /api/reprocess/jobs/[jobId]\nCancel a running reprocessing job",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts:RouteContext:5",
+      "name": "RouteContext",
+      "kind": "interface",
+      "file": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts",
+      "line": 5,
+      "end_line": 7,
+      "code_preview": "interface RouteContext {\n  params: Promise<{ curriculumId: string; topicId: string }>;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web/src/app/page.tsx:Home:28",
+      "name": "Home",
+      "kind": "component",
+      "file": "server/web/src/app/page.tsx",
+      "line": 28,
+      "end_line": 34,
+      "code_preview": "export default function Home() {\n  return (\n    <Suspense fallback={<DashboardSkeleton />}>\n      <Dashboard />\n    </Suspense>\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web/src/app/globals.css",
+      "language": "css",
+      "lines": 260,
+      "size_bytes": 6381,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/layout.tsx",
+      "language": "typescript",
+      "lines": 47,
+      "size_bytes": 1200,
+      "symbols": [
+        "server/web/src/app/layout.tsx:metadata:6",
+        "server/web/src/app/layout.tsx:RootLayout:32"
+      ],
+      "imports": [
+        "./globals.css",
+        "./providers",
+        "next",
+        "nuqs"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/page.tsx",
+      "language": "typescript",
+      "lines": 35,
+      "size_bytes": 1134,
+      "symbols": [
+        "server/web/src/app/page.tsx:DashboardSkeleton:5",
+        "server/web/src/app/page.tsx:Home:28"
+      ],
+      "imports": [
+        "@/components",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/providers.tsx",
+      "language": "typescript",
+      "lines": 43,
+      "size_bytes": 1469,
+      "symbols": [
+        "server/web/src/app/providers.tsx:ProvidersProps:11",
+        "server/web/src/app/providers.tsx:featureFlagConfig:17",
+        "server/web/src/app/providers.tsx:Providers:25"
+      ],
+      "imports": [
+        "@/components",
+        "@/lib",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/management/models/page.tsx",
+      "language": "typescript",
+      "lines": 610,
+      "size_bytes": 20512,
+      "symbols": [
+        "server/web/src/app/management/models/page.tsx:ModelInfo:24",
+        "server/web/src/app/management/models/page.tsx:onDeviceLLMs:39",
+        "server/web/src/app/management/models/page.tsx:serverLLMs:103",
+        "server/web/src/app/management/models/page.tsx:serverTTS:178",
+        "server/web/src/app/management/models/page.tsx:onDeviceTTS:266",
+        "server/web/src/app/management/models/page.tsx:StatusBadge:359",
+        "server/web/src/app/management/models/page.tsx:ModelCard:380",
+        "server/web/src/app/management/models/page.tsx:ModelsPage:460"
+      ],
+      "imports": [
+        "@/components",
+        "lucide-react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/management/tts-lab/page.tsx",
+      "language": "typescript",
+      "lines": 619,
+      "size_bytes": 23497,
+      "symbols": [
+        "server/web/src/app/management/tts-lab/page.tsx:TTSModel:42",
+        "server/web/src/app/management/tts-lab/page.tsx:TTSConfig:51",
+        "server/web/src/app/management/tts-lab/page.tsx:GeneratedAudio:63",
+        "server/web/src/app/management/tts-lab/page.tsx:ttsModels:72",
+        "server/web/src/app/management/tts-lab/page.tsx:defaultConfig:115",
+        "server/web/src/app/management/tts-lab/page.tsx:kyutaiVoices:127",
+        "server/web/src/app/management/tts-lab/page.tsx:TTSLabPage:138"
+      ],
+      "imports": [
+        "@/components",
+        "lucide-react",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/metrics/route.ts",
+      "language": "typescript",
+      "lines": 78,
+      "size_bytes": 2664,
+      "symbols": [
+        "server/web/src/app/api/metrics/route.ts:BACKEND_URL:4",
+        "server/web/src/app/api/metrics/route.ts:GET:6",
+        "server/web/src/app/api/metrics/route.ts:POST:56"
+      ],
+      "imports": [
+        "@/lib",
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/clients/route.ts",
+      "language": "typescript",
+      "lines": 33,
+      "size_bytes": 859,
+      "symbols": [
+        "server/web/src/app/api/clients/route.ts:BACKEND_URL:4",
+        "server/web/src/app/api/clients/route.ts:GET:6"
+      ],
+      "imports": [
+        "@/lib",
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/reprocess/analyze/[curriculumId]/route.ts",
+      "language": "typescript",
+      "lines": 76,
+      "size_bytes": 1931,
+      "symbols": [
+        "server/web/src/app/api/reprocess/analyze/[curriculumId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/reprocess/analyze/[curriculumId]/route.ts:POST:9",
+        "server/web/src/app/api/reprocess/analyze/[curriculumId]/route.ts:GET:51"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/reprocess/preview/[curriculumId]/route.ts",
+      "language": "typescript",
+      "lines": 46,
+      "size_bytes": 1206,
+      "symbols": [
+        "server/web/src/app/api/reprocess/preview/[curriculumId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/reprocess/preview/[curriculumId]/route.ts:POST:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/reprocess/jobs/route.ts",
+      "language": "typescript",
+      "lines": 78,
+      "size_bytes": 2127,
+      "symbols": [
+        "server/web/src/app/api/reprocess/jobs/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/reprocess/jobs/route.ts:GET:13",
+        "server/web/src/app/api/reprocess/jobs/route.ts:POST:53"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/reprocess/jobs/[jobId]/route.ts",
+      "language": "typescript",
+      "lines": 62,
+      "size_bytes": 1563,
+      "symbols": [
+        "server/web/src/app/api/reprocess/jobs/[jobId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/reprocess/jobs/[jobId]/route.ts:GET:9",
+        "server/web/src/app/api/reprocess/jobs/[jobId]/route.ts:DELETE:39"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/domains/route.ts",
+      "language": "typescript",
+      "lines": 23,
+      "size_bytes": 671,
+      "symbols": [
+        "server/web/src/app/api/kb/domains/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/domains/route.ts:GET:5"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/database-status/route.ts",
+      "language": "typescript",
+      "lines": 23,
+      "size_bytes": 695,
+      "symbols": [
+        "server/web/src/app/api/kb/database-status/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/database-status/route.ts:GET:5"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/packs/route.ts",
+      "language": "typescript",
+      "lines": 72,
+      "size_bytes": 2052,
+      "symbols": [
+        "server/web/src/app/api/kb/packs/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/packs/route.ts:GET:9",
+        "server/web/src/app/api/kb/packs/route.ts:POST:45"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/packs/preview-dedup/route.ts",
+      "language": "typescript",
+      "lines": 39,
+      "size_bytes": 1091,
+      "symbols": [
+        "server/web/src/app/api/kb/packs/preview-dedup/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/packs/preview-dedup/route.ts:POST:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/packs/bundle/route.ts",
+      "language": "typescript",
+      "lines": 36,
+      "size_bytes": 1048,
+      "symbols": [
+        "server/web/src/app/api/kb/packs/bundle/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/packs/bundle/route.ts:POST:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/packs/[packId]/route.ts",
+      "language": "typescript",
+      "lines": 101,
+      "size_bytes": 2955,
+      "symbols": [
+        "server/web/src/app/api/kb/packs/[packId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/packs/[packId]/route.ts:RouteParams:5",
+        "server/web/src/app/api/kb/packs/[packId]/route.ts:GET:13",
+        "server/web/src/app/api/kb/packs/[packId]/route.ts:PATCH:43",
+        "server/web/src/app/api/kb/packs/[packId]/route.ts:DELETE:76"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/packs/[packId]/questions/route.ts",
+      "language": "typescript",
+      "lines": 41,
+      "size_bytes": 1184,
+      "symbols": [
+        "server/web/src/app/api/kb/packs/[packId]/questions/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/packs/[packId]/questions/route.ts:RouteParams:5",
+        "server/web/src/app/api/kb/packs/[packId]/questions/route.ts:POST:13"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/packs/[packId]/questions/[questionId]/route.ts",
+      "language": "typescript",
+      "lines": 41,
+      "size_bytes": 1204,
+      "symbols": [
+        "server/web/src/app/api/kb/packs/[packId]/questions/[questionId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/packs/[packId]/questions/[questionId]/route.ts:RouteParams:5",
+        "server/web/src/app/api/kb/packs/[packId]/questions/[questionId]/route.ts:DELETE:13"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/import-from-module/route.ts",
+      "language": "typescript",
+      "lines": 39,
+      "size_bytes": 1085,
+      "symbols": [
+        "server/web/src/app/api/kb/import-from-module/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/import-from-module/route.ts:POST:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/questions/route.ts",
+      "language": "typescript",
+      "lines": 75,
+      "size_bytes": 2092,
+      "symbols": [
+        "server/web/src/app/api/kb/questions/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/questions/route.ts:GET:9",
+        "server/web/src/app/api/kb/questions/route.ts:POST:45"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/questions/bulk-update/route.ts",
+      "language": "typescript",
+      "lines": 39,
+      "size_bytes": 1081,
+      "symbols": [
+        "server/web/src/app/api/kb/questions/bulk-update/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/questions/bulk-update/route.ts:POST:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/questions/[questionId]/route.ts",
+      "language": "typescript",
+      "lines": 110,
+      "size_bytes": 3081,
+      "symbols": [
+        "server/web/src/app/api/kb/questions/[questionId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/questions/[questionId]/route.ts:RouteParams:5",
+        "server/web/src/app/api/kb/questions/[questionId]/route.ts:GET:13",
+        "server/web/src/app/api/kb/questions/[questionId]/route.ts:PATCH:46",
+        "server/web/src/app/api/kb/questions/[questionId]/route.ts:DELETE:82"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/kb/sync-to-database/route.ts",
+      "language": "typescript",
+      "lines": 23,
+      "size_bytes": 684,
+      "symbols": [
+        "server/web/src/app/api/kb/sync-to-database/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/kb/sync-to-database/route.ts:POST:5"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/fov/health/route.ts",
+      "language": "typescript",
+      "lines": 48,
+      "size_bytes": 1114,
+      "symbols": [
+        "server/web/src/app/api/fov/health/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/fov/health/route.ts:GET:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/plugins/route.ts",
+      "language": "typescript",
+      "lines": 71,
+      "size_bytes": 1759,
+      "symbols": [
+        "server/web/src/app/api/plugins/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/plugins/route.ts:GET:9",
+        "server/web/src/app/api/plugins/route.ts:POST:41"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/plugins/first-run/route.ts",
+      "language": "typescript",
+      "lines": 36,
+      "size_bytes": 856,
+      "symbols": [
+        "server/web/src/app/api/plugins/first-run/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/plugins/first-run/route.ts:GET:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/plugins/[pluginId]/route.ts",
+      "language": "typescript",
+      "lines": 70,
+      "size_bytes": 2058,
+      "symbols": [
+        "server/web/src/app/api/plugins/[pluginId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/plugins/[pluginId]/route.ts:RouteContext:5",
+        "server/web/src/app/api/plugins/[pluginId]/route.ts:GET:13",
+        "server/web/src/app/api/plugins/[pluginId]/route.ts:PUT:42"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/plugins/[pluginId]/enable/route.ts",
+      "language": "typescript",
+      "lines": 36,
+      "size_bytes": 1031,
+      "symbols": [
+        "server/web/src/app/api/plugins/[pluginId]/enable/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/plugins/[pluginId]/enable/route.ts:RouteContext:5",
+        "server/web/src/app/api/plugins/[pluginId]/enable/route.ts:POST:13"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/plugins/[pluginId]/disable/route.ts",
+      "language": "typescript",
+      "lines": 39,
+      "size_bytes": 1054,
+      "symbols": [
+        "server/web/src/app/api/plugins/[pluginId]/disable/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/plugins/[pluginId]/disable/route.ts:RouteContext:5",
+        "server/web/src/app/api/plugins/[pluginId]/disable/route.ts:POST:13"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/plugins/[pluginId]/test/route.ts",
+      "language": "typescript",
+      "lines": 44,
+      "size_bytes": 1236,
+      "symbols": [
+        "server/web/src/app/api/plugins/[pluginId]/test/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/plugins/[pluginId]/test/route.ts:RouteContext:5",
+        "server/web/src/app/api/plugins/[pluginId]/test/route.ts:POST:13"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/plugins/[pluginId]/schema/route.ts",
+      "language": "typescript",
+      "lines": 40,
+      "size_bytes": 1155,
+      "symbols": [
+        "server/web/src/app/api/plugins/[pluginId]/schema/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/plugins/[pluginId]/schema/route.ts:RouteContext:5",
+        "server/web/src/app/api/plugins/[pluginId]/schema/route.ts:GET:13"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/admin/users/route.ts",
+      "language": "typescript",
+      "lines": 57,
+      "size_bytes": 1492,
+      "symbols": [
+        "server/web/src/app/api/admin/users/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/admin/users/route.ts:GET:5",
+        "server/web/src/app/api/admin/users/route.ts:POST:39"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/admin/users/[userId]/route.ts",
+      "language": "typescript",
+      "lines": 25,
+      "size_bytes": 709,
+      "symbols": [
+        "server/web/src/app/api/admin/users/[userId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/admin/users/[userId]/route.ts:DELETE:5"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/models/route.ts",
+      "language": "typescript",
+      "lines": 35,
+      "size_bytes": 856,
+      "symbols": [
+        "server/web/src/app/api/models/route.ts:BACKEND_URL:4",
+        "server/web/src/app/api/models/route.ts:GET:6"
+      ],
+      "imports": [
+        "@/lib",
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/curricula/route.ts",
+      "language": "typescript",
+      "lines": 88,
+      "size_bytes": 2370,
+      "symbols": [
+        "server/web/src/app/api/curricula/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/curricula/route.ts:GET:9",
+        "server/web/src/app/api/curricula/route.ts:POST:45"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/curricula/reload/route.ts",
+      "language": "typescript",
+      "lines": 33,
+      "size_bytes": 894,
+      "symbols": [
+        "server/web/src/app/api/curricula/reload/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/curricula/reload/route.ts:POST:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/curricula/[curriculumId]/route.ts",
+      "language": "typescript",
+      "lines": 109,
+      "size_bytes": 3119,
+      "symbols": [
+        "server/web/src/app/api/curricula/[curriculumId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/curricula/[curriculumId]/route.ts:RouteContext:5",
+        "server/web/src/app/api/curricula/[curriculumId]/route.ts:GET:13",
+        "server/web/src/app/api/curricula/[curriculumId]/route.ts:PUT:42",
+        "server/web/src/app/api/curricula/[curriculumId]/route.ts:DELETE:78"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/curricula/[curriculumId]/full/route.ts",
+      "language": "typescript",
+      "lines": 160,
+      "size_bytes": 4365,
+      "symbols": [
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:BACKEND_URL:4",
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:RouteContext:6",
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFId:11",
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFVersion:16",
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFLifecycle:22",
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFEducational:26",
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFMetadata:32",
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFTopic:36",
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFContent:53",
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:UMCFDocument:60",
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:transformUMCFToCurriculumDetail:77",
+        "server/web/src/app/api/curricula/[curriculumId]/full/route.ts:GET:134"
+      ],
+      "imports": [
+        "@/types",
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts",
+      "language": "typescript",
+      "lines": 68,
+      "size_bytes": 1996,
+      "symbols": [
+        "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts:RouteContext:5",
+        "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts:POST:13",
+        "server/web/src/app/api/curricula/[curriculumId]/archive/route.ts:DELETE:43"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/transcript/route.ts",
+      "language": "typescript",
+      "lines": 40,
+      "size_bytes": 1163,
+      "symbols": [
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/transcript/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/transcript/route.ts:RouteContext:5",
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/transcript/route.ts:GET:13"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts",
+      "language": "typescript",
+      "lines": 73,
+      "size_bytes": 2163,
+      "symbols": [
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts:RouteContext:5",
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts:GET:13",
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/route.ts:POST:45"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts",
+      "language": "typescript",
+      "lines": 107,
+      "size_bytes": 3279,
+      "symbols": [
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts:RouteContext:5",
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts:GET:13",
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts:PATCH:45",
+        "server/web/src/app/api/curricula/[curriculumId]/topics/[topicId]/assets/[assetId]/route.ts:DELETE:81"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/sessions/route.ts",
+      "language": "typescript",
+      "lines": 59,
+      "size_bytes": 1573,
+      "symbols": [
+        "server/web/src/app/api/sessions/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/sessions/route.ts:GET:9",
+        "server/web/src/app/api/sessions/route.ts:POST:39"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/sessions/[sessionId]/route.ts",
+      "language": "typescript",
+      "lines": 61,
+      "size_bytes": 1690,
+      "symbols": [
+        "server/web/src/app/api/sessions/[sessionId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/sessions/[sessionId]/route.ts:Params:5",
+        "server/web/src/app/api/sessions/[sessionId]/route.ts:GET:11",
+        "server/web/src/app/api/sessions/[sessionId]/route.ts:DELETE:42"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/sessions/[sessionId]/context/route.ts",
+      "language": "typescript",
+      "lines": 37,
+      "size_bytes": 1020,
+      "symbols": [
+        "server/web/src/app/api/sessions/[sessionId]/context/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/sessions/[sessionId]/context/route.ts:Params:5",
+        "server/web/src/app/api/sessions/[sessionId]/context/route.ts:GET:11"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/sessions/[sessionId]/start/route.ts",
+      "language": "typescript",
+      "lines": 30,
+      "size_bytes": 852,
+      "symbols": [
+        "server/web/src/app/api/sessions/[sessionId]/start/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/sessions/[sessionId]/start/route.ts:Params:5",
+        "server/web/src/app/api/sessions/[sessionId]/start/route.ts:POST:11"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/sessions/[sessionId]/topic/route.ts",
+      "language": "typescript",
+      "lines": 33,
+      "size_bytes": 974,
+      "symbols": [
+        "server/web/src/app/api/sessions/[sessionId]/topic/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/sessions/[sessionId]/topic/route.ts:Params:5",
+        "server/web/src/app/api/sessions/[sessionId]/topic/route.ts:PUT:11"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/sessions/[sessionId]/barge-in/route.ts",
+      "language": "typescript",
+      "lines": 33,
+      "size_bytes": 1010,
+      "symbols": [
+        "server/web/src/app/api/sessions/[sessionId]/barge-in/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/sessions/[sessionId]/barge-in/route.ts:Params:5",
+        "server/web/src/app/api/sessions/[sessionId]/barge-in/route.ts:POST:11"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/sessions/[sessionId]/analyze-response/route.ts",
+      "language": "typescript",
+      "lines": 33,
+      "size_bytes": 1030,
+      "symbols": [
+        "server/web/src/app/api/sessions/[sessionId]/analyze-response/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/sessions/[sessionId]/analyze-response/route.ts:Params:5",
+        "server/web/src/app/api/sessions/[sessionId]/analyze-response/route.ts:POST:11"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/sessions/[sessionId]/turns/route.ts",
+      "language": "typescript",
+      "lines": 33,
+      "size_bytes": 977,
+      "symbols": [
+        "server/web/src/app/api/sessions/[sessionId]/turns/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/sessions/[sessionId]/turns/route.ts:Params:5",
+        "server/web/src/app/api/sessions/[sessionId]/turns/route.ts:POST:11"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/sessions/[sessionId]/debug/route.ts",
+      "language": "typescript",
+      "lines": 37,
+      "size_bytes": 1040,
+      "symbols": [
+        "server/web/src/app/api/sessions/[sessionId]/debug/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/sessions/[sessionId]/debug/route.ts:Params:5",
+        "server/web/src/app/api/sessions/[sessionId]/debug/route.ts:GET:11"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/logs/route.ts",
+      "language": "typescript",
+      "lines": 104,
+      "size_bytes": 3037,
+      "symbols": [
+        "server/web/src/app/api/logs/route.ts:BACKEND_URL:5",
+        "server/web/src/app/api/logs/route.ts:GET:7",
+        "server/web/src/app/api/logs/route.ts:POST:70",
+        "server/web/src/app/api/logs/route.ts:DELETE:94"
+      ],
+      "imports": [
+        "@/lib",
+        "@/types",
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/tts/pregen/extract/route.ts",
+      "language": "typescript",
+      "lines": 49,
+      "size_bytes": 1536,
+      "symbols": [
+        "server/web/src/app/api/tts/pregen/extract/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/tts/pregen/extract/route.ts:POST:24"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/tts/pregen/jobs/route.ts",
+      "language": "typescript",
+      "lines": 107,
+      "size_bytes": 3235,
+      "symbols": [
+        "server/web/src/app/api/tts/pregen/jobs/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/tts/pregen/jobs/route.ts:GET:16",
+        "server/web/src/app/api/tts/pregen/jobs/route.ts:POST:82"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/tts/pregen/jobs/[jobId]/route.ts",
+      "language": "typescript",
+      "lines": 76,
+      "size_bytes": 2043,
+      "symbols": [
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/route.ts:GET:9",
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/route.ts:DELETE:45"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/tts/pregen/jobs/[jobId]/pause/route.ts",
+      "language": "typescript",
+      "lines": 40,
+      "size_bytes": 1085,
+      "symbols": [
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/pause/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/pause/route.ts:POST:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/tts/pregen/jobs/[jobId]/progress/route.ts",
+      "language": "typescript",
+      "lines": 50,
+      "size_bytes": 1498,
+      "symbols": [
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/progress/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/progress/route.ts:GET:19"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/tts/pregen/jobs/[jobId]/resume/route.ts",
+      "language": "typescript",
+      "lines": 40,
+      "size_bytes": 1090,
+      "symbols": [
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/resume/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/resume/route.ts:POST:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/tts/pregen/jobs/[jobId]/start/route.ts",
+      "language": "typescript",
+      "lines": 40,
+      "size_bytes": 1086,
+      "symbols": [
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/start/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/start/route.ts:POST:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/tts/pregen/jobs/[jobId]/items/route.ts",
+      "language": "typescript",
+      "lines": 59,
+      "size_bytes": 1724,
+      "symbols": [
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/items/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/items/route.ts:GET:14"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/tts/pregen/jobs/[jobId]/retry-failed/route.ts",
+      "language": "typescript",
+      "lines": 43,
+      "size_bytes": 1183,
+      "symbols": [
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/retry-failed/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/tts/pregen/jobs/[jobId]/retry-failed/route.ts:POST:12"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/sources/route.ts",
+      "language": "typescript",
+      "lines": 37,
+      "size_bytes": 930,
+      "symbols": [
+        "server/web/src/app/api/sources/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/sources/route.ts:GET:10"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/modules/route.ts",
+      "language": "typescript",
+      "lines": 26,
+      "size_bytes": 866,
+      "symbols": [
+        "server/web/src/app/api/modules/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/modules/route.ts:GET:5"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/modules/[moduleId]/route.ts",
+      "language": "typescript",
+      "lines": 27,
+      "size_bytes": 833,
+      "symbols": [
+        "server/web/src/app/api/modules/[moduleId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/modules/[moduleId]/route.ts:RouteParams:5",
+        "server/web/src/app/api/modules/[moduleId]/route.ts:GET:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/modules/[moduleId]/settings/route.ts",
+      "language": "typescript",
+      "lines": 32,
+      "size_bytes": 1000,
+      "symbols": [
+        "server/web/src/app/api/modules/[moduleId]/settings/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/modules/[moduleId]/settings/route.ts:RouteParams:5",
+        "server/web/src/app/api/modules/[moduleId]/settings/route.ts:PATCH:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/import/sources/route.ts",
+      "language": "typescript",
+      "lines": 33,
+      "size_bytes": 800,
+      "symbols": [
+        "server/web/src/app/api/import/sources/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/import/sources/route.ts:GET:9"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/import/sources/[sourceId]/route.ts",
+      "language": "typescript",
+      "lines": 41,
+      "size_bytes": 1099,
+      "symbols": [
+        "server/web/src/app/api/import/sources/[sourceId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/import/sources/[sourceId]/route.ts:RouteParams:5",
+        "server/web/src/app/api/import/sources/[sourceId]/route.ts:GET:13"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/import/sources/[sourceId]/courses/route.ts",
+      "language": "typescript",
+      "lines": 59,
+      "size_bytes": 1693,
+      "symbols": [
+        "server/web/src/app/api/import/sources/[sourceId]/courses/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/import/sources/[sourceId]/courses/route.ts:RouteParams:5",
+        "server/web/src/app/api/import/sources/[sourceId]/courses/route.ts:GET:21"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/import/sources/[sourceId]/courses/[courseId]/route.ts",
+      "language": "typescript",
+      "lines": 42,
+      "size_bytes": 1199,
+      "symbols": [
+        "server/web/src/app/api/import/sources/[sourceId]/courses/[courseId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/import/sources/[sourceId]/courses/[courseId]/route.ts:RouteParams:5",
+        "server/web/src/app/api/import/sources/[sourceId]/courses/[courseId]/route.ts:GET:13"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/import/jobs/route.ts",
+      "language": "typescript",
+      "lines": 68,
+      "size_bytes": 1760,
+      "symbols": [
+        "server/web/src/app/api/import/jobs/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/import/jobs/route.ts:GET:12",
+        "server/web/src/app/api/import/jobs/route.ts:POST:46"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/import/jobs/[jobId]/route.ts",
+      "language": "typescript",
+      "lines": 69,
+      "size_bytes": 1894,
+      "symbols": [
+        "server/web/src/app/api/import/jobs/[jobId]/route.ts:BACKEND_URL:3",
+        "server/web/src/app/api/import/jobs/[jobId]/route.ts:RouteParams:5",
+        "server/web/src/app/api/import/jobs/[jobId]/route.ts:GET:13",
+        "server/web/src/app/api/import/jobs/[jobId]/route.ts:DELETE:46"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/servers/route.ts",
+      "language": "typescript",
+      "lines": 52,
+      "size_bytes": 1478,
+      "symbols": [
+        "server/web/src/app/api/servers/route.ts:BACKEND_URL:4",
+        "server/web/src/app/api/servers/route.ts:GET:6",
+        "server/web/src/app/api/servers/route.ts:POST:34"
+      ],
+      "imports": [
+        "@/lib",
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web/src/app/api/stats/route.ts",
+      "language": "typescript",
+      "lines": 25,
+      "size_bytes": 596,
+      "symbols": [
+        "server/web/src/app/api/stats/route.ts:BACKEND_URL:4",
+        "server/web/src/app/api/stats/route.ts:GET:6"
+      ],
+      "imports": [
+        "@/lib",
+        "next"
+      ],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

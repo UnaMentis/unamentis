@@ -1,0 +1,124 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:loadQuestions:264",
+      "name": "loadQuestions",
+      "kind": "function",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift",
+      "line": 264,
+      "end_line": 274,
+      "code_preview": "    private func loadQuestions() async {\n        isLoading = true\n        do {\n            try await engine.loadBundledQuestions()\n            // Get all questions from the engine\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:createPack:290",
+      "name": "createPack",
+      "kind": "function",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift",
+      "line": 290,
+      "end_line": 300,
+      "code_preview": "    private func createPack() {\n        let selectedQuestions = availableQuestions.filter { selectedQuestionIds.contains($0.id) }\n\n        localPackStore.createPack(\n            name: packName,\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:domainFilterButton:138",
+      "name": "domainFilterButton",
+      "kind": "function",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift",
+      "line": 138,
+      "end_line": 160,
+      "code_preview": "    private func domainFilterButton(_ domain: KBDomain?, label: String) -> some View {\n        let isSelected = selectedDomain == domain\n\n        return Button {\n            withAnimation {\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:selectAllFiltered:284",
+      "name": "selectAllFiltered",
+      "kind": "function",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift",
+      "line": 284,
+      "end_line": 288,
+      "code_preview": "    private func selectAllFiltered() {\n        for question in filteredQuestions {\n            selectedQuestionIds.insert(question.id)\n        }\n    }",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:KBCreatePackView:11",
+      "name": "KBCreatePackView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift",
+      "line": 11,
+      "end_line": 301,
+      "code_preview": "struct KBCreatePackView: View {\n    @Bindable var localPackStore: KBLocalPackStore\n    @Environment(\\.dismiss) private var dismiss\n\n    @State private var packName: String = \"\"\n    ...",
+      "visibility": "internal",
+      "docstring": "View for creating a custom question pack from local questions.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:questionRow:198",
+      "name": "questionRow",
+      "kind": "function",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift",
+      "line": 198,
+      "end_line": 238,
+      "code_preview": "    private func questionRow(_ question: KBQuestion) -> some View {\n        let isSelected = selectedQuestionIds.contains(question.id)\n\n        return Button {\n            toggleQuestion(question)\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:toggleQuestion:276",
+      "name": "toggleQuestion",
+      "kind": "function",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift",
+      "line": 276,
+      "end_line": 282,
+      "code_preview": "    private func toggleQuestion(_ question: KBQuestion) {\n        if selectedQuestionIds.contains(question.id) {\n            selectedQuestionIds.remove(question.id)\n        } else {\n            selectedQuestionIds.insert(question.id)\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift",
+      "language": "swift",
+      "lines": 308,
+      "size_bytes": 9513,
+      "symbols": [
+        "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:KBCreatePackView:11",
+        "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:domainFilterButton:138",
+        "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:questionRow:198",
+        "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:loadQuestions:264",
+        "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:toggleQuestion:276",
+        "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:selectAllFiltered:284",
+        "UnaMentis/UI/KnowledgeBowl/KBCreatePackView.swift:createPack:290"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis\nView for creating a new local question pack by selecting questions."
+    }
+  ]
+}

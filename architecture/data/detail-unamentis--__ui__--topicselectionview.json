@@ -1,0 +1,141 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/Curriculum/TopicSelectionView.swift:topicListContent:232",
+      "name": "topicListContent",
+      "kind": "function",
+      "file": "UnaMentis/UI/Curriculum/TopicSelectionView.swift",
+      "line": 232,
+      "end_line": 246,
+      "code_preview": "    @ViewBuilder\n    private func topicListContent(detail: CurriculumDetail) -> some View {\n        List {\n            ForEach(topics) { topic in\n                TopicSelectionRow(\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Curriculum/TopicSelectionView.swift:TopicSelectionView:12",
+      "name": "TopicSelectionView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Curriculum/TopicSelectionView.swift",
+      "line": 12,
+      "end_line": 288,
+      "code_preview": "struct TopicSelectionView: View {\n    let curriculum: CurriculumSummary\n    let detail: CurriculumDetail?\n    let onDownload: (Set<String>) async -> Void\n    let onCancel: () -> Void\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Curriculum/TopicSelectionView.swift:downloadProgressView:184",
+      "name": "downloadProgressView",
+      "kind": "function",
+      "file": "UnaMentis/UI/Curriculum/TopicSelectionView.swift",
+      "line": 184,
+      "end_line": 228,
+      "code_preview": "    @ViewBuilder\n    private func downloadProgressView(progress: CurriculumDownloadProgress) -> some View {\n        VStack(spacing: 8) {\n            // Progress bar\n            GeometryReader { geometry in\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Curriculum/TopicSelectionView.swift:startDownload:260",
+      "name": "startDownload",
+      "kind": "function",
+      "file": "UnaMentis/UI/Curriculum/TopicSelectionView.swift",
+      "line": 260,
+      "end_line": 270,
+      "code_preview": "    @MainActor\n    private func startDownload() async {\n        guard !selectedTopicIds.isEmpty else { return }\n\n        isDownloading = true\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Curriculum/TopicSelectionView.swift:toggleTopic:250",
+      "name": "toggleTopic",
+      "kind": "function",
+      "file": "UnaMentis/UI/Curriculum/TopicSelectionView.swift",
+      "line": 250,
+      "end_line": 258,
+      "code_preview": "    private func toggleTopic(_ id: String) {\n        guard !isDownloading else { return }\n\n        if selectedTopicIds.contains(id) {\n            selectedTopicIds.remove(id)\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Curriculum/TopicSelectionView.swift:formatDuration:349",
+      "name": "formatDuration",
+      "kind": "function",
+      "file": "UnaMentis/UI/Curriculum/TopicSelectionView.swift",
+      "line": 349,
+      "end_line": 373,
+      "code_preview": "    private func formatDuration(_ ptDuration: String) -> String {\n        let pattern = #\"PT(?:(\\d+)H)?(?:(\\d+)M)?\"#\n        guard let regex = try? NSRegularExpression(pattern: pattern),\n              let match = regex.firstMatch(in: ptDuration, range: NSRange(ptDuration.startIndex..., in: ptDuration)) else {\n            return ptDuration\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Curriculum/TopicSelectionView.swift:TopicSelectionRow:292",
+      "name": "TopicSelectionRow",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Curriculum/TopicSelectionView.swift",
+      "line": 292,
+      "end_line": 374,
+      "code_preview": "struct TopicSelectionRow: View {\n    let topic: TopicSummary\n    let isSelected: Bool\n    let isDownloading: Bool\n    let onToggle: () -> Void\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Curriculum/TopicSelectionView.swift:checkDownloadProgress:272",
+      "name": "checkDownloadProgress",
+      "kind": "function",
+      "file": "UnaMentis/UI/Curriculum/TopicSelectionView.swift",
+      "line": 272,
+      "end_line": 287,
+      "code_preview": "    private func checkDownloadProgress() {\n        if let progress = currentProgress {\n            switch progress.state {\n            case .completed:\n                isDownloading = false\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/Curriculum/TopicSelectionView.swift",
+      "language": "swift",
+      "lines": 396,
+      "size_bytes": 12617,
+      "symbols": [
+        "UnaMentis/UI/Curriculum/TopicSelectionView.swift:TopicSelectionView:12",
+        "UnaMentis/UI/Curriculum/TopicSelectionView.swift:downloadProgressView:184",
+        "UnaMentis/UI/Curriculum/TopicSelectionView.swift:topicListContent:232",
+        "UnaMentis/UI/Curriculum/TopicSelectionView.swift:toggleTopic:250",
+        "UnaMentis/UI/Curriculum/TopicSelectionView.swift:startDownload:260",
+        "UnaMentis/UI/Curriculum/TopicSelectionView.swift:checkDownloadProgress:272",
+        "UnaMentis/UI/Curriculum/TopicSelectionView.swift:TopicSelectionRow:292",
+        "UnaMentis/UI/Curriculum/TopicSelectionView.swift:formatDuration:349"
+      ],
+      "imports": [
+        "SwiftUI",
+        "Combine",
+        "Logging"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Topic Selection View\nUI for selecting which topics to download from a curriculum\nPart of Curriculum UI (Phase 4 Integration)"
+    }
+  ]
+}

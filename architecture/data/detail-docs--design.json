@@ -1,0 +1,35 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/design/AUDIO_LATENCY_TEST_HARNESS.md",
+      "language": "markdown",
+      "lines": 1074,
+      "size_bytes": 40605,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/design/AUDIO_PLAYBACK_ORCHESTRATOR.md",
+      "language": "markdown",
+      "lines": 424,
+      "size_bytes": 18175,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/design/HANDS_FREE_FIRST_DESIGN.md",
+      "language": "markdown",
+      "lines": 365,
+      "size_bytes": 10873,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

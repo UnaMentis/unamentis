@@ -1,0 +1,75 @@
+{
+  "symbols": [
+    {
+      "id": "server/usm-core/crates/usm-cli/src/main.rs:main:129",
+      "name": "main",
+      "kind": "function",
+      "file": "server/usm-core/crates/usm-cli/src/main.rs",
+      "line": 129,
+      "end_line": 326,
+      "code_preview": "async fn main() -> anyhow::Result<()> {\n    let cli = Cli::parse();\n\n    // Initialize logging\n    let filter = if cli.verbose { \"debug\" } else { \"info\" };\n    ...",
+      "visibility": "private",
+      "docstring": "[tokio::main]",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/usm-core/crates/usm-cli/src/main.rs:Cli:16",
+      "name": "Cli",
+      "kind": "struct",
+      "file": "server/usm-core/crates/usm-cli/src/main.rs",
+      "line": 16,
+      "end_line": 27,
+      "code_preview": "struct Cli {\n    /// Path to the configuration file\n    #[arg(short, long, default_value = \"config/services.toml\")]\n    config: PathBuf,\n\n    ...",
+      "visibility": "private",
+      "docstring": "[derive(Parser)]\n[command(name = \"usm\")]\n[command(author, version, about = \"USM Core - Universal Service Manager\", long_about = None)]",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/usm-core/crates/usm-cli/src/main.rs:Commands:30",
+      "name": "Commands",
+      "kind": "enum",
+      "file": "server/usm-core/crates/usm-cli/src/main.rs",
+      "line": 30,
+      "end_line": 126,
+      "code_preview": "enum Commands {\n    /// Start the USM Core server\n    Server {\n        /// Port to listen on\n        #[arg(short, long, default_value = \"8767\")]\n    ...",
+      "visibility": "private",
+      "docstring": "[derive(Subcommand)]",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/usm-core/crates/usm-cli/Cargo.toml",
+      "language": "toml",
+      "lines": 21,
+      "size_bytes": 458,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/usm-core/crates/usm-cli/src/main.rs",
+      "language": "rust",
+      "lines": 327,
+      "size_bytes": 10089,
+      "symbols": [
+        "server/usm-core/crates/usm-cli/src/main.rs:Cli:16",
+        "server/usm-core/crates/usm-cli/src/main.rs:Commands:30",
+        "server/usm-core/crates/usm-cli/src/main.rs:main:129"
+      ],
+      "imports": [
+        "std",
+        "tracing"
+      ],
+      "exports": [],
+      "module_doc": "USM Core Command-Line Interface\n\nA CLI tool for managing services through USM Core."
+    }
+  ]
+}

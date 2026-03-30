@@ -1,0 +1,374 @@
+{
+  "symbols": [
+    {
+      "id": "server/management/tts_cache/resource_pool.py:TTSResourcePool:48",
+      "name": "TTSResourcePool",
+      "kind": "class",
+      "file": "server/management/tts_cache/resource_pool.py",
+      "line": 48,
+      "end_line": 260,
+      "code_preview": "class TTSResourcePool:\n    \"\"\"Manages TTS generation with priority and concurrency limits.\n\n    Features:\n    - Separate concurrency limits for live vs background requests\n    ...",
+      "visibility": "public",
+      "docstring": "Manages TTS generation with priority and concurrency limits.\n\n    Features:\n    - Separate concurrency limits for live vs background requests\n    - Live users never starved by background pre-generation\n    - Rate limiting to avoid overwhelming TTS servers\n    - Statistics tracking\n\n    Usage:\n        pool = TTSResourcePool()\n        result = await pool.generate_with_priority(\n            text=\"Hello world\",\n            voice_id=\"nova\",\n            provider=\"vibevoice\",\n            priority=Priority.LIVE\n        )",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/kb_audio.py:KBSegment:42",
+      "name": "KBSegment",
+      "kind": "class",
+      "file": "server/management/tts_cache/kb_audio.py",
+      "line": 42,
+      "end_line": 55,
+      "code_preview": "@dataclass\nclass KBSegment:\n    \"\"\"A segment of KB content to be converted to audio.\"\"\"\n    question_id: str\n    segment_type: KBSegmentType\n    ...",
+      "visibility": "public",
+      "docstring": "A segment of KB content to be converted to audio.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/models.py:TTSCacheStats:199",
+      "name": "TTSCacheStats",
+      "kind": "class",
+      "file": "server/management/tts_cache/models.py",
+      "line": 199,
+      "end_line": 272,
+      "code_preview": "@dataclass\nclass TTSCacheStats:\n    \"\"\"Cache statistics for monitoring.\"\"\"\n    total_entries: int = 0\n    total_size_bytes: int = 0\n    ...",
+      "visibility": "public",
+      "docstring": "Cache statistics for monitoring.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/kb_audio.py:KBAudioEntry:58",
+      "name": "KBAudioEntry",
+      "kind": "class",
+      "file": "server/management/tts_cache/kb_audio.py",
+      "line": 58,
+      "end_line": 93,
+      "code_preview": "@dataclass\nclass KBAudioEntry:\n    \"\"\"Metadata for a cached KB audio file.\"\"\"\n    question_id: str\n    segment_type: str\n    ...",
+      "visibility": "public",
+      "docstring": "Metadata for a cached KB audio file.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/cache.py:TTSCache:17",
+      "name": "TTSCache",
+      "kind": "class",
+      "file": "server/management/tts_cache/cache.py",
+      "line": 17,
+      "end_line": 447,
+      "code_preview": "class TTSCache:\n    \"\"\"Async file-based TTS cache with LRU eviction.\n\n    Features:\n    - File-based storage organized by hash prefix\n    ...",
+      "visibility": "public",
+      "docstring": "Async file-based TTS cache with LRU eviction.\n\n    Features:\n    - File-based storage organized by hash prefix\n    - Persistent index for fast lookups\n    - LRU eviction when size limit exceeded\n    - TTL-based expiration\n    - Thread-safe async operations",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/resource_pool.py:GenerationResult:40",
+      "name": "GenerationResult",
+      "kind": "class",
+      "file": "server/management/tts_cache/resource_pool.py",
+      "line": 40,
+      "end_line": 45,
+      "code_preview": "@dataclass\nclass GenerationResult:\n    \"\"\"Result of a TTS generation request.\"\"\"\n    audio_data: bytes\n    sample_rate: int\n    ...",
+      "visibility": "public",
+      "docstring": "Result of a TTS generation request.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/kb_audio.py:_validate_path_component:21",
+      "name": "_validate_path_component",
+      "kind": "function",
+      "file": "server/management/tts_cache/kb_audio.py",
+      "line": 21,
+      "end_line": 31,
+      "code_preview": "def _validate_path_component(component: str) -> bool:\n    \"\"\"Validate a path component is safe (no path traversal).\"\"\"\n    if not component:\n        return False\n    # Block path traversal attempts\n    ...",
+      "visibility": "private",
+      "docstring": "Validate a path component is safe (no path traversal).",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/kb_audio.py:KBPrefetchProgress:151",
+      "name": "KBPrefetchProgress",
+      "kind": "class",
+      "file": "server/management/tts_cache/kb_audio.py",
+      "line": 151,
+      "end_line": 186,
+      "code_preview": "@dataclass\nclass KBPrefetchProgress:\n    \"\"\"Progress tracking for KB audio pre-generation.\"\"\"\n    job_id: str\n    module_id: str\n    ...",
+      "visibility": "public",
+      "docstring": "Progress tracking for KB audio pre-generation.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/kb_audio.py:KBCoverageStatus:189",
+      "name": "KBCoverageStatus",
+      "kind": "class",
+      "file": "server/management/tts_cache/kb_audio.py",
+      "line": 189,
+      "end_line": 219,
+      "code_preview": "@dataclass\nclass KBCoverageStatus:\n    \"\"\"Status of audio coverage for a module.\"\"\"\n    module_id: str\n    total_questions: int\n    ...",
+      "visibility": "public",
+      "docstring": "Status of audio coverage for a module.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/models.py:TTSCacheEntry:136",
+      "name": "TTSCacheEntry",
+      "kind": "class",
+      "file": "server/management/tts_cache/models.py",
+      "line": 136,
+      "end_line": 196,
+      "code_preview": "@dataclass\nclass TTSCacheEntry:\n    \"\"\"Metadata for a cached TTS audio file.\"\"\"\n    key: TTSCacheKey\n    file_path: str\n    ...",
+      "visibility": "public",
+      "docstring": "Metadata for a cached TTS audio file.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/kb_audio.py:KBSegmentType:34",
+      "name": "KBSegmentType",
+      "kind": "class",
+      "file": "server/management/tts_cache/kb_audio.py",
+      "line": 34,
+      "end_line": 39,
+      "code_preview": "class KBSegmentType(str, Enum):\n    \"\"\"Types of audio segments for a KB question.\"\"\"\n    QUESTION = \"question\"\n    ANSWER = \"answer\"\n    HINT = \"hint\"\n    ...",
+      "visibility": "public",
+      "docstring": "Types of audio segments for a KB question.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/models.py:TTSCacheKey:12",
+      "name": "TTSCacheKey",
+      "kind": "class",
+      "file": "server/management/tts_cache/models.py",
+      "line": 12,
+      "end_line": 133,
+      "code_preview": "@dataclass(frozen=True)\nclass TTSCacheKey:\n    \"\"\"Immutable cache key for TTS audio.\n\n    Includes all parameters that affect audio output to ensure\n    ...",
+      "visibility": "public",
+      "docstring": "Immutable cache key for TTS audio.\n\n    Includes all parameters that affect audio output to ensure\n    different voice configurations produce different cache entries.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/kb_audio.py:KBAudioManager:222",
+      "name": "KBAudioManager",
+      "kind": "class",
+      "file": "server/management/tts_cache/kb_audio.py",
+      "line": 222,
+      "end_line": 762,
+      "code_preview": "class KBAudioManager:\n    \"\"\"Manages pre-generated TTS audio for Knowledge Bowl questions.\n\n    Features:\n    - Pre-generates all audio for a module's questions\n    ...",
+      "visibility": "public",
+      "docstring": "Manages pre-generated TTS audio for Knowledge Bowl questions.\n\n    Features:\n    - Pre-generates all audio for a module's questions\n    - Stores audio in organized directory structure\n    - Tracks progress and provides manifest\n    - Serves audio efficiently",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/resource_pool.py:Priority:15",
+      "name": "Priority",
+      "kind": "class",
+      "file": "server/management/tts_cache/resource_pool.py",
+      "line": 15,
+      "end_line": 22,
+      "code_preview": "class Priority(IntEnum):\n    \"\"\"Priority levels for TTS generation requests.\n\n    Higher values = higher priority.\n    \"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Priority levels for TTS generation requests.\n\n    Higher values = higher priority.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/prefetcher.py:CurriculumPrefetcher:60",
+      "name": "CurriculumPrefetcher",
+      "kind": "class",
+      "file": "server/management/tts_cache/prefetcher.py",
+      "line": 60,
+      "end_line": 373,
+      "code_preview": "class CurriculumPrefetcher:\n    \"\"\"Predictive caching for curriculum TTS content.\n\n    Features:\n    - Background prefetching of topic segments using resource pool\n    ...",
+      "visibility": "public",
+      "docstring": "Predictive caching for curriculum TTS content.\n\n    Features:\n    - Background prefetching of topic segments using resource pool\n    - Cancellable prefetch tasks\n    - Progress tracking\n    - Priority-based generation (PREFETCH priority, doesn't starve live users)\n    - Automatic cache checking before generation",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/kb_audio.py:KBManifest:96",
+      "name": "KBManifest",
+      "kind": "class",
+      "file": "server/management/tts_cache/kb_audio.py",
+      "line": 96,
+      "end_line": 148,
+      "code_preview": "@dataclass\nclass KBManifest:\n    \"\"\"Manifest tracking all pre-generated audio for a module.\"\"\"\n    module_id: str\n    voice_id: str\n    ...",
+      "visibility": "public",
+      "docstring": "Manifest tracking all pre-generated audio for a module.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/prefetcher.py:PrefetchProgress:20",
+      "name": "PrefetchProgress",
+      "kind": "class",
+      "file": "server/management/tts_cache/prefetcher.py",
+      "line": 20,
+      "end_line": 57,
+      "code_preview": "@dataclass\nclass PrefetchProgress:\n    \"\"\"Progress tracking for a prefetch job.\"\"\"\n    job_id: str\n    curriculum_id: str\n    ...",
+      "visibility": "public",
+      "docstring": "Progress tracking for a prefetch job.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/management/tts_cache/__init__.py",
+      "language": "python",
+      "lines": 19,
+      "size_bytes": 456,
+      "symbols": [],
+      "imports": [
+        "TTSCacheKey",
+        "TTSResourcePool",
+        "CurriculumPrefetcher",
+        "TTSCache"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/tts_cache/cache.py",
+      "language": "python",
+      "lines": 448,
+      "size_bytes": 15096,
+      "symbols": [
+        "server/management/tts_cache/cache.py:TTSCache:17"
+      ],
+      "imports": [
+        "pathlib",
+        "datetime",
+        "asyncio",
+        "TTSCacheKey",
+        "logging",
+        "aiofiles",
+        "typing",
+        "json"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/tts_cache/kb_audio.py",
+      "language": "python",
+      "lines": 763,
+      "size_bytes": 25981,
+      "symbols": [
+        "server/management/tts_cache/kb_audio.py:_validate_path_component:21",
+        "server/management/tts_cache/kb_audio.py:KBSegmentType:34",
+        "server/management/tts_cache/kb_audio.py:KBSegment:42",
+        "server/management/tts_cache/kb_audio.py:KBAudioEntry:58",
+        "server/management/tts_cache/kb_audio.py:KBManifest:96",
+        "server/management/tts_cache/kb_audio.py:KBPrefetchProgress:151",
+        "server/management/tts_cache/kb_audio.py:KBCoverageStatus:189",
+        "server/management/tts_cache/kb_audio.py:KBAudioManager:222"
+      ],
+      "imports": [
+        "pathlib",
+        "asyncio",
+        "datetime",
+        "uuid",
+        "os",
+        "logging",
+        "dataclasses",
+        "enum",
+        "typing",
+        "json"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/tts_cache/models.py",
+      "language": "python",
+      "lines": 273,
+      "size_bytes": 9202,
+      "symbols": [
+        "server/management/tts_cache/models.py:TTSCacheKey:12",
+        "server/management/tts_cache/models.py:TTSCacheEntry:136",
+        "server/management/tts_cache/models.py:TTSCacheStats:199"
+      ],
+      "imports": [
+        "datetime",
+        "unicodedata",
+        "dataclasses",
+        "typing",
+        "re",
+        "hashlib"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/tts_cache/prefetcher.py",
+      "language": "python",
+      "lines": 374,
+      "size_bytes": 12327,
+      "symbols": [
+        "server/management/tts_cache/prefetcher.py:PrefetchProgress:20",
+        "server/management/tts_cache/prefetcher.py:CurriculumPrefetcher:60"
+      ],
+      "imports": [
+        "TTSCache",
+        "datetime",
+        "asyncio",
+        "uuid",
+        "TTSCacheKey",
+        "logging",
+        "dataclasses",
+        "typing"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/tts_cache/resource_pool.py",
+      "language": "python",
+      "lines": 261,
+      "size_bytes": 8826,
+      "symbols": [
+        "server/management/tts_cache/resource_pool.py:Priority:15",
+        "server/management/tts_cache/resource_pool.py:GenerationResult:40",
+        "server/management/tts_cache/resource_pool.py:TTSResourcePool:48"
+      ],
+      "imports": [
+        "aiohttp",
+        "asyncio",
+        "logging",
+        "dataclasses",
+        "enum",
+        "typing"
+      ],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

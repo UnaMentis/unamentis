@@ -1,0 +1,25 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "models/kyutai-pocket-ios/manifest.json",
+      "language": "json",
+      "lines": 63,
+      "size_bytes": 2079,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "models/kyutai-pocket-ios/tokenizer.json",
+      "language": "json",
+      "lines": 4002,
+      "size_bytes": 69478,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

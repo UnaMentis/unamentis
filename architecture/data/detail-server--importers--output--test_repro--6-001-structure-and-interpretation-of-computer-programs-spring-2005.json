@@ -1,0 +1,25 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/importers/output/test_repro/6-001-structure-and-interpretation-of-computer-programs-spring-2005/course_metadata.json",
+      "language": "json",
+      "lines": 61,
+      "size_bytes": 54887,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/importers/output/test_repro/6-001-structure-and-interpretation-of-computer-programs-spring-2005/navigation_links.json",
+      "language": "json",
+      "lines": 86,
+      "size_bytes": 3372,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/server/README.md",
+      "language": "markdown",
+      "lines": 184,
+      "size_bytes": 7621,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/server/RECOMMENDATIONS.md",
+      "language": "markdown",
+      "lines": 376,
+      "size_bytes": 10642,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/server/SERVER_IDLE_OPTIMIZATION_PLAN.md",
+      "language": "markdown",
+      "lines": 617,
+      "size_bytes": 20917,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/server/SERVER_RESOURCE_MONITORING_PLAN.md",
+      "language": "markdown",
+      "lines": 514,
+      "size_bytes": 20693,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/server/TTS_LAB_GUIDE.md",
+      "language": "markdown",
+      "lines": 492,
+      "size_bytes": 13145,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/server/VOICE_LAB_GUIDE.md",
+      "language": "markdown",
+      "lines": 577,
+      "size_bytes": 18692,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

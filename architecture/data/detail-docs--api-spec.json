@@ -1,0 +1,115 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/api-spec/01-AUTHENTICATION.md",
+      "language": "markdown",
+      "lines": 384,
+      "size_bytes": 6985,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/api-spec/02-CURRICULA.md",
+      "language": "markdown",
+      "lines": 510,
+      "size_bytes": 8827,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/api-spec/03-SESSIONS.md",
+      "language": "markdown",
+      "lines": 560,
+      "size_bytes": 9571,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/api-spec/04-TTS.md",
+      "language": "markdown",
+      "lines": 520,
+      "size_bytes": 8033,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/api-spec/05-IMPORT.md",
+      "language": "markdown",
+      "lines": 470,
+      "size_bytes": 9066,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/api-spec/06-MEDIA.md",
+      "language": "markdown",
+      "lines": 406,
+      "size_bytes": 6935,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/api-spec/07-SYSTEM.md",
+      "language": "markdown",
+      "lines": 573,
+      "size_bytes": 8200,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/api-spec/08-WEBSOCKET.md",
+      "language": "markdown",
+      "lines": 546,
+      "size_bytes": 8729,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/api-spec/09-KNOWLEDGE-BOWL.md",
+      "language": "markdown",
+      "lines": 851,
+      "size_bytes": 18881,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/api-spec/README.md",
+      "language": "markdown",
+      "lines": 176,
+      "size_bytes": 4829,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/api-spec/openapi.yaml",
+      "language": "yaml",
+      "lines": 1201,
+      "size_bytes": 29076,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

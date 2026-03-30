@@ -1,0 +1,140 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/Review/ReviewListView.swift:deleteItem:271",
+      "name": "deleteItem",
+      "kind": "function",
+      "file": "UnaMentis/UI/Review/ReviewListView.swift",
+      "line": 271,
+      "end_line": 283,
+      "code_preview": "    func deleteItem(_ item: ReinforcementItemData) {\n        guard let manager = ReinforcementManager.shared else { return }\n\n        do {\n            let items = try manager.fetchAllItems()\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Review/ReviewListView.swift:ReviewItemDetailSheet:147",
+      "name": "ReviewItemDetailSheet",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Review/ReviewListView.swift",
+      "line": 147,
+      "end_line": 215,
+      "code_preview": "private struct ReviewItemDetailSheet: View {\n    let item: ReinforcementItemData\n    @Environment(\\.dismiss) private var dismiss\n\n    var body: some View {\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Review/ReviewListView.swift:ReviewItemRow:105",
+      "name": "ReviewItemRow",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Review/ReviewListView.swift",
+      "line": 105,
+      "end_line": 143,
+      "code_preview": "private struct ReviewItemRow: View {\n    let item: ReinforcementItemData\n    let onTap: () -> Void\n\n    var body: some View {\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Review/ReviewListView.swift:ReviewListView:16",
+      "name": "ReviewListView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Review/ReviewListView.swift",
+      "line": 16,
+      "end_line": 101,
+      "code_preview": "public struct ReviewListView: View {\n\n    @StateObject private var viewModel = ReviewListViewModel()\n\n    public init() {}",
+      "visibility": "public",
+      "docstring": "Displays review items organized hierarchically by their source material.\n\nItems are grouped by source (reading list document, curriculum topic, session)\nso users can see all flagged items from a single source together. Each item\nshows a snippet preview and can be tapped to see full context.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Review/ReviewListView.swift:markMastered:257",
+      "name": "markMastered",
+      "kind": "function",
+      "file": "UnaMentis/UI/Review/ReviewListView.swift",
+      "line": 257,
+      "end_line": 269,
+      "code_preview": "    func markMastered(_ item: ReinforcementItemData) {\n        guard let manager = ReinforcementManager.shared else { return }\n\n        do {\n            let items = try manager.fetchAllItems()\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Review/ReviewListView.swift:markReviewed:243",
+      "name": "markReviewed",
+      "kind": "function",
+      "file": "UnaMentis/UI/Review/ReviewListView.swift",
+      "line": 243,
+      "end_line": 255,
+      "code_preview": "    func markReviewed(_ item: ReinforcementItemData) {\n        guard let manager = ReinforcementManager.shared else { return }\n\n        do {\n            let items = try manager.fetchAllItems()\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Review/ReviewListView.swift:ReviewListViewModel:219",
+      "name": "ReviewListViewModel",
+      "kind": "class",
+      "file": "UnaMentis/UI/Review/ReviewListView.swift",
+      "line": 219,
+      "end_line": 284,
+      "code_preview": "@MainActor\nfinal class ReviewListViewModel: ObservableObject {\n    @Published var groups: [ReinforcementSourceGroup] = []\n    @Published var isLoading = false\n    @Published var selectedItem: ReinforcementItemData?\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Review/ReviewListView.swift:loadItems:227",
+      "name": "loadItems",
+      "kind": "function",
+      "file": "UnaMentis/UI/Review/ReviewListView.swift",
+      "line": 227,
+      "end_line": 241,
+      "code_preview": "    func loadItems() {\n        isLoading = true\n        defer { isLoading = false }\n\n        guard let manager = ReinforcementManager.shared else {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/Review/ReviewListView.swift",
+      "language": "swift",
+      "lines": 294,
+      "size_bytes": 9806,
+      "symbols": [
+        "UnaMentis/UI/Review/ReviewListView.swift:ReviewListView:16",
+        "UnaMentis/UI/Review/ReviewListView.swift:ReviewItemRow:105",
+        "UnaMentis/UI/Review/ReviewListView.swift:ReviewItemDetailSheet:147",
+        "UnaMentis/UI/Review/ReviewListView.swift:ReviewListViewModel:219",
+        "UnaMentis/UI/Review/ReviewListView.swift:loadItems:227",
+        "UnaMentis/UI/Review/ReviewListView.swift:markReviewed:243",
+        "UnaMentis/UI/Review/ReviewListView.swift:markMastered:257",
+        "UnaMentis/UI/Review/ReviewListView.swift:deleteItem:271"
+      ],
+      "imports": [
+        "SwiftUI",
+        "Logging"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Review List View\nHierarchical view of items flagged for review, organized by source material\nPart of UI/Review"
+    }
+  ]
+}

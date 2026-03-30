@@ -1,0 +1,75 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/ai-ml/APPLE_INTELLIGENCE.md",
+      "language": "markdown",
+      "lines": 206,
+      "size_bytes": 6407,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/ai-ml/CHATTERBOX_SERVER_SETUP.md",
+      "language": "markdown",
+      "lines": 378,
+      "size_bytes": 9253,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/ai-ml/GLM_ASR_IMPLEMENTATION_PROGRESS.md",
+      "language": "markdown",
+      "lines": 394,
+      "size_bytes": 15986,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/ai-ml/GLM_ASR_NANO_2512.md",
+      "language": "markdown",
+      "lines": 656,
+      "size_bytes": 33931,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/ai-ml/GLM_ASR_ON_DEVICE_GUIDE.md",
+      "language": "markdown",
+      "lines": 489,
+      "size_bytes": 15294,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/ai-ml/GLM_ASR_SERVER_TRD.md",
+      "language": "markdown",
+      "lines": 1819,
+      "size_bytes": 60076,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/ai-ml/LLM_TOOLS.md",
+      "language": "markdown",
+      "lines": 424,
+      "size_bytes": 12520,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

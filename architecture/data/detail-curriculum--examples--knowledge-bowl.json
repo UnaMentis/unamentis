@@ -1,0 +1,25 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "curriculum/examples/knowledge-bowl/README.md",
+      "language": "markdown",
+      "lines": 40,
+      "size_bytes": 1308,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/examples/knowledge-bowl/science-physics-sample.json",
+      "language": "json",
+      "lines": 363,
+      "size_bytes": 15768,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

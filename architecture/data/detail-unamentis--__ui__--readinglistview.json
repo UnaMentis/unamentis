@@ -1,0 +1,110 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingListView.swift:makeUIViewController:253",
+      "name": "makeUIViewController",
+      "kind": "function",
+      "file": "UnaMentis/UI/ReadingList/ReadingListView.swift",
+      "line": 253,
+      "end_line": 266,
+      "code_preview": "    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {\n        var types: [UTType] = [.pdf, .plainText, .text]\n        // Add markdown support\n        if let mdType = UTType(filenameExtension: \"md\") {\n            types.append(mdType)\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingListView.swift:ReadingItemRow:142",
+      "name": "ReadingItemRow",
+      "kind": "struct",
+      "file": "UnaMentis/UI/ReadingList/ReadingListView.swift",
+      "line": 142,
+      "end_line": 244,
+      "code_preview": "struct ReadingItemRow: View {\n    let item: ReadingListItem\n    @ObservedObject var viewModel: ReadingListViewModel\n    @State private var showReader = false\n    @State private var showPlayback = false\n    ...",
+      "visibility": "internal",
+      "docstring": "A row displaying a reading list item",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingListView.swift:DocumentPicker:249",
+      "name": "DocumentPicker",
+      "kind": "struct",
+      "file": "UnaMentis/UI/ReadingList/ReadingListView.swift",
+      "line": 249,
+      "end_line": 294,
+      "code_preview": "struct DocumentPicker: UIViewControllerRepresentable {\n    @ObservedObject var viewModel: ReadingListViewModel\n    @Environment(\\.dismiss) private var dismiss\n\n    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {\n    ...",
+      "visibility": "internal",
+      "docstring": "Document picker for importing files",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingListView.swift:ReadingListView:12",
+      "name": "ReadingListView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/ReadingList/ReadingListView.swift",
+      "line": 12,
+      "end_line": 137,
+      "code_preview": "public struct ReadingListView: View {\n    @ObservedObject var viewModel: ReadingListViewModel\n    @Binding var showFilePicker: Bool\n    @Binding var showImportOptions: Bool\n\n    ...",
+      "visibility": "public",
+      "docstring": "Main view for managing reading list items",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingListView.swift:makeCoordinator:270",
+      "name": "makeCoordinator",
+      "kind": "function",
+      "file": "UnaMentis/UI/ReadingList/ReadingListView.swift",
+      "line": 270,
+      "end_line": 272,
+      "code_preview": "    func makeCoordinator() -> Coordinator {\n        Coordinator(self)\n    }\n\n    class Coordinator: NSObject, UIDocumentPickerDelegate {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/ReadingList/ReadingListView.swift:updateUIViewController:268",
+      "name": "updateUIViewController",
+      "kind": "function",
+      "file": "UnaMentis/UI/ReadingList/ReadingListView.swift",
+      "line": 268,
+      "end_line": 268,
+      "code_preview": "    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) { }\n\n    func makeCoordinator() -> Coordinator {\n        Coordinator(self)\n    }",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/ReadingList/ReadingListView.swift",
+      "language": "swift",
+      "lines": 307,
+      "size_bytes": 9383,
+      "symbols": [
+        "UnaMentis/UI/ReadingList/ReadingListView.swift:ReadingListView:12",
+        "UnaMentis/UI/ReadingList/ReadingListView.swift:ReadingItemRow:142",
+        "UnaMentis/UI/ReadingList/ReadingListView.swift:DocumentPicker:249",
+        "UnaMentis/UI/ReadingList/ReadingListView.swift:makeUIViewController:253",
+        "UnaMentis/UI/ReadingList/ReadingListView.swift:updateUIViewController:268",
+        "UnaMentis/UI/ReadingList/ReadingListView.swift:makeCoordinator:270"
+      ],
+      "imports": [
+        "SwiftUI",
+        "UniformTypeIdentifiers"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Reading List View\nMain view for the Reading List feature\nPart of UI/ReadingList"
+    }
+  ]
+}

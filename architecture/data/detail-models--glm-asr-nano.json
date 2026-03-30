@@ -1,0 +1,334 @@
+{
+  "symbols": [
+    {
+      "id": "models/glm-asr-nano/inference.py:transcribe:117",
+      "name": "transcribe",
+      "kind": "function",
+      "file": "models/glm-asr-nano/inference.py",
+      "line": 117,
+      "end_line": 155,
+      "code_preview": "def transcribe(\n    checkpoint_dir: Path,\n    audio_path: Path,\n    tokenizer_path: str | None,\n    max_new_tokens: int,\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/inference.py:build_prompt:46",
+      "name": "build_prompt",
+      "kind": "function",
+      "file": "models/glm-asr-nano/inference.py",
+      "line": 46,
+      "end_line": 100,
+      "code_preview": "def build_prompt(\n    audio_path: Path,\n    tokenizer,\n    feature_extractor: WhisperFeatureExtractor,\n    merge_factor: int,\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/modeling_glmasr.py:AudioMLPAdapter:12",
+      "name": "AudioMLPAdapter",
+      "kind": "class",
+      "file": "models/glm-asr-nano/modeling_glmasr.py",
+      "line": 12,
+      "end_line": 45,
+      "code_preview": "class AudioMLPAdapter(nn.Module):\n    def __init__(self, config: GlmasrConfig):\n        super().__init__()\n        whisper_config = config.whisper_config\n        self.merge_factor = config.merge_factor\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/modeling_audio.py:RotaryEmbedding:14",
+      "name": "RotaryEmbedding",
+      "kind": "class",
+      "file": "models/glm-asr-nano/modeling_audio.py",
+      "line": 14,
+      "end_line": 51,
+      "code_preview": "class RotaryEmbedding:\n    def __init__(self, dim, rope_ratio=1, original_impl=False):\n        super().__init__()\n        self.dim = dim\n        self.original_impl = original_impl\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/modeling_audio.py:apply_rotary_pos_emb:54",
+      "name": "apply_rotary_pos_emb",
+      "kind": "function",
+      "file": "models/glm-asr-nano/modeling_audio.py",
+      "line": 54,
+      "end_line": 71,
+      "code_preview": "def apply_rotary_pos_emb(x: torch.Tensor, rope_cache: torch.Tensor) -> torch.Tensor:\n    # x: [b, np, sq, hn]\n    b, np, sq, hn = x.size(0), x.size(1), x.size(2), x.size(3)\n    rot_dim = rope_cache.shape[-2] * 2\n    x, x_pass = x[..., :rot_dim], x[..., rot_dim:]\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/modeling_glmasr.py:GlmasrModel:48",
+      "name": "GlmasrModel",
+      "kind": "class",
+      "file": "models/glm-asr-nano/modeling_glmasr.py",
+      "line": 48,
+      "end_line": 146,
+      "code_preview": "class GlmasrModel(LlamaForCausalLM):\n    config_class = GlmasrConfig\n\n    def __init__(self, config: GlmasrConfig):\n        super().__init__(config.lm_config)\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/inference.py:get_audio_token_length:29",
+      "name": "get_audio_token_length",
+      "kind": "function",
+      "file": "models/glm-asr-nano/inference.py",
+      "line": 29,
+      "end_line": 44,
+      "code_preview": "def get_audio_token_length(seconds, merge_factor=2):\n    def get_T_after_cnn(L_in, dilation=1):\n        for padding, kernel_size, stride in eval(\"[(1,3,1)] + [(1,3,2)] \"):\n            L_out = L_in + 2 * padding - dilation * (kernel_size - 1) - 1\n            L_out = 1 + L_out // stride\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/modeling_audio.py:WhisperRoPEFlashAttn:74",
+      "name": "WhisperRoPEFlashAttn",
+      "kind": "class",
+      "file": "models/glm-asr-nano/modeling_audio.py",
+      "line": 74,
+      "end_line": 174,
+      "code_preview": "class WhisperRoPEFlashAttn(WhisperAttention):\n    def __init__(self, *args, **kwargs):\n        super().__init__(*args, **kwargs)\n\n    def _reshape(self, tensor: torch.Tensor, seq_len: int, bsz: int):\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/modeling_audio.py:WhisperSpecialEncoder:249",
+      "name": "WhisperSpecialEncoder",
+      "kind": "class",
+      "file": "models/glm-asr-nano/modeling_audio.py",
+      "line": 249,
+      "end_line": 410,
+      "code_preview": "class WhisperSpecialEncoder(WhisperEncoder):\n    def __init__(\n        self,\n        config: WhisperConfig,\n        use_rope=False,\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/inference.py:main:158",
+      "name": "main",
+      "kind": "function",
+      "file": "models/glm-asr-nano/inference.py",
+      "line": 158,
+      "end_line": 178,
+      "code_preview": "def main():\n    parser = argparse.ArgumentParser(description=\"Minimal ASR transcription demo.\")\n    parser.add_argument(\"--checkpoint_dir\", type=str, default=str(Path(__file__).parent))\n    parser.add_argument(\"--audio\", type=str, required=True, help=\"Path to audio file.\")\n    parser.add_argument(\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/inference.py:prepare_inputs:103",
+      "name": "prepare_inputs",
+      "kind": "function",
+      "file": "models/glm-asr-nano/inference.py",
+      "line": 103,
+      "end_line": 114,
+      "code_preview": "def prepare_inputs(batch: dict, device: torch.device) -> tuple[dict, int]:\n    tokens = batch[\"input_ids\"].to(device)\n    attention_mask = batch[\"attention_mask\"].to(device)\n    audios = batch[\"audios\"].to(device)\n    model_inputs = {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/configuration_glmasr.py:GlmasrConfig:6",
+      "name": "GlmasrConfig",
+      "kind": "class",
+      "file": "models/glm-asr-nano/configuration_glmasr.py",
+      "line": 6,
+      "end_line": 40,
+      "code_preview": "class GlmasrConfig(PretrainedConfig):\n    model_type = \"Glmasr\"\n    is_composition = True\n\n    def __init__(\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "models/glm-asr-nano/modeling_audio.py:WhisperSpecialEncoderLayer:177",
+      "name": "WhisperSpecialEncoderLayer",
+      "kind": "class",
+      "file": "models/glm-asr-nano/modeling_audio.py",
+      "line": 177,
+      "end_line": 247,
+      "code_preview": "class WhisperSpecialEncoderLayer(WhisperEncoderLayer):\n    def __init__(self, config: WhisperConfig):\n        super().__init__(config)\n        self.self_attn = WhisperRoPEFlashAttn(\n            embed_dim=self.embed_dim,\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "models/glm-asr-nano/README.md",
+      "language": "markdown",
+      "lines": 53,
+      "size_bytes": 2094,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "models/glm-asr-nano/config.json",
+      "language": "json",
+      "lines": 120,
+      "size_bytes": 3079,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "models/glm-asr-nano/configuration_glmasr.py",
+      "language": "python",
+      "lines": 44,
+      "size_bytes": 1362,
+      "symbols": [
+        "models/glm-asr-nano/configuration_glmasr.py:GlmasrConfig:6"
+      ],
+      "imports": [
+        "transformers",
+        "typing"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "models/glm-asr-nano/inference.py",
+      "language": "python",
+      "lines": 183,
+      "size_bytes": 5832,
+      "symbols": [
+        "models/glm-asr-nano/inference.py:get_audio_token_length:29",
+        "models/glm-asr-nano/inference.py:build_prompt:46",
+        "models/glm-asr-nano/inference.py:prepare_inputs:103",
+        "models/glm-asr-nano/inference.py:transcribe:117",
+        "models/glm-asr-nano/inference.py:main:158"
+      ],
+      "imports": [
+        "pathlib",
+        "transformers",
+        "torchaudio",
+        "torch",
+        "argparse"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "models/glm-asr-nano/modeling_audio.py",
+      "language": "python",
+      "lines": 411,
+      "size_bytes": 18327,
+      "symbols": [
+        "models/glm-asr-nano/modeling_audio.py:RotaryEmbedding:14",
+        "models/glm-asr-nano/modeling_audio.py:apply_rotary_pos_emb:54",
+        "models/glm-asr-nano/modeling_audio.py:WhisperRoPEFlashAttn:74",
+        "models/glm-asr-nano/modeling_audio.py:WhisperSpecialEncoderLayer:177",
+        "models/glm-asr-nano/modeling_audio.py:WhisperSpecialEncoder:249"
+      ],
+      "imports": [
+        "torch",
+        "transformers",
+        "typing"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "models/glm-asr-nano/modeling_glmasr.py",
+      "language": "python",
+      "lines": 150,
+      "size_bytes": 5707,
+      "symbols": [
+        "models/glm-asr-nano/modeling_glmasr.py:AudioMLPAdapter:12",
+        "models/glm-asr-nano/modeling_glmasr.py:GlmasrModel:48"
+      ],
+      "imports": [
+        "WhisperSpecialEncoder",
+        "transformers",
+        "torch",
+        "GlmasrConfig",
+        "typing"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "models/glm-asr-nano/tokenizer_config.json",
+      "language": "json",
+      "lines": 173,
+      "size_bytes": 3779,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "models/glm-asr-nano/GLMASRConvEncoder.mlpackage/Manifest.json",
+      "language": "json",
+      "lines": 19,
+      "size_bytes": 617,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "models/glm-asr-nano/GLMASREmbedHead.mlpackage/Manifest.json",
+      "language": "json",
+      "lines": 19,
+      "size_bytes": 617,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "models/glm-asr-nano/GLMASRWhisperEncoder.mlpackage/Manifest.json",
+      "language": "json",
+      "lines": 19,
+      "size_bytes": 617,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "models/glm-asr-nano/GLMASRAudioAdapter.mlpackage/Manifest.json",
+      "language": "json",
+      "lines": 19,
+      "size_bytes": 617,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

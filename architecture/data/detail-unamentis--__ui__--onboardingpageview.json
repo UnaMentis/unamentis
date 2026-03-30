@@ -1,0 +1,79 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/Onboarding/OnboardingView.swift:completeOnboarding:139",
+      "name": "completeOnboarding",
+      "kind": "function",
+      "file": "UnaMentis/UI/Onboarding/OnboardingView.swift",
+      "line": 139,
+      "end_line": 142,
+      "code_preview": "    private func completeOnboarding() {\n        hasCompletedOnboarding = true\n        dismiss()\n    }\n}",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Onboarding/OnboardingView.swift:OnboardingPageView:179",
+      "name": "OnboardingPageView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Onboarding/OnboardingView.swift",
+      "line": 179,
+      "end_line": 243,
+      "code_preview": "struct OnboardingPageView: View {\n    let page: OnboardingPage\n\n    var body: some View {\n        VStack(spacing: 24) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Onboarding/OnboardingView.swift:OnboardingView:9",
+      "name": "OnboardingView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Onboarding/OnboardingView.swift",
+      "line": 9,
+      "end_line": 143,
+      "code_preview": "struct OnboardingView: View {\n    @Environment(\\.dismiss) private var dismiss\n    @Binding var hasCompletedOnboarding: Bool\n    @State private var currentPage = 0\n\n    ...",
+      "visibility": "internal",
+      "docstring": "First-time user onboarding experience",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Onboarding/OnboardingView.swift:OnboardingPage:147",
+      "name": "OnboardingPage",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Onboarding/OnboardingView.swift",
+      "line": 147,
+      "end_line": 175,
+      "code_preview": "struct OnboardingPage {\n    let icon: String?\n    let customImage: String?\n    let iconColor: Color\n    let title: String\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/Onboarding/OnboardingView.swift",
+      "language": "swift",
+      "lines": 261,
+      "size_bytes": 8843,
+      "symbols": [
+        "UnaMentis/UI/Onboarding/OnboardingView.swift:OnboardingView:9",
+        "UnaMentis/UI/Onboarding/OnboardingView.swift:completeOnboarding:139",
+        "UnaMentis/UI/Onboarding/OnboardingView.swift:OnboardingPage:147",
+        "UnaMentis/UI/Onboarding/OnboardingView.swift:OnboardingPageView:179"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Onboarding View\nFirst-time user welcome and setup guide\nPart of UI/UX Help System"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/effort-reports/2025-12-28.html",
+      "language": "html",
+      "lines": 313,
+      "size_bytes": 12518,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/effort-reports/2026-01-10.html",
+      "language": "html",
+      "lines": 313,
+      "size_bytes": 12542,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/effort-reports/index.html",
+      "language": "html",
+      "lines": 133,
+      "size_bytes": 4832,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

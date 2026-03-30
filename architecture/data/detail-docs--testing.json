@@ -1,0 +1,75 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/testing/AI_SIMULATOR_TESTING.md",
+      "language": "markdown",
+      "lines": 451,
+      "size_bytes": 13231,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/testing/CHAOS_ENGINEERING_RUNBOOK.md",
+      "language": "markdown",
+      "lines": 406,
+      "size_bytes": 10637,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/testing/DEBUG_TESTING_UI.md",
+      "language": "markdown",
+      "lines": 132,
+      "size_bytes": 4085,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/testing/KNOWLEDGE_BOWL_VALIDATION_TESTING.md",
+      "language": "markdown",
+      "lines": 504,
+      "size_bytes": 12201,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/testing/MOCK_VIOLATIONS_INVENTORY.md",
+      "language": "markdown",
+      "lines": 336,
+      "size_bytes": 7399,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/testing/QA_COVERAGE_AUDIT_REPORT.md",
+      "language": "markdown",
+      "lines": 236,
+      "size_bytes": 7589,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/testing/TESTING.md",
+      "language": "markdown",
+      "lines": 553,
+      "size_bytes": 14733,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

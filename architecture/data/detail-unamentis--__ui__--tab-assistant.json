@@ -1,0 +1,49 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/Assistant/AssistantTabView.swift:AssistantSegment:11",
+      "name": "AssistantSegment",
+      "kind": "enum",
+      "file": "UnaMentis/UI/Assistant/AssistantTabView.swift",
+      "line": 11,
+      "end_line": 26,
+      "code_preview": "public enum AssistantSegment: String, CaseIterable, Identifiable {\n    case todo = \"To-Do\"\n    case readingList = \"Reading\"\n    case review = \"Review\"\n\n    ...",
+      "visibility": "public",
+      "docstring": "The segments available in the Assistant tab",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/Assistant/AssistantTabView.swift:AssistantTabView:35",
+      "name": "AssistantTabView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/Assistant/AssistantTabView.swift",
+      "line": 35,
+      "end_line": 117,
+      "code_preview": "public struct AssistantTabView: View {\n\n    // MARK: - State\n\n    @State private var selectedSegment: AssistantSegment = .todo\n    ...",
+      "visibility": "public",
+      "docstring": "Container view for the Assistant tab with segmented navigation\n\nContains:\n- To-Do list for tracking learning tasks\n- Reading List for uploaded documents",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/Assistant/AssistantTabView.swift",
+      "language": "swift",
+      "lines": 124,
+      "size_bytes": 3766,
+      "symbols": [
+        "UnaMentis/UI/Assistant/AssistantTabView.swift:AssistantSegment:11",
+        "UnaMentis/UI/Assistant/AssistantTabView.swift:AssistantTabView:35"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Assistant Tab View\nContainer view with segmented control for To-Do and Reading List\nPart of UI/Assistant"
+    }
+  ]
+}

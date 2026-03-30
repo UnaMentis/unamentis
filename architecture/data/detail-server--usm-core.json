@@ -1,0 +1,65 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/usm-core/Cargo.toml",
+      "language": "toml",
+      "lines": 62,
+      "size_bytes": 1095,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/usm-core/README.md",
+      "language": "markdown",
+      "lines": 423,
+      "size_bytes": 13727,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/usm-core/clippy.toml",
+      "language": "toml",
+      "lines": 24,
+      "size_bytes": 593,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/usm-core/rust-toolchain.toml",
+      "language": "toml",
+      "lines": 8,
+      "size_bytes": 272,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/usm-core/rustfmt.toml",
+      "language": "toml",
+      "lines": 27,
+      "size_bytes": 510,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/usm-core/config/services.toml",
+      "language": "toml",
+      "lines": 162,
+      "size_bytes": 5066,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

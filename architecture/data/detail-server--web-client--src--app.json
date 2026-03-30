@@ -1,0 +1,691 @@
+{
+  "symbols": [
+    {
+      "id": "server/web-client/src/app/register/page.tsx:RegisterPage:17",
+      "name": "RegisterPage",
+      "kind": "component",
+      "file": "server/web-client/src/app/register/page.tsx",
+      "line": 17,
+      "end_line": 90,
+      "code_preview": "export default function RegisterPage() {\n  const router = useRouter();\n  const { isAuthenticated, isLoading } = useAuth();\n\n  // Redirect if already authenticated\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/session/[...path]/route.ts:GET:55",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/session/[...path]/route.ts",
+      "line": 55,
+      "end_line": 61,
+      "code_preview": "export async function GET(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/auth/[...path]/route.ts:proxyRequest:11",
+      "name": "proxyRequest",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/auth/[...path]/route.ts",
+      "line": 11,
+      "end_line": 53,
+      "code_preview": "async function proxyRequest(request: NextRequest, path: string) {\n  const url = `${MANAGEMENT_API_URL}/api/auth/${path}`;\n\n  try {\n    // Get request body for POST/PUT/PATCH requests\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/curriculum/page.tsx:CurriculumPage:18",
+      "name": "CurriculumPage",
+      "kind": "component",
+      "file": "server/web-client/src/app/curriculum/page.tsx",
+      "line": 18,
+      "end_line": 107,
+      "code_preview": "export default function CurriculumPage() {\n  const router = useRouter();\n  const { isAuthenticated, isLoading: authLoading } = useAuth();\n  const { data: curriculaData, isLoading: curriculaLoading, mutate: refreshCurricula } = useCurricula();\n  const [selectedCurriculumId, setSelectedCurriculumId] = React.useState<string | null>(null);\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/auth/[...path]/route.ts:POST:63",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/auth/[...path]/route.ts",
+      "line": 63,
+      "end_line": 69,
+      "code_preview": "export async function POST(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/settings/page.tsx:SettingsPage:15",
+      "name": "SettingsPage",
+      "kind": "component",
+      "file": "server/web-client/src/app/settings/page.tsx",
+      "line": 15,
+      "end_line": 226,
+      "code_preview": "export default function SettingsPage() {\n  const router = useRouter();\n  const { isAuthenticated, isLoading, user, logout } = useAuth();\n\n  // Redirect if not authenticated\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/page.tsx:HomePage:16",
+      "name": "HomePage",
+      "kind": "component",
+      "file": "server/web-client/src/app/page.tsx",
+      "line": 16,
+      "end_line": 144,
+      "code_preview": "export default function HomePage() {\n  const router = useRouter();\n  const { isAuthenticated, isLoading, user, logout } = useAuth();\n\n  // Show loading state\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/curricula/[...path]/route.ts:proxyRequest:11",
+      "name": "proxyRequest",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/curricula/[...path]/route.ts",
+      "line": 11,
+      "end_line": 53,
+      "code_preview": "async function proxyRequest(request: NextRequest, path: string) {\n  const url = `${MANAGEMENT_API_URL}/api/curricula/${path}`;\n\n  try {\n    // Get request body for POST/PUT/PATCH requests\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/realtime/token/route.ts:OpenAISessionResponse:15",
+      "name": "OpenAISessionResponse",
+      "kind": "interface",
+      "file": "server/web-client/src/app/api/realtime/token/route.ts",
+      "line": 15,
+      "end_line": 26,
+      "code_preview": "interface OpenAISessionResponse {\n  id: string;\n  object: string;\n  model: string;\n  modalities: string[];\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/curricula/[...path]/route.ts:MANAGEMENT_API_URL:9",
+      "name": "MANAGEMENT_API_URL",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/curricula/[...path]/route.ts",
+      "line": 9,
+      "end_line": 9,
+      "code_preview": "const MANAGEMENT_API_URL = process.env.MANAGEMENT_API_URL || 'http://localhost:8766';\n\nasync function proxyRequest(request: NextRequest, path: string) {\n  const url = `${MANAGEMENT_API_URL}/api/curricula/${path}`;\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/session/[...path]/route.ts:MANAGEMENT_API_URL:9",
+      "name": "MANAGEMENT_API_URL",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/session/[...path]/route.ts",
+      "line": 9,
+      "end_line": 9,
+      "code_preview": "const MANAGEMENT_API_URL = process.env.MANAGEMENT_API_URL || 'http://localhost:8766';\n\nasync function proxyRequest(request: NextRequest, path: string) {\n  const url = `${MANAGEMENT_API_URL}/api/session/${path}`;\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/layout.tsx:RootLayout:18",
+      "name": "RootLayout",
+      "kind": "component",
+      "file": "server/web-client/src/app/layout.tsx",
+      "line": 18,
+      "end_line": 45,
+      "code_preview": "export default function RootLayout({\n  children,\n}: Readonly<{\n  children: React.ReactNode;\n}>) {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/session/[...path]/route.ts:PUT:71",
+      "name": "PUT",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/session/[...path]/route.ts",
+      "line": 71,
+      "end_line": 77,
+      "code_preview": "export async function PUT(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/curricula/[...path]/route.ts:GET:55",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/curricula/[...path]/route.ts",
+      "line": 55,
+      "end_line": 61,
+      "code_preview": "export async function GET(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/session/page.tsx:SessionContent:31",
+      "name": "SessionContent",
+      "kind": "component",
+      "file": "server/web-client/src/app/session/page.tsx",
+      "line": 31,
+      "end_line": 136,
+      "code_preview": "function SessionContent() {\n  const router = useRouter();\n  const session = useSession();\n  const [visualIndex, setVisualIndex] = React.useState(0);\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/session/page.tsx:VisualPanel:24",
+      "name": "VisualPanel",
+      "kind": "component",
+      "file": "server/web-client/src/app/session/page.tsx",
+      "line": 24,
+      "end_line": 27,
+      "code_preview": "const VisualPanel = dynamic(\n  () => import('@/components/visual').then((mod) => mod.VisualPanel),\n  { ssr: false }\n);\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/session/page.tsx:VoiceWaveform:20",
+      "name": "VoiceWaveform",
+      "kind": "component",
+      "file": "server/web-client/src/app/session/page.tsx",
+      "line": 20,
+      "end_line": 23,
+      "code_preview": "const VoiceWaveform = dynamic(\n  () => import('@/components/session').then((mod) => mod.VoiceWaveform),\n  { ssr: false }\n);\nconst VisualPanel = dynamic(\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/curricula/[...path]/route.ts:PUT:71",
+      "name": "PUT",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/curricula/[...path]/route.ts",
+      "line": 71,
+      "end_line": 77,
+      "code_preview": "export async function PUT(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/session/page.tsx:SessionPage:140",
+      "name": "SessionPage",
+      "kind": "component",
+      "file": "server/web-client/src/app/session/page.tsx",
+      "line": 140,
+      "end_line": 171,
+      "code_preview": "export default function SessionPage() {\n  const router = useRouter();\n  const { isAuthenticated, isLoading } = useAuth();\n\n  // Redirect if not authenticated\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/login/page.tsx:LoginPage:17",
+      "name": "LoginPage",
+      "kind": "component",
+      "file": "server/web-client/src/app/login/page.tsx",
+      "line": 17,
+      "end_line": 90,
+      "code_preview": "export default function LoginPage() {\n  const router = useRouter();\n  const { isAuthenticated, isLoading } = useAuth();\n\n  // Redirect if already authenticated\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/auth/[...path]/route.ts:MANAGEMENT_API_URL:9",
+      "name": "MANAGEMENT_API_URL",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/auth/[...path]/route.ts",
+      "line": 9,
+      "end_line": 9,
+      "code_preview": "const MANAGEMENT_API_URL = process.env.MANAGEMENT_API_URL || 'http://localhost:8766';\n\nasync function proxyRequest(request: NextRequest, path: string) {\n  const url = `${MANAGEMENT_API_URL}/api/auth/${path}`;\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/session/[...path]/route.ts:DELETE:79",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/session/[...path]/route.ts",
+      "line": 79,
+      "end_line": 85,
+      "code_preview": "export async function DELETE(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/auth/[...path]/route.ts:GET:55",
+      "name": "GET",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/auth/[...path]/route.ts",
+      "line": 55,
+      "end_line": 61,
+      "code_preview": "export async function GET(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/auth/[...path]/route.ts:DELETE:79",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/auth/[...path]/route.ts",
+      "line": 79,
+      "end_line": 85,
+      "code_preview": "export async function DELETE(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/curricula/[...path]/route.ts:POST:63",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/curricula/[...path]/route.ts",
+      "line": 63,
+      "end_line": 69,
+      "code_preview": "export async function POST(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/realtime/token/route.ts:POST:28",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/realtime/token/route.ts",
+      "line": 28,
+      "end_line": 91,
+      "code_preview": "export async function POST(request: NextRequest) {\n  try {\n    // Get OpenAI API key from environment\n    const apiKey = process.env.OPENAI_API_KEY;\n\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/curricula/[...path]/route.ts:DELETE:79",
+      "name": "DELETE",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/curricula/[...path]/route.ts",
+      "line": 79,
+      "end_line": 85,
+      "code_preview": "export async function DELETE(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/realtime/token/route.ts:TokenRequest:10",
+      "name": "TokenRequest",
+      "kind": "interface",
+      "file": "server/web-client/src/app/api/realtime/token/route.ts",
+      "line": 10,
+      "end_line": 13,
+      "code_preview": "interface TokenRequest {\n  model?: string;\n  voice?: string;\n}\n",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/session/[...path]/route.ts:proxyRequest:11",
+      "name": "proxyRequest",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/session/[...path]/route.ts",
+      "line": 11,
+      "end_line": 53,
+      "code_preview": "async function proxyRequest(request: NextRequest, path: string) {\n  const url = `${MANAGEMENT_API_URL}/api/session/${path}`;\n\n  try {\n    // Get request body for POST/PUT/PATCH requests\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/layout.tsx:inter:16",
+      "name": "inter",
+      "kind": "function",
+      "file": "server/web-client/src/app/layout.tsx",
+      "line": 16,
+      "end_line": 16,
+      "code_preview": "const inter = Inter({ subsets: ['latin'] });\n\nexport default function RootLayout({\n  children,\n}: Readonly<{\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/auth/[...path]/route.ts:PATCH:87",
+      "name": "PATCH",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/auth/[...path]/route.ts",
+      "line": 87,
+      "end_line": 93,
+      "code_preview": "export async function PATCH(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/session/[...path]/route.ts:POST:63",
+      "name": "POST",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/session/[...path]/route.ts",
+      "line": 63,
+      "end_line": 69,
+      "code_preview": "export async function POST(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/app/api/auth/[...path]/route.ts:PUT:71",
+      "name": "PUT",
+      "kind": "function",
+      "file": "server/web-client/src/app/api/auth/[...path]/route.ts",
+      "line": 71,
+      "end_line": 77,
+      "code_preview": "export async function PUT(\n  request: NextRequest,\n  { params }: { params: Promise<{ path: string[] }> }\n) {\n  const { path } = await params;\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web-client/src/app/globals.css",
+      "language": "css",
+      "lines": 88,
+      "size_bytes": 2704,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/src/app/layout.tsx",
+      "language": "typescript",
+      "lines": 46,
+      "size_bytes": 1792,
+      "symbols": [
+        "server/web-client/src/app/layout.tsx:inter:16",
+        "server/web-client/src/app/layout.tsx:RootLayout:18"
+      ],
+      "imports": [
+        "./globals.css",
+        "@/components",
+        "next",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Root Layout\nWraps the entire application with providers and sets up responsive layout.\nIncludes the TooltipProvider for contextual help throughout the app."
+    },
+    {
+      "path": "server/web-client/src/app/page.tsx",
+      "language": "typescript",
+      "lines": 145,
+      "size_bytes": 5131,
+      "symbols": [
+        "server/web-client/src/app/page.tsx:HomePage:16"
+      ],
+      "imports": [
+        "@/components",
+        "lucide-react",
+        "next"
+      ],
+      "exports": [],
+      "module_doc": "Home Page / Dashboard\nLanding page for authenticated users, showing quick actions and recent sessions."
+    },
+    {
+      "path": "server/web-client/src/app/settings/page.tsx",
+      "language": "typescript",
+      "lines": 227,
+      "size_bytes": 8002,
+      "symbols": [
+        "server/web-client/src/app/settings/page.tsx:SettingsPage:15"
+      ],
+      "imports": [
+        "@/components",
+        "lucide-react",
+        "next",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Settings Page\nUser settings and preferences configuration."
+    },
+    {
+      "path": "server/web-client/src/app/curriculum/page.tsx",
+      "language": "typescript",
+      "lines": 108,
+      "size_bytes": 3849,
+      "symbols": [
+        "server/web-client/src/app/curriculum/page.tsx:CurriculumPage:18"
+      ],
+      "imports": [
+        "@/components",
+        "@/lib",
+        "@/types",
+        "lucide-react",
+        "next",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Curriculum Page\nBrowse and select curricula and topics for learning sessions."
+    },
+    {
+      "path": "server/web-client/src/app/register/page.tsx",
+      "language": "typescript",
+      "lines": 91,
+      "size_bytes": 2766,
+      "symbols": [
+        "server/web-client/src/app/register/page.tsx:RegisterPage:17"
+      ],
+      "imports": [
+        "@/components",
+        "lucide-react",
+        "next",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Register Page\nNew user registration form."
+    },
+    {
+      "path": "server/web-client/src/app/api/auth/[...path]/route.ts",
+      "language": "typescript",
+      "lines": 94,
+      "size_bytes": 2442,
+      "symbols": [
+        "server/web-client/src/app/api/auth/[...path]/route.ts:MANAGEMENT_API_URL:9",
+        "server/web-client/src/app/api/auth/[...path]/route.ts:proxyRequest:11",
+        "server/web-client/src/app/api/auth/[...path]/route.ts:GET:55",
+        "server/web-client/src/app/api/auth/[...path]/route.ts:POST:63",
+        "server/web-client/src/app/api/auth/[...path]/route.ts:PUT:71",
+        "server/web-client/src/app/api/auth/[...path]/route.ts:DELETE:79",
+        "server/web-client/src/app/api/auth/[...path]/route.ts:PATCH:87"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": "Auth API Proxy\nProxies authentication requests to the Management API on port 8766."
+    },
+    {
+      "path": "server/web-client/src/app/api/curricula/[...path]/route.ts",
+      "language": "typescript",
+      "lines": 86,
+      "size_bytes": 2254,
+      "symbols": [
+        "server/web-client/src/app/api/curricula/[...path]/route.ts:MANAGEMENT_API_URL:9",
+        "server/web-client/src/app/api/curricula/[...path]/route.ts:proxyRequest:11",
+        "server/web-client/src/app/api/curricula/[...path]/route.ts:GET:55",
+        "server/web-client/src/app/api/curricula/[...path]/route.ts:POST:63",
+        "server/web-client/src/app/api/curricula/[...path]/route.ts:PUT:71",
+        "server/web-client/src/app/api/curricula/[...path]/route.ts:DELETE:79"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": "Curricula API Proxy\nProxies curriculum requests to the Management API on port 8766."
+    },
+    {
+      "path": "server/web-client/src/app/api/realtime/token/route.ts",
+      "language": "typescript",
+      "lines": 92,
+      "size_bytes": 2307,
+      "symbols": [
+        "server/web-client/src/app/api/realtime/token/route.ts:TokenRequest:10",
+        "server/web-client/src/app/api/realtime/token/route.ts:OpenAISessionResponse:15",
+        "server/web-client/src/app/api/realtime/token/route.ts:POST:28"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": "Realtime Token API Route\nGenerates ephemeral tokens for OpenAI Realtime API WebRTC connections.\nThis endpoint should be called client-side before establishing WebRTC connection."
+    },
+    {
+      "path": "server/web-client/src/app/api/__tests__/auth-route.test.ts",
+      "language": "typescript",
+      "lines": 314,
+      "size_bytes": 10216,
+      "symbols": [],
+      "imports": [
+        "../auth/[...path]/route",
+        "next",
+        "vitest"
+      ],
+      "exports": [],
+      "module_doc": "Auth API Route Tests\nIntegration tests for the auth proxy route."
+    },
+    {
+      "path": "server/web-client/src/app/api/session/[...path]/route.ts",
+      "language": "typescript",
+      "lines": 86,
+      "size_bytes": 2242,
+      "symbols": [
+        "server/web-client/src/app/api/session/[...path]/route.ts:MANAGEMENT_API_URL:9",
+        "server/web-client/src/app/api/session/[...path]/route.ts:proxyRequest:11",
+        "server/web-client/src/app/api/session/[...path]/route.ts:GET:55",
+        "server/web-client/src/app/api/session/[...path]/route.ts:POST:63",
+        "server/web-client/src/app/api/session/[...path]/route.ts:PUT:71",
+        "server/web-client/src/app/api/session/[...path]/route.ts:DELETE:79"
+      ],
+      "imports": [
+        "next"
+      ],
+      "exports": [],
+      "module_doc": "Session API Proxy\nProxies session requests to the Management API on port 8766."
+    },
+    {
+      "path": "server/web-client/src/app/login/page.tsx",
+      "language": "typescript",
+      "lines": 91,
+      "size_bytes": 2750,
+      "symbols": [
+        "server/web-client/src/app/login/page.tsx:LoginPage:17"
+      ],
+      "imports": [
+        "@/components",
+        "lucide-react",
+        "next",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Login Page\nUser authentication login form."
+    },
+    {
+      "path": "server/web-client/src/app/session/page.tsx",
+      "language": "typescript",
+      "lines": 172,
+      "size_bytes": 5334,
+      "symbols": [
+        "server/web-client/src/app/session/page.tsx:VoiceWaveform:20",
+        "server/web-client/src/app/session/page.tsx:VisualPanel:24",
+        "server/web-client/src/app/session/page.tsx:SessionContent:31",
+        "server/web-client/src/app/session/page.tsx:SessionPage:140"
+      ],
+      "imports": [
+        "@/components",
+        "@/contexts",
+        "lucide-react",
+        "next",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Session Page\nVoice learning session interface with transcript and visual panel.\nUses the SessionContext for real voice interaction via OpenAI Realtime API."
+    }
+  ]
+}

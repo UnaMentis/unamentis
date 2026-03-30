@@ -1,0 +1,49 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis Watch App/Views/ActiveSessionView.swift:ActiveSessionView:6",
+      "name": "ActiveSessionView",
+      "kind": "struct",
+      "file": "UnaMentis Watch App/Views/ActiveSessionView.swift",
+      "line": 6,
+      "end_line": 33,
+      "code_preview": "struct ActiveSessionView: View {\n    let state: WatchSessionState\n    @EnvironmentObject var connectivity: WatchConnectivityService\n\n    var body: some View {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis Watch App/Views/ActiveSessionView.swift:SessionHeaderView:37",
+      "name": "SessionHeaderView",
+      "kind": "struct",
+      "file": "UnaMentis Watch App/Views/ActiveSessionView.swift",
+      "line": 37,
+      "end_line": 62,
+      "code_preview": "struct SessionHeaderView: View {\n    let state: WatchSessionState\n\n    var body: some View {\n        VStack(spacing: 2) {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis Watch App/Views/ActiveSessionView.swift",
+      "language": "swift",
+      "lines": 78,
+      "size_bytes": 2215,
+      "symbols": [
+        "UnaMentis Watch App/Views/ActiveSessionView.swift:ActiveSessionView:6",
+        "UnaMentis Watch App/Views/ActiveSessionView.swift:SessionHeaderView:37"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis Watch App - Active Session View\nDisplays session progress and controls"
+    }
+  ]
+}

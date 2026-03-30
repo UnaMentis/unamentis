@@ -317,7 +317,7 @@ public enum LLMProvider: String, Codable, Sendable, CaseIterable {
         case .selfHosted:
             return ["qwen2.5:7b", "qwen2.5:3b", "llama3.2:3b", "llama3.2:1b", "mistral:7b"]
         case .localMLX:
-            return ["ministral-3b (on-device)"]  // Ministral 3B on-device via llama.cpp
+            return OnDeviceLLMModel.allCases.map { "\($0.config.displayName) (on-device)" }
         }
     }
 

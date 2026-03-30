@@ -1,0 +1,522 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/Intents/StartLessonIntent.swift:LessonDepth:90",
+      "name": "LessonDepth",
+      "kind": "enum",
+      "file": "UnaMentis/Intents/StartLessonIntent.swift",
+      "line": 90,
+      "end_line": 125,
+      "code_preview": "public enum LessonDepth: String, AppEnum {\n    case overview\n    case introductory\n    case intermediate\n    case advanced\n    ...",
+      "visibility": "public",
+      "docstring": "Content depth for Siri-initiated lessons",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/StartLessonIntent.swift:perform:49",
+      "name": "perform",
+      "kind": "function",
+      "file": "UnaMentis/Intents/StartLessonIntent.swift",
+      "line": 49,
+      "end_line": 76,
+      "code_preview": "    public func perform() async throws -> some IntentResult & OpensIntent {\n        // Determine what to study\n        let lessonTarget: String\n        let targetId: UUID?\n\n    ...",
+      "visibility": "public",
+      "docstring": "Perform the intent",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/CurriculumEntity.swift:CurriculumEntity:15",
+      "name": "CurriculumEntity",
+      "kind": "struct",
+      "file": "UnaMentis/Intents/CurriculumEntity.swift",
+      "line": 15,
+      "end_line": 61,
+      "code_preview": "public struct CurriculumEntity: AppEntity {\n    /// Unique identifier for the curriculum\n    public var id: UUID\n\n    /// Display name of the curriculum\n    ...",
+      "visibility": "public",
+      "docstring": "App Entity representing a Curriculum for Siri and Shortcuts integration\n\nThis entity allows users to:\n- Say \"Start a lesson on Physics\" to Siri\n- Search for curricula in Spotlight\n- Create Shortcuts workflows with curriculum selection",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/StartLessonIntent.swift:OpenURLIntent:150",
+      "name": "OpenURLIntent",
+      "kind": "struct",
+      "file": "UnaMentis/Intents/StartLessonIntent.swift",
+      "line": 150,
+      "end_line": 170,
+      "code_preview": "public struct OpenURLIntent: AppIntent {\n    public static let title: LocalizedStringResource = \"Open URL\"\n\n    @Parameter(title: \"URL\")\n    public var url: URL\n    ...",
+      "visibility": "public",
+      "docstring": "Helper intent to open a URL (for deep linking)",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/ResumeLearningIntent.swift:perform:27",
+      "name": "perform",
+      "kind": "function",
+      "file": "UnaMentis/Intents/ResumeLearningIntent.swift",
+      "line": 27,
+      "end_line": 77,
+      "code_preview": "    public func perform() async throws -> some IntentResult & OpensIntent {\n        // Find the most recent in-progress topic\n        let context = PersistenceController.shared.container.viewContext\n\n        let result: (UUID?, String?) = await context.perform {\n    ...",
+      "visibility": "public",
+      "docstring": "Perform the intent",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/ShowProgressIntent.swift:perform:34",
+      "name": "perform",
+      "kind": "function",
+      "file": "UnaMentis/Intents/ShowProgressIntent.swift",
+      "line": 34,
+      "end_line": 91,
+      "code_preview": "    public func perform() async throws -> some IntentResult & ProvidesDialog {\n        let context = PersistenceController.shared.container.viewContext\n\n        let stats = await context.perform { () -> LearningStats in\n            var stats = LearningStats()\n    ...",
+      "visibility": "public",
+      "docstring": "Perform the intent",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/StartConversationIntent.swift:perform:42",
+      "name": "perform",
+      "kind": "function",
+      "file": "UnaMentis/Intents/StartConversationIntent.swift",
+      "line": 42,
+      "end_line": 68,
+      "code_preview": "    public func perform() async throws -> some IntentResult & OpensIntent {\n        // Build deep link URL - simple chat URL with optional prompt\n        var urlString = \"unamentis://chat\"\n\n        if let prompt = initialPrompt, !prompt.isEmpty {\n    ...",
+      "visibility": "public",
+      "docstring": "Perform the intent",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/CurriculumEntity.swift:entities:108",
+      "name": "entities",
+      "kind": "function",
+      "file": "UnaMentis/Intents/CurriculumEntity.swift",
+      "line": 108,
+      "end_line": 126,
+      "code_preview": "    public func entities(matching query: String) async throws -> [CurriculumEntity] {\n        let context = PersistenceController.shared.container.viewContext\n\n        return await context.perform {\n            let fetchRequest: NSFetchRequest<Curriculum> = Curriculum.fetchRequest()\n    ...",
+      "visibility": "public",
+      "docstring": "Search curricula by name for Siri voice input",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/AppShortcutsProvider.swift:UnaMentisShortcuts:15",
+      "name": "UnaMentisShortcuts",
+      "kind": "struct",
+      "file": "UnaMentis/Intents/AppShortcutsProvider.swift",
+      "line": 15,
+      "end_line": 81,
+      "code_preview": "public struct UnaMentisShortcuts: AppShortcutsProvider {\n    /// Define the shortcuts exposed to the system\n    public static var appShortcuts: [AppShortcut] {\n        // Start Conversation shortcut - for freeform voice chat\n        // This is the primary hands-free entry point for spontaneous learning\n    ...",
+      "visibility": "public",
+      "docstring": "Provides app shortcuts to the system for Siri and Shortcuts integration\n\nThis enables:\n- Voice commands via Siri\n- Shortcuts app integration\n- Spotlight suggestions\n- Control Center widgets (iOS 18+)",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/TopicEntity.swift:entities:107",
+      "name": "entities",
+      "kind": "function",
+      "file": "UnaMentis/Intents/TopicEntity.swift",
+      "line": 107,
+      "end_line": 120,
+      "code_preview": "    public func entities(for identifiers: [UUID]) async throws -> [TopicEntity] {\n        let context = PersistenceController.shared.container.viewContext\n\n        return await context.perform {\n            let fetchRequest: NSFetchRequest<Topic> = Topic.fetchRequest()\n    ...",
+      "visibility": "public",
+      "docstring": "Fetch topics by ID for Siri",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/TopicEntity.swift:TopicEntityQuery:103",
+      "name": "TopicEntityQuery",
+      "kind": "struct",
+      "file": "UnaMentis/Intents/TopicEntity.swift",
+      "line": 103,
+      "end_line": 155,
+      "code_preview": "public struct TopicEntityQuery: EntityQuery {\n    public init() {}\n\n    /// Fetch topics by ID for Siri\n    public func entities(for identifiers: [UUID]) async throws -> [TopicEntity] {\n    ...",
+      "visibility": "public",
+      "docstring": "Query provider for TopicEntity\nEnables Siri to search and suggest topics",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/CurriculumEntity.swift:suggestedEntities:87",
+      "name": "suggestedEntities",
+      "kind": "function",
+      "file": "UnaMentis/Intents/CurriculumEntity.swift",
+      "line": 87,
+      "end_line": 101,
+      "code_preview": "    public func suggestedEntities() async throws -> [CurriculumEntity] {\n        let context = PersistenceController.shared.container.viewContext\n\n        return await context.perform {\n            let fetchRequest: NSFetchRequest<Curriculum> = Curriculum.fetchRequest()\n    ...",
+      "visibility": "public",
+      "docstring": "Provide suggested curricula for Siri",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/CurriculumEntity.swift:entities:71",
+      "name": "entities",
+      "kind": "function",
+      "file": "UnaMentis/Intents/CurriculumEntity.swift",
+      "line": 71,
+      "end_line": 84,
+      "code_preview": "    public func entities(for identifiers: [UUID]) async throws -> [CurriculumEntity] {\n        let context = PersistenceController.shared.container.viewContext\n\n        return await context.perform {\n            let fetchRequest: NSFetchRequest<Curriculum> = Curriculum.fetchRequest()\n    ...",
+      "visibility": "public",
+      "docstring": "Fetch all curricula for Siri suggestions",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/StartConversationIntent.swift:StartConversationError:80",
+      "name": "StartConversationError",
+      "kind": "enum",
+      "file": "UnaMentis/Intents/StartConversationIntent.swift",
+      "line": 80,
+      "end_line": 92,
+      "code_preview": "public enum StartConversationError: Error, CustomLocalizedStringResourceConvertible {\n    case invalidConfiguration\n    case appNotReady\n\n    public var localizedStringResource: LocalizedStringResource {\n    ...",
+      "visibility": "public",
+      "docstring": "Errors for StartConversationIntent",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/ResumeLearningIntent.swift:ResumeLearningError:87",
+      "name": "ResumeLearningError",
+      "kind": "enum",
+      "file": "UnaMentis/Intents/ResumeLearningIntent.swift",
+      "line": 87,
+      "end_line": 99,
+      "code_preview": "public enum ResumeLearningError: Error, CustomLocalizedStringResourceConvertible {\n    case noSessionToResume\n    case invalidConfiguration\n\n    public var localizedStringResource: LocalizedStringResource {\n    ...",
+      "visibility": "public",
+      "docstring": "Errors for ResumeLearningIntent",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/StartLessonIntent.swift:StartLessonIntent:15",
+      "name": "StartLessonIntent",
+      "kind": "struct",
+      "file": "UnaMentis/Intents/StartLessonIntent.swift",
+      "line": 15,
+      "end_line": 85,
+      "code_preview": "public struct StartLessonIntent: AppIntent {\n    public static let title: LocalizedStringResource = \"Start Lesson\"\n\n    public static let description = IntentDescription(\n        \"Start a voice learning session on a specific topic\",\n    ...",
+      "visibility": "public",
+      "docstring": "App Intent for starting a learning session on a specific topic\n\nEnables voice commands like:\n- \"Hey Siri, start a lesson on Quantum Mechanics\"\n- \"Hey Siri, start learning Physics with UnaMentis\"\n- \"Hey Siri, teach me about Classical Mechanics\"",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/TopicEntity.swift:TopicEntity:15",
+      "name": "TopicEntity",
+      "kind": "struct",
+      "file": "UnaMentis/Intents/TopicEntity.swift",
+      "line": 15,
+      "end_line": 97,
+      "code_preview": "public struct TopicEntity: AppEntity {\n    /// Unique identifier for the topic\n    public var id: UUID\n\n    /// Display title of the topic\n    ...",
+      "visibility": "public",
+      "docstring": "App Entity representing a Topic for Siri and Shortcuts integration\n\nThis entity allows users to:\n- Say \"Start a lesson on Quantum Mechanics\" to Siri\n- Browse topics within a curriculum\n- Create Shortcuts that target specific topics",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/ShowProgressIntent.swift:ShowProgressIntent:15",
+      "name": "ShowProgressIntent",
+      "kind": "struct",
+      "file": "UnaMentis/Intents/ShowProgressIntent.swift",
+      "line": 15,
+      "end_line": 98,
+      "code_preview": "public struct ShowProgressIntent: AppIntent {\n    public static let title: LocalizedStringResource = \"Show Learning Progress\"\n\n    public static let description = IntentDescription(\n        \"View your learning progress and statistics\",\n    ...",
+      "visibility": "public",
+      "docstring": "App Intent for displaying learning progress\n\nEnables voice commands like:\n- \"Hey Siri, show my learning progress\"\n- \"Hey Siri, how am I doing in UnaMentis?\"\n- \"Hey Siri, what have I learned?\"",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/StartLessonIntent.swift:StartLessonError:130",
+      "name": "StartLessonError",
+      "kind": "enum",
+      "file": "UnaMentis/Intents/StartLessonIntent.swift",
+      "line": 130,
+      "end_line": 145,
+      "code_preview": "public enum StartLessonError: Error, CustomLocalizedStringResourceConvertible {\n    case noTopicSelected\n    case topicNotFound\n    case invalidConfiguration\n\n    ...",
+      "visibility": "public",
+      "docstring": "Errors for StartLessonIntent",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/CurriculumEntity.swift:ext_CurriculumEntityQuery:106",
+      "name": "extension CurriculumEntityQuery",
+      "kind": "extension",
+      "file": "UnaMentis/Intents/CurriculumEntity.swift",
+      "line": 106,
+      "end_line": 127,
+      "code_preview": "extension CurriculumEntityQuery: EntityStringQuery {\n    /// Search curricula by name for Siri voice input\n    public func entities(matching query: String) async throws -> [CurriculumEntity] {\n        let context = PersistenceController.shared.container.viewContext\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/StartConversationIntent.swift:StartConversationIntent:22",
+      "name": "StartConversationIntent",
+      "kind": "struct",
+      "file": "UnaMentis/Intents/StartConversationIntent.swift",
+      "line": 22,
+      "end_line": 75,
+      "code_preview": "public struct StartConversationIntent: AppIntent {\n    public static let title: LocalizedStringResource = \"Start Conversation\"\n\n    public static let description = IntentDescription(\n        \"Start a freeform voice conversation for spontaneous learning\",\n    ...",
+      "visibility": "public",
+      "docstring": "App Intent for starting a freeform voice conversation\n\nThis intent enables hands-free access to the voice chat without\nrequiring a specific topic or curriculum. Perfect for:\n- Spontaneous learning when walking or doing other activities\n- Quick questions without navigating through the app\n- General knowledge exploration\n\nEnables voice commands like:\n- \"Hey Siri, start a conversation with UnaMentis\"\n- \"Hey Siri, talk to UnaMentis\"\n- \"Hey Siri, open UnaMentis chat\"\n- \"Hey Siri, I want to learn something\"",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/TopicEntity.swift:suggestedEntities:124",
+      "name": "suggestedEntities",
+      "kind": "function",
+      "file": "UnaMentis/Intents/TopicEntity.swift",
+      "line": 124,
+      "end_line": 154,
+      "code_preview": "    public func suggestedEntities() async throws -> [TopicEntity] {\n        let context = PersistenceController.shared.container.viewContext\n\n        return await context.perform {\n            // First, get in-progress topics\n    ...",
+      "visibility": "public",
+      "docstring": "Provide suggested topics for Siri\nPrioritizes in-progress and recently accessed topics",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/TopicEntity.swift:ext_TopicEntityQuery:159",
+      "name": "extension TopicEntityQuery",
+      "kind": "extension",
+      "file": "UnaMentis/Intents/TopicEntity.swift",
+      "line": 159,
+      "end_line": 180,
+      "code_preview": "extension TopicEntityQuery: EntityStringQuery {\n    /// Search topics by title for Siri voice input\n    public func entities(matching query: String) async throws -> [TopicEntity] {\n        let context = PersistenceController.shared.container.viewContext\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/TopicEntity.swift:entities:161",
+      "name": "entities",
+      "kind": "function",
+      "file": "UnaMentis/Intents/TopicEntity.swift",
+      "line": 161,
+      "end_line": 179,
+      "code_preview": "    public func entities(matching query: String) async throws -> [TopicEntity] {\n        let context = PersistenceController.shared.container.viewContext\n\n        return await context.perform {\n            let fetchRequest: NSFetchRequest<Topic> = Topic.fetchRequest()\n    ...",
+      "visibility": "public",
+      "docstring": "Search topics by title for Siri voice input",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/CurriculumEntity.swift:CurriculumEntityQuery:67",
+      "name": "CurriculumEntityQuery",
+      "kind": "struct",
+      "file": "UnaMentis/Intents/CurriculumEntity.swift",
+      "line": 67,
+      "end_line": 102,
+      "code_preview": "public struct CurriculumEntityQuery: EntityQuery {\n    public init() {}\n\n    /// Fetch all curricula for Siri suggestions\n    public func entities(for identifiers: [UUID]) async throws -> [CurriculumEntity] {\n    ...",
+      "visibility": "public",
+      "docstring": "Query provider for CurriculumEntity\nEnables Siri to search and suggest curricula",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/ResumeLearningIntent.swift:ResumeLearningIntent:15",
+      "name": "ResumeLearningIntent",
+      "kind": "struct",
+      "file": "UnaMentis/Intents/ResumeLearningIntent.swift",
+      "line": 15,
+      "end_line": 82,
+      "code_preview": "public struct ResumeLearningIntent: AppIntent {\n    public static let title: LocalizedStringResource = \"Resume Learning\"\n\n    public static let description = IntentDescription(\n        \"Continue your most recent learning session\",\n    ...",
+      "visibility": "public",
+      "docstring": "App Intent for resuming the most recent learning session\n\nEnables voice commands like:\n- \"Hey Siri, resume my lesson\"\n- \"Hey Siri, continue learning with UnaMentis\"\n- \"Hey Siri, pick up where I left off\"",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/StartLessonIntent.swift:perform:164",
+      "name": "perform",
+      "kind": "function",
+      "file": "UnaMentis/Intents/StartLessonIntent.swift",
+      "line": 164,
+      "end_line": 167,
+      "code_preview": "    public func perform() async throws -> some IntentResult {\n        // The system will open this URL, launching UnaMentis to the lesson\n        return .result()\n    }\n",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/Intents/ShowProgressIntent.swift:LearningStats:103",
+      "name": "LearningStats",
+      "kind": "struct",
+      "file": "UnaMentis/Intents/ShowProgressIntent.swift",
+      "line": 103,
+      "end_line": 109,
+      "code_preview": "private struct LearningStats {\n    var totalTopics: Int = 0\n    var completedTopics: Int = 0\n    var inProgressTopics: Int = 0\n    var totalTimeMinutes: Int = 0\n    ...",
+      "visibility": "private",
+      "docstring": "Statistics about learning progress",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/Intents/AppShortcutsProvider.swift",
+      "language": "swift",
+      "lines": 154,
+      "size_bytes": 5204,
+      "symbols": [
+        "UnaMentis/Intents/AppShortcutsProvider.swift:UnaMentisShortcuts:15"
+      ],
+      "imports": [
+        "AppIntents"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - App Shortcuts Provider\nRegisters App Intents with Siri and Shortcuts app\nPart of Apple Intelligence Integration (iOS 18+)"
+    },
+    {
+      "path": "UnaMentis/Intents/CurriculumEntity.swift",
+      "language": "swift",
+      "lines": 128,
+      "size_bytes": 4447,
+      "symbols": [
+        "UnaMentis/Intents/CurriculumEntity.swift:CurriculumEntity:15",
+        "UnaMentis/Intents/CurriculumEntity.swift:CurriculumEntityQuery:67",
+        "UnaMentis/Intents/CurriculumEntity.swift:entities:71",
+        "UnaMentis/Intents/CurriculumEntity.swift:suggestedEntities:87",
+        "UnaMentis/Intents/CurriculumEntity.swift:ext_CurriculumEntityQuery:106",
+        "UnaMentis/Intents/CurriculumEntity.swift:entities:108"
+      ],
+      "imports": [
+        "AppIntents",
+        "CoreData"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Curriculum Entity for App Intents\nExposes curricula to Siri and Shortcuts\nPart of Apple Intelligence Integration (iOS 18+)"
+    },
+    {
+      "path": "UnaMentis/Intents/ResumeLearningIntent.swift",
+      "language": "swift",
+      "lines": 100,
+      "size_bytes": 3451,
+      "symbols": [
+        "UnaMentis/Intents/ResumeLearningIntent.swift:ResumeLearningIntent:15",
+        "UnaMentis/Intents/ResumeLearningIntent.swift:perform:27",
+        "UnaMentis/Intents/ResumeLearningIntent.swift:ResumeLearningError:87"
+      ],
+      "imports": [
+        "AppIntents",
+        "CoreData"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Resume Learning Intent\nEnables \"Hey Siri, resume my lesson\" voice commands\nPart of Apple Intelligence Integration (iOS 18+)"
+    },
+    {
+      "path": "UnaMentis/Intents/ShowProgressIntent.swift",
+      "language": "swift",
+      "lines": 110,
+      "size_bytes": 3608,
+      "symbols": [
+        "UnaMentis/Intents/ShowProgressIntent.swift:ShowProgressIntent:15",
+        "UnaMentis/Intents/ShowProgressIntent.swift:perform:34",
+        "UnaMentis/Intents/ShowProgressIntent.swift:LearningStats:103"
+      ],
+      "imports": [
+        "AppIntents",
+        "CoreData"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Show Progress Intent\nEnables \"Hey Siri, show my learning progress\" voice commands\nPart of Apple Intelligence Integration (iOS 18+)"
+    },
+    {
+      "path": "UnaMentis/Intents/StartConversationIntent.swift",
+      "language": "swift",
+      "lines": 93,
+      "size_bytes": 3173,
+      "symbols": [
+        "UnaMentis/Intents/StartConversationIntent.swift:StartConversationIntent:22",
+        "UnaMentis/Intents/StartConversationIntent.swift:perform:42",
+        "UnaMentis/Intents/StartConversationIntent.swift:StartConversationError:80"
+      ],
+      "imports": [
+        "AppIntents"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Start Conversation Intent\nEnables \"Hey Siri, start a conversation with UnaMentis\" voice commands\nfor freeform voice chat without requiring a specific topic\nPart of Apple Intelligence Integration (iOS 16+)"
+    },
+    {
+      "path": "UnaMentis/Intents/StartLessonIntent.swift",
+      "language": "swift",
+      "lines": 171,
+      "size_bytes": 5164,
+      "symbols": [
+        "UnaMentis/Intents/StartLessonIntent.swift:StartLessonIntent:15",
+        "UnaMentis/Intents/StartLessonIntent.swift:perform:49",
+        "UnaMentis/Intents/StartLessonIntent.swift:LessonDepth:90",
+        "UnaMentis/Intents/StartLessonIntent.swift:StartLessonError:130",
+        "UnaMentis/Intents/StartLessonIntent.swift:OpenURLIntent:150",
+        "UnaMentis/Intents/StartLessonIntent.swift:perform:164"
+      ],
+      "imports": [
+        "AppIntents",
+        "CoreData"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Start Lesson Intent\nEnables \"Hey Siri, start a lesson on Physics\" voice commands\nPart of Apple Intelligence Integration (iOS 18+)"
+    },
+    {
+      "path": "UnaMentis/Intents/TopicEntity.swift",
+      "language": "swift",
+      "lines": 181,
+      "size_bytes": 6315,
+      "symbols": [
+        "UnaMentis/Intents/TopicEntity.swift:TopicEntity:15",
+        "UnaMentis/Intents/TopicEntity.swift:TopicEntityQuery:103",
+        "UnaMentis/Intents/TopicEntity.swift:entities:107",
+        "UnaMentis/Intents/TopicEntity.swift:suggestedEntities:124",
+        "UnaMentis/Intents/TopicEntity.swift:ext_TopicEntityQuery:159",
+        "UnaMentis/Intents/TopicEntity.swift:entities:161"
+      ],
+      "imports": [
+        "AppIntents",
+        "CoreData"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis - Topic Entity for App Intents\nExposes topics to Siri and Shortcuts\nPart of Apple Intelligence Integration (iOS 18+)"
+    }
+  ]
+}

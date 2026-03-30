@@ -1,0 +1,154 @@
+{
+  "symbols": [
+    {
+      "id": "server/management/tts_cache/tests/test_resource_pool.py:TestResourcePoolStress:202",
+      "name": "TestResourcePoolStress",
+      "kind": "class",
+      "file": "server/management/tts_cache/tests/test_resource_pool.py",
+      "line": 202,
+      "end_line": 247,
+      "code_preview": "class TestResourcePoolStress:\n    \"\"\"Stress tests for resource pool.\"\"\"\n\n    @pytest.mark.asyncio\n    async def test_high_concurrency(self):\n    ...",
+      "visibility": "public",
+      "docstring": "Stress tests for resource pool.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/tests/test_resource_pool.py:TestPriority:11",
+      "name": "TestPriority",
+      "kind": "class",
+      "file": "server/management/tts_cache/tests/test_resource_pool.py",
+      "line": 11,
+      "end_line": 24,
+      "code_preview": "class TestPriority:\n    \"\"\"Tests for Priority enum.\"\"\"\n\n    def test_priority_ordering(self):\n        \"\"\"LIVE > PREFETCH > SCHEDULED.\"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for Priority enum.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/tests/test_cache.py:TestTTSCacheKey:12",
+      "name": "TestTTSCacheKey",
+      "kind": "class",
+      "file": "server/management/tts_cache/tests/test_cache.py",
+      "line": 12,
+      "end_line": 91,
+      "code_preview": "class TestTTSCacheKey:\n    \"\"\"Tests for TTSCacheKey.\"\"\"\n\n    def test_normalize_text(self):\n        \"\"\"Test text normalization.\"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for TTSCacheKey.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/tests/test_cache.py:TestTTSCacheStats:94",
+      "name": "TestTTSCacheStats",
+      "kind": "class",
+      "file": "server/management/tts_cache/tests/test_cache.py",
+      "line": 94,
+      "end_line": 118,
+      "code_preview": "class TestTTSCacheStats:\n    \"\"\"Tests for TTSCacheStats.\"\"\"\n\n    def test_hit_rate_zero(self):\n        \"\"\"Hit rate should be 0 with no hits.\"\"\"\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for TTSCacheStats.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/tests/test_cache.py:TestTTSCache:121",
+      "name": "TestTTSCache",
+      "kind": "class",
+      "file": "server/management/tts_cache/tests/test_cache.py",
+      "line": 121,
+      "end_line": 245,
+      "code_preview": "class TestTTSCache:\n    \"\"\"Tests for TTSCache.\"\"\"\n\n    @pytest.fixture\n    def cache_dir(self):\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for TTSCache.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/tests/test_resource_pool.py:TestResourcePoolConcurrency:64",
+      "name": "TestResourcePoolConcurrency",
+      "kind": "class",
+      "file": "server/management/tts_cache/tests/test_resource_pool.py",
+      "line": 64,
+      "end_line": 199,
+      "code_preview": "class TestResourcePoolConcurrency:\n    \"\"\"Concurrency tests for TTSResourcePool.\"\"\"\n\n    @pytest.fixture\n    async def mock_pool(self):\n    ...",
+      "visibility": "public",
+      "docstring": "Concurrency tests for TTSResourcePool.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/management/tts_cache/tests/test_resource_pool.py:TestTTSResourcePool:27",
+      "name": "TestTTSResourcePool",
+      "kind": "class",
+      "file": "server/management/tts_cache/tests/test_resource_pool.py",
+      "line": 27,
+      "end_line": 61,
+      "code_preview": "class TestTTSResourcePool:\n    \"\"\"Tests for TTSResourcePool.\"\"\"\n\n    @pytest.fixture\n    async def pool(self):\n    ...",
+      "visibility": "public",
+      "docstring": "Tests for TTSResourcePool.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/management/tts_cache/tests/__init__.py",
+      "language": "python",
+      "lines": 2,
+      "size_bytes": 18,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/tts_cache/tests/test_cache.py",
+      "language": "python",
+      "lines": 246,
+      "size_bytes": 7817,
+      "symbols": [
+        "server/management/tts_cache/tests/test_cache.py:TestTTSCacheKey:12",
+        "server/management/tts_cache/tests/test_cache.py:TestTTSCacheStats:94",
+        "server/management/tts_cache/tests/test_cache.py:TestTTSCache:121"
+      ],
+      "imports": [
+        "pathlib",
+        "tempfile",
+        "asyncio",
+        "pytest",
+        "tts_cache"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/management/tts_cache/tests/test_resource_pool.py",
+      "language": "python",
+      "lines": 248,
+      "size_bytes": 8664,
+      "symbols": [
+        "server/management/tts_cache/tests/test_resource_pool.py:TestPriority:11",
+        "server/management/tts_cache/tests/test_resource_pool.py:TestTTSResourcePool:27",
+        "server/management/tts_cache/tests/test_resource_pool.py:TestResourcePoolConcurrency:64",
+        "server/management/tts_cache/tests/test_resource_pool.py:TestResourcePoolStress:202"
+      ],
+      "imports": [
+        "pytest",
+        "asyncio",
+        "unittest",
+        "tts_cache"
+      ],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

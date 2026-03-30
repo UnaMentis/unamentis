@@ -1,0 +1,165 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/modules/ACADEMIC_COMPETITION_MODULAR_ARCHITECTURE.md",
+      "language": "markdown",
+      "lines": 2049,
+      "size_bytes": 70939,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/CLAUDE_CODE_MODULE_PROMPT.md",
+      "language": "markdown",
+      "lines": 528,
+      "size_bytes": 17260,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/KNOWLEDGE_BOWL_ANSWER_VALIDATION.md",
+      "language": "markdown",
+      "lines": 563,
+      "size_bytes": 15039,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/KNOWLEDGE_BOWL_CHAMPIONSHIP_SYSTEM.md",
+      "language": "markdown",
+      "lines": 5169,
+      "size_bytes": 163631,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/KNOWLEDGE_BOWL_MODULE.md",
+      "language": "markdown",
+      "lines": 1366,
+      "size_bytes": 47766,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/KNOWLEDGE_BOWL_MODULE_SPEC.md",
+      "language": "markdown",
+      "lines": 2544,
+      "size_bytes": 86168,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/KNOWLEDGE_BOWL_STUDY_GUIDE.md",
+      "language": "markdown",
+      "lines": 821,
+      "size_bytes": 23626,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/KNOWLEDGE_BOWL_STYLE_GUIDE.html",
+      "language": "html",
+      "lines": 1860,
+      "size_bytes": 70642,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/MASTER_TECHNICAL_IMPLEMENTATION.md",
+      "language": "markdown",
+      "lines": 1555,
+      "size_bytes": 68444,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/QUIZ_BOWL_MODULE_SPEC.md",
+      "language": "markdown",
+      "lines": 2006,
+      "size_bytes": 65843,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/SAT_MODULE.md",
+      "language": "markdown",
+      "lines": 1089,
+      "size_bytes": 36347,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/SAT_STUDY_GUIDE.md",
+      "language": "markdown",
+      "lines": 775,
+      "size_bytes": 20201,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/SCIENCE_BOWL_MODULE_SPEC.md",
+      "language": "markdown",
+      "lines": 1965,
+      "size_bytes": 68302,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/SPECIALIZED_MODULES_FRAMEWORK.md",
+      "language": "markdown",
+      "lines": 1198,
+      "size_bytes": 43717,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/TRAINING_DATA_SOURCES.md",
+      "language": "markdown",
+      "lines": 399,
+      "size_bytes": 13149,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/modules/UNIFIED_PROFICIENCY_SYSTEM.md",
+      "language": "markdown",
+      "lines": 1018,
+      "size_bytes": 39515,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

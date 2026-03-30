@@ -1,0 +1,55 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "server/data/latency_harness/runs/run_20260107_204647_d43bfe.json",
+      "language": "json",
+      "lines": 14,
+      "size_bytes": 413,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/data/latency_harness/runs/run_20260107_211029_e8ce4e.json",
+      "language": "json",
+      "lines": 190,
+      "size_bytes": 6223,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/data/latency_harness/runs/run_20260107_211302_d7a3dd.json",
+      "language": "json",
+      "lines": 190,
+      "size_bytes": 6214,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/data/latency_harness/runs/run_20260107_214945_0f95de.json",
+      "language": "json",
+      "lines": 322,
+      "size_bytes": 9446,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/data/latency_harness/runs/run_20260108_061751_1208e6.json",
+      "language": "json",
+      "lines": 322,
+      "size_bytes": 9448,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

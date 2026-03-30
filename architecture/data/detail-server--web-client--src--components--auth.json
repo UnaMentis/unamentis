@@ -1,0 +1,446 @@
+{
+  "symbols": [
+    {
+      "id": "server/web-client/src/components/auth/RegisterForm.tsx:isValidEmail:36",
+      "name": "isValidEmail",
+      "kind": "function",
+      "file": "server/web-client/src/components/auth/RegisterForm.tsx",
+      "line": 36,
+      "end_line": 38,
+      "code_preview": "function isValidEmail(email: string): boolean {\n  return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": "Validate email format.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/RegisterForm.tsx:RegisterFormProps:13",
+      "name": "RegisterFormProps",
+      "kind": "interface",
+      "file": "server/web-client/src/components/auth/RegisterForm.tsx",
+      "line": 13,
+      "end_line": 20,
+      "code_preview": "interface RegisterFormProps {\n  /** Called after successful registration */\n  onSuccess?: () => void;\n  /** Called when user wants to switch to login */\n  onSwitchToLogin?: () => void;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/AuthProvider.tsx:AuthContext:37",
+      "name": "AuthContext",
+      "kind": "component",
+      "file": "server/web-client/src/components/auth/AuthProvider.tsx",
+      "line": 37,
+      "end_line": 37,
+      "code_preview": "const AuthContext = createContext<AuthContextValue | null>(null);\n\ninterface AuthProviderProps {\n  children: ReactNode;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/RegisterForm.tsx:RegisterForm:75",
+      "name": "RegisterForm",
+      "kind": "component",
+      "file": "server/web-client/src/components/auth/RegisterForm.tsx",
+      "line": 75,
+      "end_line": 385,
+      "code_preview": "export function RegisterForm({\n  onSuccess,\n  onSwitchToLogin,\n  className = '',\n}: RegisterFormProps) {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/RegisterForm.tsx:FormErrors:22",
+      "name": "FormErrors",
+      "kind": "interface",
+      "file": "server/web-client/src/components/auth/RegisterForm.tsx",
+      "line": 22,
+      "end_line": 28,
+      "code_preview": "interface FormErrors {\n  displayName?: string;\n  email?: string;\n  password?: string;\n  confirmPassword?: string;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/__tests__/LoginForm.test.tsx:renderWithAuth:33",
+      "name": "renderWithAuth",
+      "kind": "function",
+      "file": "server/web-client/src/components/auth/__tests__/LoginForm.test.tsx",
+      "line": 33,
+      "end_line": 38,
+      "code_preview": "function renderWithAuth(ui: React.ReactElement) {\n  (api.tokenManager.hasTokens as Mock).mockReturnValue(false);\n  (api.tokenManager.setOnTokenChange as Mock).mockImplementation(() => {});\n\n  return render(<AuthProvider>{ui}</AuthProvider>);\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/LoginForm.tsx:LoginFormProps:13",
+      "name": "LoginFormProps",
+      "kind": "interface",
+      "file": "server/web-client/src/components/auth/LoginForm.tsx",
+      "line": 13,
+      "end_line": 20,
+      "code_preview": "interface LoginFormProps {\n  /** Called after successful login */\n  onSuccess?: () => void;\n  /** Called when user wants to switch to register */\n  onSwitchToRegister?: () => void;\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/AuthProvider.tsx:AuthProviderProps:39",
+      "name": "AuthProviderProps",
+      "kind": "interface",
+      "file": "server/web-client/src/components/auth/AuthProvider.tsx",
+      "line": 39,
+      "end_line": 41,
+      "code_preview": "interface AuthProviderProps {\n  children: ReactNode;\n}\n\n/**\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/AuthProvider.tsx:initialState:29",
+      "name": "initialState",
+      "kind": "function",
+      "file": "server/web-client/src/components/auth/AuthProvider.tsx",
+      "line": 29,
+      "end_line": 34,
+      "code_preview": "const initialState: AuthState = {\n  isAuthenticated: false,\n  isLoading: true,\n  user: null,\n  error: null,\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/AuthProvider.tsx:AuthProvider:46",
+      "name": "AuthProvider",
+      "kind": "component",
+      "file": "server/web-client/src/components/auth/AuthProvider.tsx",
+      "line": 46,
+      "end_line": 198,
+      "code_preview": "export function AuthProvider({ children }: AuthProviderProps) {\n  const [state, setState] = useState<AuthState>(initialState);\n\n  /**\n   * Update auth state helper.\n    ...",
+      "visibility": "public",
+      "docstring": "Auth Provider component that wraps the application.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/__tests__/AuthProvider.test.tsx:TestAuthConsumer:26",
+      "name": "TestAuthConsumer",
+      "kind": "component",
+      "file": "server/web-client/src/components/auth/__tests__/AuthProvider.test.tsx",
+      "line": 26,
+      "end_line": 36,
+      "code_preview": "function TestAuthConsumer() {\n  const { isAuthenticated, isLoading, user, error } = useAuth();\n  return (\n    <div>\n      <div data-testid=\"loading\">{isLoading ? 'loading' : 'not-loading'}</div>\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/__tests__/RegisterForm.test.tsx:renderWithAuth:33",
+      "name": "renderWithAuth",
+      "kind": "function",
+      "file": "server/web-client/src/components/auth/__tests__/RegisterForm.test.tsx",
+      "line": 33,
+      "end_line": 38,
+      "code_preview": "function renderWithAuth(ui: React.ReactElement) {\n  (api.tokenManager.hasTokens as Mock).mockReturnValue(false);\n  (api.tokenManager.setOnTokenChange as Mock).mockImplementation(() => {});\n\n  return render(<AuthProvider>{ui}</AuthProvider>);\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/AuthProvider.tsx:useCurrentUser:231",
+      "name": "useCurrentUser",
+      "kind": "function",
+      "file": "server/web-client/src/components/auth/AuthProvider.tsx",
+      "line": 231,
+      "end_line": 234,
+      "code_preview": "export function useCurrentUser(): User | null {\n  const { user } = useAuth();\n  return user;\n}\n",
+      "visibility": "public",
+      "docstring": "Hook to get the current user.\nReturns null while loading or if not authenticated.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/RegisterForm.tsx:MIN_PASSWORD_LENGTH:31",
+      "name": "MIN_PASSWORD_LENGTH",
+      "kind": "component",
+      "file": "server/web-client/src/components/auth/RegisterForm.tsx",
+      "line": 31,
+      "end_line": 31,
+      "code_preview": "const MIN_PASSWORD_LENGTH = 8;\n\n/**\n * Validate email format.\n */\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/__tests__/AuthProvider.test.tsx:TestLoginComponent:39",
+      "name": "TestLoginComponent",
+      "kind": "component",
+      "file": "server/web-client/src/components/auth/__tests__/AuthProvider.test.tsx",
+      "line": 39,
+      "end_line": 59,
+      "code_preview": "function TestLoginComponent() {\n  const { login, isLoading, error } = useAuth();\n\n  const handleLogin = async () => {\n    try {\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/LoginForm.tsx:isValidEmail:31",
+      "name": "isValidEmail",
+      "kind": "function",
+      "file": "server/web-client/src/components/auth/LoginForm.tsx",
+      "line": 31,
+      "end_line": 33,
+      "code_preview": "function isValidEmail(email: string): boolean {\n  return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\n}\n\nexport function LoginForm({\n    ...",
+      "visibility": "internal",
+      "docstring": "Validate email format.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/__tests__/AuthProvider.test.tsx:TestLogoutComponent:62",
+      "name": "TestLogoutComponent",
+      "kind": "component",
+      "file": "server/web-client/src/components/auth/__tests__/AuthProvider.test.tsx",
+      "line": 62,
+      "end_line": 73,
+      "code_preview": "function TestLogoutComponent() {\n  const { logout, isAuthenticated } = useAuth();\n\n  return (\n    <div>\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/RegisterForm.tsx:isStrongPassword:43",
+      "name": "isStrongPassword",
+      "kind": "function",
+      "file": "server/web-client/src/components/auth/RegisterForm.tsx",
+      "line": 43,
+      "end_line": 73,
+      "code_preview": "function isStrongPassword(password: string): { valid: boolean; message?: string } {\n  if (password.length < MIN_PASSWORD_LENGTH) {\n    return {\n      valid: false,\n      message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,\n    ...",
+      "visibility": "internal",
+      "docstring": "Validate password strength.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/LoginForm.tsx:LoginForm:35",
+      "name": "LoginForm",
+      "kind": "component",
+      "file": "server/web-client/src/components/auth/LoginForm.tsx",
+      "line": 35,
+      "end_line": 245,
+      "code_preview": "export function LoginForm({\n  onSuccess,\n  onSwitchToRegister,\n  className = '',\n}: LoginFormProps) {\n    ...",
+      "visibility": "public",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/LoginForm.tsx:FormErrors:22",
+      "name": "FormErrors",
+      "kind": "interface",
+      "file": "server/web-client/src/components/auth/LoginForm.tsx",
+      "line": 22,
+      "end_line": 26,
+      "code_preview": "interface FormErrors {\n  email?: string;\n  password?: string;\n  general?: string;\n}",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/AuthProvider.tsx:useAuth:205",
+      "name": "useAuth",
+      "kind": "function",
+      "file": "server/web-client/src/components/auth/AuthProvider.tsx",
+      "line": 205,
+      "end_line": 213,
+      "code_preview": "export function useAuth(): AuthContextValue {\n  const context = useContext(AuthContext);\n\n  if (!context) {\n    throw new Error('useAuth must be used within an AuthProvider');\n    ...",
+      "visibility": "public",
+      "docstring": "Hook to access auth context.\n@throws Error if used outside AuthProvider",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "server/web-client/src/components/auth/AuthProvider.tsx:useIsAuthenticated:219",
+      "name": "useIsAuthenticated",
+      "kind": "function",
+      "file": "server/web-client/src/components/auth/AuthProvider.tsx",
+      "line": 219,
+      "end_line": 225,
+      "code_preview": "export function useIsAuthenticated(): {\n  isAuthenticated: boolean;\n  isLoading: boolean;\n} {\n  const { isAuthenticated, isLoading } = useAuth();\n    ...",
+      "visibility": "public",
+      "docstring": "Hook to check if user is authenticated.\nReturns loading state while checking.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web-client/src/components/auth/AuthProvider.tsx",
+      "language": "typescript",
+      "lines": 235,
+      "size_bytes": 5303,
+      "symbols": [
+        "server/web-client/src/components/auth/AuthProvider.tsx:initialState:29",
+        "server/web-client/src/components/auth/AuthProvider.tsx:AuthContext:37",
+        "server/web-client/src/components/auth/AuthProvider.tsx:AuthProviderProps:39",
+        "server/web-client/src/components/auth/AuthProvider.tsx:AuthProvider:46",
+        "server/web-client/src/components/auth/AuthProvider.tsx:useAuth:205",
+        "server/web-client/src/components/auth/AuthProvider.tsx:useIsAuthenticated:219",
+        "server/web-client/src/components/auth/AuthProvider.tsx:useCurrentUser:231"
+      ],
+      "imports": [
+        "@/lib",
+        "@/types",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Auth Context Provider\nProvides authentication state and methods to the component tree.\nHandles token management, user state, and auth persistence."
+    },
+    {
+      "path": "server/web-client/src/components/auth/LoginForm.tsx",
+      "language": "typescript",
+      "lines": 246,
+      "size_bytes": 7228,
+      "symbols": [
+        "server/web-client/src/components/auth/LoginForm.tsx:LoginFormProps:13",
+        "server/web-client/src/components/auth/LoginForm.tsx:FormErrors:22",
+        "server/web-client/src/components/auth/LoginForm.tsx:isValidEmail:31",
+        "server/web-client/src/components/auth/LoginForm.tsx:LoginForm:35"
+      ],
+      "imports": [
+        "./AuthProvider",
+        "@/lib",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Login Form Component\nEmail/password login form with validation and error handling."
+    },
+    {
+      "path": "server/web-client/src/components/auth/RegisterForm.tsx",
+      "language": "typescript",
+      "lines": 386,
+      "size_bytes": 11888,
+      "symbols": [
+        "server/web-client/src/components/auth/RegisterForm.tsx:RegisterFormProps:13",
+        "server/web-client/src/components/auth/RegisterForm.tsx:FormErrors:22",
+        "server/web-client/src/components/auth/RegisterForm.tsx:MIN_PASSWORD_LENGTH:31",
+        "server/web-client/src/components/auth/RegisterForm.tsx:isValidEmail:36",
+        "server/web-client/src/components/auth/RegisterForm.tsx:isStrongPassword:43",
+        "server/web-client/src/components/auth/RegisterForm.tsx:RegisterForm:75"
+      ],
+      "imports": [
+        "./AuthProvider",
+        "@/lib",
+        "react"
+      ],
+      "exports": [],
+      "module_doc": "Registration Form Component\nAccount registration form with validation and error handling."
+    },
+    {
+      "path": "server/web-client/src/components/auth/index.ts",
+      "language": "typescript",
+      "lines": 10,
+      "size_bytes": 265,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": "Auth Components\nAuthentication UI components and context provider."
+    },
+    {
+      "path": "server/web-client/src/components/auth/__tests__/AuthProvider.test.tsx",
+      "language": "typescript",
+      "lines": 297,
+      "size_bytes": 8584,
+      "symbols": [
+        "server/web-client/src/components/auth/__tests__/AuthProvider.test.tsx:TestAuthConsumer:26",
+        "server/web-client/src/components/auth/__tests__/AuthProvider.test.tsx:TestLoginComponent:39",
+        "server/web-client/src/components/auth/__tests__/AuthProvider.test.tsx:TestLogoutComponent:62"
+      ],
+      "imports": [
+        "../AuthProvider",
+        "@/__tests__",
+        "@/lib",
+        "@testing-library/react",
+        "vitest"
+      ],
+      "exports": [],
+      "module_doc": "AuthProvider Tests"
+    },
+    {
+      "path": "server/web-client/src/components/auth/__tests__/LoginForm.test.tsx",
+      "language": "typescript",
+      "lines": 321,
+      "size_bytes": 10857,
+      "symbols": [
+        "server/web-client/src/components/auth/__tests__/LoginForm.test.tsx:renderWithAuth:33"
+      ],
+      "imports": [
+        "../AuthProvider",
+        "../LoginForm",
+        "@/lib",
+        "@testing-library/react",
+        "@testing-library/user-event",
+        "react",
+        "vitest"
+      ],
+      "exports": [],
+      "module_doc": "LoginForm Tests"
+    },
+    {
+      "path": "server/web-client/src/components/auth/__tests__/RegisterForm.test.tsx",
+      "language": "typescript",
+      "lines": 356,
+      "size_bytes": 13698,
+      "symbols": [
+        "server/web-client/src/components/auth/__tests__/RegisterForm.test.tsx:renderWithAuth:33"
+      ],
+      "imports": [
+        "../AuthProvider",
+        "../RegisterForm",
+        "@/lib",
+        "@testing-library/react",
+        "@testing-library/user-event",
+        "react",
+        "vitest"
+      ],
+      "exports": [],
+      "module_doc": "RegisterForm Tests"
+    }
+  ]
+}

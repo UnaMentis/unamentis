@@ -1,0 +1,25 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/knowledgebowl/notes.md",
+      "language": "markdown",
+      "lines": 6,
+      "size_bytes": 70,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/knowledgebowl/validation_test_vectors.json",
+      "language": "json",
+      "lines": 251,
+      "size_bytes": 6840,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

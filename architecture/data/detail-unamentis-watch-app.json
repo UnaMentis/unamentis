@@ -1,0 +1,54 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis Watch App/UnaMentisWatchApp.swift:UnaMentisWatchApp:6",
+      "name": "UnaMentisWatchApp",
+      "kind": "struct",
+      "file": "UnaMentis Watch App/UnaMentisWatchApp.swift",
+      "line": 6,
+      "end_line": 23,
+      "code_preview": "@main\nstruct UnaMentisWatchApp: App {\n    @StateObject private var connectivity = WatchConnectivityService.shared\n    @StateObject private var runtimeManager = ExtendedRuntimeManager()\n\n    ...",
+      "visibility": "internal",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis Watch App/UnaMentisWatchApp.swift",
+      "language": "swift",
+      "lines": 24,
+      "size_bytes": 583,
+      "symbols": [
+        "UnaMentis Watch App/UnaMentisWatchApp.swift:UnaMentisWatchApp:6"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis Watch App\nEntry point for the watchOS companion app"
+    },
+    {
+      "path": "UnaMentis Watch App/Assets.xcassets/Contents.json",
+      "language": "json",
+      "lines": 7,
+      "size_bytes": 63,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "UnaMentis Watch App/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "language": "json",
+      "lines": 14,
+      "size_bytes": 169,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

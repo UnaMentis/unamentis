@@ -1,0 +1,64 @@
+{
+  "symbols": [
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBDomainMixView.swift:DomainSlider:125",
+      "name": "DomainSlider",
+      "kind": "struct",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBDomainMixView.swift",
+      "line": 125,
+      "end_line": 172,
+      "code_preview": "private struct DomainSlider: View {\n    @Binding var value: Double\n    let color: Color\n\n    var body: some View {\n    ...",
+      "visibility": "private",
+      "docstring": "Custom slider styled for domain mix",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBDomainMixView.swift:domainSliderRow:68",
+      "name": "domainSliderRow",
+      "kind": "function",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBDomainMixView.swift",
+      "line": 68,
+      "end_line": 101,
+      "code_preview": "    private func domainSliderRow(for domain: KBDomain) -> some View {\n        HStack(spacing: 8) {\n            // Domain icon and name (fixed width for alignment)\n            HStack(spacing: 6) {\n                Image(systemName: domain.icon)\n    ...",
+      "visibility": "private",
+      "docstring": null,
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    },
+    {
+      "id": "UnaMentis/UI/KnowledgeBowl/KBDomainMixView.swift:KBDomainMixView:12",
+      "name": "KBDomainMixView",
+      "kind": "struct",
+      "file": "UnaMentis/UI/KnowledgeBowl/KBDomainMixView.swift",
+      "line": 12,
+      "end_line": 120,
+      "code_preview": "struct KBDomainMixView: View {\n    @Binding var domainMix: KBDomainMix\n    @Environment(\\.dismiss) private var dismiss\n\n    var body: some View {\n    ...",
+      "visibility": "internal",
+      "docstring": "View for configuring domain weights with linked sliders.",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "UnaMentis/UI/KnowledgeBowl/KBDomainMixView.swift",
+      "language": "swift",
+      "lines": 187,
+      "size_bytes": 5726,
+      "symbols": [
+        "UnaMentis/UI/KnowledgeBowl/KBDomainMixView.swift:KBDomainMixView:12",
+        "UnaMentis/UI/KnowledgeBowl/KBDomainMixView.swift:domainSliderRow:68",
+        "UnaMentis/UI/KnowledgeBowl/KBDomainMixView.swift:DomainSlider:125"
+      ],
+      "imports": [
+        "SwiftUI"
+      ],
+      "exports": [],
+      "module_doc": "UnaMentis\nDomain mix configuration view with linked sliders.\nAll sliders are linked to maintain a sum of 100%."
+    }
+  ]
+}

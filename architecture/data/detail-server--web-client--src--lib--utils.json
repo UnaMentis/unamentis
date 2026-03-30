@@ -1,0 +1,45 @@
+{
+  "symbols": [
+    {
+      "id": "server/web-client/src/lib/utils/cn.ts:cn:7",
+      "name": "cn",
+      "kind": "function",
+      "file": "server/web-client/src/lib/utils/cn.ts",
+      "line": 7,
+      "end_line": 9,
+      "code_preview": "export function cn(...inputs: ClassValue[]): string {\n  return twMerge(clsx(inputs));\n}\n",
+      "visibility": "public",
+      "docstring": "Combines clsx and tailwind-merge for conditional class merging",
+      "parent": null,
+      "dependencies": [],
+      "annotations": []
+    }
+  ],
+  "files": [
+    {
+      "path": "server/web-client/src/lib/utils/cn.ts",
+      "language": "typescript",
+      "lines": 10,
+      "size_bytes": 251,
+      "symbols": [
+        "server/web-client/src/lib/utils/cn.ts:cn:7"
+      ],
+      "imports": [
+        "clsx",
+        "tailwind-merge"
+      ],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "server/web-client/src/lib/utils/index.ts",
+      "language": "typescript",
+      "lines": 2,
+      "size_bytes": 27,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

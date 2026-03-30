@@ -1,5 +1,5 @@
 // UnaMentis - On-Device LLM Settings View
-// Settings UI for managing the on-device LLM model
+// Settings UI for managing multiple on-device LLM models
 //
 // Part of UI/Settings
 
@@ -8,32 +8,42 @@ import SwiftUI
 /// Settings view for on-device LLM model management
 ///
 /// Features:
-/// - Download model from Hugging Face
-/// - View download progress
-/// - Delete model with clear warnings
-/// - Show model information and benefits
+/// - Browse available models with status indicators
+/// - Download/delete individual models
+/// - Select active model for inference
+/// - View model details and storage usage
 struct OnDeviceLLMSettingsView: View {
 
     @StateObject private var viewModel = OnDeviceLLMSettingsViewModel()
     @Environment(\.dismiss) private var dismiss
-    @State private var showDeleteConfirmation = false
 
     var body: some View {
         List {
-            // Model Status
-            modelStatusSection
+            // Active model indicator
+            activeModelSection
 
-            // What This Model Does
-            if !viewModel.isDownloaded {
+            // Model catalog
+            modelCatalogSection
+
+            // Why download section (shown when no models downloaded)
+            if viewModel.downloadedCount == 0 {
                 benefitsSection
             }
 
-            // Model Information
-            modelInfoSection
-
-            // Storage Management
-            if viewModel.isDownloaded {
+            // Storage overview
+            if viewModel.downloadedCount > 0 {
                 storageSection
+            }
+
+            // Advanced settings
+            Section {
+                NavigationLink {
+                    OnDeviceLLMAdvancedSettingsView()
+                } label: {
+                    Label("Advanced Settings", systemImage: "slider.horizontal.3")
+                }
+            } footer: {
+                Text("Tune inference parameters, FOV context budgets, response latency, and thermal behavior.")
             }
         }
         .navigationTitle("On-Device LLM")
@@ -43,89 +53,288 @@ struct OnDeviceLLMSettingsView: View {
                 await viewModel.refreshState()
             }
         }
-        .alert("Delete On-Device LLM?", isPresented: $showDeleteConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete", role: .destructive) {
-                Task {
-                    await viewModel.deleteModel()
+    }
+
+    // MARK: - Active Model Section
+
+    private var activeModelSection: some View {
+        Section {
+            HStack {
+                Image(systemName: "cpu")
+                    .foregroundStyle(.blue)
+                    .font(.title2)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Active Model")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text(viewModel.selectedModel.config.displayName)
+                        .font(.headline)
                 }
+                Spacer()
+                statusBadge(for: viewModel.modelState(for: viewModel.selectedModel))
             }
-        } message: {
-            Text("This will remove the 2.2 GB model from your device. You can re-download it anytime.\n\nWithout this model, some learning modules may have reduced functionality when offline.")
+        } footer: {
+            if viewModel.isSelectedModelReady {
+                Text("Model is loaded and ready for offline inference.")
+            } else if viewModel.isSelectedModelDownloaded {
+                Text("Model is downloaded. It will load automatically when needed.")
+            } else {
+                Text("Download a model to enable on-device AI features.")
+            }
         }
     }
 
-    // MARK: - Model Status Section
+    // MARK: - Model Catalog Section
 
-    private var modelStatusSection: some View {
+    private var modelCatalogSection: some View {
         Section {
-            HStack {
-                modelStatusIcon
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(viewModel.modelStateDescription)
+            ForEach(OnDeviceLLMModel.allCases, id: \.rawValue) { model in
+                NavigationLink {
+                    ModelDetailView(model: model, viewModel: viewModel)
+                } label: {
+                    modelRow(for: model)
+                }
+            }
+        } header: {
+            Text("Available Models")
+        } footer: {
+            Text("All models use Q4_K_M quantization for optimal quality-to-size ratio on Apple Silicon.")
+        }
+    }
+
+    private func modelRow(for model: OnDeviceLLMModel) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(model.config.displayName)
                         .font(.subheadline)
                         .fontWeight(.medium)
-                    Text(modelStatusSubtext)
+                    if model.isRecommended {
+                        Text("Recommended")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.blue.opacity(0.15))
+                            .foregroundStyle(.blue)
+                            .clipShape(Capsule())
+                    }
+                    if model == viewModel.selectedModel {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                    }
+                }
+                Text("\(model.config.expectedSizeFormatted) \u{2022} \(model.config.publisher)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            statusBadge(for: viewModel.modelState(for: model))
+        }
+    }
+
+    // MARK: - Benefits Section
+
+    private var benefitsSection: some View {
+        Section {
+            ForEach(OnDeviceLLMModelConfig.keepModelReasons, id: \.self) { reason in
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.subheadline)
+                    Text(reason)
+                        .font(.subheadline)
+                }
+            }
+        } header: {
+            Text("Why Download?")
+        } footer: {
+            Text("On-device models enable advanced features that work without an internet connection.")
+        }
+    }
+
+    // MARK: - Storage Section
+
+    private var storageSection: some View {
+        Section {
+            HStack {
+                Text("Models Downloaded")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("\(viewModel.downloadedCount) of \(OnDeviceLLMModel.allCases.count)")
+                    .font(.subheadline)
+            }
+            HStack {
+                Text("Total Storage Used")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(viewModel.totalStorageFormatted)
+                    .font(.subheadline)
+            }
+        } header: {
+            Text("Storage")
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func statusBadge(for state: OnDeviceLLMModelManager.ModelState) -> some View {
+        Group {
+            switch state {
+            case .notDownloaded:
+                Text("Not Downloaded")
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.gray.opacity(0.15))
+                    .foregroundStyle(.secondary)
+                    .clipShape(Capsule())
+            case .downloading(let progress):
+                Text("Downloading \(Int(progress * 100))%")
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.blue.opacity(0.15))
+                    .foregroundStyle(.blue)
+                    .clipShape(Capsule())
+            case .verifying:
+                Text("Verifying")
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.orange.opacity(0.15))
+                    .foregroundStyle(.orange)
+                    .clipShape(Capsule())
+            case .available:
+                Text("Downloaded")
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.green.opacity(0.15))
+                    .foregroundStyle(.green)
+                    .clipShape(Capsule())
+            case .loading:
+                Text("Loading")
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.blue.opacity(0.15))
+                    .foregroundStyle(.blue)
+                    .clipShape(Capsule())
+            case .loaded:
+                Text("Active")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.green.opacity(0.15))
+                    .foregroundStyle(.green)
+                    .clipShape(Capsule())
+            case .error:
+                Text("Error")
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.red.opacity(0.15))
+                    .foregroundStyle(.red)
+                    .clipShape(Capsule())
+            }
+        }
+    }
+}
+
+// MARK: - Model Detail View
+
+/// Detail view for a single on-device LLM model
+private struct ModelDetailView: View {
+    let model: OnDeviceLLMModel
+    @ObservedObject var viewModel: OnDeviceLLMSettingsViewModel
+    @State private var showDeleteConfirmation = false
+
+    private var config: OnDeviceLLMModelConfig { model.config }
+    private var state: OnDeviceLLMModelManager.ModelState { viewModel.modelState(for: model) }
+
+    var body: some View {
+        List {
+            // Status and actions
+            statusSection
+
+            // Download progress
+            if viewModel.isDownloading(model) {
+                progressSection
+            }
+
+            // Model info
+            infoSection
+
+            // Storage management (if downloaded)
+            if viewModel.isDownloaded(model) {
+                storageManagementSection
+            }
+        }
+        .navigationTitle(config.displayName)
+        .navigationBarTitleDisplayMode(.large)
+        .onAppear {
+            Task { await viewModel.refreshState() }
+        }
+        .alert("Delete \(config.displayName)?", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                Task { await viewModel.deleteModel(model) }
+            }
+        } message: {
+            Text("This will remove the \(config.expectedSizeFormatted) model from your device. You can re-download it anytime.")
+        }
+    }
+
+    // MARK: - Status Section
+
+    private var statusSection: some View {
+        Section {
+            // Status indicator
+            HStack {
+                statusIcon
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(state.displayText)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    Text(statusSubtext)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
             }
 
-            // Download/Loading progress
-            if viewModel.isDownloading || viewModel.isLoading {
-                VStack(alignment: .leading, spacing: 8) {
-                    ProgressView(value: viewModel.progress)
-                        .progressViewStyle(.linear)
-
-                    if viewModel.isDownloading {
-                        HStack {
-                            Text("Downloading from Hugging Face...")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text("\(Int(viewModel.progress * 100))%")
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-
-            // Action buttons based on state
+            // Action buttons
             actionButtons
-
         } header: {
-            Text("Model Status")
+            Text("Status")
         } footer: {
-            if viewModel.isDownloaded {
-                Text("Model is stored locally and works offline. No internet required for inference.")
-            } else {
-                Text("Download requires ~2.2 GB. The model will be stored on your device for offline use.")
+            if model.isRecommended {
+                Text("Recommended for most devices. Compact size with excellent quality.")
             }
         }
     }
 
     @ViewBuilder
     private var actionButtons: some View {
-        switch viewModel.modelState {
+        switch state {
         case .notDownloaded:
             Button {
-                Task {
-                    await viewModel.downloadModel()
-                }
+                Task { await viewModel.downloadModel(model) }
             } label: {
                 HStack {
                     Label("Download Model", systemImage: "arrow.down.circle")
                     Spacer()
-                    Text("~2.2 GB")
+                    Text("~\(config.expectedSizeFormatted)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-            .disabled(!viewModel.hasEnoughStorage)
+            .disabled(!viewModel.hasEnoughStorage(for: model))
 
-            if !viewModel.hasEnoughStorage {
+            if !viewModel.hasEnoughStorage(for: model) {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
@@ -137,30 +346,35 @@ struct OnDeviceLLMSettingsView: View {
 
         case .downloading:
             Button(role: .destructive) {
-                Task {
-                    await viewModel.cancelDownload()
-                }
+                Task { await viewModel.cancelDownload(for: model) }
             } label: {
                 Label("Cancel Download", systemImage: "xmark.circle")
             }
 
         case .available:
-            Button {
-                Task {
-                    await viewModel.loadModel()
+            if model != viewModel.selectedModel {
+                Button {
+                    Task { await viewModel.selectModel(model) }
+                } label: {
+                    Label("Set as Active Model", systemImage: "checkmark.circle")
                 }
-            } label: {
-                Label("Load Model", systemImage: "cpu")
+            } else {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("Currently Active")
+                        .font(.subheadline)
+                        .foregroundStyle(.green)
+                }
             }
-            .disabled(viewModel.isLoading)
 
         case .loaded:
-            Button {
-                Task {
-                    await viewModel.unloadModel()
-                }
-            } label: {
-                Label("Unload Model", systemImage: "cpu.fill")
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text("Loaded and Ready")
+                    .font(.subheadline)
+                    .foregroundStyle(.green)
             }
 
         case .verifying, .loading:
@@ -168,18 +382,16 @@ struct OnDeviceLLMSettingsView: View {
 
         case .error:
             Button {
-                Task {
-                    await viewModel.refreshState()
-                }
+                Task { await viewModel.refreshState() }
             } label: {
                 Label("Retry", systemImage: "arrow.clockwise")
             }
         }
     }
 
-    private var modelStatusIcon: some View {
+    private var statusIcon: some View {
         Group {
-            switch viewModel.modelState {
+            switch state {
             case .notDownloaded:
                 Image(systemName: "arrow.down.circle")
                     .foregroundStyle(.blue)
@@ -206,8 +418,8 @@ struct OnDeviceLLMSettingsView: View {
         .font(.title2)
     }
 
-    private var modelStatusSubtext: String {
-        switch viewModel.modelState {
+    private var statusSubtext: String {
+        switch state {
         case .notDownloaded:
             return "Download to enable on-device AI"
         case .downloading:
@@ -215,7 +427,10 @@ struct OnDeviceLLMSettingsView: View {
         case .verifying:
             return "Verifying download..."
         case .available:
-            return "Ready to load (\(viewModel.modelSizeMB) MB)"
+            let sizeMB = viewModel.modelSizeMB(for: model)
+            return model == viewModel.selectedModel
+                ? "Active model (\(sizeMB) MB)"
+                : "Ready (\(sizeMB) MB)"
         case .loading:
             return "Loading into memory..."
         case .loaded:
@@ -225,54 +440,55 @@ struct OnDeviceLLMSettingsView: View {
         }
     }
 
-    // MARK: - Benefits Section
+    // MARK: - Progress Section
 
-    private var benefitsSection: some View {
+    private var progressSection: some View {
         Section {
-            ForEach(OnDeviceLLMModelInfo.keepModelReasons, id: \.self) { reason in
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .font(.subheadline)
-                    Text(reason)
-                        .font(.subheadline)
+            VStack(alignment: .leading, spacing: 8) {
+                ProgressView(value: viewModel.downloadProgress(for: model))
+                    .progressViewStyle(.linear)
+
+                HStack {
+                    Text("Downloading from Hugging Face...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(Int(viewModel.downloadProgress(for: model) * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
                 }
             }
-        } header: {
-            Text("Why Download?")
-        } footer: {
-            Text("The on-device LLM enables advanced features that work without an internet connection.")
         }
     }
 
-    // MARK: - Model Info Section
+    // MARK: - Info Section
 
-    private var modelInfoSection: some View {
+    private var infoSection: some View {
         Section {
-            InfoRow(label: "Model", value: OnDeviceLLMModelInfo.displayName)
-            InfoRow(label: "Version", value: OnDeviceLLMModelInfo.version)
-            InfoRow(label: "Publisher", value: OnDeviceLLMModelInfo.publisher)
-            InfoRow(label: "Size", value: "\(Int(OnDeviceLLMModelInfo.totalSizeMB)) MB")
-            InfoRow(label: "Quantization", value: OnDeviceLLMModelInfo.quantization)
-            InfoRow(label: "Context Window", value: "\(OnDeviceLLMModelInfo.contextSize) tokens")
-            InfoRow(label: "Min RAM", value: "\(OnDeviceLLMModelInfo.minimumRAMGB) GB")
-            InfoRow(label: "License", value: OnDeviceLLMModelInfo.license)
+            InfoRow(label: "Model", value: config.displayName)
+            InfoRow(label: "Version", value: config.version)
+            InfoRow(label: "Publisher", value: config.publisher)
+            InfoRow(label: "Size", value: config.expectedSizeFormatted)
+            InfoRow(label: "Quantization", value: config.quantization)
+            InfoRow(label: "Context Window", value: "\(config.contextSize) tokens")
+            InfoRow(label: "Min RAM", value: "\(config.minimumRAMGB) GB")
+            InfoRow(label: "License", value: config.license)
         } header: {
             Text("Model Information")
         } footer: {
-            Text("Ministral 3 3B is a compact, efficient language model optimized for on-device inference on Apple Silicon.")
+            Text(config.description)
         }
     }
 
-    // MARK: - Storage Section
+    // MARK: - Storage Management Section
 
-    private var storageSection: some View {
+    private var storageManagementSection: some View {
         Section {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Storage Used")
                         .font(.subheadline)
-                    Text("\(viewModel.modelSizeMB) MB")
+                    Text("\(viewModel.modelSizeMB(for: model)) MB")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -297,7 +513,7 @@ struct OnDeviceLLMSettingsView: View {
                         .fontWeight(.medium)
                 }
 
-                ForEach(OnDeviceLLMModelInfo.deletionConsequences, id: \.self) { consequence in
+                ForEach(OnDeviceLLMModelConfig.deletionConsequences, id: \.self) { consequence in
                     HStack(alignment: .top, spacing: 8) {
                         Text("\u{2022}")
                             .foregroundStyle(.secondary)
@@ -312,7 +528,7 @@ struct OnDeviceLLMSettingsView: View {
         } header: {
             Text("Storage Management")
         } footer: {
-            Text("You can re-download the model anytime from Settings.")
+            Text("You can re-download this model anytime from Settings.")
         }
     }
 }
@@ -321,13 +537,12 @@ struct OnDeviceLLMSettingsView: View {
 
 @MainActor
 final class OnDeviceLLMSettingsViewModel: ObservableObject {
-    @Published var modelState: OnDeviceLLMModelManager.ModelState = .notDownloaded
-    @Published var progress: Float = 0.0
-    @Published var modelSizeMB: Int = 0
+    @Published var selectedModel: OnDeviceLLMModel = .defaultModel
+    @Published var modelStates: [OnDeviceLLMModel: OnDeviceLLMModelManager.ModelState] = [:]
     @Published var errorMessage: String?
 
     private var modelManager: OnDeviceLLMModelManager?
-    private var refreshTask: Task<Void, Never>?
+    private var refreshTasks: [OnDeviceLLMModel: Task<Void, Never>] = [:]
 
     init() {
         Task {
@@ -337,26 +552,34 @@ final class OnDeviceLLMSettingsViewModel: ObservableObject {
 
     private func setupModelManager() async {
         modelManager = OnDeviceLLMModelManager.shared
+        selectedModel = await modelManager!.selectedModel
         await refreshState()
     }
 
     func refreshState() async {
         guard let manager = modelManager else { return }
 
-        modelState = await manager.currentState()
-        modelSizeMB = await manager.modelSizeMB()
-
-        if case .downloading(let p) = modelState {
-            progress = p
+        selectedModel = await manager.selectedModel
+        for model in OnDeviceLLMModel.allCases {
+            modelStates[model] = await manager.currentState(for: model)
         }
     }
 
-    var modelStateDescription: String {
-        modelState.displayText
+    func modelState(for model: OnDeviceLLMModel) -> OnDeviceLLMModelManager.ModelState {
+        modelStates[model] ?? .notDownloaded
     }
 
-    var isDownloaded: Bool {
-        switch modelState {
+    var isSelectedModelReady: Bool {
+        modelState(for: selectedModel).isReady
+    }
+
+    var isSelectedModelDownloaded: Bool {
+        modelState(for: selectedModel).isAvailable
+    }
+
+    func isDownloaded(_ model: OnDeviceLLMModel) -> Bool {
+        let state = modelState(for: model)
+        switch state {
         case .available, .loading, .loaded:
             return true
         default:
@@ -364,19 +587,43 @@ final class OnDeviceLLMSettingsViewModel: ObservableObject {
         }
     }
 
-    var isDownloading: Bool {
-        if case .downloading = modelState { return true }
+    func isDownloading(_ model: OnDeviceLLMModel) -> Bool {
+        if case .downloading = modelState(for: model) { return true }
         return false
     }
 
-    var isLoading: Bool {
-        if case .loading = modelState { return true }
-        return false
+    func downloadProgress(for model: OnDeviceLLMModel) -> Float {
+        if case .downloading(let progress) = modelState(for: model) {
+            return progress
+        }
+        return 0
     }
 
-    var hasEnoughStorage: Bool {
-        // Check for ~3 GB free (model + temp file during download)
-        let requiredBytes: Int64 = 3_000_000_000
+    func modelSizeMB(for model: OnDeviceLLMModel) -> Int {
+        guard let manager = modelManager else { return 0 }
+        // Use a cached/sync approach; actual size fetched during refresh
+        return model.config.expectedSizeMB
+    }
+
+    var downloadedCount: Int {
+        OnDeviceLLMModel.allCases.filter { isDownloaded($0) }.count
+    }
+
+    var totalStorageFormatted: String {
+        let totalMB = OnDeviceLLMModel.allCases
+            .filter { isDownloaded($0) }
+            .reduce(0) { $0 + $1.config.expectedSizeMB }
+        let gb = Double(totalMB) / 1000
+        if gb >= 1.0 {
+            return String(format: "%.1f GB", gb)
+        } else {
+            return "\(totalMB) MB"
+        }
+    }
+
+    func hasEnoughStorage(for model: OnDeviceLLMModel) -> Bool {
+        // Need model size + temp file during download
+        let requiredBytes = Int64(Double(model.config.expectedSizeBytes) * 1.5)
         do {
             let attrs = try FileManager.default.attributesOfFileSystem(forPath: NSHomeDirectory())
             let freeSpace = attrs[.systemFreeSize] as? Int64 ?? 0
@@ -386,40 +633,42 @@ final class OnDeviceLLMSettingsViewModel: ObservableObject {
         }
     }
 
-    func downloadModel() async {
+    func downloadModel(_ model: OnDeviceLLMModel) async {
         guard let manager = modelManager else { return }
 
         // Start progress monitoring
-        refreshTask = Task {
+        refreshTasks[model] = Task {
             while !Task.isCancelled {
                 await refreshState()
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                try? await Task.sleep(nanoseconds: 500_000_000)
             }
         }
 
         do {
-            try await manager.downloadModel()
+            try await manager.downloadModel(for: model)
             await refreshState()
         } catch {
             errorMessage = error.localizedDescription
             await refreshState()
         }
 
-        refreshTask?.cancel()
+        refreshTasks[model]?.cancel()
+        refreshTasks[model] = nil
     }
 
-    func cancelDownload() async {
+    func cancelDownload(for model: OnDeviceLLMModel) async {
         guard let manager = modelManager else { return }
-        await manager.cancelDownload()
-        refreshTask?.cancel()
+        await manager.cancelDownload(for: model)
+        refreshTasks[model]?.cancel()
+        refreshTasks[model] = nil
         await refreshState()
     }
 
-    func deleteModel() async {
+    func deleteModel(_ model: OnDeviceLLMModel) async {
         guard let manager = modelManager else { return }
 
         do {
-            try await manager.deleteModel()
+            try await manager.deleteModel(for: model)
             await refreshState()
         } catch {
             errorMessage = error.localizedDescription
@@ -427,17 +676,9 @@ final class OnDeviceLLMSettingsViewModel: ObservableObject {
         }
     }
 
-    func loadModel() async {
-        // TODO: Integrate with OnDeviceLLMService
-        // For now, just mark as loaded
+    func selectModel(_ model: OnDeviceLLMModel) async {
         guard let manager = modelManager else { return }
-        await manager.markLoaded()
-        await refreshState()
-    }
-
-    func unloadModel() async {
-        guard let manager = modelManager else { return }
-        await manager.markUnloaded()
+        await manager.selectModel(model)
         await refreshState()
     }
 }

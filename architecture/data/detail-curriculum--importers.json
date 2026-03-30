@@ -1,0 +1,105 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "curriculum/importers/AI_ENRICHMENT_PIPELINE.md",
+      "language": "markdown",
+      "lines": 2119,
+      "size_bytes": 82840,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/importers/CK12_IMPORTER_SPEC.md",
+      "language": "markdown",
+      "lines": 735,
+      "size_bytes": 25627,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/importers/CURRICULUM_SOURCE_BROWSER_SPEC.md",
+      "language": "markdown",
+      "lines": 1083,
+      "size_bytes": 52347,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/importers/FASTAI_IMPORTER_SPEC.md",
+      "language": "markdown",
+      "lines": 1186,
+      "size_bytes": 39972,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/importers/GLOBAL_OER_LANDSCAPE.md",
+      "language": "markdown",
+      "lines": 561,
+      "size_bytes": 19561,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/importers/IMPORTER_ARCHITECTURE.md",
+      "language": "markdown",
+      "lines": 716,
+      "size_bytes": 22783,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/importers/MERLOT_IMPORTER_SPEC.md",
+      "language": "markdown",
+      "lines": 762,
+      "size_bytes": 25697,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/importers/MIT_OCW_IMPORTER_SPEC.md",
+      "language": "markdown",
+      "lines": 1298,
+      "size_bytes": 45581,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/importers/OCW_SEE_IMPLEMENTATION_PLAN.md",
+      "language": "markdown",
+      "lines": 719,
+      "size_bytes": 22063,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "curriculum/importers/STANFORD_SEE_IMPORTER_SPEC.md",
+      "language": "markdown",
+      "lines": 1363,
+      "size_bytes": 48978,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}

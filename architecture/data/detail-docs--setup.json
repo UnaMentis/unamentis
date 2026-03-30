@@ -1,0 +1,55 @@
+{
+  "symbols": [],
+  "files": [
+    {
+      "path": "docs/setup/CODERABBIT_SETUP.md",
+      "language": "markdown",
+      "lines": 183,
+      "size_bytes": 4955,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/setup/COMMS_SKILL_SETUP_GUIDE.md",
+      "language": "markdown",
+      "lines": 480,
+      "size_bytes": 11812,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/setup/DEVICE_SETUP_GUIDE.md",
+      "language": "markdown",
+      "lines": 326,
+      "size_bytes": 8371,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/setup/DEV_ENVIRONMENT.md",
+      "language": "markdown",
+      "lines": 564,
+      "size_bytes": 14654,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    },
+    {
+      "path": "docs/setup/SETUP.md",
+      "language": "markdown",
+      "lines": 425,
+      "size_bytes": 10152,
+      "symbols": [],
+      "imports": [],
+      "exports": [],
+      "module_doc": null
+    }
+  ]
+}
