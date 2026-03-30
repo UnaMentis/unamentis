@@ -166,7 +166,7 @@ struct KBEnhancedValidationSetupView: View {
                             .foregroundStyle(.secondary)
                         Text("LLM Service Not Configured")
                     }
-                    Text("The on-device LLM service needs to be configured. This requires the Ministral or TinyLlama model to be bundled with the app.")
+                    Text("The on-device LLM service needs to be configured. Download a model in Settings > On-Device LLM.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

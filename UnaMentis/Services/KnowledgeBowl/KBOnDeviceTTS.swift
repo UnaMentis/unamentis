@@ -459,16 +459,16 @@ actor KBOnDeviceTTS {
             ttsService = KyutaiPocketTTSService(config: .lowLatency)
 
         case .selfHosted, .vibeVoice, .chatterbox, .elevenLabsFlash, .elevenLabsTurbo, .deepgramAura2:
-            // For server-based TTS, fall back to Apple TTS for Knowledge Bowl
-            // (to avoid network dependency in timed competition setting)
-            logger.warning("Server-based TTS not supported for Knowledge Bowl, using Apple TTS")
-            NSLog("🔵 Server-based TTS, falling back to AppleTTSService")
-            ttsService = AppleTTSService()
+            // For server-based TTS, use Pocket TTS for Knowledge Bowl
+            // (bundled on-device, avoids network dependency in timed competition setting)
+            logger.info("Server-based TTS not supported for Knowledge Bowl, using Pocket TTS (on-device)")
+            NSLog("🔵 Server-based TTS, using Pocket TTS (bundled on-device)")
+            ttsService = KyutaiPocketTTSService(config: .lowLatency)
 
         default:
-            logger.warning("Unknown TTS provider, using Apple TTS")
-            NSLog("🔵 Unknown provider, using AppleTTSService")
-            ttsService = AppleTTSService()
+            logger.info("Unknown TTS provider, using Pocket TTS (on-device)")
+            NSLog("🔵 Unknown provider, using Pocket TTS (bundled on-device)")
+            ttsService = KyutaiPocketTTSService(config: .lowLatency)
         }
 
         NSLog("🔵 TTS service created: \(type(of: ttsService!))")

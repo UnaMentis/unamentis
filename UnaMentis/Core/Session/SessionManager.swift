@@ -248,6 +248,15 @@ public final class SessionManager: ObservableObject {
     private var sessionStartTime: Date?
     private var currentTurnStartTime: Date?
     
+    /// FOV context coordinator for foveated context management
+    private var fovContextCoordinator: FOVSessionContextCoordinator?
+
+    /// Canned response bank for instant acknowledgments
+    private let cannedResponseBank = CannedResponseBank()
+
+    /// Response pre-generator for speculative starters
+    private let responsePreGenerator = ResponsePreGenerator()
+
     /// Stream cancellation
     private var sttStreamTask: Task<Void, Never>?
     private var llmStreamTask: Task<Void, Never>?
@@ -401,6 +410,20 @@ public final class SessionManager: ObservableObject {
             await metricsUploadService.drainQueue()
         }
         startMetricsUploadTimer()
+
+        // Initialize FOV context coordinator if curriculum is available
+        if UserDefaults.standard.object(forKey: "fov_enabled") == nil {
+            UserDefaults.standard.set(true, forKey: "fov_enabled")
+        }
+        if UserDefaults.standard.bool(forKey: "fov_enabled") {
+            let contextWindow = Int(UserDefaults.standard.double(forKey: "ondevice_llm_contextSize"))
+            fovContextCoordinator = FOVSessionContextCoordinator(
+                curriculumEngine: curriculum,
+                llmService: llmService,
+                modelContextWindow: contextWindow > 0 ? contextWindow : 8192
+            )
+            logger.info("FOV context coordinator initialized with \(contextWindow > 0 ? contextWindow : 8192) token context window")
+        }
 
         // Initialize silence tracking
         hasDetectedSpeech = false
@@ -943,6 +966,28 @@ public final class SessionManager: ObservableObject {
     private func generateAIResponse() async {
         await setState(.aiThinking)
 
+        // Phase 1: Instant canned acknowledgment (zero-latency feel)
+        let lastUserMessage = conversationHistory.last(where: { $0.role == .user })?.content ?? ""
+        if UserDefaults.standard.bool(forKey: "zerolatency_cannedEnabled"),
+           await cannedResponseBank.isReady,
+           let cannedClip = await cannedResponseBank.getResponse(forUtterance: lastUserMessage) {
+            // Queue the canned audio to TTS orchestrator for immediate playback
+            if let orch = self.ttsOrchestrator {
+                let segment = SessionSentenceSegment(index: 0, text: cannedClip.text)
+                await orch.appendSegments([segment])
+                self.sentenceIndex = 1
+                logger.info("Queued canned acknowledgment: \(cannedClip.text)")
+            }
+        }
+
+        // Phase 2: Check pre-generated starter for intent match
+        var preGeneratedPrefix: String?
+        if UserDefaults.standard.bool(forKey: "zerolatency_pregenEnabled"),
+           let starter = await responsePreGenerator.getMatchingStarter(for: lastUserMessage) {
+            preGeneratedPrefix = starter
+            logger.info("Found pre-generated starter: \(starter.prefix(50))...")
+        }
+
         guard let llmService = llmService else {
             logger.error("LLM service not available")
             await handleProcessingError("LLM service not configured")
@@ -953,9 +998,21 @@ public final class SessionManager: ObservableObject {
             // Capture metrics before streaming to calculate cost delta
             let metricsBefore = await llmService.metrics
 
-            logger.info("Calling LLM streamCompletion with \(conversationHistory.count) messages")
+            // Build messages: use FOV foveated context if available and enabled
+            let fovEnabled = UserDefaults.standard.bool(forKey: "fov_enabled")
+            let messages: [LLMMessage]
+            if fovEnabled, let coordinator = fovContextCoordinator {
+                messages = await coordinator.buildFoveatedMessages(
+                    conversationHistory: conversationHistory
+                )
+                logger.info("Using FOV context with \(messages.count) foveated messages")
+            } else {
+                messages = conversationHistory
+                logger.info("Using raw conversation history with \(conversationHistory.count) messages")
+            }
+
             let stream = try await llmService.streamCompletion(
-                messages: conversationHistory,
+                messages: messages,
                 config: config.llm
             )
 
@@ -968,6 +1025,15 @@ public final class SessionManager: ObservableObject {
 
             // Start the TTS playback orchestrator for this turn
             self.startTTSOrchestrator()
+
+            // If we have a pre-generated prefix, inject it as the first sentence
+            if let prefix = preGeneratedPrefix {
+                fullResponse = prefix + " "
+                self.sentenceBuffer = prefix + " "
+                self.aiResponse = prefix + " "
+                await self.extractAndQueueSentences()
+                logger.info("Injected pre-generated prefix into response stream")
+            }
 
             llmStreamTask = Task {
                 for await token in stream {

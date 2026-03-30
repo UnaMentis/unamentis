@@ -1519,8 +1519,9 @@ class SessionViewModel: ObservableObject {
                 logger.info("Using self-hosted TTS (Piper) at \(serverIP):11402 with voice: \(ttsVoiceSetting)")
                 ttsService = SelfHostedTTSService.piper(host: serverIP, voice: ttsVoiceSetting)
             } else {
-                logger.warning("Self-hosted TTS selected but no server IP configured - falling back to Apple TTS")
-                ttsService = AppleTTSService()
+                logger.warning("Self-hosted TTS selected but no server IP configured, using Pocket TTS (bundled on-device)")
+                ttsService = KyutaiPocketTTSService(config: .lowLatency)
+                TTSProviderTracker.shared.recordProviderActive(requested: "selfHosted", active: "pocketTTS")
             }
         case .vibeVoice:
             // Use SelfHostedTTSService to connect to VibeVoice server (24000 Hz)
@@ -1529,8 +1530,9 @@ class SessionViewModel: ObservableObject {
                 logger.info("Using self-hosted TTS (VibeVoice) at \(serverIP):8880 with voice: \(ttsVoiceSetting)")
                 ttsService = SelfHostedTTSService.vibeVoice(host: serverIP, voice: ttsVoiceSetting)
             } else {
-                logger.warning("VibeVoice TTS selected but no server IP configured - falling back to Apple TTS")
-                ttsService = AppleTTSService()
+                logger.warning("VibeVoice TTS selected but no server IP configured, using Pocket TTS (bundled on-device)")
+                ttsService = KyutaiPocketTTSService(config: .lowLatency)
+                TTSProviderTracker.shared.recordProviderActive(requested: "vibeVoice", active: "pocketTTS")
             }
         case .chatterbox:
             // Use ChatterboxTTSService with full configuration loaded from UserDefaults
@@ -1539,22 +1541,25 @@ class SessionViewModel: ObservableObject {
                 logger.info("Using Chatterbox TTS at \(serverIP):8004 with exaggeration=\(config.exaggeration), cfg=\(config.cfgWeight), speed=\(config.speed)")
                 ttsService = ChatterboxTTSService.chatterbox(host: serverIP, config: config)
             } else {
-                logger.warning("Chatterbox TTS selected but no server IP configured - falling back to Apple TTS")
-                ttsService = AppleTTSService()
+                logger.warning("Chatterbox TTS selected but no server IP configured, using Pocket TTS (bundled on-device)")
+                ttsService = KyutaiPocketTTSService(config: .lowLatency)
+                TTSProviderTracker.shared.recordProviderActive(requested: "chatterbox", active: "pocketTTS")
             }
         case .elevenLabsFlash, .elevenLabsTurbo:
             if let apiKey = await appState.apiKeys.getKey(.elevenLabs) {
                 ttsService = ElevenLabsTTSService(apiKey: apiKey)
             } else {
-                logger.warning("ElevenLabs API key not configured, falling back to Apple TTS")
-                ttsService = AppleTTSService()
+                logger.warning("ElevenLabs API key not configured, using Pocket TTS (bundled on-device)")
+                ttsService = KyutaiPocketTTSService(config: .lowLatency)
+                TTSProviderTracker.shared.recordProviderActive(requested: ttsProviderSetting.rawValue, active: "pocketTTS")
             }
         case .deepgramAura2:
             if let apiKey = await appState.apiKeys.getKey(.deepgram) {
                 ttsService = DeepgramTTSService(apiKey: apiKey)
             } else {
-                logger.warning("Deepgram TTS API key not configured, falling back to Apple TTS")
-                ttsService = AppleTTSService()
+                logger.warning("Deepgram TTS API key not configured, using Pocket TTS (bundled on-device)")
+                ttsService = KyutaiPocketTTSService(config: .lowLatency)
+                TTSProviderTracker.shared.recordProviderActive(requested: "deepgramAura2", active: "pocketTTS")
             }
         case .pocketTTS:
             logger.info("Using Pocket TTS (on-device)")

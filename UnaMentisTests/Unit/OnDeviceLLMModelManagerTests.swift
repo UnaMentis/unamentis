@@ -14,9 +14,61 @@ import XCTest
 /// Note: Network download tests are skipped in CI to avoid hitting Hugging Face CDN.
 final class OnDeviceLLMModelManagerTests: XCTestCase {
 
-    // MARK: - Model Configuration Tests
+    // MARK: - Model Configuration Tests (Falcon-H1 1.5B Deep)
 
-    func testModelConfigHasCorrectValues() {
+    func testFalconH1ConfigHasCorrectValues() {
+        let config = OnDeviceLLMModel.falconH1_1_5B.config
+
+        XCTAssertEqual(config.id, "falcon-h1-1.5b-deep-instruct-q4_k_m")
+        XCTAssertEqual(config.displayName, "Falcon-H1 1.5B Deep")
+        XCTAssertEqual(config.huggingFaceRepo, "tiiuae/Falcon-H1-1.5B-Deep-Instruct-GGUF")
+        XCTAssertEqual(config.filename, "Falcon-H1-1.5B-Deep-Instruct-Q4_K_M.gguf")
+        XCTAssertEqual(config.quantization, "Q4_K_M")
+        XCTAssertEqual(config.contextSize, 8192)
+        XCTAssertEqual(config.minimumRAMGB, 3)
+        XCTAssertEqual(config.chatFormat, .chatML)
+        XCTAssertEqual(config.publisher, "TII (UAE)")
+        XCTAssertEqual(config.license, "Apache 2.0")
+        XCTAssertLessThan(config.expectedSizeBytes, 1_000_000_000) // Under 1 GB
+        XCTAssertGreaterThan(config.expectedSizeBytes, 900_000_000)
+    }
+
+    func testFalconH1ConfigDownloadURL() {
+        let config = OnDeviceLLMModel.falconH1_1_5B.config
+        let expectedURL = "https://huggingface.co/tiiuae/Falcon-H1-1.5B-Deep-Instruct-GGUF/resolve/main/Falcon-H1-1.5B-Deep-Instruct-Q4_K_M.gguf"
+
+        XCTAssertEqual(config.downloadURL.absoluteString, expectedURL)
+    }
+
+    // MARK: - Model Configuration Tests (Qwen3.5 2B)
+
+    func testQwen35ConfigHasCorrectValues() {
+        let config = OnDeviceLLMModel.qwen35_2B.config
+
+        XCTAssertEqual(config.id, "qwen3.5-2b-q4_k_m")
+        XCTAssertEqual(config.displayName, "Qwen3.5 2B")
+        XCTAssertEqual(config.huggingFaceRepo, "unsloth/Qwen3.5-2B-GGUF")
+        XCTAssertEqual(config.filename, "Qwen3.5-2B-Q4_K_M.gguf")
+        XCTAssertEqual(config.quantization, "Q4_K_M")
+        XCTAssertEqual(config.contextSize, 32768)
+        XCTAssertEqual(config.minimumRAMGB, 3)
+        XCTAssertEqual(config.chatFormat, .chatML)
+        XCTAssertEqual(config.publisher, "Alibaba (Qwen)")
+        XCTAssertEqual(config.license, "Apache 2.0")
+        XCTAssertGreaterThan(config.expectedSizeBytes, 1_200_000_000)
+        XCTAssertLessThan(config.expectedSizeBytes, 1_400_000_000)
+    }
+
+    func testQwen35ConfigDownloadURL() {
+        let config = OnDeviceLLMModel.qwen35_2B.config
+        let expectedURL = "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf"
+
+        XCTAssertEqual(config.downloadURL.absoluteString, expectedURL)
+    }
+
+    // MARK: - Model Configuration Tests (Ministral 3 3B)
+
+    func testMinistralConfigHasCorrectValues() {
         let config = OnDeviceLLMModel.ministral3_3B.config
 
         XCTAssertEqual(config.id, "ministral-3-3b-instruct-2512")
@@ -26,21 +78,110 @@ final class OnDeviceLLMModelManagerTests: XCTestCase {
         XCTAssertEqual(config.quantization, "Q4_K_M")
         XCTAssertEqual(config.contextSize, 4096)
         XCTAssertEqual(config.minimumRAMGB, 4)
+        XCTAssertEqual(config.chatFormat, .mistral)
+        XCTAssertEqual(config.publisher, "Mistral AI")
+        XCTAssertEqual(config.license, "Apache 2.0")
         XCTAssertGreaterThan(config.expectedSizeBytes, 2_000_000_000) // > 2GB
     }
 
-    func testModelConfigDownloadURL() {
+    func testMinistralConfigDownloadURL() {
         let config = OnDeviceLLMModel.ministral3_3B.config
         let expectedURL = "https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-GGUF/resolve/main/Ministral-3-3B-Instruct-2512-Q4_K_M.gguf"
 
         XCTAssertEqual(config.downloadURL.absoluteString, expectedURL)
     }
 
-    func testModelConfigExpectedSizeMB() {
+    func testMinistralConfigExpectedSizeMB() {
         let config = OnDeviceLLMModel.ministral3_3B.config
-
-        // ~2.15 GB = ~2150 MB
         XCTAssertEqual(config.expectedSizeMB, 2150)
+    }
+
+    // MARK: - Model Configuration Tests (Qwen3 1.7B)
+
+    func testQwen3ConfigHasCorrectValues() {
+        let config = OnDeviceLLMModel.qwen3_1_7B.config
+
+        XCTAssertEqual(config.id, "qwen3-1.7b-q4_k_m")
+        XCTAssertEqual(config.displayName, "Qwen3 1.7B")
+        XCTAssertEqual(config.huggingFaceRepo, "unsloth/Qwen3-1.7B-GGUF")
+        XCTAssertEqual(config.filename, "Qwen3-1.7B-Q4_K_M.gguf")
+        XCTAssertEqual(config.quantization, "Q4_K_M")
+        XCTAssertEqual(config.contextSize, 32768)
+        XCTAssertEqual(config.minimumRAMGB, 3)
+        XCTAssertEqual(config.chatFormat, .chatML)
+        XCTAssertEqual(config.publisher, "Alibaba (Qwen)")
+        XCTAssertEqual(config.license, "Apache 2.0")
+        XCTAssertGreaterThan(config.expectedSizeBytes, 1_000_000_000) // > 1GB
+        XCTAssertLessThan(config.expectedSizeBytes, 1_500_000_000)    // < 1.5GB
+    }
+
+    func testQwen3ConfigDownloadURL() {
+        let config = OnDeviceLLMModel.qwen3_1_7B.config
+        let expectedURL = "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf"
+
+        XCTAssertEqual(config.downloadURL.absoluteString, expectedURL)
+    }
+
+    // MARK: - Model Configuration Tests (SmolLM3 3B)
+
+    func testSmolLM3ConfigHasCorrectValues() {
+        let config = OnDeviceLLMModel.smolLM3_3B.config
+
+        XCTAssertEqual(config.id, "smollm3-3b-q4_k_m")
+        XCTAssertEqual(config.displayName, "SmolLM3 3B")
+        XCTAssertEqual(config.huggingFaceRepo, "ggml-org/SmolLM3-3B-GGUF")
+        XCTAssertEqual(config.filename, "SmolLM3-Q4_K_M.gguf")
+        XCTAssertEqual(config.quantization, "Q4_K_M")
+        XCTAssertEqual(config.contextSize, 32768)
+        XCTAssertEqual(config.minimumRAMGB, 4)
+        XCTAssertEqual(config.chatFormat, .chatML)
+        XCTAssertEqual(config.publisher, "Hugging Face")
+        XCTAssertEqual(config.license, "Apache 2.0")
+        XCTAssertGreaterThan(config.expectedSizeBytes, 1_500_000_000) // > 1.5GB
+        XCTAssertLessThan(config.expectedSizeBytes, 2_500_000_000)    // < 2.5GB
+    }
+
+    func testSmolLM3ConfigDownloadURL() {
+        let config = OnDeviceLLMModel.smolLM3_3B.config
+        let expectedURL = "https://huggingface.co/ggml-org/SmolLM3-3B-GGUF/resolve/main/SmolLM3-Q4_K_M.gguf"
+
+        XCTAssertEqual(config.downloadURL.absoluteString, expectedURL)
+    }
+
+    // MARK: - Default Model Tests
+
+    func testDefaultModelIsFalconH1() {
+        XCTAssertEqual(OnDeviceLLMModel.defaultModel, .falconH1_1_5B)
+    }
+
+    func testRecommendedModelFlag() {
+        XCTAssertTrue(OnDeviceLLMModel.falconH1_1_5B.isRecommended)
+        XCTAssertFalse(OnDeviceLLMModel.qwen35_2B.isRecommended)
+        XCTAssertFalse(OnDeviceLLMModel.qwen3_1_7B.isRecommended)
+        XCTAssertFalse(OnDeviceLLMModel.smolLM3_3B.isRecommended)
+        XCTAssertFalse(OnDeviceLLMModel.ministral3_3B.isRecommended)
+    }
+
+    // MARK: - Chat Format Tests
+
+    func testChatFormatAssignment() {
+        XCTAssertEqual(OnDeviceLLMModel.falconH1_1_5B.config.chatFormat, .chatML)
+        XCTAssertEqual(OnDeviceLLMModel.qwen35_2B.config.chatFormat, .chatML)
+        XCTAssertEqual(OnDeviceLLMModel.qwen3_1_7B.config.chatFormat, .chatML)
+        XCTAssertEqual(OnDeviceLLMModel.smolLM3_3B.config.chatFormat, .chatML)
+        XCTAssertEqual(OnDeviceLLMModel.ministral3_3B.config.chatFormat, .mistral)
+    }
+
+    // MARK: - Config Helpers Tests
+
+    func testExpectedSizeFormatted() {
+        // Qwen3 at ~1.11 GB should show as "1.1 GB"
+        let qwenFormatted = OnDeviceLLMModel.qwen3_1_7B.config.expectedSizeFormatted
+        XCTAssertTrue(qwenFormatted.contains("GB"), "Qwen3 should show size in GB: \(qwenFormatted)")
+
+        // Ministral at ~2.15 GB should show as "2.2 GB"
+        let ministralFormatted = OnDeviceLLMModel.ministral3_3B.config.expectedSizeFormatted
+        XCTAssertTrue(ministralFormatted.contains("GB"), "Ministral should show size in GB: \(ministralFormatted)")
     }
 
     // MARK: - Model State Tests
@@ -135,42 +276,31 @@ final class OnDeviceLLMModelManagerTests: XCTestCase {
         )
     }
 
-    // MARK: - Model Info Tests
+    // MARK: - Keep Model Reasons / Deletion Consequences
 
-    func testModelInfoStaticValues() {
-        XCTAssertEqual(OnDeviceLLMModelInfo.displayName, "Ministral 3 3B")
-        XCTAssertEqual(OnDeviceLLMModelInfo.version, "December 2025")
-        XCTAssertEqual(OnDeviceLLMModelInfo.quantization, "Q4_K_M")
-        XCTAssertEqual(OnDeviceLLMModelInfo.totalSizeMB, 2150)
-        XCTAssertEqual(OnDeviceLLMModelInfo.contextSize, 4096)
-        XCTAssertEqual(OnDeviceLLMModelInfo.minimumRAMGB, 4)
-        XCTAssertEqual(OnDeviceLLMModelInfo.license, "Apache 2.0")
-        XCTAssertEqual(OnDeviceLLMModelInfo.publisher, "Mistral AI")
-    }
-
-    func testModelInfoKeepReasons() {
-        XCTAssertFalse(OnDeviceLLMModelInfo.keepModelReasons.isEmpty)
-        XCTAssertGreaterThanOrEqual(OnDeviceLLMModelInfo.keepModelReasons.count, 3)
+    func testKeepModelReasons() {
+        XCTAssertFalse(OnDeviceLLMModelConfig.keepModelReasons.isEmpty)
+        XCTAssertGreaterThanOrEqual(OnDeviceLLMModelConfig.keepModelReasons.count, 3)
 
         // Should mention offline capability
-        let hasOfflineReason = OnDeviceLLMModelInfo.keepModelReasons.contains {
+        let hasOfflineReason = OnDeviceLLMModelConfig.keepModelReasons.contains {
             $0.lowercased().contains("offline")
         }
         XCTAssertTrue(hasOfflineReason, "Should mention offline capability")
 
         // Should mention privacy
-        let hasPrivacyReason = OnDeviceLLMModelInfo.keepModelReasons.contains {
+        let hasPrivacyReason = OnDeviceLLMModelConfig.keepModelReasons.contains {
             $0.lowercased().contains("private") || $0.lowercased().contains("privacy")
         }
         XCTAssertTrue(hasPrivacyReason, "Should mention privacy")
     }
 
-    func testModelInfoDeletionConsequences() {
-        XCTAssertFalse(OnDeviceLLMModelInfo.deletionConsequences.isEmpty)
-        XCTAssertGreaterThanOrEqual(OnDeviceLLMModelInfo.deletionConsequences.count, 3)
+    func testDeletionConsequences() {
+        XCTAssertFalse(OnDeviceLLMModelConfig.deletionConsequences.isEmpty)
+        XCTAssertGreaterThanOrEqual(OnDeviceLLMModelConfig.deletionConsequences.count, 3)
 
         // Should mention re-download option
-        let hasRedownloadInfo = OnDeviceLLMModelInfo.deletionConsequences.contains {
+        let hasRedownloadInfo = OnDeviceLLMModelConfig.deletionConsequences.contains {
             $0.lowercased().contains("re-download") || $0.lowercased().contains("download")
         }
         XCTAssertTrue(hasRedownloadInfo, "Should mention re-download option")
@@ -233,22 +363,69 @@ final class OnDeviceLLMModelManagerTests: XCTestCase {
         let path = await manager.modelPath
 
         XCTAssertTrue(path.path.contains("models/LLM"))
-        XCTAssertTrue(path.path.contains("Ministral-3-3B-Instruct-2512-Q4_K_M.gguf"))
-    }
-
-    func testManagerModelPathString() async {
-        let manager = OnDeviceLLMModelManager()
-        let pathString = await manager.modelPathString
-
-        XCTAssertTrue(pathString.contains("models/LLM"))
-        XCTAssertTrue(pathString.contains("Ministral-3-3B-Instruct-2512-Q4_K_M.gguf"))
-    }
-
-    func testManagerSelectedModel() async {
-        let manager = OnDeviceLLMModelManager()
+        // Path should contain the selected model's filename
         let selectedModel = await manager.selectedModel
+        XCTAssertTrue(path.path.contains(selectedModel.config.filename))
+    }
 
-        XCTAssertEqual(selectedModel, .ministral3_3B)
+    func testManagerModelPathForSpecificModel() async {
+        let manager = OnDeviceLLMModelManager()
+
+        let falconPath = await manager.modelPath(for: .falconH1_1_5B)
+        XCTAssertTrue(falconPath.path.contains("Falcon-H1-1.5B-Deep-Instruct-Q4_K_M.gguf"))
+
+        let qwen35Path = await manager.modelPath(for: .qwen35_2B)
+        XCTAssertTrue(qwen35Path.path.contains("Qwen3.5-2B-Q4_K_M.gguf"))
+
+        let qwenPath = await manager.modelPath(for: .qwen3_1_7B)
+        XCTAssertTrue(qwenPath.path.contains("Qwen3-1.7B-Q4_K_M.gguf"))
+
+        let smolPath = await manager.modelPath(for: .smolLM3_3B)
+        XCTAssertTrue(smolPath.path.contains("SmolLM3-Q4_K_M.gguf"))
+
+        let ministralPath = await manager.modelPath(for: .ministral3_3B)
+        XCTAssertTrue(ministralPath.path.contains("Ministral-3-3B-Instruct-2512-Q4_K_M.gguf"))
+    }
+
+    func testManagerPerModelState() async {
+        let manager = OnDeviceLLMModelManager()
+
+        // Give it time to initialize
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Each model should have its own state
+        for model in OnDeviceLLMModel.allCases {
+            let state = await manager.state(for: model)
+            XCTAssertTrue(
+                state == .notDownloaded || state == .available,
+                "\(model.config.displayName) should be notDownloaded or available"
+            )
+        }
+    }
+
+    func testManagerAllModelStates() async {
+        let manager = OnDeviceLLMModelManager()
+
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let states = await manager.allModelStates()
+        XCTAssertEqual(states.count, OnDeviceLLMModel.allCases.count)
+
+        for model in OnDeviceLLMModel.allCases {
+            XCTAssertNotNil(states[model], "Should have state for \(model.config.displayName)")
+        }
+    }
+
+    func testManagerSelectModel() async {
+        let manager = OnDeviceLLMModelManager()
+
+        await manager.selectModel(.smolLM3_3B)
+        let selected = await manager.selectedModel
+        XCTAssertEqual(selected, .smolLM3_3B)
+
+        await manager.selectModel(.qwen3_1_7B)
+        let selected2 = await manager.selectedModel
+        XCTAssertEqual(selected2, .qwen3_1_7B)
     }
 
     func testManagerMarkLoadedAndUnloaded() async {
@@ -276,6 +453,16 @@ final class OnDeviceLLMModelManagerTests: XCTestCase {
         await manager.cancelDownload()
 
         let state = await manager.currentState()
+        XCTAssertEqual(state, .notDownloaded)
+    }
+
+    func testManagerCancelDownloadForSpecificModel() async {
+        let manager = OnDeviceLLMModelManager()
+
+        // Cancel for a specific model when not downloading should be safe
+        await manager.cancelDownload(for: .smolLM3_3B)
+
+        let state = await manager.state(for: .smolLM3_3B)
         XCTAssertEqual(state, .notDownloaded)
     }
 
@@ -307,16 +494,66 @@ final class OnDeviceLLMModelManagerTests: XCTestCase {
         XCTAssertEqual(observer.state, managerState)
     }
 
+    @MainActor
+    func testStateObserverAllStates() async {
+        let manager = OnDeviceLLMModelManager()
+        let observer = OnDeviceLLMModelStateObserver(manager: manager)
+
+        await observer.refreshState()
+
+        XCTAssertEqual(observer.allStates.count, OnDeviceLLMModel.allCases.count)
+    }
+
     // MARK: - All Models Enumeration
 
     func testAllModelsAvailable() {
         let allModels = OnDeviceLLMModel.allCases
 
-        XCTAssertEqual(allModels.count, 1, "Currently only Ministral 3 3B is supported")
+        XCTAssertEqual(allModels.count, 5, "Should have 5 on-device models")
+        XCTAssertTrue(allModels.contains(.falconH1_1_5B))
+        XCTAssertTrue(allModels.contains(.qwen35_2B))
+        XCTAssertTrue(allModels.contains(.qwen3_1_7B))
+        XCTAssertTrue(allModels.contains(.smolLM3_3B))
         XCTAssertTrue(allModels.contains(.ministral3_3B))
     }
 
     func testModelRawValues() {
+        XCTAssertEqual(OnDeviceLLMModel.falconH1_1_5B.rawValue, "falcon-h1-1.5b")
+        XCTAssertEqual(OnDeviceLLMModel.qwen35_2B.rawValue, "qwen3.5-2b")
+        XCTAssertEqual(OnDeviceLLMModel.qwen3_1_7B.rawValue, "qwen3-1.7b")
+        XCTAssertEqual(OnDeviceLLMModel.smolLM3_3B.rawValue, "smollm3-3b")
         XCTAssertEqual(OnDeviceLLMModel.ministral3_3B.rawValue, "ministral-3-3b")
+    }
+
+    // MARK: - All Models Have Valid Configs
+
+    func testAllModelsHaveValidConfigs() {
+        for model in OnDeviceLLMModel.allCases {
+            let config = model.config
+
+            XCTAssertFalse(config.id.isEmpty, "\(model) should have a non-empty id")
+            XCTAssertFalse(config.displayName.isEmpty, "\(model) should have a display name")
+            XCTAssertFalse(config.huggingFaceRepo.isEmpty, "\(model) should have a HF repo")
+            XCTAssertFalse(config.filename.isEmpty, "\(model) should have a filename")
+            XCTAssertTrue(config.filename.hasSuffix(".gguf"), "\(model) filename should end in .gguf")
+            XCTAssertGreaterThan(config.expectedSizeBytes, 0, "\(model) should have a positive expected size")
+            XCTAssertEqual(config.quantization, "Q4_K_M", "\(model) should use Q4_K_M quantization")
+            XCTAssertGreaterThan(config.contextSize, 0, "\(model) should have a positive context size")
+            XCTAssertGreaterThan(config.minimumRAMGB, 0, "\(model) should have a positive RAM requirement")
+            XCTAssertFalse(config.description.isEmpty, "\(model) should have a description")
+            XCTAssertFalse(config.publisher.isEmpty, "\(model) should have a publisher")
+            XCTAssertEqual(config.license, "Apache 2.0", "\(model) should be Apache 2.0 licensed")
+            XCTAssertFalse(config.version.isEmpty, "\(model) should have a version")
+
+            // Download URL should be valid
+            XCTAssertTrue(
+                config.downloadURL.absoluteString.hasPrefix("https://huggingface.co/"),
+                "\(model) download URL should point to HuggingFace"
+            )
+            XCTAssertTrue(
+                config.downloadURL.absoluteString.contains(config.filename),
+                "\(model) download URL should contain the filename"
+            )
+        }
     }
 }

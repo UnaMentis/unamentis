@@ -84,21 +84,26 @@ final class KBVoiceCoordinator: ObservableObject {
                 try await kyutaiTTS.ensureLoaded()
                 self.ttsService = kyutaiTTS
                 Self.logger.info("Using Pocket TTS (on-device)")
+                TTSProviderTracker.shared.recordProviderActive(requested: "pocketTTS", active: "pocketTTS")
             } catch {
-                // Fall back to Apple TTS if Pocket TTS models not available
-                Self.logger.warning("Pocket TTS models not available, falling back to Apple TTS: \(error)")
+                // Pocket TTS is bundled, this should not happen. Log at error level.
+                Self.logger.error("Pocket TTS failed to load (bundled model should always be available): \(error)")
                 self.ttsService = AppleTTSService()
+                TTSProviderTracker.shared.recordFallbackToAppleTTS(requested: "pocketTTS", reason: "Model load failed: \(error)")
             }
 
         case .appleTTS:
-            // Use Apple's built-in TTS
+            // Use Apple's built-in TTS (user explicitly chose this)
             self.ttsService = AppleTTSService()
-            Self.logger.info("Using Apple TTS (on-device)")
+            Self.logger.info("Using Apple TTS (on-device, user selected)")
+            TTSProviderTracker.shared.recordProviderActive(requested: "appleTTS", active: "appleTTS")
 
         default:
-            // For other providers, fall back to Apple TTS for KB (always on-device)
-            self.ttsService = AppleTTSService()
-            Self.logger.info("Using Apple TTS (fallback for KB)")
+            // For cloud/server providers, use Pocket TTS for KB (always on-device, bundled)
+            let pocketTTS = KyutaiPocketTTSService(config: .lowLatency)
+            self.ttsService = pocketTTS
+            Self.logger.info("Using Pocket TTS for KB (on-device fallback from \(ttsProvider.rawValue))")
+            TTSProviderTracker.shared.recordProviderActive(requested: ttsProvider.rawValue, active: "pocketTTS")
         }
 
         // Create on-device STT service

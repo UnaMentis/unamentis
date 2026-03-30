@@ -287,8 +287,9 @@ public final class VoiceActivityFeedback: ObservableObject {
             announcementPlayer = nil
         } catch {
             guard !Task.isCancelled else { return }
-            logger.warning("Configured TTS failed for announcement, falling back to Apple TTS: \(error.localizedDescription)")
-            // Fall back to Apple TTS if the configured provider fails
+            logger.error("Configured TTS failed for announcement, falling back to Apple TTS: \(error.localizedDescription)")
+            // Runtime fallback: Pocket TTS should be bundled, so this indicates a bug
+            TTSProviderTracker.shared.recordFallbackToAppleTTS(requested: "configured", reason: "Announcement TTS failed: \(error.localizedDescription)")
             await speakWithAppleTTSFallback(text)
         }
     }
