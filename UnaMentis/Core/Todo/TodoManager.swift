@@ -66,8 +66,11 @@ public actor TodoManager {
 
         // For learning targets, fetch curriculum suggestions asynchronously
         if type == .learningTarget {
-            Task {
-                await CurriculumSuggestionService.shared.updateTodoWithSuggestions(item)
+            let itemID = item.objectID
+            Task { @MainActor in
+                let context = PersistenceController.shared.container.viewContext
+                guard let todoItem = context.object(with: itemID) as? TodoItem else { return }
+                await CurriculumSuggestionService.shared.updateTodoWithSuggestions(todoItem)
             }
         }
 

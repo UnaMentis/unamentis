@@ -395,6 +395,69 @@ public actor FOVContextManager {
 
     Always maintain a supportive, encouraging tone while being intellectually rigorous.
     """
+
+    /// Build a pedagogically enriched system prompt based on session context.
+    /// Incorporates ContentDepth instructions, teachback configuration, learner signals,
+    /// and misconception awareness into the system prompt.
+    public static func buildSystemPrompt(
+        depth: ContentDepth? = nil,
+        learnerSignals: LearnerSignals? = nil,
+        misconceptionTriggers: [String] = [],
+        learningObjectives: [String] = []
+    ) -> String {
+        var prompt = defaultSystemPrompt
+
+        // Inject depth-specific AI instructions
+        if let depth = depth {
+            prompt += "\n\nCONTENT DEPTH: \(depth.displayName)\n\(depth.aiInstructions)"
+            prompt += "\nMATH PRESENTATION: \(depth.mathPresentationStyle)"
+        }
+
+        // Teachback directives
+        prompt += """
+
+        \nTEACHBACK ASSESSMENT:
+        - After explaining a key concept, ask the student to explain it back in their own words
+        - Evaluate their understanding: if accurate, continue; if partial, supplement with targeted clarification; if struggling, reteach using a different approach
+        - Track the quality of teachback responses to gauge comprehension
+        """
+
+        // Inject learning objectives if available
+        if !learningObjectives.isEmpty {
+            prompt += "\n\nLEARNING OBJECTIVES FOR THIS SESSION:"
+            for (i, objective) in learningObjectives.enumerated() {
+                prompt += "\n\(i + 1). \(objective)"
+            }
+        }
+
+        // Inject misconception awareness
+        if !misconceptionTriggers.isEmpty {
+            prompt += "\n\nCOMMON MISCONCEPTIONS TO WATCH FOR:"
+            for trigger in misconceptionTriggers {
+                prompt += "\n- \(trigger)"
+            }
+            prompt += "\nWhen you detect a misconception, address it directly and explain the correct understanding."
+        }
+
+        // Inject learner signal awareness
+        if let signals = learnerSignals {
+            var signalNotes: [String] = []
+            if signals.clarificationRequests > 2 {
+                signalNotes.append("The student has asked for \(signals.clarificationRequests) clarifications. Slow down and use simpler language.")
+            }
+            if signals.repetitionRequests > 1 {
+                signalNotes.append("The student has asked for \(signals.repetitionRequests) repetitions. Be more concise and check understanding more frequently.")
+            }
+            if !signalNotes.isEmpty {
+                prompt += "\n\nLEARNER SIGNALS:"
+                for note in signalNotes {
+                    prompt += "\n- \(note)"
+                }
+            }
+        }
+
+        return prompt
+    }
 }
 
 // MARK: - Convenience Extensions

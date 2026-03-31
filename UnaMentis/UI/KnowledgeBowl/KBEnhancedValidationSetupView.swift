@@ -85,6 +85,7 @@ struct KBEnhancedValidationSetupView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .accessibilityLabel("Download embeddings model, 80 megabytes")
 
         case .downloading(let progress):
             VStack(alignment: .leading, spacing: 8) {
@@ -96,12 +97,16 @@ struct KBEnhancedValidationSetupView: View {
                         .foregroundStyle(.secondary)
                 }
                 ProgressView(value: progress)
+                    .accessibilityLabel("Download progress")
+                    .accessibilityValue("\(Int(progress * 100)) percent")
             }
+            .accessibilityElement(children: .combine)
 
         case .available:
             HStack {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
+                    .accessibilityHidden(true)
                 Text("Model Downloaded")
                 Spacer()
                 Button("Remove") {
@@ -110,24 +115,29 @@ struct KBEnhancedValidationSetupView: View {
                     }
                 }
                 .foregroundStyle(.red)
+                .accessibilityLabel("Remove downloaded embeddings model")
             }
 
         case .loaded:
             HStack {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
+                    .accessibilityHidden(true)
                 Text("Model Active")
                 Spacer()
                 Text("Tier 2 Enabled")
                     .font(.caption)
                     .foregroundStyle(.green)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Embeddings model active, tier 2 validation enabled")
 
         case .error(let message):
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
+                        .accessibilityHidden(true)
                     Text("Error")
                 }
                 Text(message)
@@ -138,7 +148,9 @@ struct KBEnhancedValidationSetupView: View {
                         await viewModel.downloadEmbeddings()
                     }
                 }
+                .accessibilityLabel("Retry downloading embeddings model")
             }
+            .accessibilityElement(children: .contain)
         }
     }
 
@@ -177,13 +189,16 @@ struct KBEnhancedValidationSetupView: View {
                         Text("Loading LLM...")
                         Spacer()
                         ProgressView()
+                            .accessibilityLabel("Loading LLM model")
                     }
                 }
+                .accessibilityElement(children: .combine)
 
             case .available:
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
+                        .accessibilityHidden(true)
                     Text("Model Downloaded")
                     Spacer()
                     Button("Remove") {
@@ -192,24 +207,29 @@ struct KBEnhancedValidationSetupView: View {
                         }
                     }
                     .foregroundStyle(.red)
+                    .accessibilityLabel("Remove downloaded LLM model")
                 }
 
             case .loaded:
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
+                        .accessibilityHidden(true)
                     Text("Model Active")
                     Spacer()
                     Text("Tier 3 Enabled")
                         .font(.caption)
                         .foregroundStyle(.green)
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("LLM model active, tier 3 validation enabled")
 
             case .error(let message):
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
+                            .accessibilityHidden(true)
                         Text("Error")
                     }
                     Text(message)
@@ -220,7 +240,9 @@ struct KBEnhancedValidationSetupView: View {
                             await viewModel.downloadLLM()
                         }
                     }
+                    .accessibilityLabel("Retry downloading LLM model")
                 }
+                .accessibilityElement(children: .contain)
             }
         }
     }

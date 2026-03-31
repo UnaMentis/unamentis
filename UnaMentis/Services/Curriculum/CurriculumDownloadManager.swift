@@ -322,7 +322,54 @@ public final class CurriculumDownloadManager: ObservableObject {
 
         Self.logger.info("Successfully downloaded curriculum: \(curriculumTitle) with \(cachedAssets) assets")
 
+        // Trigger server-side TTS pre-generation for the first topics.
+        // The server's CurriculumPrefetcher will generate audio in the background
+        // so it's ready when the user starts the curriculum.
+        Task {
+            await Self.triggerServerTTSPrefetch(
+                curriculumId: curriculumId,
+                topicIds: Array(selectedTopicIds)
+            )
+        }
+
         return curriculum
+    }
+
+    /// Request server-side TTS pre-generation for curriculum topics
+    private static func triggerServerTTSPrefetch(curriculumId: String, topicIds: [String]) async {
+        let selfHostedEnabled = UserDefaults.standard.bool(forKey: "selfHostedEnabled")
+        let serverIP = UserDefaults.standard.string(forKey: "serverIP") ?? ""
+
+        guard selfHostedEnabled, !serverIP.isEmpty else {
+            logger.debug("Server not configured, skipping TTS prefetch for curriculum \(curriculumId)")
+            return
+        }
+
+        let urlString = "http://\(serverIP):8766/api/tts-cache/prefetch"
+        guard let url = URL(string: urlString) else { return }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "curriculumId": curriculumId,
+            "topicIds": topicIds,
+            "priority": "prefetch"
+        ]
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                logger.info("Server TTS prefetch started for curriculum \(curriculumId)")
+            } else {
+                logger.warning("Server TTS prefetch request returned non-200 for curriculum \(curriculumId)")
+            }
+        } catch {
+            logger.debug("Server TTS prefetch unavailable for curriculum \(curriculumId): \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Private Helpers

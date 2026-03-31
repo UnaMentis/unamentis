@@ -145,14 +145,28 @@ public struct PronunciationProcessor {
         }
     }
 
+    /// Cache of pre-compiled regexes keyed by term to avoid recompilation per call
+    private static let regexCacheLock = NSLock()
+    private static nonisolated(unsafe) var regexCache: [String: NSRegularExpression] = [:]
+
     /// Replace whole words only (not partial matches)
     private func replaceWholeWords(in text: String, term: String, replacement: String) -> String {
-        // Use word boundary regex to avoid partial matches
-        // This ensures "Medici" doesn't match inside "MediciNE" etc.
-        let pattern = "\\b\(NSRegularExpression.escapedPattern(for: term))\\b"
-
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-            return text
+        // Use cached regex, or compile and cache on first use
+        let regex: NSRegularExpression
+        Self.regexCacheLock.lock()
+        if let cached = Self.regexCache[term] {
+            Self.regexCacheLock.unlock()
+            regex = cached
+        } else {
+            Self.regexCacheLock.unlock()
+            let pattern = "\\b\(NSRegularExpression.escapedPattern(for: term))\\b"
+            guard let compiled = try? NSRegularExpression(pattern: pattern, options: []) else {
+                return text
+            }
+            Self.regexCacheLock.lock()
+            Self.regexCache[term] = compiled
+            Self.regexCacheLock.unlock()
+            regex = compiled
         }
 
         let range = NSRange(text.startIndex..., in: text)

@@ -100,11 +100,21 @@ public actor AudioEngine: ObservableObject {
         audioStreamHolder.publisher
     }
     
+    // Audio buffer processing stream (replaces per-buffer Task.detached)
+    private var bufferStreamContinuation: AsyncStream<AVAudioPCMBuffer>.Continuation?
+    private var bufferProcessingTask: Task<Void, Never>?
+
     // Thermal monitoring
     private var thermalStateObserver: NSObjectProtocol?
 
-    // Level monitoring handled on MainActor
-    @MainActor private static var levelMonitorTimer: Timer?
+    // Audio session notification observers
+    #if os(iOS)
+    private var sessionNotificationObservers: [NSObjectProtocol] = []
+    private var wasRunningBeforeInterruption = false
+    private var wasPlayingBeforeInterruption = false
+    #endif
+
+    // Level monitoring is driven by the audio tap callback (no timer needed)
     
     // MARK: - Initialization
     
@@ -119,7 +129,7 @@ public actor AudioEngine: ObservableObject {
         self.telemetry = telemetry
         
         Task {
-            await setupThermalMonitoring()
+            await self.setupThermalMonitoring()
         }
     }
     
@@ -146,6 +156,7 @@ public actor AudioEngine: ObservableObject {
             try session.setPreferredSampleRate(config.sampleRate)
             try session.setPreferredIOBufferDuration(Double(config.bufferSize) / config.sampleRate)
             try session.setActive(true)
+            setupSessionNotifications()
         } catch {
             throw AudioEngineError.audioSessionConfigurationFailed(error.localizedDescription)
         }
@@ -199,35 +210,41 @@ public actor AudioEngine: ObservableObject {
             throw AudioEngineError.invalidConfiguration("Could not create audio format")
         }
         
-        // Remove any existing tap
+        // Remove any existing tap and cancel previous processing task
         inputNode.removeTap(onBus: 0)
-        
-        // Install new tap with @Sendable closure to avoid Swift 6 actor isolation crash
-        // The closure runs on a real-time audio thread and must not reference the actor
-        // AudioStreamHolder is Sendable, others wrapped in UncheckedSendableBox
+        bufferProcessingTask?.cancel()
+        bufferStreamContinuation?.finish()
+
+        // Create AsyncStream for buffer processing (replaces per-buffer Task.detached)
+        // This reduces ~253K task allocations per 90-min session to a single long-lived task
         let streamHolder = audioStreamHolder
         let vadServiceBox = UncheckedSendableBox(value: self.vadService)
         let telemetryBox = UncheckedSendableBox(value: self.telemetry)
 
-        inputNode.installTap(
-            onBus: 0,
-            bufferSize: config.bufferSize,
-            format: format
-        ) { @Sendable buffer, _ in
-            // Process audio completely off the actor to avoid Swift 6 isolation crash
-            // Use Task.detached to ensure no actor context is inherited
-            Task.detached {
-                // Run VAD on the buffer
-                let vadResult = await vadServiceBox.value.processBuffer(buffer)
+        let (bufferStream, continuation) = AsyncStream<AVAudioPCMBuffer>.makeStream(
+            bufferingPolicy: .bufferingNewest(10)
+        )
+        self.bufferStreamContinuation = continuation
 
-                // Emit to subscribers via thread-safe holder
+        // Single long-lived task consuming from the stream
+        bufferProcessingTask = Task.detached {
+            for await buffer in bufferStream {
+                let vadResult = await vadServiceBox.value.processBuffer(buffer)
                 streamHolder.send(buffer, vadResult)
 
-                // Record VAD events
                 if vadResult.isSpeech {
                     await telemetryBox.value.recordEvent(.vadSpeechDetected(confidence: vadResult.confidence))
                 }
             }
+        }
+
+        // Tap callback yields buffers to the stream instead of creating tasks
+        inputNode.installTap(
+            onBus: 0,
+            bufferSize: config.bufferSize,
+            format: format
+        ) { @Sendable [continuation] buffer, _ in
+            continuation.yield(buffer)
         }
         
         // Prepare VAD
@@ -261,10 +278,16 @@ public actor AudioEngine: ObservableObject {
         // Stop level monitoring
         await stopLevelMonitoring()
         
+        // Stop buffer processing stream
+        bufferStreamContinuation?.finish()
+        bufferProcessingTask?.cancel()
+        bufferStreamContinuation = nil
+        bufferProcessingTask = nil
+
         // Remove tap and stop
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
-        
+
         // Shutdown VAD
         await vadService.shutdown()
         
@@ -546,6 +569,204 @@ public actor AudioEngine: ObservableObject {
         }
     }
     
+    // MARK: - Audio Session Notifications
+
+    #if os(iOS)
+    /// Set up observers for AVAudioSession interruption, route change, and media services reset.
+    /// These are critical for maintaining audio stability during 60-90+ minute voice sessions.
+    private func setupSessionNotifications() {
+        // Remove any existing observers first
+        teardownSessionNotifications()
+
+        // Interruption handling (phone calls, Siri, alarms)
+        let interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: session,
+            queue: nil
+        ) { [weak self] notification in
+            Task {
+                await self?.handleSessionInterruption(notification)
+            }
+        }
+        sessionNotificationObservers.append(interruptionObserver)
+
+        // Route change handling (Bluetooth disconnect, headphone unplug)
+        let routeChangeObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: session,
+            queue: nil
+        ) { [weak self] notification in
+            Task {
+                await self?.handleRouteChange(notification)
+            }
+        }
+        sessionNotificationObservers.append(routeChangeObserver)
+
+        // Media services reset (rare but catastrophic, requires full rebuild)
+        let mediaResetObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.mediaServicesWereResetNotification,
+            object: session,
+            queue: nil
+        ) { [weak self] _ in
+            Task {
+                await self?.handleMediaServicesReset()
+            }
+        }
+        sessionNotificationObservers.append(mediaResetObserver)
+
+        logger.info("Audio session notification observers installed")
+    }
+
+    private func teardownSessionNotifications() {
+        for observer in sessionNotificationObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        sessionNotificationObservers.removeAll()
+    }
+
+    /// Handle audio session interruption (phone call, Siri, alarm, etc.)
+    private func handleSessionInterruption(_ notification: Notification) async {
+        guard let userInfo = notification.userInfo,
+              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+            logger.warning("Received audio session interruption with missing type info")
+            return
+        }
+
+        switch type {
+        case .began:
+            logger.info("Audio session interruption began")
+            wasRunningBeforeInterruption = isRunning
+            wasPlayingBeforeInterruption = isPlaying
+
+            // Pause playback if active (preserves state for potential resume)
+            if isPlaying {
+                _ = await pausePlayback()
+            }
+
+            // Stop the engine to release audio hardware
+            if isRunning {
+                engine.inputNode.removeTap(onBus: 0)
+                engine.stop()
+                isRunning = false
+            }
+
+            await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: "Audio session interruption began"))
+
+        case .ended:
+            logger.info("Audio session interruption ended")
+
+            // Check if we should resume
+            let shouldResume: Bool
+            if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
+                let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                shouldResume = options.contains(.shouldResume) && wasRunningBeforeInterruption
+            } else {
+                shouldResume = wasRunningBeforeInterruption
+            }
+
+            if shouldResume {
+                do {
+                    try session.setActive(true)
+                    try await start()
+                    logger.info("Audio engine restarted after interruption")
+
+                    // Resume playback if it was active before
+                    if wasPlayingBeforeInterruption && isPaused {
+                        _ = await resumePlayback()
+                    }
+                } catch {
+                    logger.error("Failed to restart audio after interruption: \(error.localizedDescription)")
+                }
+            }
+
+            wasRunningBeforeInterruption = false
+            wasPlayingBeforeInterruption = false
+            await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: "Audio session interruption ended"))
+
+        @unknown default:
+            logger.warning("Unknown audio session interruption type: \(typeValue)")
+        }
+    }
+
+    /// Handle audio route change (Bluetooth disconnect, headphone unplug, etc.)
+    private func handleRouteChange(_ notification: Notification) async {
+        guard let userInfo = notification.userInfo,
+              let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else {
+            return
+        }
+
+        logger.info("Audio route changed", metadata: ["reason": .stringConvertible(reasonValue)])
+
+        switch reason {
+        case .oldDeviceUnavailable:
+            // Bluetooth disconnected or headphones unplugged
+            // Audio output switches to speaker automatically, but we need to restart engine
+            // to ensure the audio pipeline is properly reconfigured
+            if isRunning {
+                logger.info("Audio device became unavailable, restarting engine")
+                await stop()
+                do {
+                    try session.setCategory(
+                        .playAndRecord,
+                        mode: .voiceChat,
+                        options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
+                    )
+                    try session.setActive(true)
+                    try await start()
+                    logger.info("Audio engine restarted after route change")
+                } catch {
+                    logger.error("Failed to restart audio after route change: \(error.localizedDescription)")
+                }
+                await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: "Audio route changed: device unavailable"))
+            }
+
+        case .newDeviceAvailable:
+            logger.info("New audio device available")
+            // New device connected, engine usually handles this automatically
+
+        case .categoryChange:
+            logger.debug("Audio category changed")
+
+        default:
+            break
+        }
+    }
+
+    /// Handle media services reset (rare, requires full audio stack rebuild)
+    private func handleMediaServicesReset() async {
+        logger.critical("Media services were reset, rebuilding audio stack")
+
+        // The entire audio system has been torn down by iOS.
+        // All AVAudioEngine state is invalid. We must rebuild from scratch.
+        wasRunningBeforeInterruption = false
+        wasPlayingBeforeInterruption = false
+        isRunning = false
+        isPlaying = false
+        isPaused = false
+        pendingBuffers.removeAll()
+        playbackFormat = nil
+
+        // Resume any waiting continuation so callers don't hang
+        if let continuation = playbackCompletionContinuation {
+            playbackCompletionContinuation = nil
+            continuation.resume()
+        }
+
+        // Rebuild: reconfigure and restart
+        do {
+            try await configure(config: config)
+            try await start()
+            logger.info("Audio stack rebuilt after media services reset")
+        } catch {
+            logger.error("Failed to rebuild audio stack after media reset: \(error.localizedDescription)")
+        }
+
+        await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: "Media services reset, audio stack rebuilt"))
+    }
+    #endif
+
     // MARK: - Thermal Management
     
     private func setupThermalMonitoring() async {
@@ -586,33 +807,59 @@ public actor AudioEngine: ObservableObject {
         }
     }
     
+    /// Whether thermal adaptation is currently applied
+    private var thermalAdaptationActive = false
+
     private func adaptQualityForThermalState(_ state: ProcessInfo.ThermalState) async {
-        // Reduce quality to prevent throttling
-        // Could reduce sample rate, increase buffer size, etc.
-        let reason = "Thermal state: \(state)"
-        await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: reason))
-        logger.warning("Adapting quality due to thermal state: \(state)")
-    }
-    
-    // MARK: - Level Monitoring
-    
-    private func startLevelMonitoring(interval: TimeInterval) async {
-        await MainActor.run {
-            AudioEngine.levelMonitorTimer?.invalidate()
-            AudioEngine.levelMonitorTimer = Timer.scheduledTimer(
-                withTimeInterval: interval,
-                repeats: true
-            ) { _ in
-                // Level is updated in processAudioBuffer
+        // Protect TTS pipeline (primary capability). Shed other resources instead.
+        switch state {
+        case .serious:
+            guard !thermalAdaptationActive else { return }
+            thermalAdaptationActive = true
+            logger.warning("Thermal state SERIOUS: reducing non-TTS resource usage")
+            // Increase VAD threshold to reduce processing frequency
+            await vadService.configure(
+                threshold: min(config.vadThreshold + 0.15, 0.9),
+                contextWindow: config.vadContextWindow
+            )
+            await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: "Thermal serious: increased VAD threshold, reduced monitoring"))
+
+        case .critical:
+            thermalAdaptationActive = true
+            logger.error("Thermal state CRITICAL: aggressive non-TTS resource shedding")
+            // Aggressively reduce non-TTS work
+            await vadService.configure(
+                threshold: min(config.vadThreshold + 0.25, 0.95),
+                contextWindow: max(config.vadContextWindow - 1, 1)
+            )
+            await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: "Thermal critical: aggressive resource shedding to protect TTS"))
+
+        case .nominal, .fair:
+            if thermalAdaptationActive {
+                thermalAdaptationActive = false
+                logger.info("Thermal state nominal/fair: restoring normal settings")
+                // Restore original VAD settings
+                await vadService.configure(
+                    threshold: config.vadThreshold,
+                    contextWindow: config.vadContextWindow
+                )
+                await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: "Thermal recovered: restored normal settings"))
             }
+
+        @unknown default:
+            break
         }
     }
-    
+
+    // MARK: - Level Monitoring
+
+    private func startLevelMonitoring(interval: TimeInterval) async {
+        // Level updates are computed in processAudioBuffer/updateAudioLevel
+        // No timer needed; the tap callback drives updates
+    }
+
     private func stopLevelMonitoring() async {
-        await MainActor.run {
-            AudioEngine.levelMonitorTimer?.invalidate()
-            AudioEngine.levelMonitorTimer = nil
-        }
+        // No timer to clean up; level monitoring is driven by the audio tap
     }
     
     private func updateAudioLevel(buffer: AVAudioPCMBuffer) async {
@@ -642,5 +889,8 @@ public actor AudioEngine: ObservableObject {
             NotificationCenter.default.removeObserver(observer)
             thermalStateObserver = nil
         }
+        #if os(iOS)
+        teardownSessionNotifications()
+        #endif
     }
 }

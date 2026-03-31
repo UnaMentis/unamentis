@@ -43,14 +43,28 @@ public actor ReadingAudioPreGenerator {
 
     private let logger = Logger(label: "com.unamentis.reading.audio.pregen")
 
-    /// Number of chunks to pre-generate at import time
-    public static let defaultPreGenCount = 3
+    /// Number of chunks to pre-generate at import time.
+    /// At ~40 words/chunk and ~16 seconds/chunk, 20 chunks covers ~5 minutes of audio.
+    /// Configurable via UserDefaults key "reading_preGenChunkCount".
+    public static var defaultPreGenCount: Int {
+        let stored = UserDefaults.standard.integer(forKey: "reading_preGenChunkCount")
+        return stored > 0 ? stored : 20
+    }
 
     /// In-progress generation tasks keyed by item ID.
     /// Callers can await the task value to wait for completion.
     private var inProgressTasks: [UUID: Task<Void, Never>] = [:]
 
+    /// Progress tracking for in-flight pre-generation (completed, total)
+    private var progressMap: [UUID: (completed: Int, total: Int)] = [:]
+
     private init() {}
+
+    /// Get the current pre-generation progress for an item.
+    /// Returns nil if no generation is in progress or has completed.
+    public func getProgress(itemId: UUID) -> (completed: Int, total: Int)? {
+        progressMap[itemId]
+    }
 
     // MARK: - Pre-generation
 
@@ -84,8 +98,9 @@ public actor ReadingAudioPreGenerator {
             guard let self else { return }
 
             var successCount = 0
+            await self.updateProgress(itemId: itemId, completed: 0, total: chunks.count)
 
-            for chunk in chunks {
+            for (index, chunk) in chunks.enumerated() {
                 guard !Task.isCancelled else { break }
 
                 let audioData = await self.synthesizeChunk(text: chunk.text)
@@ -98,10 +113,12 @@ public actor ReadingAudioPreGenerator {
                         persistenceController: persistenceController
                     )
                     successCount += 1
+                    await self.updateProgress(itemId: itemId, completed: index + 1, total: chunks.count)
                     await self.logger.debug(
                         "Pre-generated chunk \(chunk.index) for \(itemId), \(audioData.count) bytes"
                     )
                 } else {
+                    await self.updateProgress(itemId: itemId, completed: index + 1, total: chunks.count)
                     await self.logger.warning(
                         "Pre-generation failed for chunk \(chunk.index) of \(itemId)"
                     )
@@ -163,6 +180,11 @@ public actor ReadingAudioPreGenerator {
 
     private func removeTask(itemId: UUID) {
         inProgressTasks.removeValue(forKey: itemId)
+        progressMap.removeValue(forKey: itemId)
+    }
+
+    private func updateProgress(itemId: UUID, completed: Int, total: Int) {
+        progressMap[itemId] = (completed: completed, total: total)
     }
 
     /// Synthesize audio for a chunk of text using the configured TTS provider

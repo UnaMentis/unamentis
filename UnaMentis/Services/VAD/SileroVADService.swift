@@ -40,6 +40,11 @@ public actor SileroVADService: VADService {
     
     /// Frame size in samples (Silero expects 512 samples at 16kHz = 32ms)
     private let frameSize: Int = 512
+
+    /// Cached audio converter for resampling non-16kHz input to 16kHz
+    private var resampleConverter: AVAudioConverter?
+    /// Format of the last input that was used to create the converter
+    private var lastInputFormat: AVAudioFormat?
     
     // MARK: - Initialization
     
@@ -70,16 +75,28 @@ public actor SileroVADService: VADService {
         guard isActive else {
             return VADResult(isSpeech: false, confidence: 0, timestamp: Date().timeIntervalSince1970)
         }
-        
+
         let startTime = Date()
-        
-        // Convert buffer to expected format if needed
-        guard let floatData = buffer.floatChannelData?[0] else {
+
+        // Resample to 16kHz if needed (Silero model requires 16kHz input)
+        let processBuffer: AVAudioPCMBuffer
+        if buffer.format.sampleRate != expectedSampleRate {
+            if let resampled = resampleTo16kHz(buffer) {
+                processBuffer = resampled
+            } else {
+                // Resampling failed, use original (degraded accuracy)
+                processBuffer = buffer
+            }
+        } else {
+            processBuffer = buffer
+        }
+
+        guard let floatData = processBuffer.floatChannelData?[0] else {
             logger.warning("No float channel data available")
             return VADResult(isSpeech: false, confidence: 0, timestamp: startTime.timeIntervalSince1970)
         }
-        
-        let frameLength = Int(buffer.frameLength)
+
+        let frameLength = Int(processBuffer.frameLength)
         
         // If model is loaded, run inference
         if let model = model {
@@ -161,11 +178,62 @@ public actor SileroVADService: VADService {
         hiddenState = nil
         cellState = nil
         smoothingBuffer.removeAll()
+        resampleConverter = nil
+        lastInputFormat = nil
         logger.info("Silero VAD shutdown")
     }
     
     // MARK: - Private Methods
     
+    /// Resample an audio buffer to 16kHz mono for Silero VAD inference
+    private func resampleTo16kHz(_ buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
+        guard let outputFormat = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: expectedSampleRate,
+            channels: 1,
+            interleaved: false
+        ) else {
+            return nil
+        }
+
+        // Cache the converter if the input format hasn't changed
+        if resampleConverter == nil || lastInputFormat != buffer.format {
+            resampleConverter = AVAudioConverter(from: buffer.format, to: outputFormat)
+            lastInputFormat = buffer.format
+        }
+
+        guard let converter = resampleConverter else {
+            return nil
+        }
+
+        // Calculate output frame count based on sample rate ratio
+        let ratio = expectedSampleRate / buffer.format.sampleRate
+        let outputFrameCount = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
+
+        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: outputFrameCount) else {
+            return nil
+        }
+
+        var error: NSError?
+        var consumed = false
+        converter.convert(to: outputBuffer, error: &error) { _, outStatus in
+            if consumed {
+                outStatus.pointee = .noDataNow
+                return nil
+            }
+            consumed = true
+            outStatus.pointee = .haveData
+            return buffer
+        }
+
+        if let error = error {
+            logger.warning("Audio resampling failed: \(error.localizedDescription)")
+            return nil
+        }
+
+        return outputBuffer
+    }
+
     private func loadModel() throws {
         // Look for Silero VAD model in bundle
         // The model file should be named "silero_vad.mlmodelc" or "silero_vad.mlpackage"

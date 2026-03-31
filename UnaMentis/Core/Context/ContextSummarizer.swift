@@ -306,11 +306,11 @@ public struct SummarizerConfig: Sendable {
         cacheExpiration: 3600 // 1 hour
     )
 
-    /// Configuration optimized for minimal token usage
+    /// Configuration optimized for minimal token usage (uses cost-optimized model)
     public static let minimal = SummarizerConfig(
         systemPrompt: "Summarize concisely.",
         llmConfig: LLMConfig(
-            model: "gpt-4o-mini",
+            model: LLMConfig.costOptimized.model,
             maxTokens: 150,
             temperature: 0.3,
             stream: false
