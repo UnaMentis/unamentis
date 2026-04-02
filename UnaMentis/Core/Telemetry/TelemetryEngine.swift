@@ -104,6 +104,7 @@ public struct BoundedLatencyBuffer: Sendable {
     private let capacity: Int
 
     public init(capacity: Int = 500) {
+        precondition(capacity > 0, "BoundedLatencyBuffer capacity must be positive")
         self.capacity = capacity
         self.storage = []
         self.storage.reserveCapacity(capacity)

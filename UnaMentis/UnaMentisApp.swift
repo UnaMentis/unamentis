@@ -148,8 +148,8 @@ struct UnaMentisApp: App {
         switch phase {
         case .background:
             Self.logger.info("App entering background")
-            // Auto-save any in-progress session state
-            if appState.sessionManager != nil {
+            // Auto-save any in-progress session state (only if store loaded successfully)
+            if appState.sessionManager != nil, PersistenceController.shared.isReady {
                 Task { @MainActor in
                     try? PersistenceController.shared.save()
                     Self.logger.info("Session state saved on background entry")
@@ -729,10 +729,16 @@ public class AppState: ObservableObject {
         await checkConfiguration()
         await initializePatchPanel()
 
-        // Pre-warm Pocket TTS (primary capability, should be ready before first interaction)
+        // Pre-warm Pocket TTS model files (primary capability, should be ready before first interaction)
+        // This ensures model files are copied from bundle and available on disk,
+        // so subsequent TTS service instances don't pay the cold-start cost for model resolution.
         Task.detached {
-            let tts = KyutaiPocketTTSService(config: .lowLatency)
-            await tts.preWarm()
+            do {
+                let modelManager = KyutaiPocketModelManager()
+                _ = try await modelManager.getModelPath()
+            } catch {
+                // Model pre-warm is best-effort; session creation will retry
+            }
         }
 
         // Auto-discover server on first launch or when no server is configured

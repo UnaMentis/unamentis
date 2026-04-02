@@ -227,10 +227,16 @@ public actor AudioEngine: ObservableObject {
         self.bufferStreamContinuation = continuation
 
         // Single long-lived task consuming from the stream
+        let levelMonitoringEnabled = config.enableAudioLevelMonitoring
+        let engineRef = self
         bufferProcessingTask = Task.detached {
             for await buffer in bufferStream {
                 let vadResult = await vadServiceBox.value.processBuffer(buffer)
                 streamHolder.send(buffer, vadResult)
+
+                if levelMonitoringEnabled {
+                    await engineRef.updateAudioLevel(buffer: buffer)
+                }
 
                 if vadResult.isSpeech {
                     await telemetryBox.value.recordEvent(.vadSpeechDetected(confidence: vadResult.confidence))

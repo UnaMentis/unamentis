@@ -21,6 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: sirfifer/solution-explorer@main
+        # Artifact upload may fail due to colons in generated filenames (e.g. detail-repo:unamentis.json)
+        # which are invalid on Windows/NTFS. Cloudflare deployment completes before this step.
+        # TODO: Report upstream to sirfifer/solution-explorer to sanitize artifact filenames
+        continue-on-error: true
         with:
           config: solution-explorer.json
           deploy-to: cloudflare

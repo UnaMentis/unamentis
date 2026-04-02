@@ -76,6 +76,7 @@ public final class AudioPreGenInvalidator {
     private func invalidateAllPreGeneratedAudio() {
         logger.info("Invalidating all pre-generated audio due to TTS setting change")
 
+        let log = logger
         let context = PersistenceController.shared.container.newBackgroundContext()
         context.perform {
             let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "ReadingChunk")
@@ -90,17 +91,11 @@ public final class AudioPreGenInvalidator {
                 }
                 if clearedCount > 0 {
                     try context.save()
-                    self.logger.info("Cleared pre-generated audio from \(clearedCount) chunks")
+                    log.info("Cleared pre-generated audio from \(clearedCount) chunks")
                 }
             } catch {
-                self.logger.error("Failed to clear pre-generated audio: \(error)")
+                log.error("Failed to clear pre-generated audio: \(error)")
             }
-        }
-
-        // Also clear the canned response bank since voice changed
-        Task {
-            // CannedResponseBank will re-populate on next session start
-            // with the new voice/provider
         }
     }
 }

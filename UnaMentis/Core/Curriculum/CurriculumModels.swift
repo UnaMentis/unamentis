@@ -553,7 +553,7 @@ public struct RetrievalSchedule: Codable, Sendable, Identifiable {
     ///   - success: Whether the attempt was successful
     ///   - algorithm: Which spacing algorithm to use
     ///   - maxInterval: Maximum interval cap
-    ///   - quality: SM2 quality rating (0-5). Defaults to 4 for success, 2 for failure if not provided.
+    ///   - quality: SM2 quality rating (0-5). Defaults to 4 for success if not provided. Ignored on failure (fixed -0.2 EF penalty).
     public mutating func recordAttempt(success: Bool, algorithm: SpacingAlgorithm, maxInterval: TimeInterval, quality: Double? = nil) {
         attemptCount += 1
         if success {

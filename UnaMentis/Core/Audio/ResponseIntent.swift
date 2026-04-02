@@ -155,6 +155,22 @@ public enum ResponseIntent: String, CaseIterable, Sendable {
             return .transition
         }
 
+        // Check for thinking/stalling signals (user needs time)
+        let thinkingKeywords = ["umm", "hmm", "let me think", "hold on",
+                                 "give me a second", "wait", "one moment",
+                                 "i need to think", "let me see"]
+        if thinkingKeywords.contains(where: { lower.contains($0) }) {
+            return .thinking
+        }
+
+        // Check for Socratic prompts (turning questions back to learner)
+        let socraticKeywords = ["what do you think", "how would you", "what would you",
+                                 "what's your", "your opinion", "your take",
+                                 "you tell me", "figure it out", "try it yourself"]
+        if socraticKeywords.contains(where: { lower.contains($0) }) {
+            return .socratic
+        }
+
         // Check if the user is asking the AI a question (contains question markers)
         let isQuestion = lower.contains("?") ||
             lower.hasPrefix("why") || lower.hasPrefix("how") ||
@@ -167,7 +183,19 @@ public enum ResponseIntent: String, CaseIterable, Sendable {
             return .engagement
         }
 
-        // Default to engagement for longer utterances (user is making a substantive comment)
+        // Check for encouragement signals (positive affirmations about answers)
+        let encouragementKeywords = ["i think it's", "my answer is", "i believe",
+                                      "the answer is", "i got it", "i know this"]
+        if encouragementKeywords.contains(where: { lower.contains($0) }) {
+            return .encouragement
+        }
+
+        // Default to redirect for longer non-question utterances (substantive comment needing guidance)
+        if wordCount > 8 {
+            return .redirect
+        }
+
+        // Default to engagement for medium-length utterances
         return .engagement
     }
 }

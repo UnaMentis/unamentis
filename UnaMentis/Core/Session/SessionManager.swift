@@ -276,6 +276,8 @@ public final class SessionManager: ObservableObject {
     private var sttStreamTask: Task<Void, Never>?
     private var llmStreamTask: Task<Void, Never>?
     private var ttsStreamTask: Task<Void, Never>?
+    private var preGenerationTask: Task<Void, Never>?
+    private var cannedResponseTask: Task<Void, Never>?
     private var audioSubscription: AnyCancellable?
 
     /// Silence detection for utterance completion
@@ -440,7 +442,7 @@ public final class SessionManager: ObservableObject {
         subscribeToAudioStream()
 
         // Pre-render canned acknowledgment phrases for zero-latency barge-in response
-        Task {
+        cannedResponseTask = Task {
             await cannedResponseBank.populate(using: ttsService)
         }
 
@@ -503,6 +505,10 @@ public final class SessionManager: ObservableObject {
         // Cancel pending utterance detection
         pendingUtteranceTask?.cancel()
 
+        // Cancel speculative pre-generation and canned response tasks
+        preGenerationTask?.cancel()
+        cannedResponseTask?.cancel()
+
         // Cancel audio subscription to stop VAD processing
         audioSubscription?.cancel()
 
@@ -511,6 +517,8 @@ public final class SessionManager: ObservableObject {
         sttStreamTask = nil
         ttsStreamTask = nil
         pendingUtteranceTask = nil
+        preGenerationTask = nil
+        cannedResponseTask = nil
         audioSubscription = nil
 
         // STEP 3: Stop audio immediately (this stops any in-flight playback)
@@ -1066,7 +1074,8 @@ public final class SessionManager: ObservableObject {
 
                 // Pre-generate speculative response starters while user listens to TTS
                 // This uses idle LLM capacity to prepare for the user's next utterance
-                Task { [weak self] in
+                self.preGenerationTask?.cancel()
+                self.preGenerationTask = Task { [weak self] in
                     guard let self = self else { return }
                     await self.responsePreGenerator.preGenerate(
                         using: llmService,
@@ -1370,7 +1379,7 @@ public final class SessionManager: ObservableObject {
             bargeInConfirmationTask = Task {
                 // Wait for speech confirmation (e.g., 500ms of continued speech)
                 // During this time, VAD will keep firing if there's real speech
-                try? await Task.sleep(nanoseconds: 600_000_000) // 600ms
+                try? await Task.sleep(nanoseconds: UInt64(config.bargeInConfirmationMs) * 1_000_000)
 
                 // Check if still in tentative pause (not already confirmed or cancelled)
                 guard !Task.isCancelled && isTentativePause else { return }
@@ -1410,7 +1419,9 @@ public final class SessionManager: ObservableObject {
 
         await telemetry.recordEvent(.userInterrupted)
 
-        // Invalidate speculative starters since context has shifted
+        // Cancel and invalidate speculative starters since context has shifted
+        preGenerationTask?.cancel()
+        preGenerationTask = nil
         await responsePreGenerator.invalidate()
 
         // Now fully stop everything

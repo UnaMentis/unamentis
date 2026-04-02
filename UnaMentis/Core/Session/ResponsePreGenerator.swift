@@ -31,18 +31,18 @@ public actor ResponsePreGenerator {
         public var isConsumed: Bool = false
     }
 
-    /// Scenarios to pre-generate responses for
+    /// Scenarios to pre-generate responses for, ordered by likelihood
     public enum Scenario: String, CaseIterable, Sendable {
-        /// User asks about the current topic
+        /// User asks about the current topic (maps to .engagement)
         case questionAboutTopic
-        /// User asks to repeat what was just said
-        case repeatRequest
-        /// User gives a correct answer
-        case correctAnswer
-        /// User gives a wrong answer
-        case wrongAnswer
-        /// User asks to move on
+        /// User asks to move on (maps to .transition)
         case moveOn
+        /// User asks to repeat what was just said (maps to .clarification)
+        case repeatRequest
+        /// User gives a correct answer (maps to .encouragement)
+        case correctAnswer
+        /// User gives a wrong answer (maps to .redirect)
+        case wrongAnswer
     }
 
     // MARK: - Properties
