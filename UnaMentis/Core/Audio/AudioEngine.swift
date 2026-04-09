@@ -643,18 +643,24 @@ public actor AudioEngine: ObservableObject {
         case .began:
             logger.info("Audio session interruption began")
             wasRunningBeforeInterruption = isRunning
-            wasPlayingBeforeInterruption = isPlaying
+            // Only mark as playing if actively playing (not if user manually paused)
+            wasPlayingBeforeInterruption = isPlaying && !isPaused
 
             // Pause playback if active (preserves state for potential resume)
             if isPlaying {
                 _ = await pausePlayback()
             }
 
-            // Stop the engine to release audio hardware
+            // Stop the engine and tear down the capture pipeline to release audio hardware
             if isRunning {
                 engine.inputNode.removeTap(onBus: 0)
+                bufferStreamContinuation?.finish()
+                bufferStreamContinuation = nil
+                bufferProcessingTask?.cancel()
+                bufferProcessingTask = nil
                 engine.stop()
                 isRunning = false
+                await vadService.shutdown()
             }
 
             await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: "Audio session interruption began"))
@@ -813,15 +819,26 @@ public actor AudioEngine: ObservableObject {
         }
     }
     
-    /// Whether thermal adaptation is currently applied
-    private var thermalAdaptationActive = false
+    /// Thermal adaptation levels, ordered by severity
+    private enum ThermalAdaptationLevel: Int, Comparable {
+        case none = 0
+        case serious = 1
+        case critical = 2
+
+        static func < (lhs: ThermalAdaptationLevel, rhs: ThermalAdaptationLevel) -> Bool {
+            lhs.rawValue < rhs.rawValue
+        }
+    }
+
+    /// Currently applied thermal adaptation level
+    private var thermalAdaptationLevel: ThermalAdaptationLevel = .none
 
     private func adaptQualityForThermalState(_ state: ProcessInfo.ThermalState) async {
         // Protect TTS pipeline (primary capability). Shed other resources instead.
         switch state {
         case .serious:
-            guard !thermalAdaptationActive else { return }
-            thermalAdaptationActive = true
+            guard thermalAdaptationLevel < .serious else { return }
+            thermalAdaptationLevel = .serious
             logger.warning("Thermal state SERIOUS: reducing non-TTS resource usage")
             // Increase VAD threshold to reduce processing frequency
             await vadService.configure(
@@ -831,7 +848,8 @@ public actor AudioEngine: ObservableObject {
             await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: "Thermal serious: increased VAD threshold, reduced monitoring"))
 
         case .critical:
-            thermalAdaptationActive = true
+            guard thermalAdaptationLevel < .critical else { return }
+            thermalAdaptationLevel = .critical
             logger.error("Thermal state CRITICAL: aggressive non-TTS resource shedding")
             // Aggressively reduce non-TTS work
             await vadService.configure(
@@ -841,8 +859,8 @@ public actor AudioEngine: ObservableObject {
             await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: "Thermal critical: aggressive resource shedding to protect TTS"))
 
         case .nominal, .fair:
-            if thermalAdaptationActive {
-                thermalAdaptationActive = false
+            if thermalAdaptationLevel > .none {
+                thermalAdaptationLevel = .none
                 logger.info("Thermal state nominal/fair: restoring normal settings")
                 // Restore original VAD settings
                 await vadService.configure(

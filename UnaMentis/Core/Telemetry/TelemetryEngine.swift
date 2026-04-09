@@ -96,13 +96,14 @@ public struct RecordedEvent: Sendable {
 
 // MARK: - Session Metrics
 
-/// Aggregated metrics for a session
-/// Bounded ring buffer for latency samples. Keeps at most `capacity` recent entries
-/// to prevent unbounded memory growth during long sessions.
+/// Bounded ring buffer for latency samples.
+/// Keeps at most `capacity` recent entries to prevent unbounded memory growth during long sessions.
 public struct BoundedLatencyBuffer: Sendable {
     private var storage: [TimeInterval]
     private let capacity: Int
 
+    /// Creates a buffer with the given maximum number of samples.
+    /// - Parameter capacity: Maximum number of samples to retain. Must be > 0.
     public init(capacity: Int = 500) {
         precondition(capacity > 0, "BoundedLatencyBuffer capacity must be positive")
         self.capacity = capacity
@@ -110,6 +111,7 @@ public struct BoundedLatencyBuffer: Sendable {
         self.storage.reserveCapacity(capacity)
     }
 
+    /// Appends a new sample, dropping the oldest if at capacity.
     public mutating func append(_ value: TimeInterval) {
         if storage.count >= capacity {
             storage.removeFirst()
@@ -117,12 +119,24 @@ public struct BoundedLatencyBuffer: Sendable {
         storage.append(value)
     }
 
-    /// Access the underlying sorted array for percentile calculations
+    /// The median latency across all stored samples, or 0 if empty.
     public var median: TimeInterval { storage.median }
-    public func percentile(_ p: Int) -> TimeInterval { storage.percentile(p) }
+
+    /// Returns the value at the given percentile (0–100).
+    /// - Parameter p: Percentile in the range 0...100. Values outside this range are clamped.
+    public func percentile(_ p: Int) -> TimeInterval {
+        let safeP = min(max(p, 0), 100)
+        return storage.percentile(safeP)
+    }
+
+    /// Number of samples currently stored.
     public var count: Int { storage.count }
+
+    /// True when no samples have been recorded.
     public var isEmpty: Bool { storage.isEmpty }
 }
+
+/// Aggregated metrics for a learning session.
 
 public struct SessionMetrics: Sendable {
     // Duration

@@ -21,9 +21,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: sirfifer/solution-explorer@main
-        # Artifact upload may fail due to colons in generated filenames (e.g. detail-repo:unamentis.json)
-        # which are invalid on Windows/NTFS. Cloudflare deployment completes before this step.
-        # TODO: Report upstream to sirfifer/solution-explorer to sanitize artifact filenames
+        # continue-on-error is needed because the action's internal artifact upload uses
+        # filenames with colons (e.g. detail-repo:unamentis.json), which are invalid on
+        # Windows/NTFS and rejected by actions/upload-artifact@v4. The Cloudflare
+        # deployment step inside the action completes before the artifact upload step,
+        # so the deploy itself succeeds. The verification step below confirms this.
+        # TODO: Report upstream to sirfifer/solution-explorer to sanitize artifact filenames.
         continue-on-error: true
         with:
           config: solution-explorer.json
@@ -31,3 +34,17 @@ jobs:
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           cloudflare-project-name: um-solution-explorer
+
+      - name: Verify Cloudflare deployment
+        run: |
+          echo "Verifying Cloudflare Pages deployment is reachable..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://um-solution-explorer.pages.dev || echo "000")
+          if [ "$STATUS" = "000" ]; then
+            echo "::error::Could not reach Cloudflare deployment (network error or timeout)"
+            exit 1
+          fi
+          if [ "$STATUS" -ge 500 ]; then
+            echo "::error::Cloudflare deployment returned HTTP $STATUS (server error)"
+            exit 1
+          fi
+          echo "Cloudflare deployment verified: HTTP $STATUS"

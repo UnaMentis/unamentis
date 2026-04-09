@@ -136,16 +136,12 @@ public actor CurriculumSuggestionService {
 
     // MARK: - Update Todo Item
 
-    /// Update a todo item with curriculum suggestions
-    public func updateTodoWithSuggestions(_ todoItem: TodoItem) async {
-        guard todoItem.itemType == .learningTarget,
-              let title = todoItem.title else {
-            return
-        }
-
-        // Capture the objectID to safely refetch on MainActor
-        let objectID = todoItem.objectID
-
+    /// Update a todo item with curriculum suggestions.
+    /// - Parameters:
+    ///   - itemID: The managed object ID for the `TodoItem` to update (Sendable).
+    ///   - title: The item's title, pre-extracted by the caller on the correct actor.
+    public func updateTodoWithSuggestions(itemID: NSManagedObjectID, title: String) async {
+        let objectID = itemID
         do {
             let suggestions = try await fetchSuggestions(for: title)
 

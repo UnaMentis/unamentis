@@ -64,7 +64,7 @@ struct CoreDataErrorView: View {
             }
 
             if let resetError {
-                Text("Some files could not be removed: \(resetError)")
+                Text(String(localized: "Some files could not be removed: \(resetError)", comment: "Core Data reset partial failure message"))
                     .font(.caption2)
                     .foregroundStyle(.orange)
             }
@@ -112,7 +112,7 @@ struct CoreDataErrorView: View {
             if failedFiles.isEmpty {
                 resetComplete = true
             } else {
-                resetComplete = true
+                resetComplete = false
                 resetError = failedFiles.joined(separator: ", ")
             }
         }

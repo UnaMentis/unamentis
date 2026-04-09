@@ -590,7 +590,7 @@ public struct RetrievalSchedule: Codable, Sendable, Identifiable {
         if success {
             // SuperMemo 2 formula for easiness factor
             // EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
-            let q = quality ?? 4.0
+            let q = min(5.0, max(0.0, quality ?? 4.0))
             let efDelta = 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)
             easinessFactor = max(1.3, easinessFactor + efDelta)
 

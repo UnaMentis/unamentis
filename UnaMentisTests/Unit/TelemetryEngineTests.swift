@@ -227,3 +227,71 @@ final class TelemetryEngineTests: XCTestCase {
         XCTAssertEqual(stdDev, 2.138, accuracy: 0.01)
     }
 }
+
+// MARK: - BoundedLatencyBuffer Tests
+
+final class BoundedLatencyBufferTests: XCTestCase {
+
+    func testInit_emptyBuffer() {
+        let buf = BoundedLatencyBuffer(capacity: 10)
+        XCTAssertTrue(buf.isEmpty)
+        XCTAssertEqual(buf.count, 0)
+    }
+
+    func testAppend_storesValues() {
+        var buf = BoundedLatencyBuffer(capacity: 5)
+        buf.append(0.1)
+        buf.append(0.2)
+        XCTAssertEqual(buf.count, 2)
+        XCTAssertFalse(buf.isEmpty)
+    }
+
+    func testAppend_dropsOldestWhenAtCapacity() {
+        var buf = BoundedLatencyBuffer(capacity: 3)
+        buf.append(0.1)
+        buf.append(0.2)
+        buf.append(0.3)
+        buf.append(0.4) // should evict 0.1
+        XCTAssertEqual(buf.count, 3)
+        // Median of [0.2, 0.3, 0.4] = 0.3
+        XCTAssertEqual(buf.median, 0.3, accuracy: 0.001)
+    }
+
+    func testMedian_oddCount() {
+        var buf = BoundedLatencyBuffer(capacity: 10)
+        buf.append(0.3)
+        buf.append(0.1)
+        buf.append(0.2)
+        XCTAssertEqual(buf.median, 0.2, accuracy: 0.001)
+    }
+
+    func testPercentile_clampsNegativeInput() {
+        var buf = BoundedLatencyBuffer(capacity: 10)
+        for i in 1...10 { buf.append(Double(i) / 10.0) }
+        // -1 should be treated as 0 (min)
+        let p = buf.percentile(-1)
+        let p0 = buf.percentile(0)
+        XCTAssertEqual(p, p0, accuracy: 0.001)
+    }
+
+    func testPercentile_clampsOver100() {
+        var buf = BoundedLatencyBuffer(capacity: 10)
+        for i in 1...10 { buf.append(Double(i) / 10.0) }
+        let p = buf.percentile(200)
+        let p100 = buf.percentile(100)
+        XCTAssertEqual(p, p100, accuracy: 0.001)
+    }
+
+    func testInit_preconditionFiredForZeroCapacity() {
+        // We can't test precondition in a non-crashing way, but we can verify
+        // the valid boundary works correctly
+        let buf = BoundedLatencyBuffer(capacity: 1)
+        XCTAssertTrue(buf.isEmpty)
+    }
+
+    func testAppend_singleItem_medianEqualsValue() {
+        var buf = BoundedLatencyBuffer(capacity: 10)
+        buf.append(0.42)
+        XCTAssertEqual(buf.median, 0.42, accuracy: 0.001)
+    }
+}

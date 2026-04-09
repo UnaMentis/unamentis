@@ -70,8 +70,13 @@ public actor TodoManager {
             let controller = persistenceController
             Task { @MainActor in
                 let context = controller.container.viewContext
-                guard let todoItem = try? context.existingObject(with: itemID) as? TodoItem else { return }
-                await CurriculumSuggestionService.shared.updateTodoWithSuggestions(todoItem)
+                guard let todoItem = try? context.existingObject(with: itemID) as? TodoItem,
+                      let title = todoItem.title,
+                      todoItem.itemType == .learningTarget else { return }
+                await CurriculumSuggestionService.shared.updateTodoWithSuggestions(
+                    itemID: itemID,
+                    title: title
+                )
             }
         }
 
