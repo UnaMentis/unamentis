@@ -85,7 +85,7 @@ struct KBEnhancedValidationSetupView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .accessibilityLabel("Download embeddings model, 80 megabytes")
+            .accessibilityLabel(Text("Download embeddings model, 80 megabytes", comment: "Accessibility label for embeddings download button"))
 
         case .downloading(let progress):
             VStack(alignment: .leading, spacing: 8) {
@@ -97,8 +97,8 @@ struct KBEnhancedValidationSetupView: View {
                         .foregroundStyle(.secondary)
                 }
                 ProgressView(value: progress)
-                    .accessibilityLabel("Download progress")
-                    .accessibilityValue("\(Int(progress * 100)) percent")
+                    .accessibilityLabel(Text("Download progress", comment: "Accessibility label for download progress bar"))
+                    .accessibilityValue(Text("\(Int(progress * 100)) percent", comment: "Accessibility value showing download percentage"))
             }
             .accessibilityElement(children: .combine)
 
@@ -115,7 +115,7 @@ struct KBEnhancedValidationSetupView: View {
                     }
                 }
                 .foregroundStyle(.red)
-                .accessibilityLabel("Remove downloaded embeddings model")
+                .accessibilityLabel(Text("Remove downloaded embeddings model", comment: "Accessibility label for remove embeddings button"))
             }
 
         case .loaded:
@@ -130,7 +130,7 @@ struct KBEnhancedValidationSetupView: View {
                     .foregroundStyle(.green)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Embeddings model active, tier 2 validation enabled")
+            .accessibilityLabel(Text("Embeddings model active, tier 2 validation enabled", comment: "Accessibility label for active embeddings status"))
 
         case .error(let message):
             VStack(alignment: .leading, spacing: 8) {
@@ -148,7 +148,7 @@ struct KBEnhancedValidationSetupView: View {
                         await viewModel.downloadEmbeddings()
                     }
                 }
-                .accessibilityLabel("Retry downloading embeddings model")
+                .accessibilityLabel(Text("Retry downloading embeddings model", comment: "Accessibility label for retry embeddings download button"))
             }
             .accessibilityElement(children: .contain)
         }
@@ -189,7 +189,7 @@ struct KBEnhancedValidationSetupView: View {
                         Text("Loading LLM...")
                         Spacer()
                         ProgressView()
-                            .accessibilityLabel("Loading LLM model")
+                            .accessibilityLabel(Text("Loading LLM model", comment: "Accessibility label for LLM loading progress"))
                     }
                 }
                 .accessibilityElement(children: .combine)
@@ -207,7 +207,7 @@ struct KBEnhancedValidationSetupView: View {
                         }
                     }
                     .foregroundStyle(.red)
-                    .accessibilityLabel("Remove downloaded LLM model")
+                    .accessibilityLabel(Text("Remove downloaded LLM model", comment: "Accessibility label for remove LLM button"))
                 }
 
             case .loaded:
@@ -222,7 +222,7 @@ struct KBEnhancedValidationSetupView: View {
                         .foregroundStyle(.green)
                 }
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("LLM model active, tier 3 validation enabled")
+                .accessibilityLabel(Text("LLM model active, tier 3 validation enabled", comment: "Accessibility label for active LLM status"))
 
             case .error(let message):
                 VStack(alignment: .leading, spacing: 8) {
@@ -240,7 +240,7 @@ struct KBEnhancedValidationSetupView: View {
                             await viewModel.downloadLLM()
                         }
                     }
-                    .accessibilityLabel("Retry downloading LLM model")
+                    .accessibilityLabel(Text("Retry downloading LLM model", comment: "Accessibility label for retry LLM download button"))
                 }
                 .accessibilityElement(children: .contain)
             }

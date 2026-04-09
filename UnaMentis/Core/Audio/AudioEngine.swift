@@ -244,13 +244,27 @@ public actor AudioEngine: ObservableObject {
             }
         }
 
-        // Tap callback yields buffers to the stream instead of creating tasks
+        // Tap callback yields copied buffers to the stream instead of creating tasks.
+        // AVAudioPCMBuffer from installTap is reused by AVFoundation after the callback
+        // returns, so we must deep-copy before async handoff (per Apple QA1749/audio docs).
+        // bufferingNewest(10) is intentional: for real-time VAD/STT, processing stale
+        // audio increases latency without benefit; dropping old buffers keeps the pipeline current.
         inputNode.installTap(
             onBus: 0,
             bufferSize: config.bufferSize,
             format: format
         ) { @Sendable [continuation] buffer, _ in
-            continuation.yield(buffer)
+            guard let copy = AVAudioPCMBuffer(pcmFormat: buffer.format, frameCapacity: buffer.frameLength) else {
+                return
+            }
+            copy.frameLength = buffer.frameLength
+            let dstList = UnsafeMutableAudioBufferListPointer(copy.mutableAudioBufferList)
+            let srcList = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: buffer.audioBufferList))
+            for i in 0..<min(dstList.count, srcList.count) {
+                guard let dstData = dstList[i].mData, let srcData = srcList[i].mData else { continue }
+                memcpy(dstData, srcData, Int(srcList[i].mDataByteSize))
+            }
+            continuation.yield(copy)
         }
         
         // Prepare VAD
