@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: sirfifer/solution-explorer@31145dcdc4da6cb95b17a08d5422fe1cfe6e4b16 # main
+      - uses: sirfifer/solution-explorer@31145dcdc4da6cb95b17a08d5422fe1cfe6e4b16  # main
         with:
           config: solution-explorer.json
           deploy-to: artifact-only

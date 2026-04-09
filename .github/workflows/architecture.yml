@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: sirfifer/solution-explorer@31145dcdc4da6cb95b17a08d5422fe1cfe6e4b16 # main
+      - uses: sirfifer/solution-explorer@31145dcdc4da6cb95b17a08d5422fe1cfe6e4b16  # main
         # continue-on-error is needed because the action's internal artifact upload uses
         # filenames with colons (e.g. detail-repo:unamentis.json), which are invalid on
         # Windows/NTFS and rejected by actions/upload-artifact@v4. The Cloudflare

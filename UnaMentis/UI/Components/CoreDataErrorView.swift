@@ -103,7 +103,12 @@ struct CoreDataErrorView: View {
 
         let container = PersistenceController.shared.container
         guard let storeURL = container.persistentStoreDescriptions.first?.url else {
+            let message = String(localized: "Unable to locate data store files.", comment: "Core Data reset failure when no store URL available")
+            resetError = message
             isResetting = false
+            AccessibilityNotification.Announcement(
+                String(localized: "Reset failed. Unable to locate data store files.", comment: "Core Data reset failure announcement for VoiceOver")
+            ).post()
             return
         }
 

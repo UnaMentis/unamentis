@@ -232,6 +232,9 @@ public actor AudioEngine: ObservableObject {
         bufferProcessingTask = Task.detached {
             for await buffer in bufferStream {
                 let vadResult = await vadServiceBox.value.processBuffer(buffer)
+                // Check cancellation after processBuffer (which may suspend) to avoid
+                // publishing stale VAD results after teardown
+                guard !Task.isCancelled else { break }
                 streamHolder.send(buffer, vadResult)
 
                 if levelMonitoringEnabled {
@@ -763,6 +766,15 @@ public actor AudioEngine: ObservableObject {
     /// Handle media services reset (rare, requires full audio stack rebuild)
     private func handleMediaServicesReset() async {
         logger.critical("Media services were reset, rebuilding audio stack")
+
+        // Drain the old buffer consumer before rebuilding to prevent stale
+        // VAD results from bleeding state across sessions
+        bufferStreamContinuation?.finish()
+        bufferStreamContinuation = nil
+        let oldTask = bufferProcessingTask
+        bufferProcessingTask = nil
+        oldTask?.cancel()
+        await oldTask?.value
 
         // The entire audio system has been torn down by iOS.
         // All AVAudioEngine state is invalid. We must rebuild from scratch.
