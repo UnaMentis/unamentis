@@ -43,8 +43,8 @@ jobs:
             echo "::error::Could not reach Cloudflare deployment (network error or timeout)"
             exit 1
           fi
-          if [ "$STATUS" -ge 500 ]; then
-            echo "::error::Cloudflare deployment returned HTTP $STATUS (server error)"
+          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 400 ]; then
+            echo "::error::Cloudflare deployment returned HTTP $STATUS"
             exit 1
           fi
           echo "Cloudflare deployment verified: HTTP $STATUS"

@@ -73,7 +73,7 @@ final class ResponseIntentTests: XCTestCase {
             .classify(from: "hmm"),                // thinking
             .classify(from: "what do you think?"), // socratic
             .classify(from: "I think it's X"),     // encouragement
-            .classify(from: "I believe that in this longer sentence about a complex topic, the answer should demonstrate knowledge of the subject matter at hand") // redirect
+            .classify(from: "The mitochondria is the powerhouse of the cell and it produces ATP through oxidative phosphorylation") // redirect
         ]
         for intent in allCases {
             XCTAssertTrue(reachableIntents.contains(intent), "Intent \(intent) is unreachable via classify(from:)")
@@ -83,8 +83,8 @@ final class ResponseIntentTests: XCTestCase {
     func testClassify_longNonQuestion_returnsRedirectOrEngagement() {
         let longUtterance = "I think the mitochondria is the powerhouse of the cell but I am not completely sure about the exact mechanism of ATP synthesis"
         let result = ResponseIntent.classify(from: longUtterance)
-        XCTAssertTrue(result == .redirect || result == .engagement || result == .encouragement,
-                      "Long non-question utterance should return redirect, engagement, or encouragement, got \(result)")
+        XCTAssertEqual(result, .redirect,
+                       "Long non-question utterance should map to .redirect, got \(result)")
     }
 
     // MARK: - phrases Tests

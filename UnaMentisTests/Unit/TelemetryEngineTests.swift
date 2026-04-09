@@ -282,7 +282,7 @@ final class BoundedLatencyBufferTests: XCTestCase {
         XCTAssertEqual(p, p100, accuracy: 0.001)
     }
 
-    func testInit_preconditionFiredForZeroCapacity() {
+    func testInit_minimumPositiveCapacity_isAllowed() {
         // We can't test precondition in a non-crashing way, but we can verify
         // the valid boundary works correctly
         let buf = BoundedLatencyBuffer(capacity: 1)

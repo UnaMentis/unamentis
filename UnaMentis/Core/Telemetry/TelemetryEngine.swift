@@ -825,13 +825,13 @@ extension Array where Element == TimeInterval {
             : sorted[mid]
     }
 
-    /// Calculate percentile (0-100)
+    /// Calculate percentile using nearest-rank method (0-100)
     public func percentile(_ p: Int) -> TimeInterval {
         guard !isEmpty else { return 0 }
         let sorted = self.sorted()
-        let index = Int(Double(sorted.count) * Double(p) / 100.0)
-        let clampedIndex = Swift.min(index, sorted.count - 1)
-        return sorted[clampedIndex]
+        let rank = Int(ceil(Double(p) * Double(sorted.count) / 100.0))
+        let clampedRank = Swift.max(1, Swift.min(rank, sorted.count))
+        return sorted[clampedRank - 1]
     }
 
     /// Calculate sample standard deviation using Bessel's correction

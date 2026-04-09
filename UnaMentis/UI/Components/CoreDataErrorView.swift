@@ -71,7 +71,7 @@ struct CoreDataErrorView: View {
 
             Spacer()
 
-            Text("Error: \(error.localizedDescription)")
+            Text(String(localized: "Error: \(error.localizedDescription)", comment: "Core Data error details with error description"))
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .padding(.horizontal, 16)

@@ -45,11 +45,11 @@ public actor AudioEngine: ObservableObject {
     // MARK: - Properties
     
     private let logger = Logger(label: "com.unamentis.audio")
-    private let engine = AVAudioEngine()
+    private var engine = AVAudioEngine()
     #if os(iOS)
     private let session = AVAudioSession.sharedInstance()
     #endif
-    private let playerNode = AVAudioPlayerNode()
+    private var playerNode = AVAudioPlayerNode()
 
     private var vadService: any VADService
     private let telemetry: TelemetryEngine
@@ -766,7 +766,18 @@ public actor AudioEngine: ObservableObject {
             continuation.resume()
         }
 
-        // Rebuild: reconfigure and restart
+        // Dispose orphaned audio objects per Apple QA1749.
+        // After a media services reset, existing AVAudioEngine/AVAudioPlayerNode
+        // instances are invalid and must be fully recreated.
+        engine.stop()
+        engine.reset()
+        if engine.attachedNodes.contains(playerNode) {
+            engine.detach(playerNode)
+        }
+        engine = AVAudioEngine()
+        playerNode = AVAudioPlayerNode()
+
+        // Rebuild: reconfigure and restart with fresh instances
         do {
             try await configure(config: config)
             try await start()
@@ -837,7 +848,7 @@ public actor AudioEngine: ObservableObject {
         // Protect TTS pipeline (primary capability). Shed other resources instead.
         switch state {
         case .serious:
-            guard thermalAdaptationLevel < .serious else { return }
+            guard thermalAdaptationLevel != .serious else { return }
             thermalAdaptationLevel = .serious
             logger.warning("Thermal state SERIOUS: reducing non-TTS resource usage")
             // Increase VAD threshold to reduce processing frequency
@@ -848,7 +859,7 @@ public actor AudioEngine: ObservableObject {
             await telemetry.recordEvent(.adaptiveQualityAdjusted(reason: "Thermal serious: increased VAD threshold, reduced monitoring"))
 
         case .critical:
-            guard thermalAdaptationLevel < .critical else { return }
+            guard thermalAdaptationLevel != .critical else { return }
             thermalAdaptationLevel = .critical
             logger.error("Thermal state CRITICAL: aggressive non-TTS resource shedding")
             // Aggressively reduce non-TTS work
