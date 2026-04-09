@@ -11,6 +11,7 @@
 
 @preconcurrency import CoreData
 import Logging
+import os
 
 /// Manages the Core Data stack for UnaMentis
 ///
@@ -46,8 +47,24 @@ public final class PersistenceController: @unchecked Sendable {
     /// The Core Data container
     public let container: NSPersistentContainer
 
-    /// Whether the persistent stores have been loaded
-    private var isStoreLoaded = false
+    /// Thread-safe state for store loading status
+    private let stateLock = OSAllocatedUnfairLock(initialState: StoreState())
+
+    /// Internal state protected by stateLock
+    private struct StoreState {
+        var isLoaded = false
+        var loadError: Error?
+    }
+
+    /// Whether the persistent store loaded successfully and is ready for use
+    public var isReady: Bool {
+        stateLock.withLock { $0.isLoaded && $0.loadError == nil }
+    }
+
+    /// Error from store loading, if any
+    public var storeLoadError: Error? {
+        stateLock.withLock { $0.loadError }
+    }
 
     /// Main context for UI operations
     @MainActor
@@ -93,7 +110,7 @@ public final class PersistenceController: @unchecked Sendable {
                 loadError = error
             } else {
                 self?.configureContext()
-                self?.isStoreLoaded = true
+                self?.stateLock.withLock { $0.isLoaded = true }
             }
             semaphore.signal()
         }
@@ -101,7 +118,8 @@ public final class PersistenceController: @unchecked Sendable {
         _ = semaphore.wait(timeout: .now() + 5)
 
         if let error = loadError {
-            fatalError("Failed to load Core Data store: \(error)")
+            logger.critical("Failed to load in-memory Core Data store: \(error.localizedDescription)")
+            stateLock.withLock { $0.loadError = error }
         }
     }
 
@@ -112,12 +130,11 @@ public final class PersistenceController: @unchecked Sendable {
         // This does NOT block the calling thread
         container.loadPersistentStores { [weak self] _, error in
             if let error = error {
-                // Log but don't crash, will be detected when store is accessed
                 self?.logger.critical("Failed to load Core Data store: \(error.localizedDescription)")
-                fatalError("Failed to load Core Data store: \(error)")
+                self?.stateLock.withLock { $0.loadError = error }
             } else {
                 self?.configureContext()
-                self?.isStoreLoaded = true
+                self?.stateLock.withLock { $0.isLoaded = true }
                 self?.logger.info("Core Data stack initialized successfully (async)")
             }
         }

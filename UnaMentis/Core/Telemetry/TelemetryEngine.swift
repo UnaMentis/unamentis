@@ -96,16 +96,57 @@ public struct RecordedEvent: Sendable {
 
 // MARK: - Session Metrics
 
-/// Aggregated metrics for a session
+/// Bounded ring buffer for latency samples.
+/// Keeps at most `capacity` recent entries to prevent unbounded memory growth during long sessions.
+public struct BoundedLatencyBuffer: Sendable {
+    private var storage: [TimeInterval]
+    private let capacity: Int
+
+    /// Creates a buffer with the given maximum number of samples.
+    /// - Parameter capacity: Maximum number of samples to retain. Must be > 0.
+    public init(capacity: Int = 500) {
+        precondition(capacity > 0, "BoundedLatencyBuffer capacity must be positive")
+        self.capacity = capacity
+        self.storage = []
+        self.storage.reserveCapacity(capacity)
+    }
+
+    /// Appends a new sample, dropping the oldest if at capacity.
+    public mutating func append(_ value: TimeInterval) {
+        if storage.count >= capacity {
+            storage.removeFirst()
+        }
+        storage.append(value)
+    }
+
+    /// The median latency across all stored samples, or 0 if empty.
+    public var median: TimeInterval { storage.median }
+
+    /// Returns the value at the given percentile (0–100).
+    /// - Parameter p: Percentile in the range 0...100. Values outside this range are clamped.
+    public func percentile(_ p: Int) -> TimeInterval {
+        let safeP = min(max(p, 0), 100)
+        return storage.percentile(safeP)
+    }
+
+    /// Number of samples currently stored.
+    public var count: Int { storage.count }
+
+    /// True when no samples have been recorded.
+    public var isEmpty: Bool { storage.isEmpty }
+}
+
+/// Aggregated metrics for a learning session.
+
 public struct SessionMetrics: Sendable {
     // Duration
     public var duration: TimeInterval
 
-    // Latency arrays
-    public var sttLatencies: [TimeInterval]
-    public var llmLatencies: [TimeInterval]
-    public var ttsLatencies: [TimeInterval]
-    public var e2eLatencies: [TimeInterval]
+    // Latency buffers (bounded to prevent unbounded growth during 90+ min sessions)
+    public var sttLatencies: BoundedLatencyBuffer
+    public var llmLatencies: BoundedLatencyBuffer
+    public var ttsLatencies: BoundedLatencyBuffer
+    public var e2eLatencies: BoundedLatencyBuffer
 
     // Costs
     public var sttCost: Decimal
@@ -132,10 +173,10 @@ public struct SessionMetrics: Sendable {
 
     public init() {
         duration = 0
-        sttLatencies = []
-        llmLatencies = []
-        ttsLatencies = []
-        e2eLatencies = []
+        sttLatencies = BoundedLatencyBuffer()
+        llmLatencies = BoundedLatencyBuffer()
+        ttsLatencies = BoundedLatencyBuffer()
+        e2eLatencies = BoundedLatencyBuffer()
         sttCost = 0
         ttsCost = 0
         llmCost = 0
@@ -724,6 +765,10 @@ public struct DeviceMetricsCollector: Sendable {
             return 0
         }
 
+        defer {
+            vm_deallocate(mach_task_self_, vm_address_t(bitPattern: threadsList), vm_size_t(Int(threadsCount) * MemoryLayout<thread_t>.stride))
+        }
+
         for index in 0..<threadsCount {
             var threadInfo = thread_basic_info()
             var threadInfoCount = mach_msg_type_number_t(THREAD_INFO_MAX)
@@ -740,8 +785,6 @@ public struct DeviceMetricsCollector: Sendable {
                 totalUsageOfCPU += Double(threadBasicInfo.cpu_usage) / Double(TH_USAGE_SCALE) * 100.0
             }
         }
-
-        vm_deallocate(mach_task_self_, vm_address_t(bitPattern: threadsList), vm_size_t(Int(threadsCount) * MemoryLayout<thread_t>.stride))
 
         return min(totalUsageOfCPU, 100.0)
     }
@@ -782,13 +825,13 @@ extension Array where Element == TimeInterval {
             : sorted[mid]
     }
 
-    /// Calculate percentile (0-100)
+    /// Calculate percentile using nearest-rank method (0-100)
     public func percentile(_ p: Int) -> TimeInterval {
         guard !isEmpty else { return 0 }
         let sorted = self.sorted()
-        let index = Int(Double(sorted.count) * Double(p) / 100.0)
-        let clampedIndex = Swift.min(index, sorted.count - 1)
-        return sorted[clampedIndex]
+        let rank = Int(ceil(Double(p) * Double(sorted.count) / 100.0))
+        let clampedRank = Swift.max(1, Swift.min(rank, sorted.count))
+        return sorted[clampedRank - 1]
     }
 
     /// Calculate sample standard deviation using Bessel's correction

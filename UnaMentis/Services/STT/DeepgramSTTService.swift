@@ -130,11 +130,14 @@ public actor DeepgramSTTService: STTService {
     
     private func listenForMessages() async {
         guard let ws = webSocketTask else { return }
-        
-        do {
-            let message = try await ws.receive()
-            
-            if isStreaming {
+
+        // Use a loop instead of recursion to avoid unbounded stack growth
+        while isStreaming {
+            do {
+                let message = try await ws.receive()
+
+                guard isStreaming else { break }
+
                 switch message {
                 case .string(let text):
                     await handleMessage(text)
@@ -145,13 +148,11 @@ public actor DeepgramSTTService: STTService {
                 @unknown default:
                     break
                 }
-                
-                // Continue listening (recursive call)
-                await listenForMessages()
+            } catch {
+                logger.error("WebSocket receive failed: \(error)")
+                await cancelStreaming()
+                break
             }
-        } catch {
-            logger.error("WebSocket receive failed: \(error)")
-            await cancelStreaming()
         }
     }
     

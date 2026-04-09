@@ -164,6 +164,12 @@ public struct SessionConfig: Codable, Sendable {
     /// TTS playback configuration (prefetching, buffer scheduling)
     public var ttsPlayback: TTSPlaybackConfig
 
+    /// Silence threshold for utterance completion (seconds). 1.0s competition, 1.5s default, 2.0s conversational
+    public var silenceThreshold: TimeInterval
+
+    /// Barge-in confirmation timeout (milliseconds). How long to wait for continued speech before confirming interruption.
+    public var bargeInConfirmationMs: Int
+
     public static let `default` = SessionConfig(
         audio: .default,
         llm: .default,
@@ -174,9 +180,11 @@ public struct SessionConfig: Codable, Sendable {
             Ask follow-up questions to check understanding.
             """,
         enableCostTracking: true,
-        maxDuration: 5400, // 90 minutes
+        maxDuration: 0, // 0 = unlimited; session longevity governed by environmental monitoring
         enableInterruptions: true,
-        ttsPlayback: .default
+        ttsPlayback: .default,
+        silenceThreshold: 1.5,
+        bargeInConfirmationMs: 600
     )
 
     public init(
@@ -185,9 +193,11 @@ public struct SessionConfig: Codable, Sendable {
         voice: TTSVoiceConfig = .default,
         systemPrompt: String = "",
         enableCostTracking: Bool = true,
-        maxDuration: TimeInterval = 5400,
+        maxDuration: TimeInterval = 0,
         enableInterruptions: Bool = true,
-        ttsPlayback: TTSPlaybackConfig = .default
+        ttsPlayback: TTSPlaybackConfig = .default,
+        silenceThreshold: TimeInterval = 1.5,
+        bargeInConfirmationMs: Int = 600
     ) {
         self.audio = audio
         self.llm = llm
@@ -197,6 +207,8 @@ public struct SessionConfig: Codable, Sendable {
         self.maxDuration = maxDuration
         self.enableInterruptions = enableInterruptions
         self.ttsPlayback = ttsPlayback
+        self.silenceThreshold = silenceThreshold
+        self.bargeInConfirmationMs = bargeInConfirmationMs
     }
 }
 
@@ -248,17 +260,32 @@ public final class SessionManager: ObservableObject {
     private var sessionStartTime: Date?
     private var currentTurnStartTime: Date?
     
+    /// FOV context coordinator for foveated context management
+    private var fovContextCoordinator: FOVSessionContextCoordinator?
+
+    /// Voice feedback for instant haptic/tone acknowledgments
+    private let voiceFeedback = VoiceActivityFeedback()
+
+    /// Canned response bank for instant acknowledgments
+    private let cannedResponseBank = CannedResponseBank()
+
+    /// Response pre-generator for speculative starters
+    private let responsePreGenerator = ResponsePreGenerator()
+
     /// Stream cancellation
     private var sttStreamTask: Task<Void, Never>?
     private var llmStreamTask: Task<Void, Never>?
     private var ttsStreamTask: Task<Void, Never>?
+    private var preGenerationTask: Task<Void, Never>?
+    private var cannedResponseTask: Task<Void, Never>?
     private var audioSubscription: AnyCancellable?
 
     /// Silence detection for utterance completion
     private var silenceStartTime: Date?
     private var hasDetectedSpeech: Bool = false
     private var speechStartTime: Date?  // Track when user started speaking for STT cost
-    private let silenceThreshold: TimeInterval = 1.5  // seconds of silence before completing utterance
+    /// Silence threshold configured from session config (default 1.5s, 1.0s competition, 2.0s conversational)
+    private let silenceThreshold: TimeInterval
     private var pendingUtteranceTask: Task<Void, Never>?
 
     /// Sentence-level TTS streaming
@@ -293,6 +320,7 @@ public final class SessionManager: ObservableObject {
         self.curriculum = curriculum
         self.persistenceController = persistenceController
         self.metricsUploadService = MetricsUploadService()
+        self.silenceThreshold = mutableConfig.silenceThreshold
         logger.info("SessionManager initialized with TTS config: prefetch=\(mutableConfig.ttsPlayback.enablePrefetch), lookahead=\(mutableConfig.ttsPlayback.prefetchLookaheadSeconds)s")
     }
 
@@ -413,6 +441,11 @@ public final class SessionManager: ObservableObject {
         // Subscribe to audio stream for VAD events
         subscribeToAudioStream()
 
+        // Pre-render canned acknowledgment phrases for zero-latency barge-in response
+        cannedResponseTask = Task {
+            await cannedResponseBank.populate(using: ttsService)
+        }
+
         if lectureMode {
             // Lecture mode: AI speaks first
             logger.info("Lecture mode enabled - AI will begin speaking")
@@ -458,9 +491,9 @@ public final class SessionManager: ObservableObject {
         // Cancel LLM first to stop new tokens from being generated
         llmStreamTask?.cancel()
 
-        // Stop TTS orchestrator to halt playback and prefetch
+        // Stop TTS orchestrator to halt playback and prefetch (await to avoid race with audio engine stop)
         if let orch = ttsOrchestrator {
-            Task { await orch.stopPlayback() }
+            await orch.stopPlayback()
         }
 
         // Cancel STT stream
@@ -472,6 +505,10 @@ public final class SessionManager: ObservableObject {
         // Cancel pending utterance detection
         pendingUtteranceTask?.cancel()
 
+        // Cancel speculative pre-generation and canned response tasks
+        preGenerationTask?.cancel()
+        cannedResponseTask?.cancel()
+
         // Cancel audio subscription to stop VAD processing
         audioSubscription?.cancel()
 
@@ -480,6 +517,8 @@ public final class SessionManager: ObservableObject {
         sttStreamTask = nil
         ttsStreamTask = nil
         pendingUtteranceTask = nil
+        preGenerationTask = nil
+        cannedResponseTask = nil
         audioSubscription = nil
 
         // STEP 3: Stop audio immediately (this stops any in-flight playback)
@@ -1033,6 +1072,18 @@ public final class SessionManager: ObservableObject {
                 }
                 logger.info("LLM streaming complete - orchestrator will finish when all sentences played")
 
+                // Pre-generate speculative response starters while user listens to TTS
+                // This uses idle LLM capacity to prepare for the user's next utterance
+                self.preGenerationTask?.cancel()
+                self.preGenerationTask = Task { [weak self] in
+                    guard let self = self else { return }
+                    await self.responsePreGenerator.preGenerate(
+                        using: llmService,
+                        fovContext: nil,
+                        conversationHistory: self.conversationHistory
+                    )
+                }
+
                 // Record LLM cost based on token usage delta
                 let metricsAfter = await llmService.metrics
                 let inputTokens = metricsAfter.totalInputTokens - metricsBefore.totalInputTokens
@@ -1328,7 +1379,7 @@ public final class SessionManager: ObservableObject {
             bargeInConfirmationTask = Task {
                 // Wait for speech confirmation (e.g., 500ms of continued speech)
                 // During this time, VAD will keep firing if there's real speech
-                try? await Task.sleep(nanoseconds: 600_000_000) // 600ms
+                try? await Task.sleep(nanoseconds: UInt64(config.bargeInConfirmationMs) * 1_000_000)
 
                 // Check if still in tentative pause (not already confirmed or cancelled)
                 guard !Task.isCancelled && isTentativePause else { return }
@@ -1358,12 +1409,20 @@ public final class SessionManager: ObservableObject {
     private func confirmBargeIn() async {
         logger.info("Barge-in confirmed - fully interrupting")
 
+        // Instant haptic/tone feedback so user knows they've been heard (<10ms)
+        voiceFeedback.playTone(.commandRecognized)
+
         // Cancel the confirmation timer
         bargeInConfirmationTask?.cancel()
         bargeInConfirmationTask = nil
         isTentativePause = false
 
         await telemetry.recordEvent(.userInterrupted)
+
+        // Cancel and invalidate speculative starters since context has shifted
+        preGenerationTask?.cancel()
+        preGenerationTask = nil
+        await responsePreGenerator.invalidate()
 
         // Now fully stop everything
         ttsStreamTask?.cancel()

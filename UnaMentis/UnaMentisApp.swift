@@ -12,6 +12,9 @@ struct UnaMentisApp: App {
     /// Application state container
     @StateObject private var appState = AppState()
 
+    /// Track app lifecycle for session management
+    @Environment(\.scenePhase) private var scenePhase
+
     /// Logger for app-level events (used after logging system is bootstrapped)
     private static let logger = Logger(label: "com.unamentis.app")
 
@@ -33,13 +36,10 @@ struct UnaMentisApp: App {
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
         let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
         let buildDate = Self.getBuildDate()
-        // Unique build ID - change this each time to verify new build is running
-        let buildID = "TTS_QUEUE_FIX_20251219_X"
         print("=======================================================")
         print("UnaMentis App Starting")
         print("Version: \(appVersion) (Build \(buildNumber))")
         print("Build Date: \(buildDate)")
-        print("Build ID: \(buildID)")
         print("=======================================================")
 
         // CRITICAL: Initialize Core Data store EARLY, before any views access it
@@ -116,21 +116,57 @@ struct UnaMentisApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(appState)
-                // Enable Dynamic Type scaling for accessibility
-                .dynamicTypeSize(.medium ... .accessibility3)
-                // Handle deep links from Siri and Shortcuts
-                .onOpenURL { url in
-                    handleDeepLink(url)
+            Group {
+                if let error = PersistenceController.shared.storeLoadError {
+                    CoreDataErrorView(error: error)
+                } else {
+                    ContentView()
+                        .environmentObject(appState)
+                        // Enable Dynamic Type scaling for accessibility
+                        .dynamicTypeSize(.medium ... .accessibility3)
+                        // Handle deep links from Siri and Shortcuts
+                        .onOpenURL { url in
+                            handleDeepLink(url)
+                        }
+                        // Show onboarding for first-time users
+                        .fullScreenCover(isPresented: Binding(
+                            get: { !hasCompletedOnboarding },
+                            set: { if $0 == false { hasCompletedOnboarding = true } }
+                        )) {
+                            OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+                        }
                 }
-                // Show onboarding for first-time users
-                .fullScreenCover(isPresented: Binding(
-                    get: { !hasCompletedOnboarding },
-                    set: { if $0 == false { hasCompletedOnboarding = true } }
-                )) {
-                    OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                handleScenePhaseChange(newPhase)
+            }
+        }
+    }
+
+    /// Handle app lifecycle transitions to protect session state and audio resources
+    private func handleScenePhaseChange(_ phase: ScenePhase) {
+        switch phase {
+        case .background:
+            Self.logger.info("App entering background")
+            // Auto-save any in-progress session state (only if store loaded successfully)
+            if appState.sessionManager != nil, PersistenceController.shared.isReady {
+                Task { @MainActor in
+                    try? PersistenceController.shared.save()
+                    Self.logger.info("Session state saved on background entry")
                 }
+            }
+
+        case .active:
+            Self.logger.info("App becoming active")
+            // Audio session re-activation is handled by AudioEngine's interruption
+            // notification handler (Phase 1A), so no manual intervention needed here.
+
+        case .inactive:
+            Self.logger.debug("App becoming inactive")
+            // Lightweight state snapshot, no heavy work needed
+
+        @unknown default:
+            break
         }
     }
 
@@ -357,6 +393,9 @@ struct ContentView: View {
         .task {
             // Initialize AppState async components (non-blocking)
             await appState.initializeAsync()
+
+            // Start observing TTS setting changes for pre-gen cache invalidation
+            AudioPreGenInvalidator.shared.startObserving()
 
             // Give UI a moment to initialize and show splash
             try? await Task.sleep(for: .milliseconds(300))
@@ -689,6 +728,18 @@ public class AppState: ObservableObject {
 
         await checkConfiguration()
         await initializePatchPanel()
+
+        // Pre-warm Pocket TTS model files (primary capability, should be ready before first interaction)
+        // This ensures model files are copied from bundle and available on disk,
+        // so subsequent TTS service instances don't pay the cold-start cost for model resolution.
+        Task.detached {
+            do {
+                let modelManager = KyutaiPocketModelManager()
+                _ = try await modelManager.getModelPath()
+            } catch {
+                // Model pre-warm is best-effort; session creation will retry
+            }
+        }
 
         // Auto-discover server on first launch or when no server is configured
         await initializeServerDiscovery()

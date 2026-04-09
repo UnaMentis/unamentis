@@ -290,6 +290,17 @@ public actor KyutaiPocketTTSService: TTSService {
         }
     }
 
+    /// Pre-warm the TTS engine at app launch.
+    /// TTS is the primary capability and should be loaded before first user interaction.
+    public func preWarm() async {
+        do {
+            try await ensureLoaded()
+            logger.info("[KyutaiPocket] Pre-warmed successfully")
+        } catch {
+            logger.error("[KyutaiPocket] Pre-warm failed: \(error.localizedDescription)")
+        }
+    }
+
     /// Unload models to free memory
     public func unloadModels() async {
         engine?.unload()

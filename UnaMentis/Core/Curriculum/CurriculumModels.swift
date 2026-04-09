@@ -549,7 +549,12 @@ public struct RetrievalSchedule: Codable, Sendable, Identifiable {
     }
 
     /// Update schedule after a retrieval attempt
-    public mutating func recordAttempt(success: Bool, algorithm: SpacingAlgorithm, maxInterval: TimeInterval) {
+    /// - Parameters:
+    ///   - success: Whether the attempt was successful
+    ///   - algorithm: Which spacing algorithm to use
+    ///   - maxInterval: Maximum interval cap
+    ///   - quality: SM2 quality rating (0-5). Defaults to 4 for success if not provided. Ignored on failure (fixed -0.2 EF penalty).
+    public mutating func recordAttempt(success: Bool, algorithm: SpacingAlgorithm, maxInterval: TimeInterval, quality: Double? = nil) {
         attemptCount += 1
         if success {
             successCount += 1
@@ -559,7 +564,7 @@ public struct RetrievalSchedule: Codable, Sendable, Identifiable {
         case .leitner:
             updateLeitner(success: success, maxInterval: maxInterval)
         case .sm2:
-            updateSM2(success: success, maxInterval: maxInterval)
+            updateSM2(success: success, maxInterval: maxInterval, quality: quality)
         case .custom:
             // Custom logic handled externally
             break
@@ -579,13 +584,14 @@ public struct RetrievalSchedule: Codable, Sendable, Identifiable {
         nextRetrievalDate = Date().addingTimeInterval(currentInterval)
     }
 
-    private mutating func updateSM2(success: Bool, maxInterval: TimeInterval) {
+    /// Update using SM2 algorithm. Quality should be 0-5: 0=complete failure, 3=correct with difficulty, 5=perfect.
+    /// If not provided, defaults to 4 for success and 2 for failure.
+    private mutating func updateSM2(success: Bool, maxInterval: TimeInterval, quality: Double? = nil) {
         if success {
             // SuperMemo 2 formula for easiness factor
             // EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
-            // Using quality = 4 for correct, 2 for struggling
-            let quality = 4.0
-            let efDelta = 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)
+            let q = min(5.0, max(0.0, quality ?? 4.0))
+            let efDelta = 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)
             easinessFactor = max(1.3, easinessFactor + efDelta)
 
             if attemptCount == 1 {

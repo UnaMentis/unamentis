@@ -35,6 +35,9 @@ public enum TTFAFeature: String, Sendable {
     // Reading List
     case readingPlay = "reading.play"
     case readingResume = "reading.resume"
+
+    // Barge-in response (measures time from barge-in confirmation to first canned audio)
+    case sessionBargeIn = "session.bargein"
 }
 
 // MARK: - Event Types

@@ -233,9 +233,9 @@ public actor VoiceCommandRecognizer {
             return nil
         }
 
-        // Tier 1: Exact match
+        // Tier 1: Exact match or whole-word match
         for phrase in phrases {
-            if input == phrase || input.contains(phrase) {
+            if input == phrase || containsAsWholeWords(input, phrase: phrase) {
                 return VoiceCommandResult(
                     command: command,
                     confidence: 1.0,
@@ -306,6 +306,27 @@ public actor VoiceCommandRecognizer {
             return true
         }
 
+        return false
+    }
+
+    /// Check if the input contains the phrase as whole words (not as a substring).
+    /// "I started" does NOT match "start", but "skip this" DOES match "skip".
+    private func containsAsWholeWords(_ input: String, phrase: String) -> Bool {
+        let inputWords = input.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        let phraseWords = phrase.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+
+        guard !phraseWords.isEmpty, phraseWords.count <= inputWords.count else {
+            return false
+        }
+
+        // Check for contiguous subsequence of whole words
+        let searchRange = inputWords.count - phraseWords.count
+        for i in 0...searchRange {
+            let slice = Array(inputWords[i..<(i + phraseWords.count)])
+            if slice == phraseWords {
+                return true
+            }
+        }
         return false
     }
 
