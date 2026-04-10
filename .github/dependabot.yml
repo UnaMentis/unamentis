@@ -19,6 +19,41 @@ updates:
           - "@types/react"
           - "@types/react-dom"
 
+  # Web client legacy (Next.js 15) - independent from server/web
+  - package-ecosystem: "npm"
+    directory: "/server/web-client"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+
+  # Management API (Python/uv)
+  - package-ecosystem: "uv"
+    directory: "/server/management"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # Importers (Python/pip)
+  - package-ecosystem: "pip"
+    directory: "/server/importers"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # Lambda shared services (Python/pip)
+  - package-ecosystem: "pip"
+    directory: "/server/lambda/services/shared"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
   # USM Core (Rust)
   - package-ecosystem: "cargo"
     directory: "/server/usm-core"
