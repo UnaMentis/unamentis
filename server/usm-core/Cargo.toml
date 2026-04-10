@@ -32,7 +32,7 @@ toml = "0.8"
 sysinfo = "0.30"
 
 # File watching
-notify = "6.1"
+notify = "8.2"
 
 # Logging
 tracing = "0.1"
