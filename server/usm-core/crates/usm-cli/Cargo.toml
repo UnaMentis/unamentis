@@ -12,7 +12,7 @@ path = "src/main.rs"
 [dependencies]
 usm-core = { path = "../usm-core" }
 clap = { version = "4.4", features = ["derive"] }
-tokio = { version = "1.35", features = ["full"] }
+tokio = { version = "1.51", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 serde_json = "1.0"
