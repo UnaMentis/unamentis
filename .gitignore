@@ -1,6 +1,49 @@
+# iOS app (moved to unamentis-ios repo)
+UnaMentis/
+UnaMentisTests/
+UnaMentis Watch App/
+Shared/
+*.xcodeproj/
+*.xcworkspace/
+*.xcresult
+*.xcresult/
+project.yml
+Package.swift
+Package.resolved
+.swiftlint.yml
+.swiftformat
+
+# iOS-specific files (moved to unamentis-ios repo)
+scripts/test-ci.sh
+scripts/test-quick.sh
+scripts/test-all.sh
+scripts/test-integration.sh
+scripts/test-e2e.sh
+scripts/ttfa-test.sh
+scripts/validate-for-appstore.sh
+scripts/add-files-to-xcode.py
+scripts/add_to_xcode.py
+scripts/add_test_files_to_xcode.py
+scripts/add_ondevice_to_xcode.py
+scripts/xcode-project-helper.rb
+.github/workflows/ios.yml
+.github/workflows/appstore-validation.yml
+.claude/hooks/lint-swift.sh
+docs/ios/
+docs/client-spec/
+docs/knowledgebowl/
+docs/watch-testing/
+docs/APP_STORE_COMPLIANCE.md
+
 # Build artifacts
 build/
+.build/
 DerivedData/
+
+# Large binary dependencies (download separately)
+llama.xcframework/
+llama-xcframework.tar.gz
+llama.cpp/
 
 # Code coverage
 *.gcda
