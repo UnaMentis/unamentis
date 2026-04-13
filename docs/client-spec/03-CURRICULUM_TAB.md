@@ -2,7 +2,7 @@
 
 **Version:** 1.1.0
 **Last Updated:** 2026-01-20
-**Platform:** iOS (Swift/SwiftUI)
+**Reference Implementation:** iOS (Swift/SwiftUI) | All clients should achieve feature parity
 
 ---
 
