@@ -3,24 +3,23 @@
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![iOS CI](https://github.com/UnaMentis/unamentis/actions/workflows/ios.yml/badge.svg)](https://github.com/UnaMentis/unamentis/actions/workflows/ios.yml)
+[![CI](https://github.com/UnaMentis/unamentis/actions/workflows/ci.yml/badge.svg)](https://github.com/UnaMentis/unamentis/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/UnaMentis/unamentis/branch/main/graph/badge.svg)](https://codecov.io/gh/UnaMentis/unamentis)
 [![Code Quality](https://img.shields.io/badge/code%20quality-A-brightgreen)](docs/quality/CODE_QUALITY_INITIATIVE.md)
 [![Backers on Open Collective](https://opencollective.com/unamentis/backers/badge.svg)](https://opencollective.com/unamentis)
 [![Sponsors on Open Collective](https://opencollective.com/unamentis/sponsors/badge.svg)](https://opencollective.com/unamentis)
 
-**Real-time bidirectional, hands free, mobile, voice learning platform that uses AI on device and on a server to provide extensive learning sessions.
-These sessions can be ad-hoc or based on proven curriculum from many well known sources.**
+**Voice AI learning platform. This repository contains the server infrastructure, curriculum system, and project-wide documentation.**
 
 ## Why UnaMentis?
 
 We live in an age where AI can write essays, solve problems, and answer any question instantly. This power is extraordinary, but it's also dangerous without foundation. A calculator is useless to someone who doesn't understand what multiplication means. AI writing is hollow to someone who has never formed their own thoughts.
 
-**UnaMentis takes a different approach: AI as tutor, not substitute.**
+**UnaMentis takes a different approach: AI as learning partner, not substitute.**
 
 We use artificial intelligence to deliver personalized, voice-based instruction at scale. But our goal isn't to give you answers. It's to build genuine understanding. We challenge you to explain concepts back in your own words. We celebrate the time you spend thinking before asking for help. We revisit what you learned last week to make sure you truly remember it.
 
-This is a personalized tutor that works with you over extended sessions (60-90+ minutes), develops an understanding of your learning progress and style, and evolves into a true personal tutor over time. Quality curriculum, often from institutions like MIT, combined with AI that guides rather than replaces, creates something powerful: a tutor that makes you genuinely smarter.
+Quality curriculum, often from institutions like MIT, combined with AI that guides rather than replaces, creates something powerful: a platform that makes you genuinely smarter.
 
 **This is education technology that serves learning, not shortcuts.**
 
@@ -33,9 +32,19 @@ This is a personalized tutor that works with you over extended sessions (60-90+ 
 
 See [About UnaMentis](docs/ABOUT.md) for our complete philosophy and [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md) for the founding vision.
 
+## Ecosystem
+
+UnaMentis is a multi-repo project. Each component has its own repository:
+
+| Repository | Purpose | Status |
+|------------|---------|--------|
+| [unamentis](https://github.com/UnaMentis/unamentis) | Server infrastructure, curriculum, project docs (this repo) | Active |
+| [unamentis-ios](https://github.com/UnaMentis/unamentis-ios) | iOS client (Swift 6/SwiftUI) | Pre-beta |
+| [unamentis-android](https://github.com/UnaMentis/unamentis-android) | Android client (Kotlin/Jetpack Compose) | In development |
+
 ## Overview
 
-UnaMentis is an iOS application that enables 60-90+ minute voice-based learning sessions with AI tutoring. Built for iPhone 16/17 Pro Max with emphasis on:
+UnaMentis enables 60-90+ minute voice-based learning sessions with AI. The platform spans iOS, Android, and web clients backed by shared server infrastructure. Key design goals:
 
 - Sub-500ms end-to-end latency
 - Natural interruption handling (no push-to-talk)
@@ -64,20 +73,23 @@ The right model depends on the task, the moment, and the cost. The architecture 
 ## Quick Start
 
 ```bash
-# 1. Create Xcode project (manual - see docs/QUICKSTART.md)
-
-# 2. Set up environment
+# 1. Set up environment
 ./scripts/setup-local-env.sh
 
-# 3. Configure API keys
+# 2. Configure API keys
 cp .env.example .env
 # Edit .env and add your keys
+
+# 3. Start server components
+cd server/management && python -m management.app   # Management API (port 8766)
+cd server/web && pnpm install && pnpm dev           # Operations Console (port 3000)
 
 # 4. Run tests
 ./scripts/test-quick.sh
 ```
 
-See [Quick Start Guide](docs/QUICKSTART.md) for complete setup.
+For iOS client setup, see the [unamentis-ios](https://github.com/UnaMentis/unamentis-ios) repository.
+See [Quick Start Guide](docs/QUICKSTART.md) for complete server setup.
 
 ## Current Status
 
@@ -118,23 +130,6 @@ The wiki is the primary resource for contributors and maintainers.
 - [Testing Guide](docs/testing/TESTING.md)
 - [Debug & Testing UI](docs/testing/DEBUG_TESTING_UI.md) - Built-in troubleshooting tools
 
-### iOS Project Setup
-
-The Xcode project is generated from `project.yml` using [XcodeGen](https://github.com/yonaskolb/XcodeGen). After cloning:
-
-```bash
-# Install XcodeGen (if not already installed)
-brew install xcodegen
-
-# Generate the Xcode project
-xcodegen generate
-
-# Open in Xcode
-open UnaMentis.xcodeproj
-```
-
-This keeps the project configuration human-readable and avoids merge conflicts in `project.pbxproj`.
-
 ### Curriculum Format (UMCF)
 - [Curriculum Overview](curriculum/README.md) - **Comprehensive guide to UMCF**
 - [UMCF Specification](curriculum/spec/UMCF_SPECIFICATION.md) - Format specification
@@ -149,9 +144,8 @@ This keeps the project configuration human-readable and avoids merge conflicts i
 - [Technical Design Document](docs/architecture/UnaMentis_TDD.md) - Complete TDD
 
 ### Standards & Guidelines
-- [iOS Style Guide](docs/ios/IOS_STYLE_GUIDE.md) - **MANDATORY** coding standards, accessibility, i18n
-- [iOS Best Practices Review](docs/ios/IOS_BEST_PRACTICES_REVIEW.md) - Platform compliance audit
 - [AI Development Guidelines](AGENTS.md) - Guidelines for AI-assisted development
+- iOS Style Guide and Best Practices are maintained in the [unamentis-ios](https://github.com/UnaMentis/unamentis-ios) repository
 
 ### Project
 - [Contributing](docs/CONTRIBUTING.md)
@@ -197,7 +191,7 @@ python -m latency_harness.cli --suite provider_comparison --no-mock
 ```
 
 Features:
-- High-precision timing (nanosecond on iOS via `mach_absolute_time`)
+- High-precision timing
 - Network projections (localhost, WiFi, cellular)
 - Baseline comparison for regression detection
 - Web dashboard at Operations Console → Latency Tests
@@ -215,19 +209,19 @@ UnaMentis implements a comprehensive **5-phase Code Quality Initiative** that en
 |------|-----------|-------------|
 | Code Coverage | 80% minimum | CI fails if below |
 | Latency (P50) | 500ms | CI warns/fails on regression |
-| SwiftLint | Zero violations | Pre-commit hook |
+| Linting | Zero violations | Pre-commit hook |
 | Security Scan | Zero critical findings | CI + weekly audit |
 
 ### Automation Tools
 
-- **Pre-commit Hooks**: SwiftLint, SwiftFormat, Ruff, ESLint, Gitleaks
+- **Pre-commit Hooks**: Ruff, ESLint, Clippy, Gitleaks
 - **Hook Bypass Auditing**: Detect `--no-verify` usage with `scripts/hook-audit.sh`
 - **Dependency Management**: Renovate with auto-merge for patches
 - **AI Code Review**: CodeRabbit (free for open source)
 - **Performance Testing**: Automated latency regression detection
 - **Security Scanning**: CodeQL, Gitleaks, pip-audit, npm audit
 - **DORA Metrics**: Apache DevLake for engineering health
-- **Mutation Testing**: Weekly validation with mutmut (Python), Stryker (Web), Muter (iOS)
+- **Mutation Testing**: Weekly validation with mutmut (Python), Stryker (Web)
 - **Chaos Engineering**: Voice pipeline resilience testing (see [runbook](docs/testing/CHAOS_ENGINEERING_RUNBOOK.md))
 
 ### Feature Flags
@@ -250,23 +244,18 @@ See [docs/quality/CODE_QUALITY_INITIATIVE.md](docs/quality/CODE_QUALITY_INITIATI
 ## Architecture
 
 ```
-UnaMentis/
-├── Core/           # Core business logic
-│   ├── Audio/      # Audio engine, VAD
-│   ├── Session/    # Session management
-│   ├── Curriculum/ # Learning materials
-│   └── Telemetry/  # Metrics
-├── Services/       # Provider integrations
-│   ├── STT/        # Speech-to-text
-│   ├── TTS/        # Text-to-speech
-│   └── LLM/        # Language models
-└── UI/             # SwiftUI views
-
 server/
-├── management/     # Management API (port 8766)
-├── web/            # Operations Console (port 3000)
-├── web-client/     # Web Client (voice tutoring for browsers)
+├── usm-core/        # Rust cross-platform service manager (port 8787)
+├── management/      # Management API (port 8766)
+├── web/             # Operations Console (port 3000)
+├── web-client/      # Web Client (voice learning for browsers)
+├── importers/       # Curriculum import framework
 └── latency_harness/ # Latency testing CLI and orchestrator
+
+curriculum/
+├── spec/            # UMCF specification and JSON schema
+├── importers/       # Import architecture docs
+└── examples/        # Example curriculum files
 ```
 
 ## Web Interfaces
@@ -300,14 +289,12 @@ Application and content management:
 
 ## Technology Stack
 
-### Core Platform
-- **Language**: Swift 6.0
-- **UI**: SwiftUI
-- **Audio**: AVFoundation
-- **Transport**: LiveKit WebRTC
-- **ML Framework**: Core ML, llama.cpp (C++ interop)
-- **Persistence**: Core Data
-- **Testing**: XCTest (no mocks, real implementations)
+### Server Infrastructure
+- **Service Manager**: Rust (USM Core, port 8787)
+- **Management API**: Python/aiohttp (port 8766)
+- **Operations Console**: Next.js/React/TypeScript (port 3000)
+- **Web Client**: Next.js/React (voice learning for browsers)
+- **Importers**: Python with pluggy plugin architecture
 
 ### Speech-to-Text (STT)
 | Provider | Model | Type | Notes |
@@ -394,10 +381,10 @@ The fundamental core of UnaMentis will always remain open source. This ensures t
 
 ### Current Platform Support
 
-- **iOS**: Primary platform, fully functional (iPhone 16/17 Pro Max optimized)
-- **Web**: Browser-based voice tutoring (Chrome, Safari, Edge recommended)
-- **Android**: In active development (separate repository, Kotlin with on-device inference)
-- **Server**: Management API and Operations Console for curriculum and infrastructure management
+- **iOS**: Primary platform, pre-beta ([unamentis-ios](https://github.com/UnaMentis/unamentis-ios))
+- **Web**: Browser-based voice learning (Chrome, Safari, Edge recommended)
+- **Android**: In active development ([unamentis-android](https://github.com/UnaMentis/unamentis-android))
+- **Server**: Management API, Operations Console, and USM Core (this repo)
 
 ### Future Directions
 

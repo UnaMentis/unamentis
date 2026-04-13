@@ -1,99 +1,44 @@
 # UnaMentis Documentation
 
-This directory contains the documentation for the UnaMentis project. Use this index to navigate the documentation.
+This repository is the project hub for UnaMentis. It contains server infrastructure, the curriculum system, and all cross-cutting documentation.
+
+Client-specific documentation lives in each client repository:
+- iOS: [unamentis-ios/docs/](https://github.com/UnaMentis/unamentis-ios/tree/main/docs)
+- Android: [unamentis-android/docs/](https://github.com/UnaMentis/unamentis-android/tree/main/docs)
 
 ---
 
-## Directory Structure
+## Cross-Cutting Documentation (All Platforms)
 
-```
-docs/
-├── setup/           # Environment and device setup guides
-├── architecture/    # System design and technical documents
-├── ios/             # iOS development standards and guides
-├── testing/         # Testing guides and automation
-├── ai-ml/           # AI/ML features (GLM-ASR, LLM tools)
-├── modules/         # Specialized learning modules (KB, SAT)
-├── api-spec/        # Server API documentation (OpenAPI)
-├── client-spec/     # iOS client feature specification
-├── server/          # Server infrastructure docs
-├── quality/         # Code quality and development excellence
-├── explorations/    # Research and feature explorations
-├── planning/        # Implementation plans
-└── tools/           # Development tools documentation
-```
-
----
-
-## Getting Started
+These docs apply to all client implementations:
 
 | Document | Description |
 |----------|-------------|
-| [QUICKSTART.md](QUICKSTART.md) | Quick start guide for new developers |
-| [setup/SETUP.md](setup/SETUP.md) | Detailed setup instructions |
-| [setup/DEV_ENVIRONMENT.md](setup/DEV_ENVIRONMENT.md) | Developer environment configuration |
-| [setup/DEVICE_SETUP_GUIDE.md](setup/DEVICE_SETUP_GUIDE.md) | Physical device configuration |
+| [client-spec/](client-spec/README.md) | Canonical UI/UX specification for all clients |
+| [modules/](modules/SPECIALIZED_MODULES_FRAMEWORK.md) | Knowledge Bowl, SAT, Quiz Bowl, Science Bowl module specs |
+| [design/HANDS_FREE_FIRST_DESIGN.md](design/HANDS_FREE_FIRST_DESIGN.md) | Voice-first interaction design for all platforms |
+| [design/AUDIO_PLAYBACK_ORCHESTRATOR.md](design/AUDIO_PLAYBACK_ORCHESTRATOR.md) | Cross-platform audio pipeline specification |
+| [testing/TESTING.md](testing/TESTING.md) | Real-over-mock testing philosophy |
+| [testing/MOCK_VIOLATIONS_INVENTORY.md](testing/MOCK_VIOLATIONS_INVENTORY.md) | Mock violation patterns and remediation |
 
 ---
 
-## Philosophy & Vision
+## Architecture
 
 | Document | Description |
 |----------|-------------|
-| [ABOUT.md](ABOUT.md) | About UnaMentis, core values, and mission |
-| [PHILOSOPHY.md](PHILOSOPHY.md) | Founding philosophy on genuine learning |
-| [architecture/PROJECT_OVERVIEW.md](architecture/PROJECT_OVERVIEW.md) | Technical overview and architecture |
-
----
-
-## Architecture & Design
-
-| Document | Description |
-|----------|-------------|
+| [architecture/PROJECT_OVERVIEW.md](architecture/PROJECT_OVERVIEW.md) | Authoritative project overview (kept current, used externally) |
 | [architecture/UnaMentis_TDD.md](architecture/UnaMentis_TDD.md) | Technical Design Document |
 | [architecture/PATCH_PANEL_ARCHITECTURE.md](architecture/PATCH_PANEL_ARCHITECTURE.md) | LLM routing and task classification |
-| [architecture/FOV_CONTEXT_MANAGEMENT.md](architecture/FOV_CONTEXT_MANAGEMENT.md) | Foveated context for voice tutoring |
-| [architecture/FALLBACK_ARCHITECTURE.md](architecture/FALLBACK_ARCHITECTURE.md) | Fallback and degradation patterns |
+| [architecture/FOV_CONTEXT_MANAGEMENT.md](architecture/FOV_CONTEXT_MANAGEMENT.md) | Foveated context for voice learning |
+| [architecture/FALLBACK_ARCHITECTURE.md](architecture/FALLBACK_ARCHITECTURE.md) | Fallback and graceful degradation patterns |
 | [architecture/SERVER_INFRASTRUCTURE.md](architecture/SERVER_INFRASTRUCTURE.md) | Server deployment architecture |
-| [architecture/CLOUD_HOSTING_ARCHITECTURE.md](architecture/CLOUD_HOSTING_ARCHITECTURE.md) | Cloud hosting options |
-| [architecture/DEVICE_CAPABILITY_TIERS.md](architecture/DEVICE_CAPABILITY_TIERS.md) | Device feature matrix |
+| [architecture/CLOUD_HOSTING_ARCHITECTURE.md](architecture/CLOUD_HOSTING_ARCHITECTURE.md) | Cloud hosting options and analysis |
+| [architecture/CLOUD_DEPLOYMENT_EXECUTION_PLAN.md](architecture/CLOUD_DEPLOYMENT_EXECUTION_PLAN.md) | Cloud deployment execution plan |
+| [architecture/DEVICE_CAPABILITY_TIERS.md](architecture/DEVICE_CAPABILITY_TIERS.md) | Device feature matrix by capability tier |
 | [architecture/OPENTELEMETRY_SPEC.md](architecture/OPENTELEMETRY_SPEC.md) | Telemetry specification |
-
----
-
-## iOS Development
-
-| Document | Description |
-|----------|-------------|
-| [ios/IOS_STYLE_GUIDE.md](ios/IOS_STYLE_GUIDE.md) | **MANDATORY** iOS coding standards |
-| [ios/IOS_BEST_PRACTICES_REVIEW.md](ios/IOS_BEST_PRACTICES_REVIEW.md) | Platform compliance audit |
-| [ios/VISUAL_ASSET_SUPPORT.md](ios/VISUAL_ASSET_SUPPORT.md) | Visual content display system |
-| [ios/PRONUNCIATION_GUIDE.md](ios/PRONUNCIATION_GUIDE.md) | TTS pronunciation enhancement |
-| [ios/SPEAKER_MIC_BARGE_IN_DESIGN.md](ios/SPEAKER_MIC_BARGE_IN_DESIGN.md) | Voice interruption handling |
-
----
-
-## Testing & QA
-
-| Document | Description |
-|----------|-------------|
-| [testing/TESTING.md](testing/TESTING.md) | Testing guide and philosophy |
-| [testing/AI_SIMULATOR_TESTING.md](testing/AI_SIMULATOR_TESTING.md) | Simulator testing with MCP |
-| [testing/DEBUG_TESTING_UI.md](testing/DEBUG_TESTING_UI.md) | Built-in troubleshooting tools |
-
----
-
-## AI/ML Features
-
-| Document | Description |
-|----------|-------------|
-| [ai-ml/GLM_ASR_ON_DEVICE_GUIDE.md](ai-ml/GLM_ASR_ON_DEVICE_GUIDE.md) | On-device STT implementation |
-| [ai-ml/GLM_ASR_NANO_2512.md](ai-ml/GLM_ASR_NANO_2512.md) | GLM-ASR Nano model details |
-| [ai-ml/GLM_ASR_SERVER_TRD.md](ai-ml/GLM_ASR_SERVER_TRD.md) | Server-side ASR design |
-| [ai-ml/GLM_ASR_IMPLEMENTATION_PROGRESS.md](ai-ml/GLM_ASR_IMPLEMENTATION_PROGRESS.md) | Implementation status |
-| [ai-ml/APPLE_INTELLIGENCE.md](ai-ml/APPLE_INTELLIGENCE.md) | App Intents and Siri integration |
-| [ai-ml/LLM_TOOLS.md](ai-ml/LLM_TOOLS.md) | LLM tool use implementation |
-| [ai-ml/CHATTERBOX_SERVER_SETUP.md](ai-ml/CHATTERBOX_SERVER_SETUP.md) | Chatterbox TTS server setup |
+| [architecture/ARCHITECTURE_FOR_COMMUNICATIONS.md](architecture/ARCHITECTURE_FOR_COMMUNICATIONS.md) | Architecture summary for external communications |
+| [architecture/QUALITY_INFRASTRUCTURE_RESEARCH.md](architecture/QUALITY_INFRASTRUCTURE_RESEARCH.md) | Quality infrastructure research |
 
 ---
 
@@ -104,32 +49,106 @@ docs/
 | [server/README.md](server/README.md) | Server component overview |
 | [server/VOICE_LAB_GUIDE.md](server/VOICE_LAB_GUIDE.md) | Voice Lab console section guide |
 | [server/TTS_LAB_GUIDE.md](server/TTS_LAB_GUIDE.md) | TTS experimentation and batch processing |
-| [REMOTE_LOGGING.md](REMOTE_LOGGING.md) | Log server and debugging |
+| [server/RECOMMENDATIONS.md](server/RECOMMENDATIONS.md) | Server recommendations |
+| [server/SERVER_IDLE_OPTIMIZATION_PLAN.md](server/SERVER_IDLE_OPTIMIZATION_PLAN.md) | Idle resource optimization plan |
+| [server/SERVER_RESOURCE_MONITORING_PLAN.md](server/SERVER_RESOURCE_MONITORING_PLAN.md) | Resource monitoring plan |
+| [api-spec/README.md](api-spec/README.md) | Server REST API specification |
+| [LATENCY_TEST_HARNESS_GUIDE.md](LATENCY_TEST_HARNESS_GUIDE.md) | Latency test harness usage guide |
+| [design/AUDIO_LATENCY_TEST_HARNESS.md](design/AUDIO_LATENCY_TEST_HARNESS.md) | Latency harness architecture |
+| [REMOTE_LOGGING.md](REMOTE_LOGGING.md) | Log server and remote debugging |
+| [FEATURE_FLAGS.md](FEATURE_FLAGS.md) | Feature flag definitions |
+| [FEATURE_FLAGS_ARCHITECTURE.md](FEATURE_FLAGS_ARCHITECTURE.md) | Feature flag system architecture |
+
+---
+
+## AI & Machine Learning
+
+| Document | Description |
+|----------|-------------|
+| [ai-ml/GLM_ASR_ON_DEVICE_GUIDE.md](ai-ml/GLM_ASR_ON_DEVICE_GUIDE.md) | On-device STT implementation |
+| [ai-ml/GLM_ASR_NANO_2512.md](ai-ml/GLM_ASR_NANO_2512.md) | GLM-ASR Nano model details |
+| [ai-ml/GLM_ASR_SERVER_TRD.md](ai-ml/GLM_ASR_SERVER_TRD.md) | Server-side ASR design |
+| [ai-ml/GLM_ASR_IMPLEMENTATION_PROGRESS.md](ai-ml/GLM_ASR_IMPLEMENTATION_PROGRESS.md) | GLM-ASR implementation status |
+| [ai-ml/APPLE_INTELLIGENCE.md](ai-ml/APPLE_INTELLIGENCE.md) | App Intents and Siri integration |
+| [ai-ml/LLM_TOOLS.md](ai-ml/LLM_TOOLS.md) | LLM tool use implementation |
+| [ai-ml/CHATTERBOX_SERVER_SETUP.md](ai-ml/CHATTERBOX_SERVER_SETUP.md) | Chatterbox TTS server setup |
+| [AI_MODEL_SELECTION_2026.md](AI_MODEL_SELECTION_2026.md) | 2026 AI model selection analysis |
+| [integrations/POCKET_TTS.md](integrations/POCKET_TTS.md) | Kyutai Pocket TTS integration |
+
+---
+
+## Testing
+
+| Document | Description |
+|----------|-------------|
+| [testing/TESTING.md](testing/TESTING.md) | Testing philosophy and guide |
+| [testing/CHAOS_ENGINEERING_RUNBOOK.md](testing/CHAOS_ENGINEERING_RUNBOOK.md) | Voice pipeline resilience testing |
+| [testing/MOCK_VIOLATIONS_INVENTORY.md](testing/MOCK_VIOLATIONS_INVENTORY.md) | Mock violation patterns and remediation |
+| [testing/AI_SIMULATOR_TESTING.md](testing/AI_SIMULATOR_TESTING.md) | Simulator testing with MCP |
+| [testing/DEBUG_TESTING_UI.md](testing/DEBUG_TESTING_UI.md) | Built-in troubleshooting tools |
+| [testing/KNOWLEDGE_BOWL_VALIDATION_TESTING.md](testing/KNOWLEDGE_BOWL_VALIDATION_TESTING.md) | Knowledge Bowl validation testing |
+| [testing/QA_COVERAGE_AUDIT_REPORT.md](testing/QA_COVERAGE_AUDIT_REPORT.md) | QA coverage audit report |
+
+---
+
+## Quality & Process
+
+| Document | Description |
+|----------|-------------|
+| [quality/DEVELOPMENT_EXCELLENCE.md](quality/DEVELOPMENT_EXCELLENCE.md) | Development tooling and automation plan |
+| [quality/TOOL_TRUST_DOCTRINE.md](quality/TOOL_TRUST_DOCTRINE.md) | Tool findings trust policy |
+| [quality/CODE_QUALITY_INITIATIVE.md](quality/CODE_QUALITY_INITIATIVE.md) | Code quality initiative |
+| [quality/QUALITY_INFRASTRUCTURE_PLAN.md](quality/QUALITY_INFRASTRUCTURE_PLAN.md) | Quality infrastructure plan |
+| [reviews/EXPERT_PANEL_REVIEW.md](reviews/EXPERT_PANEL_REVIEW.md) | Expert panel review (42 findings) |
+| [reviews/EXPERT_PANEL_SOCRATIC_ENGINE.md](reviews/EXPERT_PANEL_SOCRATIC_ENGINE.md) | Socratic Engine proposal |
+
+---
+
+## Setup & Tools
+
+| Document | Description |
+|----------|-------------|
+| [QUICKSTART.md](QUICKSTART.md) | Quick start guide for new developers |
+| [setup/SETUP.md](setup/SETUP.md) | Detailed setup instructions |
+| [setup/DEV_ENVIRONMENT.md](setup/DEV_ENVIRONMENT.md) | Developer environment configuration |
+| [setup/DEVICE_SETUP_GUIDE.md](setup/DEVICE_SETUP_GUIDE.md) | Physical device configuration |
+| [setup/CODERABBIT_SETUP.md](setup/CODERABBIT_SETUP.md) | CodeRabbit AI review setup |
+| [setup/COMMS_SKILL_SETUP_GUIDE.md](setup/COMMS_SKILL_SETUP_GUIDE.md) | Slack/Trello communications setup |
+| [tools/CODERABBIT.md](tools/CODERABBIT.md) | CodeRabbit AI code review usage |
+| [tools/CROSS_REPO_ACCESS.md](tools/CROSS_REPO_ACCESS.md) | Cross-repository access for AI agents |
+| [tools/GITHUB_WIKI.md](tools/GITHUB_WIKI.md) | GitHub Wiki setup and usage |
+
+---
+
+## Project Governance
+
+| Document | Description |
+|----------|-------------|
+| [ABOUT.md](ABOUT.md) | About UnaMentis, core values, and mission |
+| [PHILOSOPHY.md](PHILOSOPHY.md) | Founding philosophy on genuine learning |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
+| [PRIVACY_PRESERVING_USER_DATA.md](PRIVACY_PRESERVING_USER_DATA.md) | Privacy architecture |
+| [APP_STORE_COMPLIANCE.md](APP_STORE_COMPLIANCE.md) | App Store compliance documentation |
+| [TASK_STATUS.md](TASK_STATUS.md) | Current implementation progress |
 
 ---
 
 ## Specialized Modules
-
-Specialized learning modules for high-stakes scenarios:
 
 | Document | Description |
 |----------|-------------|
 | [modules/SPECIALIZED_MODULES_FRAMEWORK.md](modules/SPECIALIZED_MODULES_FRAMEWORK.md) | Module design methodology |
 | [modules/KNOWLEDGE_BOWL_MODULE.md](modules/KNOWLEDGE_BOWL_MODULE.md) | Knowledge Bowl competition prep |
 | [modules/KNOWLEDGE_BOWL_ANSWER_VALIDATION.md](modules/KNOWLEDGE_BOWL_ANSWER_VALIDATION.md) | 3-tier answer validation system |
+| [modules/KNOWLEDGE_BOWL_MODULE_SPEC.md](modules/KNOWLEDGE_BOWL_MODULE_SPEC.md) | Knowledge Bowl module specification |
+| [modules/KNOWLEDGE_BOWL_CHAMPIONSHIP_SYSTEM.md](modules/KNOWLEDGE_BOWL_CHAMPIONSHIP_SYSTEM.md) | Knowledge Bowl championship system |
+| [modules/QUIZ_BOWL_MODULE_SPEC.md](modules/QUIZ_BOWL_MODULE_SPEC.md) | Quiz Bowl module specification |
+| [modules/SCIENCE_BOWL_MODULE_SPEC.md](modules/SCIENCE_BOWL_MODULE_SPEC.md) | Science Bowl module specification |
+| [modules/ACADEMIC_COMPETITION_MODULAR_ARCHITECTURE.md](modules/ACADEMIC_COMPETITION_MODULAR_ARCHITECTURE.md) | Academic competition modular architecture |
 | [modules/SAT_MODULE.md](modules/SAT_MODULE.md) | SAT Preparation Module |
-
----
-
-## API & Client Specifications
-
-External-facing specifications for client and API development:
-
-| Document | Description |
-|----------|-------------|
-| [client-spec/README.md](client-spec/README.md) | **Gold standard** iOS client feature document |
-| [api-spec/README.md](api-spec/README.md) | Server API specification |
-| [api-spec/openapi.yaml](api-spec/openapi.yaml) | OpenAPI 3.0 machine-readable spec |
+| [modules/UNIFIED_PROFICIENCY_SYSTEM.md](modules/UNIFIED_PROFICIENCY_SYSTEM.md) | Unified proficiency system |
+| [modules/TRAINING_DATA_SOURCES.md](modules/TRAINING_DATA_SOURCES.md) | Training data sources |
+| [modules/MASTER_TECHNICAL_IMPLEMENTATION.md](modules/MASTER_TECHNICAL_IMPLEMENTATION.md) | Master technical implementation |
 
 ---
 
@@ -144,26 +163,15 @@ External-facing specifications for client and API development:
 
 ## Explorations & Research
 
-These documents capture research and planning for features under consideration:
-
 | Document | Description |
 |----------|-------------|
 | [explorations/LEARNER_PROFILE_EXPLORATION.md](explorations/LEARNER_PROFILE_EXPLORATION.md) | Learner profiling approach |
 | [explorations/MULTILINGUAL_VOICE_LEARNING_EXPLORATION.md](explorations/MULTILINGUAL_VOICE_LEARNING_EXPLORATION.md) | Multi-language support |
 | [explorations/WATCH_APP_EXPLORATION.md](explorations/WATCH_APP_EXPLORATION.md) | Apple Watch companion |
+| [explorations/VERIFIED_KNOWLEDGE_STREAM_EXPLORATION.md](explorations/VERIFIED_KNOWLEDGE_STREAM_EXPLORATION.md) | Verified knowledge stream |
+| [explorations/AGNO_IOS_AGENT_ARCHITECTURE_EXPLORATION.md](explorations/AGNO_IOS_AGENT_ARCHITECTURE_EXPLORATION.md) | Agno iOS agent architecture |
 | [explorations/commercial-stt-tts-providers.md](explorations/commercial-stt-tts-providers.md) | STT/TTS provider comparison |
 | [CURRICULUM_SOURCE_API_RESEARCH.md](CURRICULUM_SOURCE_API_RESEARCH.md) | External curriculum sources |
-| [PRIVACY_PRESERVING_USER_DATA.md](PRIVACY_PRESERVING_USER_DATA.md) | Privacy architecture |
-
----
-
-## Project Management
-
-| Document | Description |
-|----------|-------------|
-| [TASK_STATUS.md](TASK_STATUS.md) | Current implementation progress |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
-| [DEVELOPMENT_EXCELLENCE.md](quality/DEVELOPMENT_EXCELLENCE.md) | Development tooling and automation plan |
 
 ---
 
@@ -173,7 +181,7 @@ The curriculum format has its own comprehensive documentation:
 
 | Document | Description |
 |----------|-------------|
-| [../curriculum/README.md](../curriculum/README.md) | **START HERE** for UMCF |
+| [../curriculum/README.md](../curriculum/README.md) | Start here for UMCF |
 | [../curriculum/spec/UMCF_SPECIFICATION.md](../curriculum/spec/UMCF_SPECIFICATION.md) | Format specification |
 | [../curriculum/spec/STANDARDS_TRACEABILITY.md](../curriculum/spec/STANDARDS_TRACEABILITY.md) | Standards mapping |
 
@@ -188,21 +196,12 @@ The curriculum format has its own comprehensive documentation:
 
 ---
 
-## Tools & Automation
-
-| Document | Description |
-|----------|-------------|
-| [tools/CROSS_REPO_ACCESS.md](tools/CROSS_REPO_ACCESS.md) | Cross-repository access for AI agents |
-| [tools/CODERABBIT.md](tools/CODERABBIT.md) | CodeRabbit AI code review |
-| [tools/GITHUB_WIKI.md](tools/GITHUB_WIKI.md) | GitHub Wiki setup and usage |
-
----
-
 ## Quick Links
 
 - **New to the project?** Start with [QUICKSTART.md](QUICKSTART.md)
 - **Understanding the vision?** Read [ABOUT.md](ABOUT.md) and [PHILOSOPHY.md](PHILOSOPHY.md)
-- **Writing iOS code?** Follow [ios/IOS_STYLE_GUIDE.md](ios/IOS_STYLE_GUIDE.md)
+- **Architecture overview?** See [architecture/PROJECT_OVERVIEW.md](architecture/PROJECT_OVERVIEW.md)
 - **Working with curriculum?** See [../curriculum/README.md](../curriculum/README.md)
-- **Debugging issues?** Check [testing/DEBUG_TESTING_UI.md](testing/DEBUG_TESTING_UI.md) and [REMOTE_LOGGING.md](REMOTE_LOGGING.md)
-- **Development tooling?** See [DEVELOPMENT_EXCELLENCE.md](quality/DEVELOPMENT_EXCELLENCE.md)
+- **Server API?** See [api-spec/README.md](api-spec/README.md)
+- **Debugging issues?** Check [REMOTE_LOGGING.md](REMOTE_LOGGING.md) and [testing/DEBUG_TESTING_UI.md](testing/DEBUG_TESTING_UI.md)
+- **Development tooling?** See [quality/DEVELOPMENT_EXCELLENCE.md](quality/DEVELOPMENT_EXCELLENCE.md)

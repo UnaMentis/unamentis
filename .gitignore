@@ -30,10 +30,14 @@ scripts/xcode-project-helper.rb
 .github/workflows/appstore-validation.yml
 .claude/hooks/lint-swift.sh
 docs/ios/
-docs/client-spec/
 docs/knowledgebowl/
 docs/watch-testing/
 docs/APP_STORE_COMPLIANCE.md
+docs/testing/AI_SIMULATOR_TESTING.md
+docs/testing/DEBUG_TESTING_UI.md
+docs/testing/QA_COVERAGE_AUDIT_REPORT.md
+docs/testing/KNOWLEDGE_BOWL_VALIDATION_TESTING.md
+docs/setup/DEVICE_SETUP_GUIDE.md
 
 # Build artifacts
 build/

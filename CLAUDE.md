@@ -313,6 +313,8 @@ Claude automatically tracks work completed, building commit message notes tied t
 
 ## Key Documentation
 
+**This repo is the single source of truth for cross-cutting documentation.** Client-specific docs live in their respective repos (unamentis-ios, unamentis-android). Cross-cutting docs (client-spec, modules, design, testing philosophy) live here.
+
 - `docs/setup/DEV_ENVIRONMENT.md` - **Developer environment setup guide**
 - `docs/architecture/UnaMentis_TDD.md` - Technical design document
 - `docs/architecture/PROJECT_OVERVIEW.md` - **Authoritative project overview (must be kept current)**
@@ -323,7 +325,8 @@ Claude automatically tracks work completed, building commit message notes tied t
 - `docs/design/AUDIO_LATENCY_TEST_HARNESS.md` - Latency harness architecture
 - `docs/testing/CHAOS_ENGINEERING_RUNBOOK.md` - Voice pipeline resilience testing
 
-For iOS documentation (style guide, client specs, etc.), see `unamentis-ios/docs/`.
+For iOS-specific docs (style guide, app architecture), see `unamentis-ios/docs/`.
+For Android-specific docs (dev environment, API reference), see `unamentis-android/docs/`.
 
 ## MANDATORY: PROJECT_OVERVIEW.md Maintenance
 

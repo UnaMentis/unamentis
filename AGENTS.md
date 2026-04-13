@@ -15,16 +15,17 @@ This rule ensures proper attribution and maintains the integrity of the contribu
 
 This project is developed with **100% AI assistance**. All code, tests, documentation, and architecture decisions are made collaboratively between human direction and AI implementation.
 
-## Monorepo Structure
+## Repository Structure
 
-This repository contains multiple components, each with its own AGENTS.md:
+This repository contains the server infrastructure, curriculum system, and project-wide documentation. The iOS client is in a separate repository ([unamentis-ios](https://github.com/UnaMentis/unamentis-ios)).
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| iOS App | `UnaMentis/` | Swift/SwiftUI voice tutoring client |
 | Server | `server/` | Backend infrastructure |
+| USM Core | `server/usm-core/` | Rust cross-platform service manager (port 8787) |
 | Management Console | `server/management/` | Python/aiohttp content admin (port 8766) |
 | Operations Console | `server/web/` | Next.js/React DevOps monitoring (port 3000) |
+| Web Client | `server/web-client/` | Browser-based voice learning |
 | Importers | `server/importers/` | Curriculum import framework |
 | Curriculum | `curriculum/` | UMCF format specification |
 | Latency Harness | `server/latency_harness/` | Automated latency testing CLI |
@@ -129,25 +130,20 @@ On December 11, 2025, the entire UnaMentis iOS app (Phases 1-5 of a 12-week road
 
 ### Key Directories
 ```
-UnaMentis/
-├── Core/           # Core business logic
-│   ├── Audio/      # Audio pipeline, VAD integration
-│   ├── Curriculum/ # Curriculum management, progress tracking
-│   └── Telemetry/  # Metrics, cost tracking, observability
-├── Services/       # External service integrations (STT, TTS, LLM)
-├── UI/             # SwiftUI views
-└── Persistence/    # Core Data stack
-
-UnaMentisTests/
-├── Unit/           # Unit tests (run frequently)
-├── Integration/    # Integration tests
-└── Helpers/        # Test utilities, mock services
-
 server/
-├── management/     # Management Console (port 8766) - curriculum, users, content
-│   └── static/     # HTML/JS frontend
-├── database/       # Curriculum database
-└── web/            # Operations Console (port 3000) - system monitoring
+├── usm-core/        # Rust service manager (port 8787)
+├── management/      # Management Console (port 8766) - curriculum, users, content
+│   └── static/      # HTML/JS frontend
+├── web/             # Operations Console (port 3000) - system monitoring
+├── web-client/      # Web Client - browser-based voice learning
+├── importers/       # Curriculum import framework
+├── latency_harness/ # Latency testing CLI and orchestrator
+└── database/        # Curriculum database
+
+curriculum/
+├── spec/            # UMCF specification and JSON schema
+├── importers/       # Import architecture docs
+└── examples/        # Example curriculum files
 ```
 
 ### Web Interfaces
@@ -174,38 +170,42 @@ There are TWO separate web interfaces. Do not confuse them:
 
 ### Build & Test Commands
 ```bash
-# Build for simulator (iPhone 16 Pro for CI parity)
-xcodebuild -project UnaMentis.xcodeproj -scheme UnaMentis \
-  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
-
-# Testing - use the unified test runner for CI parity
+# Server tests
 ./scripts/test-quick.sh          # Unit tests only (fast)
 ./scripts/test-all.sh            # All tests + 80% coverage enforcement
 ./scripts/test-integration.sh    # Integration tests only
 ./scripts/test-ci.sh             # Direct runner with env var config
 
-# Run specific test class (direct xcodebuild)
-xcodebuild test -project UnaMentis.xcodeproj -scheme UnaMentis \
-  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
-  -only-testing:UnaMentisTests/ProgressTrackerTests
+# Rust (USM Core)
+cd server/usm-core && cargo build          # Debug build
+cd server/usm-core && cargo test           # Run tests
+cd server/usm-core && cargo clippy -- -D warnings  # Lint
+
+# Python (Management API, Importers)
+cd server/management && pytest             # Run tests
+cd server/importers && pytest              # Run tests
+
+# Web (Operations Console)
+cd server/web && pnpm test                 # Run tests
 ```
+
+For iOS build and test commands, see the [unamentis-ios](https://github.com/UnaMentis/unamentis-ios) repository.
 
 ---
 
 ## Working with This Codebase
 
 ### Before Implementation
-1. **Read the iOS Style Guide**: `docs/ios/IOS_STYLE_GUIDE.md` (MANDATORY)
+1. **For iOS work**: Read the iOS Style Guide in the [unamentis-ios](https://github.com/UnaMentis/unamentis-ios) repository (MANDATORY)
 2. Read relevant tests first - they document expected behavior
 3. Check existing patterns in similar components
 4. Reference `docs/architecture/UnaMentis_TDD.md` for architectural decisions
 
 ### During Implementation
 1. Write tests first (TDD)
-2. Ensure Swift 6 concurrency compliance (@MainActor, Sendable, actors)
-3. Run build frequently to catch issues early
-4. Use TodoWrite to track progress on multi-step tasks
-5. **Follow iOS Style Guide requirements for accessibility and i18n**
+2. Run build frequently to catch issues early
+3. Use TodoWrite to track progress on multi-step tasks
+4. Follow the style guide for the component you are working on
 
 ### CRITICAL: Definition of Done
 
@@ -225,13 +225,10 @@ If you tell the user "implementation is complete" when tests are failing, you ha
 
 ### Quality Gates
 - All tests pass (you must verify by running them)
-- Build succeeds for iOS Simulator
-- No force unwraps (!)
-- Public APIs documented with /// comments
+- Build succeeds
+- Public APIs documented with comments
 - Code follows existing patterns in the codebase
-- **Accessibility labels on all interactive elements** (per iOS Style Guide)
-- **Localizable strings for all user-facing text** (per iOS Style Guide)
-- **iPad adaptive layouts using size class detection** (per iOS Style Guide)
+- Linting passes with zero violations
 
 ---
 
