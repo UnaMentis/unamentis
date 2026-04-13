@@ -1,7 +1,9 @@
 {
   "permissions": {
     "additionalDirectories": [
-      "/Users/ramerman/dev/unamentis-android"
+      "/Users/ramerman/dev/unamentis-android",
+      "/Users/ramerman/dev/unamentis-ios",
+      "/Users/ramerman/dev/unamentis-models"
     ],
     "allow": [
       "Bash(npm test:*)"
@@ -20,17 +22,6 @@
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lint-swift.sh",
-            "timeout": 30
-          }
-        ]
-      }
-    ]
+    "PostToolUse": []
   }
 }

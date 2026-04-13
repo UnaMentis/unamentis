@@ -1,34 +1,6 @@
-# Xcode
-# Note: project.pbxproj is generated from project.yml via XcodeGen
-# Run `xcodegen generate` after cloning to create the Xcode project
-*.xcodeproj/*
-!*.xcodeproj/xcshareddata/
-!*.xcworkspace/contents.xcworkspacedata
-*.xcworkspace/*
-!*.xcworkspace/xcshareddata/
-xcuserdata/
-DerivedData/
+# Build artifacts
 build/
-*.moved-aside
-*.xccheckout
-*.xcscmblueprint
-
-# Swift Package Manager
-.build/
-.swiftpm/
-Package.resolved
-
-# CocoaPods
-Pods/
-
-# Carthage
-Carthage/Build/
-
-# fastlane
-fastlane/report.xml
-fastlane/Preview.html
-fastlane/screenshots/**/*.png
-fastlane/test_output
+DerivedData/
 
 # Code coverage
 *.gcda
@@ -36,9 +8,6 @@ fastlane/test_output
 *.profraw
 .coverage
 htmlcov/
-
-# Xcode test results
-*.xcresult/
 
 # macOS
 .DS_Store
@@ -50,11 +19,6 @@ htmlcov/
 # Environment
 .env
 *.env
-
-# Test recordings
-Tests/Recordings/
-*.wav
-*.m4a
 
 # Logs
 *.log
@@ -72,7 +36,6 @@ __pycache__/
 .mypy_cache/
 
 # ML Models (too large for git)
-# Use explicit path to avoid matching Swift code directories like Routing/Models/
 /models/
 *.mlmodel
 *.mlpackage
@@ -82,15 +45,7 @@ __pycache__/
 *.pth
 *.gguf
 
-# llama.cpp XCFramework (large binary, download separately)
-llama.xcframework/
-llama-xcframework.tar.gz
-
-# llama.cpp source clones (used for building, not tracked)
-llama.cpp/
-tools/llama.cpp/
-
-# Website (separate repo - see documentation/website/)
+# Website (separate repo)
 documentation/website/
 
 # Importer downloads and output (large course files)
@@ -109,6 +64,3 @@ server/web/.next/
 # Archive files in project root
 /*.zip
 /*.tar.gz
-
-# Xcode test results
-*.xcresult

@@ -15,117 +15,40 @@ This rule ensures proper attribution and maintains the integrity of the contribu
 
 ## Project Overview
 
-UnaMentis is an iOS voice AI tutoring app built with Swift 6.0/SwiftUI. It enables 60-90+ minute voice-based learning sessions with sub-500ms latency. The project is developed with 100% AI assistance.
+UnaMentis is a voice AI learning platform. This repository contains the server infrastructure, documentation, and curriculum. The project is developed with 100% AI assistance.
 
-## Monorepo Structure
+**The iOS app is in a separate repository:** `unamentis-ios` at `/Users/ramerman/dev/unamentis-ios/`
 
-This repository contains multiple components, each with its own CLAUDE.md:
+## Repository Structure
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| iOS App | `UnaMentis/` | Swift/SwiftUI voice tutoring client |
 | Server | `server/` | Backend infrastructure |
 | **USM Core** | `server/usm-core/` | Rust cross-platform service manager (port 8787) |
 | Management API | `server/management/` | Python/aiohttp backend API (port 8766) |
-| UnaMentis Server | `server/web/` | Next.js/React web interface (port 3000) |
+| Web Interface | `server/web/` | Next.js/React web interface (port 3000) |
 | Importers | `server/importers/` | Curriculum import framework |
 | Curriculum | `curriculum/` | UMCF format specification |
 | Latency Test Harness | `server/latency_harness/` | Automated latency testing CLI |
-| iOS Test Harness | `UnaMentis/Testing/LatencyHarness/` | High-precision iOS latency testing |
 | Demo Video Generator | `demo/` | Automated iOS demo video creation |
+
+### Related Repositories
+
+| Repo | Path | Purpose |
+|------|------|---------|
+| unamentis-ios | `/Users/ramerman/dev/unamentis-ios/` | iOS client (Swift 6/SwiftUI) |
+| unamentis-android | `/Users/ramerman/dev/unamentis-android/` | Android client (Kotlin) |
+| unamentis-models | `/Users/ramerman/dev/unamentis-models/` | Shared ML models |
 
 See the CLAUDE.md in each directory for component-specific instructions.
 
-## MANDATORY: MCP Server Integration
+## iOS Development
 
-**You MUST use the configured MCP servers for all Xcode and Simulator operations.** This enables first-class, round-trip development and debugging.
-
-### Required MCP Servers
-
-Verify both servers are connected:
-```bash
-claude mcp list
-# Should show:
-# ios-simulator: ✓ Connected
-# XcodeBuildMCP: ✓ Connected
-```
-
-If not connected, restart the Claude Code session.
-
-### MCP Tools to Use
-
-| Task | MCP Tool |
-|------|----------|
-| Set session defaults | `mcp__XcodeBuildMCP__session-set-defaults` |
-| Build for simulator | `mcp__XcodeBuildMCP__build_sim` |
-| Build and run | `mcp__XcodeBuildMCP__build_run_sim` |
-| Install app | `mcp__XcodeBuildMCP__install_app_sim` |
-| Launch app | `mcp__XcodeBuildMCP__launch_app_sim` |
-| Capture logs | `mcp__XcodeBuildMCP__start_sim_log_cap` / `stop_sim_log_cap` |
-| Take screenshot | `mcp__XcodeBuildMCP__screenshot` or `mcp__ios-simulator__screenshot` |
-| Describe UI | `mcp__XcodeBuildMCP__describe_ui` |
-| Tap UI | `mcp__XcodeBuildMCP__tap` or `mcp__ios-simulator__ui_tap` |
-| Type text | `mcp__XcodeBuildMCP__type_text` or `mcp__ios-simulator__ui_type` |
-| Swipe | `mcp__XcodeBuildMCP__swipe` or `mcp__ios-simulator__ui_swipe` |
-| Gestures | `mcp__XcodeBuildMCP__gesture` |
-
-**Important**: Before building, set session defaults:
-```
-mcp__XcodeBuildMCP__session-set-defaults({
-  projectPath: "/Users/ramerman/dev/unamentis/UnaMentis.xcodeproj",
-  scheme: "UnaMentis",
-  simulatorName: "iPhone 16 Pro"
-})
-```
-
-### Round-Trip Debugging Workflow
-
-When debugging UI issues:
-1. Build with XcodeBuildMCP
-2. Install and launch with XcodeBuildMCP
-3. Capture logs with XcodeBuildMCP
-4. Screenshot with ios-simulator MCP
-5. Interact with ios-simulator MCP
-6. Analyze and iterate
-
-This workflow allows autonomous debugging without manual user intervention.
-
-## Xcode Project Generation
-
-The Xcode project is generated from `project.yml` using XcodeGen. The `project.pbxproj` file is NOT committed to git.
-
-**First-time setup after cloning:**
-```bash
-xcodegen generate
-```
-
-**After modifying project.yml:**
-```bash
-xcodegen generate
-```
-
-This keeps the project configuration human-readable and avoids merge conflicts.
+**iOS development has moved to the `unamentis-ios` repo.** See `/Users/ramerman/dev/unamentis-ios/CLAUDE.md` for MCP servers, Xcode project generation, and iOS build commands.
 
 ## Quick Commands
 
 ```bash
-# iOS build (uses iPhone 16 Pro for CI parity)
-xcodebuild -project UnaMentis.xcodeproj -scheme UnaMentis \
-  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
-
-# Testing (use the unified test runner for CI parity)
-./scripts/test-quick.sh          # Unit tests only (fast)
-./scripts/test-all.sh            # All tests + 80% coverage enforcement
-./scripts/test-integration.sh    # Integration tests only
-./scripts/test-ci.sh             # Direct runner with env var config
-
-# Lint and format
-./scripts/lint.sh
-./scripts/format.sh
-
-# Health check (lint + quick tests)
-./scripts/health-check.sh
-
 # Latency testing (see server/latency_harness/CLAUDE.md for details)
 python -m latency_harness.cli --list-suites
 python -m latency_harness.cli --suite quick_validation --mock
@@ -144,18 +67,7 @@ cargo fmt                        # Format code
 cargo fmt --check                # Check formatting without modifying
 ```
 
-### Unified Test Runner
-
-The `test-ci.sh` script is the single source of truth for test execution, used by both local scripts and CI workflows. This ensures local and CI environments behave identically.
-
-```bash
-# Environment variables for test-ci.sh:
-TEST_TYPE=unit|integration|all  # Default: unit
-SIMULATOR="iPhone 16 Pro"       # Default: iPhone 16 Pro (with fallback)
-COVERAGE_THRESHOLD=80           # Default: 80%
-ENABLE_COVERAGE=true|false      # Default: true
-ENFORCE_COVERAGE=true|false     # Default: true in CI, false locally
-```
+For iOS build/test commands, see `unamentis-ios/CLAUDE.md`.
 
 ## Server Management
 
@@ -267,10 +179,9 @@ Enforces the "Real Over Mock" testing philosophy by blocking commits with forbid
 |----------|-------------------|-------------------|
 | Python | `class Mock*`, `MagicMock()`, `AsyncMock()` | `# ALLOWED: <reason>` comment |
 | TypeScript | `vi.mock('@/lib/...')` | `// ALLOWED: <reason>` comment |
-| Swift | `class/actor/struct Mock*` outside `MockServices.swift` | `// ALLOWED: <reason>` comment |
 | Rust | `mockall` crate, `mock!` macro, `struct Mock*` | `// ALLOWED: <reason>` comment |
 
-**Swift exception:** Mocks for paid external APIs (LLM, STT, TTS, Embeddings) are allowed in `UnaMentisTests/Helpers/MockServices.swift`.
+For Swift mock test detection, see `unamentis-ios/.hooks/pre-commit`.
 
 **Remediation:** Use real implementations with fixtures. See `docs/testing/MOCK_VIOLATIONS_INVENTORY.md` for patterns.
 
@@ -331,13 +242,6 @@ Proven false positive? → Document WHY in detail
 See `docs/quality/TOOL_TRUST_DOCTRINE.md` and the "Tool Trust Doctrine" section in `AGENTS.md` for full documentation and case studies.
 
 ## Key Technical Requirements
-
-**Hands-Free First Design:**
-- Voice-centric activities (oral practice, learning sessions) must support 100% hands-free operation
-- Voice-first is automatic when entering activities, no toggle needed
-- App-wide voice navigation is a separate accessibility feature (opt-in)
-- All voice work must follow accessibility standards (VoiceOver compatible, consistent commands)
-- See `docs/design/HANDS_FREE_FIRST_DESIGN.md` for complete specification
 
 **Testing Philosophy (Real Over Mock):**
 - Only mock paid external APIs (LLM, STT, TTS, Embeddings)
@@ -410,7 +314,6 @@ Claude automatically tracks work completed, building commit message notes tied t
 ## Key Documentation
 
 - `docs/setup/DEV_ENVIRONMENT.md` - **Developer environment setup guide**
-- `docs/ios/IOS_STYLE_GUIDE.md` - Mandatory iOS coding standards
 - `docs/architecture/UnaMentis_TDD.md` - Technical design document
 - `docs/architecture/PROJECT_OVERVIEW.md` - **Authoritative project overview (must be kept current)**
 - `docs/TASK_STATUS.md` - Current task status
@@ -419,6 +322,8 @@ Claude automatically tracks work completed, building commit message notes tied t
 - `docs/LATENCY_TEST_HARNESS_GUIDE.md` - Latency harness usage guide
 - `docs/design/AUDIO_LATENCY_TEST_HARNESS.md` - Latency harness architecture
 - `docs/testing/CHAOS_ENGINEERING_RUNBOOK.md` - Voice pipeline resilience testing
+
+For iOS documentation (style guide, client specs, etc.), see `unamentis-ios/docs/`.
 
 ## MANDATORY: PROJECT_OVERVIEW.md Maintenance
 
@@ -517,36 +422,34 @@ docs/testing/CHAOS_ENGINEERING_RUNBOOK.md
 
 ## Cross-Repository Access
 
-This project has read access to related external repositories. Use this when you need to reference code, patterns, or documentation from other UnaMentis projects.
+This project has read access to all UnaMentis ecosystem repositories via global additionalDirectories.
 
 ### Available External Repos
 
 | Repo | Path | Purpose |
 |------|------|---------|
-| unamentis-android | /Users/ramerman/dev/unamentis-android | Android client for UnaMentis |
+| unamentis-ios | /Users/ramerman/dev/unamentis-ios | iOS client (standalone repo) |
+| unamentis-android | /Users/ramerman/dev/unamentis-android | Android client |
+| unamentis-models | /Users/ramerman/dev/unamentis-models | Shared ML models |
 
 ### How to Use
 
 Access is always active. Use absolute paths with Read, Grep, and Glob:
 
 ```bash
-# Find files
+# iOS repo
+Glob: /Users/ramerman/dev/unamentis-ios/**/*.swift
+
+# Android repo
 Glob: /Users/ramerman/dev/unamentis-android/**/*.kt
 
-# Search content
-Grep: pattern in /Users/ramerman/dev/unamentis-android/
-
-# Read specific file
-Read: /Users/ramerman/dev/unamentis-android/README.md
+# Shared models
+Read: /Users/ramerman/dev/unamentis-models/CLAUDE.md
 ```
 
 ### Read-Only Constraint
 
 For explicit read-only mode, invoke `/read-external`. This restricts tools to Read, Grep, Glob, and Task only.
-
-### Adding New Repos
-
-See `.claude/skills/read-external/TEMPLATE.md` for instructions on adding additional external repositories.
 
 ## Available Skills
 
@@ -562,8 +465,6 @@ Skills are focused workflows that provide consistency and predictability. Invoke
 | `/read-external` | Cross-repo read access | Reference external repos |
 | `/comms` | Post to Slack/Trello with natural language | Team communication |
 | `/worktree` | Manage git worktrees for parallel development | Parallel task isolation |
-| `/xcode-project` | Add files/frameworks to Xcode projects | After creating Swift files |
-| `/demo-video` | Generate iOS demo videos autonomously | Marketing, App Store previews |
 
 ### Key Skills
 
@@ -592,28 +493,6 @@ Skills are focused workflows that provide consistency and predictability. Invoke
 /review staged       # Review staged changes only
 ```
 
-**`/mcp-setup`** - Configure MCP for iOS/USM development
-```
-/mcp-setup ios       # Main iOS app
-/mcp-setup usm       # Server Manager app
-```
-
-**`/worktree`** - Parallel development with isolated worktrees
-```
-/worktree create kb-feature    # Create worktree (auto-opens VS Code)
-/worktree list                 # List all worktrees with disk usage
-/worktree cleanup              # Clean DerivedData from inactive worktrees
-/worktree remove kb-feature    # Remove worktree (with safety checks)
-```
-
-**`/demo-video`** - Automated iOS demo video generation
-```
-/demo-video                    # Show status and available configs
-/demo-video generate app_overview  # Full pipeline: capture → TTS → assemble
-/demo-video capture app_overview   # Capture only (test navigation)
-/demo-video script app_overview    # View narration script for editing
-```
-
-Prerequisites: `/service status` shows management-api running, `SHOTSTACK_API_KEY` set.
+For iOS-specific skills (`/demo-video`, `/xcode-project`, `/mcp-setup ios`), see `unamentis-ios`.
 
 See `.claude/skills/*/SKILL.md` for detailed documentation on each skill.

@@ -12,9 +12,11 @@ This skill provides constrained read-only access to external repositories config
 
 External repositories are configured in `.claude/settings.json` under `additionalDirectories`. Check that file for the current list of available repos and their absolute paths.
 
-| Repo | Purpose |
-|------|---------|
-| *unamentis-android* | Android Client for UnaMentis |
+| Repo | Path | Purpose |
+|------|------|---------|
+| unamentis-ios | /Users/ramerman/dev/unamentis-ios | iOS client (standalone repo) |
+| unamentis-android | /Users/ramerman/dev/unamentis-android | Android client |
+| unamentis-models | /Users/ramerman/dev/unamentis-models | Shared ML models |
 
 ## Usage
 

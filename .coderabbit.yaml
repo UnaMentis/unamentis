@@ -38,18 +38,6 @@ reviews:
 
   # Path-based review instructions
   path_instructions:
-    # iOS Swift code
-    - path: "**/*.swift"
-      instructions: |
-        Review for Swift 6.0 concurrency safety. Check for:
-        - Actor isolation violations
-        - Sendable conformance issues
-        - Data races in async code
-        - Memory leaks and retain cycles
-        - Force unwrapping (prefer guard/if-let)
-        - Performance in hot paths (voice pipeline is latency-critical)
-        Follow the iOS Style Guide in docs/ios/IOS_STYLE_GUIDE.md
-
     # Python server code
     - path: "server/**/*.py"
       instructions: |

@@ -51,84 +51,6 @@ if [ -z "$STAGED_FILES" ]; then
 fi
 
 # =============================================================================
-# Swift Checks (iOS)
-# =============================================================================
-SWIFT_FILES=$(echo "$STAGED_FILES" | grep -E '\.swift$' || true)
-
-if [ -n "$SWIFT_FILES" ]; then
-    echo -e "\n${YELLOW}Checking Swift files...${NC}"
-
-    # Check if SwiftLint is available
-    if command -v swiftlint &> /dev/null; then
-        echo "Running SwiftLint..."
-        # Lint only staged Swift files
-        echo "$SWIFT_FILES" | xargs swiftlint lint --quiet --strict || {
-            echo -e "${RED}SwiftLint found violations. Please fix them before committing.${NC}"
-            FAILED=1
-        }
-    else
-        echo -e "${YELLOW}SwiftLint not found, skipping Swift lint checks.${NC}"
-    fi
-
-    # Check if SwiftFormat is available (check mode only)
-    if command -v swiftformat &> /dev/null; then
-        echo "Running SwiftFormat check..."
-        echo "$SWIFT_FILES" | xargs swiftformat --lint || {
-            echo -e "${RED}SwiftFormat found formatting issues. Run 'swiftformat .' to fix.${NC}"
-            FAILED=1
-        }
-    fi
-fi
-
-# =============================================================================
-# Swift Mock Test Violation Detection (Prevention)
-# =============================================================================
-# Enforces "Real Over Mock" philosophy for Swift tests
-# Approved mocks for paid external APIs must be in MockServices.swift only
-
-SWIFT_TEST_FILES=$(echo "$STAGED_FILES" | grep -E '^UnaMentisTests/.*\.swift$' || true)
-# Exclude MockServices.swift which is the approved location for external API mocks
-SWIFT_TEST_FILES_NO_MOCKS=$(echo "$SWIFT_TEST_FILES" | grep -v 'MockServices\.swift$' || true)
-
-if [ -n "$SWIFT_TEST_FILES_NO_MOCKS" ]; then
-    echo -e "\n${YELLOW}Checking for Swift mock test violations...${NC}"
-
-    SWIFT_MOCK_VIOLATIONS=""
-
-    for file in $SWIFT_TEST_FILES_NO_MOCKS; do
-        staged_content=$(git show ":$file" 2>/dev/null || true)
-
-        if [ -n "$staged_content" ]; then
-            # Detect class Mock*, actor Mock*, struct Mock* definitions
-            violations=$(echo "$staged_content" | grep -n "^\(class\|actor\|struct\) Mock" | grep -v "// ALLOWED:" || true)
-            if [ -n "$violations" ]; then
-                SWIFT_MOCK_VIOLATIONS="${SWIFT_MOCK_VIOLATIONS}\n${file}:\n${violations}"
-            fi
-        fi
-    done
-
-    if [ -n "$SWIFT_MOCK_VIOLATIONS" ]; then
-        echo -e "${RED}Swift mock test violations detected!${NC}"
-        echo -e "${YELLOW}Mock definitions found outside MockServices.swift:${NC}"
-        echo -e "$SWIFT_MOCK_VIOLATIONS"
-        echo ""
-        echo -e "${YELLOW}TESTING PHILOSOPHY: Real Over Mock${NC}"
-        echo "Mocks are only allowed for paid external APIs (LLM, STT, TTS, Embeddings)."
-        echo ""
-        echo "Options:"
-        echo "  1. Use real implementations (preferred)"
-        echo "  2. Add approved mock to UnaMentisTests/Helpers/MockServices.swift"
-        echo ""
-        echo "See: AGENTS.md for full testing philosophy"
-        echo ""
-        echo "If this is a legitimate exception, add '// ALLOWED: <reason>' comment on the same line"
-        FAILED=1
-    else
-        echo -e "${GREEN}No Swift mock violations detected.${NC}"
-    fi
-fi
-
-# =============================================================================
 # Python Checks (Server)
 # =============================================================================
 PYTHON_FILES=$(echo "$STAGED_FILES" | grep -E '\.py$' || true)
@@ -260,37 +182,6 @@ if [ -n "$MANAGEMENT_NON_TEST_FILES" ]; then
         cd - > /dev/null
     else
         echo -e "${YELLOW}pytest not found, skipping coverage check.${NC}"
-    fi
-fi
-
-# =============================================================================
-# iOS/Swift Coverage Check
-# =============================================================================
-IOS_SWIFT_FILES=$(echo "$STAGED_FILES" | grep -E '^UnaMentis/.*\.swift$' || true)
-# Exclude test files and UI-only files from triggering coverage check
-IOS_NON_TEST_FILES=$(echo "$IOS_SWIFT_FILES" | grep -v 'Tests/' | grep -v '/Views/' || true)
-
-if [ -n "$IOS_NON_TEST_FILES" ]; then
-    echo -e "\n${YELLOW}Checking iOS test coverage...${NC}"
-
-    # Check if xcodebuild is available
-    if command -v xcodebuild &> /dev/null; then
-        # Check if test-ci.sh exists and run quick unit tests with coverage enforcement
-        if [ -f "scripts/test-ci.sh" ]; then
-            echo "Running iOS unit tests with coverage enforcement (80% minimum)..."
-            # Run tests with coverage enforcement enabled
-            if ! ENFORCE_COVERAGE=true TEST_TYPE=unit ./scripts/test-ci.sh 2>&1 | tail -20; then
-                echo -e "${RED}iOS coverage check failed! Coverage must be at least 80%.${NC}"
-                echo -e "${YELLOW}Run './scripts/test-quick.sh' to see full test output.${NC}"
-                FAILED=1
-            else
-                echo -e "${GREEN}iOS coverage check passed (80%+ achieved).${NC}"
-            fi
-        else
-            echo -e "${YELLOW}test-ci.sh not found, skipping iOS coverage check.${NC}"
-        fi
-    else
-        echo -e "${YELLOW}xcodebuild not found, skipping iOS coverage check.${NC}"
     fi
 fi
 

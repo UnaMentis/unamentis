@@ -12,10 +12,6 @@ coverage:
         target: auto
         threshold: 2%
         informational: false
-      ios:
-        flags:
-          - ios
-        target: 80%
       management:
         flags:
           - management
@@ -31,10 +27,6 @@ coverage:
         informational: true  # Temporary: large feature PR needs test backfill, restore to false after
 
 flags:
-  ios:
-    paths:
-      - UnaMentis/
-    carryforward: true
   management:
     paths:
       - server/management/
@@ -59,16 +51,4 @@ comment:
 github_checks:
   annotations: true
 
-ignore:
-  # Debug-only code - development tools, not production critical
-  - "UnaMentis/UI/Debug/**"
-  # Test harness infrastructure - testing tests creates circular dependency
-  - "UnaMentis/Testing/**"
-  # App entry point - SwiftUI lifecycle, minimal testable logic
-  - "UnaMentis/UnaMentisApp.swift"
-  # Pure SwiftUI views with no business logic, only presentation
-  - "UnaMentis/UI/Settings/DiscoveryProgressView.swift"
-  - "UnaMentis/UI/Settings/OnDeviceLLMSettingsView.swift"
-  - "UnaMentis/UI/Settings/QRCodeScannerView.swift"
-  - "UnaMentis/UI/Settings/ServerSettingsView.swift"
-  - "UnaMentis/UI/ReadingList/ReadingListView.swift"
+ignore: []
