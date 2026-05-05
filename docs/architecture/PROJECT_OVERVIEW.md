@@ -20,9 +20,9 @@ UnaMentis provides voice tutoring across multiple platforms:
 
 | Client | Platform | Technology | Status | Repository |
 |--------|----------|------------|--------|------------|
-| **iOS App** | iPhone/iPad | Swift 6.0, SwiftUI | Primary, feature-complete | This repo (`UnaMentis/`) |
+| **iOS App** | iPhone/iPad | Swift 6.0, SwiftUI | TestFlight beta prep (May 2026) | [`unamentis-ios`](https://github.com/UnaMentis/unamentis-ios) (separate repo) |
 | **Web Client** | Browsers | Next.js 15+, React 19, TypeScript | Feature-complete | This repo (`server/web-client/`) |
-| **Android App** | Android | Kotlin | In development | Separate repo |
+| **Android App** | Android | Kotlin | In development | [`unamentis-android`](https://github.com/UnaMentis/unamentis-android) (separate repo) |
 
 ### iOS App (Primary)
 - **Target Devices:** iPhone 16/17 Pro Max (optimized), iPad
@@ -41,12 +41,23 @@ UnaMentis provides voice tutoring across multiple platforms:
 
 ---
 
-## Monorepo Structure
+## Repository Structure
+
+UnaMentis is a multi-repo project. The `unamentis` repo serves as the project hub for server infrastructure, curriculum, and cross-cutting documentation. Each client has its own dedicated repo.
+
+### Ecosystem Repositories
+
+| Repo | Purpose |
+|------|---------|
+| `unamentis` (this repo) | Server infrastructure, curriculum, project hub, cross-cutting documentation |
+| `unamentis-ios` | iOS client (Swift 6.0/SwiftUI), TestFlight beta prep |
+| `unamentis-android` | Android client (Kotlin), in development |
+| `unamentis-models` | Shared ML model artifacts (Ministral, Kyutai TTS, etc.) |
+
+### This Repo Layout
 
 ```
 unamentis/
-├── UnaMentis/                 # iOS App (Swift 6.0/SwiftUI)
-├── UnaMentisTests/            # iOS Test Suite (178+ tests)
 ├── server/                    # Backend Infrastructure
 │   ├── usm-core/              # Cross-Platform Service Manager (Rust, port 8787)
 │   ├── server-manager/        # Menu bar apps for service management
@@ -56,19 +67,24 @@ unamentis/
 │   ├── web/                   # Operations Console (Next.js/React, port 3000)
 │   ├── web-client/            # Web Client (Next.js, voice tutoring for browsers)
 │   ├── database/              # Shared SQLite curriculum database
-│   └── importers/             # Curriculum import framework
+│   ├── importers/             # Curriculum import framework
+│   └── latency_harness/       # Automated latency testing CLI
 ├── curriculum/                # UMCF specification and examples
-├── docs/                      # Comprehensive documentation (40+ files)
-├── scripts/                   # Build, test, lint automation
-└── .github/                   # CI/CD workflows
+├── docs/                      # Cross-cutting documentation (single source of truth)
+│   ├── client-spec/           # Cross-platform client UI/UX specification
+│   ├── modules/               # Knowledge Bowl, SAT, and other module specs
+│   ├── design/                # Hands-free design, audio orchestrator, etc.
+│   ├── architecture/          # This file, TDD, fallback architecture
+│   └── testing/               # Testing philosophy (Real Over Mock)
+├── demo/                      # Automated iOS demo video generation
+├── scripts/                   # Build, test, lint automation for server components
+└── .github/                   # CI/CD workflows for server components
 ```
 
-### Component Summary
+### Server Component Summary
 
 | Component | Location | Technology | Purpose |
 |-----------|----------|------------|---------|
-| iOS App | `UnaMentis/` | Swift 6.0, SwiftUI | Voice tutoring client (primary) |
-| iOS Tests | `UnaMentisTests/` | XCTest | 178+ unit, 16+ integration tests |
 | **USM Core** | `server/usm-core/` | Rust, Tokio, Axum | Cross-platform service manager (port 8787) |
 | **USM-FFI** | `server/server-manager/USMXcode-FFI/` | Swift 6.0, SwiftUI | macOS menu bar app (uses USM Core) |
 | Web Client | `server/web-client/` | Next.js 15+, React, TypeScript | Voice tutoring for browsers |
@@ -77,6 +93,8 @@ unamentis/
 | Importers | `server/importers/` | Python | Plugin-based curriculum import |
 | Curriculum | `curriculum/` | UMCF JSON | Format specification |
 | Latency Harness | `server/latency_harness/` | Python | Automated latency testing |
+
+For iOS architecture, see [`unamentis-ios/UnaMentis/CLAUDE.md`](https://github.com/UnaMentis/unamentis-ios/blob/main/UnaMentis/CLAUDE.md).
 
 ---
 

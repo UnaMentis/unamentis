@@ -1,10 +1,24 @@
 # UnaMentis Task Status
 
-This document tracks all tasks for completing the UnaMentis iOS project. Tasks are divided into:
+This document tracks all tasks for the UnaMentis project. Tasks are divided into:
 - **Part 1**: Autonomous tasks (AI agent can complete independently)
-- **Part 2**: Collaborative tasks (requires user participation - API keys, device testing)
+- **Part 2**: Collaborative tasks (requires user participation, e.g. API keys, device testing)
 
-**Last Updated:** December 2025
+**Last Updated:** May 2026
+
+---
+
+## Recent Milestones (2026)
+
+| Date | Milestone |
+|------|-----------|
+| 2026-03-29 | Expert Panel Review (3 experts, 42 findings, 4 beta blockers identified) |
+| 2026-04-08 | PR #104 merged: 4 beta blockers from expert review addressed |
+| 2026-04-13 | iOS app extracted from monorepo into `unamentis-ios` |
+| 2026-04-29 | Multi-repo documentation strategy established (`unamentis` as project hub) |
+| 2026-05-04 | Pre-TestFlight readiness audit complete; CI repaired, signing configured |
+
+**Next milestone:** First TestFlight beta submission (Part 2 gates: see Sections 11-13).
 
 ---
 
@@ -12,17 +26,18 @@ This document tracks all tasks for completing the UnaMentis iOS project. Tasks a
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Build | **Zero Errors** | `swift build` succeeds |
-| Unit Tests | **126+ Passing** | Including 23 App Intents tests |
-| Integration Tests | **16+ Passing** | Multi-component tests |
+| Repo Structure | **Multi-repo** | `unamentis` (server/hub), `unamentis-ios`, `unamentis-android`, `unamentis-models` |
+| iOS Build | **Compiles** | Swift 6 strict concurrency, Xcode project generated via XcodeGen |
+| iOS Unit Tests | **85 test files** | 80% coverage threshold enforced via `test-ci.sh` |
+| iOS Integration Tests | **Multi-component** | Voice session, telemetry, audio pipeline, Core Data |
+| iOS CI (GitHub Actions) | **Repaired 2026-05-04** | hook-audit + placeholder model failures fixed |
+| iOS Signing | **Configured 2026-05-04** | DEVELOPMENT_TEAM set, automatic signing for distribution |
 | Core Data | **Complete** | Manual NSManagedObject classes for SPM |
-| Platform Compatibility | **Complete** | macOS + iOS builds work |
 | GLM-ASR Server | **Implemented** | Server-side STT service |
 | GLM-ASR On-Device | **Implemented** | On-device STT with CoreML + llama.cpp |
-| iOS Simulator MCP | **Installed** | AI-driven testing capability |
-| **Siri & App Intents** | **Implemented** | Voice commands, deep links, entities |
-| Documentation | **Updated** | New guides for Apple Intelligence |
-| **UI Simulator Testing** | **Verified** | All tabs functional, navigation working |
+| Siri & App Intents | **Implemented** | Voice commands, deep links, entities |
+| Privacy Manifest | **Complete** | PrivacyInfo.xcprivacy with required-reasons APIs declared |
+| Android Client | **In Progress** | Separate repo, parity build-out underway |
 
 ---
 
@@ -229,8 +244,10 @@ This document tracks all tasks for completing the UnaMentis iOS project. Tasks a
 
 | Task | Agent/Tool | Started | Notes |
 |------|------------|---------|-------|
-| Part 1 COMPLETE | Claude Code | 2025-12-16 | All autonomous tasks finished |
-| Ready for Part 2 | User | - | API keys, model download, device testing |
+| Part 1 COMPLETE | Claude Code | 2025-12-16 | All autonomous tasks finished as of Dec 2025 |
+| Pre-TestFlight Readiness | Claude Code | 2026-05-04 | CI repair, signing, asset validation complete |
+| TestFlight Submission | User | - | Pending: App Store Connect metadata, distribution cert in keychain |
+| Part 2 (Beta Gates) | User | - | API keys, on-device model download, physical device testing |
 
 ---
 
