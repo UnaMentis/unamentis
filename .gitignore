@@ -107,6 +107,7 @@ server/web/.next/
 
 # Claude draft files
 .claude/draft-commit.md
+.claude/*.lock
 
 # Archive files in project root
 /*.zip
