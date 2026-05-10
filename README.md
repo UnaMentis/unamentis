@@ -438,3 +438,4 @@ Contributions are welcome! Please read our [Contributing Guide](docs/CONTRIBUTIN
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 Copyright (c) 2025 Richard Amerman
+
