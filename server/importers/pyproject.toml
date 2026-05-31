@@ -64,7 +64,7 @@ Repository = "https://github.com/sirfifer/unamentis"
 # schema = "unamentis_importers.validators.schema:SchemaValidatorPlugin"
 
 [tool.setuptools]
-packages = ["importers", "importers.core", "importers.sources", "importers.parsers", "importers.enrichment"]
+packages = ["importers", "importers.core", "importers.sources", "importers.parsers", "importers.enrichment", "importers.security"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
