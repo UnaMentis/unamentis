@@ -27,18 +27,17 @@ from ..core.reprocess_models import (
     IssueSeverity,
     IssueType,
 )
+from ..security.url_guard import UnsafeURLError, assert_url_allowed
 
 logger = logging.getLogger(__name__)
 
 # Analysis thresholds
 MAX_SEGMENT_LENGTH = 2000  # Characters - longer is hard to follow in voice
-MIN_SEGMENT_LENGTH = 100   # Characters - shorter may be too fragmented
+MIN_SEGMENT_LENGTH = 100  # Characters - shorter may be too fragmented
 CHECKPOINT_EVERY_N_SEGMENTS = 3  # Expected checkpoint frequency
 
 # Valid Bloom taxonomy levels
-VALID_BLOOM_LEVELS = {
-    "remember", "understand", "apply", "analyze", "evaluate", "create"
-}
+VALID_BLOOM_LEVELS = {"remember", "understand", "apply", "analyze", "evaluate", "create"}
 
 # Required metadata fields
 REQUIRED_METADATA = ["title", "description"]
@@ -176,7 +175,9 @@ class CurriculumAnalyzer:
         # Check images concurrently with rate limiting
         semaphore = asyncio.Semaphore(10)  # Max 10 concurrent requests
 
-        async def check_single_image(image_info: tuple[str, dict[str, Any]]) -> AnalysisIssue | None:
+        async def check_single_image(
+            image_info: tuple[str, dict[str, Any]],
+        ) -> AnalysisIssue | None:
             location, asset = image_info
             async with semaphore:
                 return await self._validate_image(location, asset)
@@ -236,6 +237,7 @@ class CurriculumAnalyzer:
 
         # Validate URL with HEAD request
         try:
+            await assert_url_allowed(url)
             timeout = aiohttp.ClientTimeout(total=self.http_timeout)
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.head(url, allow_redirects=True) as resp:
@@ -254,6 +256,18 @@ class CurriculumAnalyzer:
                                 "httpStatus": resp.status,
                             },
                         )
+        except UnsafeURLError as e:
+            return AnalysisIssue(
+                id=self._next_issue_id(),
+                issue_type=IssueType.BROKEN_IMAGE.value,
+                severity=IssueSeverity.CRITICAL.value,
+                location=location,
+                node_id=asset.get("id"),
+                description=f"Image URL failed safety validation: {str(e)}",
+                suggested_fix="Search Wikimedia Commons for replacement image",
+                auto_fixable=True,
+                details={"url": url, "error": str(e)},
+            )
         except asyncio.TimeoutError:
             return AnalysisIssue(
                 id=self._next_issue_id(),
@@ -288,7 +302,11 @@ class CurriculumAnalyzer:
         def walk(obj: Any, path: str):
             if isinstance(obj, dict):
                 # Check if this is an image asset
-                if obj.get("type") == "image" or "mimeType" in obj and "image" in obj.get("mimeType", ""):
+                if (
+                    obj.get("type") == "image"
+                    or "mimeType" in obj
+                    and "image" in obj.get("mimeType", "")
+                ):
                     images.append((path, obj))
 
                 # Check assets array
@@ -336,39 +354,47 @@ class CurriculumAnalyzer:
 
             # Skip checkpoint/summary segments for undersized check
             if char_count > MAX_SEGMENT_LENGTH:
-                issues.append(AnalysisIssue(
-                    id=self._next_issue_id(),
-                    issue_type=IssueType.OVERSIZED_SEGMENT.value,
-                    severity=IssueSeverity.WARNING.value,
-                    location=location,
-                    node_id=segment.get("id"),
-                    description=f"Segment has {char_count:,} characters (max {MAX_SEGMENT_LENGTH:,})",
-                    suggested_fix="Use LLM to split into 2-3 smaller conversational segments",
-                    auto_fixable=True,
-                    details={
-                        "charCount": char_count,
-                        "recommendedMax": MAX_SEGMENT_LENGTH,
-                        "segmentType": segment_type,
-                        "preview": content[:100] + "..." if len(content) > 100 else content,
-                    },
-                ))
-            elif char_count < MIN_SEGMENT_LENGTH and segment_type not in ("checkpoint", "summary", "question"):
-                issues.append(AnalysisIssue(
-                    id=self._next_issue_id(),
-                    issue_type=IssueType.UNDERSIZED_SEGMENT.value,
-                    severity=IssueSeverity.INFO.value,
-                    location=location,
-                    node_id=segment.get("id"),
-                    description=f"Segment has only {char_count} characters (min {MIN_SEGMENT_LENGTH})",
-                    suggested_fix="Consider merging with adjacent segment",
-                    auto_fixable=True,
-                    details={
-                        "charCount": char_count,
-                        "recommendedMin": MIN_SEGMENT_LENGTH,
-                        "segmentType": segment_type,
-                        "content": content,
-                    },
-                ))
+                issues.append(
+                    AnalysisIssue(
+                        id=self._next_issue_id(),
+                        issue_type=IssueType.OVERSIZED_SEGMENT.value,
+                        severity=IssueSeverity.WARNING.value,
+                        location=location,
+                        node_id=segment.get("id"),
+                        description=f"Segment has {char_count:,} characters (max {MAX_SEGMENT_LENGTH:,})",
+                        suggested_fix="Use LLM to split into 2-3 smaller conversational segments",
+                        auto_fixable=True,
+                        details={
+                            "charCount": char_count,
+                            "recommendedMax": MAX_SEGMENT_LENGTH,
+                            "segmentType": segment_type,
+                            "preview": content[:100] + "..." if len(content) > 100 else content,
+                        },
+                    )
+                )
+            elif char_count < MIN_SEGMENT_LENGTH and segment_type not in (
+                "checkpoint",
+                "summary",
+                "question",
+            ):
+                issues.append(
+                    AnalysisIssue(
+                        id=self._next_issue_id(),
+                        issue_type=IssueType.UNDERSIZED_SEGMENT.value,
+                        severity=IssueSeverity.INFO.value,
+                        location=location,
+                        node_id=segment.get("id"),
+                        description=f"Segment has only {char_count} characters (min {MIN_SEGMENT_LENGTH})",
+                        suggested_fix="Consider merging with adjacent segment",
+                        auto_fixable=True,
+                        details={
+                            "charCount": char_count,
+                            "recommendedMin": MIN_SEGMENT_LENGTH,
+                            "segmentType": segment_type,
+                            "content": content,
+                        },
+                    )
+                )
 
         return issues
 
@@ -414,38 +440,42 @@ class CurriculumAnalyzer:
             objectives = topic.get("learningObjectives", [])
 
             if not objectives:
-                issues.append(AnalysisIssue(
-                    id=self._next_issue_id(),
-                    issue_type=IssueType.MISSING_OBJECTIVES.value,
-                    severity=IssueSeverity.WARNING.value,
-                    location=location,
-                    node_id=topic.get("id"),
-                    description=f"Topic '{topic.get('title', 'Untitled')}' has no learning objectives",
-                    suggested_fix="Use LLM to generate Bloom-aligned learning objectives",
-                    auto_fixable=True,
-                    details={
-                        "topicTitle": topic.get("title", ""),
-                    },
-                ))
+                issues.append(
+                    AnalysisIssue(
+                        id=self._next_issue_id(),
+                        issue_type=IssueType.MISSING_OBJECTIVES.value,
+                        severity=IssueSeverity.WARNING.value,
+                        location=location,
+                        node_id=topic.get("id"),
+                        description=f"Topic '{topic.get('title', 'Untitled')}' has no learning objectives",
+                        suggested_fix="Use LLM to generate Bloom-aligned learning objectives",
+                        auto_fixable=True,
+                        details={
+                            "topicTitle": topic.get("title", ""),
+                        },
+                    )
+                )
             else:
                 # Check for invalid Bloom levels
                 for i, obj in enumerate(objectives):
                     bloom_level = obj.get("bloomLevel", "").lower()
                     if bloom_level and bloom_level not in VALID_BLOOM_LEVELS:
-                        issues.append(AnalysisIssue(
-                            id=self._next_issue_id(),
-                            issue_type=IssueType.INVALID_BLOOM_LEVEL.value,
-                            severity=IssueSeverity.INFO.value,
-                            location=f"{location}/learningObjectives/{i}",
-                            node_id=obj.get("id"),
-                            description=f"Invalid Bloom level: '{bloom_level}'",
-                            suggested_fix=f"Update to valid level: {', '.join(VALID_BLOOM_LEVELS)}",
-                            auto_fixable=True,
-                            details={
-                                "currentLevel": bloom_level,
-                                "validLevels": list(VALID_BLOOM_LEVELS),
-                            },
-                        ))
+                        issues.append(
+                            AnalysisIssue(
+                                id=self._next_issue_id(),
+                                issue_type=IssueType.INVALID_BLOOM_LEVEL.value,
+                                severity=IssueSeverity.INFO.value,
+                                location=f"{location}/learningObjectives/{i}",
+                                node_id=obj.get("id"),
+                                description=f"Invalid Bloom level: '{bloom_level}'",
+                                suggested_fix=f"Update to valid level: {', '.join(VALID_BLOOM_LEVELS)}",
+                                auto_fixable=True,
+                                details={
+                                    "currentLevel": bloom_level,
+                                    "validLevels": list(VALID_BLOOM_LEVELS),
+                                },
+                            )
+                        )
 
         return issues
 
@@ -474,25 +504,29 @@ class CurriculumAnalyzer:
                             checkpoints.append(seg)
 
             # Check if there should be checkpoints
-            content_segments = [s for s in segments if s.get("type") not in ("checkpoint", "summary")]
+            content_segments = [
+                s for s in segments if s.get("type") not in ("checkpoint", "summary")
+            ]
             expected_checkpoints = len(content_segments) // CHECKPOINT_EVERY_N_SEGMENTS
 
             if expected_checkpoints > 0 and len(checkpoints) == 0:
-                issues.append(AnalysisIssue(
-                    id=self._next_issue_id(),
-                    issue_type=IssueType.MISSING_CHECKPOINTS.value,
-                    severity=IssueSeverity.WARNING.value,
-                    location=location,
-                    node_id=topic.get("id"),
-                    description=f"Topic '{topic.get('title', 'Untitled')}' has {len(content_segments)} segments but no comprehension checks",
-                    suggested_fix=f"Use LLM to generate {expected_checkpoints} comprehension checkpoints",
-                    auto_fixable=True,
-                    details={
-                        "topicTitle": topic.get("title", ""),
-                        "segmentCount": len(content_segments),
-                        "expectedCheckpoints": expected_checkpoints,
-                    },
-                ))
+                issues.append(
+                    AnalysisIssue(
+                        id=self._next_issue_id(),
+                        issue_type=IssueType.MISSING_CHECKPOINTS.value,
+                        severity=IssueSeverity.WARNING.value,
+                        location=location,
+                        node_id=topic.get("id"),
+                        description=f"Topic '{topic.get('title', 'Untitled')}' has {len(content_segments)} segments but no comprehension checks",
+                        suggested_fix=f"Use LLM to generate {expected_checkpoints} comprehension checkpoints",
+                        auto_fixable=True,
+                        details={
+                            "topicTitle": topic.get("title", ""),
+                            "segmentCount": len(content_segments),
+                            "expectedCheckpoints": expected_checkpoints,
+                        },
+                    )
+                )
 
         return issues
 
@@ -517,20 +551,22 @@ class CurriculumAnalyzer:
                 alternatives = segment.get("alternativeExplanations", [])
 
                 if not alternatives:
-                    issues.append(AnalysisIssue(
-                        id=self._next_issue_id(),
-                        issue_type=IssueType.MISSING_ALTERNATIVES.value,
-                        severity=IssueSeverity.INFO.value,
-                        location=location,
-                        node_id=segment.get("id"),
-                        description="Explanation segment has no alternative explanations",
-                        suggested_fix="Use LLM to generate simpler/technical/analogy alternatives",
-                        auto_fixable=True,
-                        details={
-                            "segmentType": segment_type,
-                            "charCount": len(content),
-                        },
-                    ))
+                    issues.append(
+                        AnalysisIssue(
+                            id=self._next_issue_id(),
+                            issue_type=IssueType.MISSING_ALTERNATIVES.value,
+                            severity=IssueSeverity.INFO.value,
+                            location=location,
+                            node_id=segment.get("id"),
+                            description="Explanation segment has no alternative explanations",
+                            suggested_fix="Use LLM to generate simpler/technical/analogy alternatives",
+                            auto_fixable=True,
+                            details={
+                                "segmentType": segment_type,
+                                "charCount": len(content),
+                            },
+                        )
+                    )
 
         return issues
 
@@ -548,17 +584,19 @@ class CurriculumAnalyzer:
         for field in REQUIRED_METADATA:
             value = curriculum.get(field, "")
             if not value or (isinstance(value, str) and not value.strip()):
-                issues.append(AnalysisIssue(
-                    id=self._next_issue_id(),
-                    issue_type=IssueType.MISSING_METADATA.value,
-                    severity=IssueSeverity.WARNING.value,
-                    location=f"/{field}",
-                    node_id=None,
-                    description=f"Required metadata field '{field}' is missing or empty",
-                    suggested_fix=f"Infer {field} from content or source metadata",
-                    auto_fixable=field != "title",  # Title requires manual input
-                    details={"field": field},
-                ))
+                issues.append(
+                    AnalysisIssue(
+                        id=self._next_issue_id(),
+                        issue_type=IssueType.MISSING_METADATA.value,
+                        severity=IssueSeverity.WARNING.value,
+                        location=f"/{field}",
+                        node_id=None,
+                        description=f"Required metadata field '{field}' is missing or empty",
+                        suggested_fix=f"Infer {field} from content or source metadata",
+                        auto_fixable=field != "title",  # Title requires manual input
+                        details={"field": field},
+                    )
+                )
 
         # Check time estimates
         topics = self._find_all_topics(curriculum)
@@ -568,20 +606,22 @@ class CurriculumAnalyzer:
                 transcript = topic.get("transcript", {})
                 segments = transcript.get("segments", []) if isinstance(transcript, dict) else []
                 if len(segments) > 2:
-                    issues.append(AnalysisIssue(
-                        id=self._next_issue_id(),
-                        issue_type=IssueType.MISSING_TIME_ESTIMATE.value,
-                        severity=IssueSeverity.INFO.value,
-                        location=location,
-                        node_id=topic.get("id"),
-                        description=f"Topic '{topic.get('title', 'Untitled')}' has no time estimate",
-                        suggested_fix="Calculate from segment count and average reading pace",
-                        auto_fixable=True,
-                        details={
-                            "topicTitle": topic.get("title", ""),
-                            "segmentCount": len(segments),
-                        },
-                    ))
+                    issues.append(
+                        AnalysisIssue(
+                            id=self._next_issue_id(),
+                            issue_type=IssueType.MISSING_TIME_ESTIMATE.value,
+                            severity=IssueSeverity.INFO.value,
+                            location=location,
+                            node_id=topic.get("id"),
+                            description=f"Topic '{topic.get('title', 'Untitled')}' has no time estimate",
+                            suggested_fix="Calculate from segment count and average reading pace",
+                            auto_fixable=True,
+                            details={
+                                "topicTitle": topic.get("title", ""),
+                                "segmentCount": len(segments),
+                            },
+                        )
+                    )
 
         return issues
 

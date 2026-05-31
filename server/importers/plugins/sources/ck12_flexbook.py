@@ -21,20 +21,26 @@ Key Features:
 - Modular Content: FlexBooks -> Chapters -> Lessons -> Sections
 """
 
+from __future__ import annotations
+
 __version__ = "1.0.0"
 __author__ = "UnaMentis Team"
 __url__ = "https://www.ck12.org/"
 
 import asyncio
-import io
 import json
 import logging
 import re
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
-from urllib.parse import urljoin, quote
-from xml.etree import ElementTree as ET
+from typing import Any
+from urllib.parse import urljoin
+
+try:
+    from defusedxml.ElementTree import fromstring as _xml_fromstring
+except ImportError:  # pragma: no cover - defusedxml is a declared dependency
+    from xml.etree.ElementTree import fromstring as _xml_fromstring  # nosec B314
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -59,6 +65,7 @@ from ...core.models import (
     NormalizedCourseDetail,
 )
 from ...core.registry import SourceRegistry
+from ...security.url_guard import UnsafeURLError, assert_url_allowed
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +82,7 @@ CK12_LICENSE = LicenseInfo(
     conditions=["attribution", "noncommercial"],
     attribution_required=True,
     attribution_format=(
-        "Content from CK-12 Foundation (www.ck12.org), "
-        "licensed under CC-BY-NC 3.0."
+        "Content from CK-12 Foundation (www.ck12.org), licensed under CC-BY-NC 3.0."
     ),
     holder_name="CK-12 Foundation",
     holder_url="https://www.ck12.org/",
@@ -93,10 +99,10 @@ CK12_LICENSE = LicenseInfo(
 CATALOG_FILE = Path(__file__).parent.parent.parent / "data" / "ck12_catalog.json"
 
 # In-memory cache of courses loaded from JSON
-_COURSES_CACHE: Optional[List[Dict[str, Any]]] = None
+_COURSES_CACHE: list[dict[str, Any]] | None = None
 
 
-def _load_courses_from_catalog() -> List[Dict[str, Any]]:
+def _load_courses_from_catalog() -> list[dict[str, Any]]:
     """Load courses from the JSON catalog file."""
     global _COURSES_CACHE
 
@@ -108,7 +114,7 @@ def _load_courses_from_catalog() -> List[Dict[str, Any]]:
         return []
 
     try:
-        with open(CATALOG_FILE, "r", encoding="utf-8") as f:
+        with open(CATALOG_FILE, encoding="utf-8") as f:
             data = json.load(f)
             _COURSES_CACHE = data.get("courses", [])
             logger.info(f"Loaded {len(_COURSES_CACHE)} courses from CK-12 catalog")
@@ -118,13 +124,13 @@ def _load_courses_from_catalog() -> List[Dict[str, Any]]:
         return []
 
 
-def _get_catalog_metadata() -> Dict[str, Any]:
+def _get_catalog_metadata() -> dict[str, Any]:
     """Get metadata from the catalog file."""
     if not CATALOG_FILE.exists():
         return {}
 
     try:
-        with open(CATALOG_FILE, "r", encoding="utf-8") as f:
+        with open(CATALOG_FILE, encoding="utf-8") as f:
             data = json.load(f)
             return data.get("metadata", {})
     except Exception as e:
@@ -159,6 +165,7 @@ CK12_GRADE_LEVELS = [
 # CK-12 FlexBook Source Handler
 # =============================================================================
 
+
 @SourceRegistry.register
 class CK12FlexBookHandler(CurriculumSourceHandler):
     """
@@ -181,9 +188,9 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
     API_URL = "https://www.ck12.org/apis"
 
     def __init__(self):
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._catalog_cache: Dict[str, CourseCatalogEntry] = {}
-        self._raw_data_cache: Dict[str, Dict[str, Any]] = {}
+        self._session: aiohttp.ClientSession | None = None
+        self._catalog_cache: dict[str, CourseCatalogEntry] = {}
+        self._raw_data_cache: dict[str, dict[str, Any]] = {}
         self._load_catalog()
 
     def _load_catalog(self):
@@ -194,7 +201,7 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
             self._catalog_cache[entry.id] = entry
             self._raw_data_cache[entry.id] = course_data
 
-    def _course_data_to_entry(self, data: Dict[str, Any]) -> CourseCatalogEntry:
+    def _course_data_to_entry(self, data: dict[str, Any]) -> CourseCatalogEntry:
         """Convert catalog data to CourseCatalogEntry."""
         features = []
 
@@ -269,9 +276,9 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         self,
         page: int = 1,
         page_size: int = 20,
-        filters: Optional[Dict[str, Any]] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[CourseCatalogEntry], int, Dict[str, List[str]]]:
+        filters: dict[str, Any] | None = None,
+        search: str | None = None,
+    ) -> tuple[list[CourseCatalogEntry], int, dict[str, list[str]]]:
         """
         Get paginated course catalog.
 
@@ -296,7 +303,8 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         if search:
             search_lower = search.lower()
             courses = [
-                c for c in courses
+                c
+                for c in courses
                 if search_lower in c.title.lower()
                 or search_lower in c.description.lower()
                 or any(search_lower in i.lower() for i in c.instructors)
@@ -316,16 +324,14 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         # Apply grade filter
         if filters.get("grade"):
             grade = filters["grade"]
-            courses = [
-                c for c in courses
-                if self._matches_grade(c.id, grade)
-            ]
+            courses = [c for c in courses if self._matches_grade(c.id, grade)]
 
         # Apply features filter
         if filters.get("features"):
             required_features = set(filters["features"])
             courses = [
-                c for c in courses
+                c
+                for c in courses
                 if required_features.issubset({f.type for f in c.features if f.available})
             ]
 
@@ -358,7 +364,7 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         self,
         query: str,
         limit: int = 20,
-    ) -> List[CourseCatalogEntry]:
+    ) -> list[CourseCatalogEntry]:
         """Search courses by query."""
         courses, _, _ = await self.get_course_catalog(
             page=1,
@@ -405,14 +411,16 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         lesson_number = 1
         for chapter in chapters:
             for lesson in chapter.get("lessons", []):
-                lessons.append(LectureInfo(
-                    id=f"lesson-{lesson_number}",
-                    number=lesson_number,
-                    title=f"{chapter.get('title', 'Chapter')}: {lesson.get('title', 'Lesson')}",
-                    has_video=lesson.get("has_video", False),
-                    has_transcript=lesson.get("has_transcript", False),
-                    has_notes=True,  # FlexBooks always have written content
-                ))
+                lessons.append(
+                    LectureInfo(
+                        id=f"lesson-{lesson_number}",
+                        number=lesson_number,
+                        title=f"{chapter.get('title', 'Chapter')}: {lesson.get('title', 'Lesson')}",
+                        has_video=lesson.get("has_video", False),
+                        has_transcript=lesson.get("has_transcript", False),
+                        has_notes=True,  # FlexBooks always have written content
+                    )
+                )
                 lesson_number += 1
 
         # If no chapters in catalog, try to fetch from source
@@ -423,25 +431,27 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         assignments = []
         if raw_data.get("practice_count", 0) > 0:
             for i in range(min(raw_data.get("practice_count", 5), 10)):
-                assignments.append(AssignmentInfo(
-                    id=f"practice-{i + 1}",
-                    title=f"Practice Set {i + 1}",
-                    has_solutions=True,
-                ))
+                assignments.append(
+                    AssignmentInfo(
+                        id=f"practice-{i + 1}",
+                        title=f"Practice Set {i + 1}",
+                        has_solutions=True,
+                    )
+                )
 
         # Build exams from quizzes
         exams = []
         if raw_data.get("quiz_count", 0) > 0:
             for i in range(min(raw_data.get("quiz_count", 2), 5)):
-                exams.append(ExamInfo(
-                    id=f"quiz-{i + 1}",
-                    title=f"Quiz {i + 1}",
-                    exam_type="quiz",
-                    has_solutions=True,
-                ))
+                exams.append(
+                    ExamInfo(
+                        id=f"quiz-{i + 1}",
+                        title=f"Quiz {i + 1}",
+                        exam_type="quiz",
+                        has_solutions=True,
+                    )
+                )
 
-        # Build standards alignment
-        standards = raw_data.get("standards", [])
         prerequisites = raw_data.get("prerequisites", [])
         syllabus = self._build_syllabus(chapters, raw_data)
 
@@ -480,6 +490,7 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         license_result = self.validate_license(course_id)
         if not license_result.can_import:
             from ...core.base import LicenseRestrictionError
+
             raise LicenseRestrictionError(license_result.warnings[0])
 
         # Get base entry from catalog
@@ -501,21 +512,25 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
             lessons = chapter.get("lessons", [])
 
             for lesson_num, lesson in enumerate(lessons, 1):
-                topics.append(ContentTopic(
-                    id=f"ch{chapter_num}-lesson-{lesson_num}",
-                    title=lesson.get("title", f"Lesson {lesson_num}"),
-                    number=lesson_num,
-                    has_video=lesson.get("has_video", False),
-                    has_transcript=lesson.get("has_transcript", False),
-                    has_practice=lesson.get("has_practice", True),
-                ))
+                topics.append(
+                    ContentTopic(
+                        id=f"ch{chapter_num}-lesson-{lesson_num}",
+                        title=lesson.get("title", f"Lesson {lesson_num}"),
+                        number=lesson_num,
+                        has_video=lesson.get("has_video", False),
+                        has_transcript=lesson.get("has_transcript", False),
+                        has_practice=lesson.get("has_practice", True),
+                    )
+                )
 
-            units.append(ContentUnit(
-                id=f"chapter-{chapter_num}",
-                title=chapter.get("title", f"Chapter {chapter_num}"),
-                number=chapter_num,
-                topics=topics,
-            ))
+            units.append(
+                ContentUnit(
+                    id=f"chapter-{chapter_num}",
+                    title=chapter.get("title", f"Chapter {chapter_num}"),
+                    number=chapter_num,
+                    topics=topics,
+                )
+            )
 
         # Determine level label based on grade level
         level_labels = {
@@ -540,22 +555,26 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         assignments = []
         if raw_data.get("practice_count", 0) > 0:
             for i in range(min(raw_data.get("practice_count", 5), 10)):
-                assignments.append(AssignmentInfo(
-                    id=f"practice-{i + 1}",
-                    title=f"Practice Set {i + 1}",
-                    has_solutions=True,
-                ))
+                assignments.append(
+                    AssignmentInfo(
+                        id=f"practice-{i + 1}",
+                        title=f"Practice Set {i + 1}",
+                        has_solutions=True,
+                    )
+                )
 
         # Build exams from quiz counts
         exams = []
         if raw_data.get("quiz_count", 0) > 0:
             for i in range(min(raw_data.get("quiz_count", 2), 5)):
-                exams.append(ExamInfo(
-                    id=f"quiz-{i + 1}",
-                    title=f"Quiz {i + 1}",
-                    exam_type="quiz",
-                    has_solutions=True,
-                ))
+                exams.append(
+                    ExamInfo(
+                        id=f"quiz-{i + 1}",
+                        title=f"Quiz {i + 1}",
+                        exam_type="quiz",
+                        has_solutions=True,
+                    )
+                )
 
         return NormalizedCourseDetail(
             id=entry.id,
@@ -583,10 +602,8 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         )
 
     async def _fetch_lesson_structure(
-        self,
-        course_id: str,
-        course_url: Optional[str]
-    ) -> List[LectureInfo]:
+        self, course_id: str, course_url: str | None
+    ) -> list[LectureInfo]:
         """
         Fetch lesson structure from CK-12 website.
 
@@ -599,6 +616,12 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         session = await self._get_session()
 
         try:
+            try:
+                await assert_url_allowed(course_url)
+            except UnsafeURLError as e:
+                logger.warning(f"Refusing to fetch lessons from unsafe URL: {e}")
+                return lessons
+
             async with session.get(course_url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status != 200:
                     logger.warning(f"CK-12 course page returned {resp.status}")
@@ -616,14 +639,16 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
                     for link in toc_container.find_all("a", href=True):
                         title = link.get_text(strip=True)
                         if title and len(title) > 2:  # Skip empty/short links
-                            lessons.append(LectureInfo(
-                                id=f"lesson-{lesson_number}",
-                                number=lesson_number,
-                                title=title,
-                                has_video=False,
-                                has_transcript=False,
-                                has_notes=True,
-                            ))
+                            lessons.append(
+                                LectureInfo(
+                                    id=f"lesson-{lesson_number}",
+                                    number=lesson_number,
+                                    title=title,
+                                    has_video=False,
+                                    has_transcript=False,
+                                    has_notes=True,
+                                )
+                            )
                             lesson_number += 1
 
                 logger.info(f"Fetched {len(lessons)} lessons from {course_url}")
@@ -635,7 +660,7 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
 
         return lessons
 
-    def _build_syllabus(self, chapters: List[Dict], raw_data: Dict) -> str:
+    def _build_syllabus(self, chapters: list[dict], raw_data: dict) -> str:
         """Build syllabus text from chapter structure."""
         if not chapters:
             return raw_data.get("description", "")
@@ -678,8 +703,8 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         self,
         course_id: str,
         output_dir: Path,
-        progress_callback: Optional[Callable[[float, str], None]] = None,
-        selected_lessons: Optional[List[str]] = None,
+        progress_callback: Callable[[float, str], None] | None = None,
+        selected_lessons: list[str] | None = None,
     ) -> Path:
         """
         Download course content to local directory.
@@ -792,9 +817,9 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
     async def _find_epub_download_url(
         self,
         session: aiohttp.ClientSession,
-        course_url: Optional[str],
-        download_url: Optional[str],
-    ) -> Optional[str]:
+        course_url: str | None,
+        download_url: str | None,
+    ) -> str | None:
         """Find the EPUB download URL for a course."""
         # If we have a direct download URL, use it
         if download_url and download_url.endswith(".epub"):
@@ -804,6 +829,12 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
             return None
 
         try:
+            try:
+                await assert_url_allowed(course_url)
+            except UnsafeURLError as e:
+                logger.warning(f"Refusing to fetch EPUB URL from unsafe course URL: {e}")
+                return None
+
             async with session.get(course_url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status != 200:
                     return None
@@ -833,10 +864,15 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
         session: aiohttp.ClientSession,
         epub_url: str,
         output_dir: Path,
-        progress_callback: Optional[Callable[[float, str], None]] = None,
+        progress_callback: Callable[[float, str], None] | None = None,
     ) -> Path:
         """Download EPUB file from URL."""
         logger.info(f"Downloading EPUB from {epub_url}")
+
+        try:
+            await assert_url_allowed(epub_url)
+        except UnsafeURLError as e:
+            raise ValueError(f"EPUB download blocked for unsafe URL: {e}") from e
 
         async with session.get(epub_url) as resp:
             if resp.status != 200:
@@ -865,8 +901,8 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
     async def _parse_epub(
         self,
         epub_path: Path,
-        selected_lessons: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        selected_lessons: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Parse EPUB file and extract structured content."""
         content = {
             "format": "epub",
@@ -921,15 +957,15 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
 
         return content
 
-    def _parse_opf_metadata(self, opf_content: str) -> Dict[str, Any]:
+    def _parse_opf_metadata(self, opf_content: str) -> dict[str, Any]:
         """Parse OPF manifest for metadata."""
         metadata = {}
 
         try:
             # Remove namespace prefixes for easier parsing
-            opf_content = re.sub(r'xmlns[^=]*="[^"]*"', '', opf_content)
+            opf_content = re.sub(r'xmlns[^=]*="[^"]*"', "", opf_content)
 
-            root = ET.fromstring(opf_content)
+            root = _xml_fromstring(opf_content)  # nosec B314 - parsed via defusedxml when available
 
             # Find metadata element
             meta_elem = root.find(".//metadata")
@@ -958,7 +994,7 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
 
         return metadata
 
-    def _parse_lesson_html(self, html_content: str, filename: str) -> Dict[str, Any]:
+    def _parse_lesson_html(self, html_content: str, filename: str) -> dict[str, Any]:
         """Parse lesson HTML content."""
         soup = BeautifulSoup(html_content, "html.parser")
 
@@ -1002,10 +1038,10 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
     async def _scrape_html_content(
         self,
         session: aiohttp.ClientSession,
-        course_url: Optional[str],
-        selected_lessons: Optional[List[str]],
-        progress_callback: Optional[Callable[[float, str], None]] = None,
-    ) -> Dict[str, Any]:
+        course_url: str | None,
+        selected_lessons: list[str] | None,
+        progress_callback: Callable[[float, str], None] | None = None,
+    ) -> dict[str, Any]:
         """Fallback: Scrape HTML content from CK-12 website."""
         content = {
             "format": "html",
@@ -1017,6 +1053,12 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
             return content
 
         try:
+            try:
+                await assert_url_allowed(course_url)
+            except UnsafeURLError as e:
+                logger.warning(f"Refusing to scrape unsafe course URL: {e}")
+                return content
+
             async with session.get(course_url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
                 if resp.status != 200:
                     return content
@@ -1035,10 +1077,12 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
                     href = link.get("href", "")
                     text = link.get_text(strip=True)
                     if "/lesson/" in href or "/section/" in href:
-                        lesson_links.append({
-                            "url": urljoin(course_url, href),
-                            "title": text,
-                        })
+                        lesson_links.append(
+                            {
+                                "url": urljoin(course_url, href),
+                                "title": text,
+                            }
+                        )
 
                 # Fetch lesson content (limit to avoid rate limiting)
                 lesson_number = 1
@@ -1054,9 +1098,14 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
                         progress_callback(pct, f"Fetching lesson {lesson_number}...")
 
                     try:
+                        try:
+                            await assert_url_allowed(lesson_link["url"])
+                        except UnsafeURLError as e:
+                            logger.warning(f"Skipping lesson with unsafe URL: {e}")
+                            continue
+
                         async with session.get(
-                            lesson_link["url"],
-                            timeout=aiohttp.ClientTimeout(total=10)
+                            lesson_link["url"], timeout=aiohttp.ClientTimeout(total=10)
                         ) as lesson_resp:
                             if lesson_resp.status == 200:
                                 lesson_html = await lesson_resp.text()
@@ -1125,10 +1174,10 @@ class CK12FlexBookHandler(CurriculumSourceHandler):
     def get_attribution_text(self, course_id: str, course_title: str) -> str:
         """Generate attribution text for a course."""
         return (
-            f'This content is derived from CK-12 Foundation (www.ck12.org). '
+            f"This content is derived from CK-12 Foundation (www.ck12.org). "
             f'Original FlexBook: "{course_title}". '
-            f'Licensed under Creative Commons Attribution-NonCommercial 3.0 Unported (CC-BY-NC 3.0). '
-            f'Copyright CK-12 Foundation.'
+            f"Licensed under Creative Commons Attribution-NonCommercial 3.0 Unported (CC-BY-NC 3.0). "
+            f"Copyright CK-12 Foundation."
         )
 
     # =========================================================================

@@ -27,6 +27,8 @@ Key Features:
 - Modular structure: Grades -> Modules -> Topics -> Lessons
 """
 
+from __future__ import annotations
+
 __version__ = "1.0.0"
 __author__ = "UnaMentis Team"
 __url__ = "https://archive.org/details/engageny-mathematics"
@@ -36,10 +38,10 @@ import io
 import json
 import logging
 import os
-import re
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 import aiohttp
 
@@ -49,7 +51,6 @@ from ...core.base import (
     LicenseValidationResult,
 )
 from ...core.models import (
-    AssignmentInfo,
     ContentStructure,
     ContentTopic,
     ContentUnit,
@@ -57,12 +58,12 @@ from ...core.models import (
     CourseDetail,
     CourseFeature,
     CurriculumSource,
-    ExamInfo,
     LectureInfo,
     LicenseInfo,
     NormalizedCourseDetail,
 )
 from ...core.registry import SourceRegistry
+from ...security.url_guard import UnsafeURLError, assert_url_allowed
 
 logger = logging.getLogger(__name__)
 
@@ -97,10 +98,10 @@ ENGAGENY_LICENSE = LicenseInfo(
 CATALOG_FILE = Path(__file__).parent.parent.parent / "data" / "engageny_catalog.json"
 
 # In-memory cache of courses loaded from JSON
-_COURSES_CACHE: Optional[List[Dict[str, Any]]] = None
+_COURSES_CACHE: list[dict[str, Any]] | None = None
 
 
-def _load_courses_from_catalog() -> List[Dict[str, Any]]:
+def _load_courses_from_catalog() -> list[dict[str, Any]]:
     """Load courses from the JSON catalog file."""
     global _COURSES_CACHE
 
@@ -112,7 +113,7 @@ def _load_courses_from_catalog() -> List[Dict[str, Any]]:
         return []
 
     try:
-        with open(CATALOG_FILE, "r", encoding="utf-8") as f:
+        with open(CATALOG_FILE, encoding="utf-8") as f:
             data = json.load(f)
             _COURSES_CACHE = data.get("courses", [])
             logger.info(f"Loaded {len(_COURSES_CACHE)} courses from EngageNY catalog")
@@ -122,13 +123,13 @@ def _load_courses_from_catalog() -> List[Dict[str, Any]]:
         return []
 
 
-def _get_catalog_metadata() -> Dict[str, Any]:
+def _get_catalog_metadata() -> dict[str, Any]:
     """Get metadata from the catalog file."""
     if not CATALOG_FILE.exists():
         return {}
 
     try:
-        with open(CATALOG_FILE, "r", encoding="utf-8") as f:
+        with open(CATALOG_FILE, encoding="utf-8") as f:
             data = json.load(f)
             return data.get("metadata", {})
     except Exception as e:
@@ -157,6 +158,7 @@ ENGAGENY_GRADE_LEVELS = [
 # EngageNY Source Handler
 # =============================================================================
 
+
 @SourceRegistry.register
 class EngageNYHandler(CurriculumSourceHandler):
     """
@@ -178,9 +180,9 @@ class EngageNYHandler(CurriculumSourceHandler):
     DOWNLOAD_BASE_URL = "https://archive.org/download/engageny-mathematics"
 
     def __init__(self):
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._catalog_cache: Dict[str, CourseCatalogEntry] = {}
-        self._raw_data_cache: Dict[str, Dict[str, Any]] = {}
+        self._session: aiohttp.ClientSession | None = None
+        self._catalog_cache: dict[str, CourseCatalogEntry] = {}
+        self._raw_data_cache: dict[str, dict[str, Any]] = {}
         self._load_catalog()
 
     def _load_catalog(self):
@@ -191,7 +193,7 @@ class EngageNYHandler(CurriculumSourceHandler):
             self._catalog_cache[entry.id] = entry
             self._raw_data_cache[entry.id] = course_data
 
-    def _course_data_to_entry(self, data: Dict[str, Any]) -> CourseCatalogEntry:
+    def _course_data_to_entry(self, data: dict[str, Any]) -> CourseCatalogEntry:
         """Convert catalog data to CourseCatalogEntry."""
         features = []
 
@@ -262,9 +264,9 @@ class EngageNYHandler(CurriculumSourceHandler):
         self,
         page: int = 1,
         page_size: int = 20,
-        filters: Optional[Dict[str, Any]] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[CourseCatalogEntry], int, Dict[str, List[str]]]:
+        filters: dict[str, Any] | None = None,
+        search: str | None = None,
+    ) -> tuple[list[CourseCatalogEntry], int, dict[str, list[str]]]:
         """
         Get paginated course catalog.
 
@@ -280,7 +282,8 @@ class EngageNYHandler(CurriculumSourceHandler):
         if search:
             search_lower = search.lower()
             courses = [
-                c for c in courses
+                c
+                for c in courses
                 if search_lower in c.title.lower()
                 or search_lower in c.description.lower()
                 or any(search_lower in k.lower() for k in c.keywords)
@@ -294,10 +297,7 @@ class EngageNYHandler(CurriculumSourceHandler):
         # Apply grade filter
         if filters.get("grade"):
             grade = filters["grade"]
-            courses = [
-                c for c in courses
-                if self._matches_grade(c.id, grade)
-            ]
+            courses = [c for c in courses if self._matches_grade(c.id, grade)]
 
         # Get total count before pagination
         total = len(courses)
@@ -327,7 +327,7 @@ class EngageNYHandler(CurriculumSourceHandler):
         self,
         query: str,
         limit: int = 20,
-    ) -> List[CourseCatalogEntry]:
+    ) -> list[CourseCatalogEntry]:
         """Search courses by query."""
         courses, _, _ = await self.get_course_catalog(
             page=1,
@@ -367,18 +367,18 @@ class EngageNYHandler(CurriculumSourceHandler):
         for module in modules:
             module_num = module.get("number", 0)
             lesson_count = module.get("lessons", 0)
-            lectures.append(LectureInfo(
-                id=f"module-{module_num}",
-                number=module_num,
-                title=f"Module {module_num}: {module.get('title', 'Untitled')}",
-                has_video=False,
-                has_transcript=False,
-                has_notes=True,
-                duration=f"{lesson_count} lessons",
-            ))
+            lectures.append(
+                LectureInfo(
+                    id=f"module-{module_num}",
+                    number=module_num,
+                    title=f"Module {module_num}: {module.get('title', 'Untitled')}",
+                    has_video=False,
+                    has_transcript=False,
+                    has_notes=True,
+                    duration=f"{lesson_count} lessons",
+                )
+            )
 
-        # Build standards alignment
-        standards = raw_data.get("standards", [])
         prerequisites = raw_data.get("prerequisites", [])
         syllabus = self._build_syllabus(modules, raw_data)
 
@@ -439,21 +439,25 @@ class EngageNYHandler(CurriculumSourceHandler):
             # Generate topic entries for lessons in this module
             topics = []
             for lesson_num in range(1, lesson_count + 1):
-                topics.append(ContentTopic(
-                    id=f"mod{module_num}-lesson-{lesson_num}",
-                    title=f"Lesson {lesson_num}",
-                    number=lesson_num,
-                    has_video=False,
-                    has_transcript=False,
-                    has_practice=True,
-                ))
+                topics.append(
+                    ContentTopic(
+                        id=f"mod{module_num}-lesson-{lesson_num}",
+                        title=f"Lesson {lesson_num}",
+                        number=lesson_num,
+                        has_video=False,
+                        has_transcript=False,
+                        has_practice=True,
+                    )
+                )
 
-            units.append(ContentUnit(
-                id=f"module-{module_num}",
-                title=f"Module {module_num}: {module.get('title', 'Untitled')}",
-                number=module_num,
-                topics=topics,
-            ))
+            units.append(
+                ContentUnit(
+                    id=f"module-{module_num}",
+                    title=f"Module {module_num}: {module.get('title', 'Untitled')}",
+                    number=module_num,
+                    topics=topics,
+                )
+            )
 
         # Determine level label based on grade level
         level_labels = {
@@ -470,9 +474,6 @@ class EngageNYHandler(CurriculumSourceHandler):
             is_flat=False,  # EngageNY has nested structure
             units=units,
         )
-
-        # Count total lessons for estimates
-        total_lessons = sum(len(u.topics) for u in units)
 
         return NormalizedCourseDetail(
             id=entry.id,
@@ -499,7 +500,7 @@ class EngageNYHandler(CurriculumSourceHandler):
             download_url=raw_data.get("archive_url"),
         )
 
-    def _build_syllabus(self, modules: List[Dict], raw_data: Dict) -> str:
+    def _build_syllabus(self, modules: list[dict], raw_data: dict) -> str:
         """Build syllabus text from module structure."""
         if not modules:
             return raw_data.get("description", "")
@@ -562,8 +563,8 @@ class EngageNYHandler(CurriculumSourceHandler):
         self,
         course_id: str,
         output_dir: Path,
-        progress_callback: Optional[Callable[[float, str], None]] = None,
-        selected_modules: Optional[List[str]] = None,
+        progress_callback: Callable[[float, str], None] | None = None,
+        selected_modules: list[str] | None = None,
     ) -> Path:
         """
         Download course content to local directory.
@@ -624,18 +625,22 @@ class EngageNYHandler(CurriculumSourceHandler):
                 module_content = await self._download_module(
                     session, zip_url, course_output_dir, module_num
                 )
-                downloaded_content.append({
-                    "module": module_num,
-                    "title": module_title,
-                    "files": module_content,
-                })
+                downloaded_content.append(
+                    {
+                        "module": module_num,
+                        "title": module_title,
+                        "files": module_content,
+                    }
+                )
             except Exception as e:
                 logger.warning(f"Failed to download module {module_num}: {e}")
-                downloaded_content.append({
-                    "module": module_num,
-                    "title": module_title,
-                    "error": str(e),
-                })
+                downloaded_content.append(
+                    {
+                        "module": module_num,
+                        "title": module_title,
+                        "error": str(e),
+                    }
+                )
 
         if progress_callback:
             progress_callback(90, "Saving course metadata...")
@@ -667,9 +672,7 @@ class EngageNYHandler(CurriculumSourceHandler):
         logger.info(f"Downloaded course {course_id} to {course_output_dir}")
         return course_output_dir
 
-    def _get_module_download_url(
-        self, course_id: str, module_num: int, raw_data: Dict
-    ) -> str:
+    def _get_module_download_url(self, course_id: str, module_num: int, raw_data: dict) -> str:
         """Construct download URL for a specific module."""
         # Map course IDs to archive file naming convention
         grade_map = {
@@ -699,16 +702,19 @@ class EngageNYHandler(CurriculumSourceHandler):
         zip_url: str,
         output_dir: Path,
         module_num: int,
-    ) -> List[str]:
+    ) -> list[str]:
         """Download and extract a module ZIP file."""
         logger.info(f"Downloading module from {zip_url}")
 
         extracted_files = []
 
         try:
-            async with session.get(
-                zip_url, timeout=aiohttp.ClientTimeout(total=300)
-            ) as resp:
+            try:
+                await assert_url_allowed(zip_url)
+            except UnsafeURLError as e:
+                raise ValueError(f"Refusing unsafe download URL {zip_url}: {e}")
+
+            async with session.get(zip_url, timeout=aiohttp.ClientTimeout(total=300)) as resp:
                 if resp.status != 200:
                     raise ValueError(f"Download failed with status {resp.status}")
 

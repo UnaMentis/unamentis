@@ -20,6 +20,8 @@ Required Attribution:
 for Learning Online and Teaching (www.merlot.org). Some rights reserved."
 """
 
+from __future__ import annotations
+
 __version__ = "1.0.0"
 __author__ = "UnaMentis Team"
 __url__ = "https://www.merlot.org/"
@@ -29,8 +31,9 @@ import json
 import logging
 import os
 import re
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import aiohttp
 
@@ -51,6 +54,7 @@ from ...core.models import (
     NormalizedCourseDetail,
 )
 from ...core.registry import SourceRegistry
+from ...security.url_guard import UnsafeURLError, assert_url_allowed
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +64,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 # Licenses that ALLOW derivatives (we can adapt for voice learning)
-ALLOWED_LICENSES: Set[str] = {
+ALLOWED_LICENSES: set[str] = {
     "CC0",
     "CC BY",
     "CC BY-SA",
@@ -70,7 +74,7 @@ ALLOWED_LICENSES: Set[str] = {
 }
 
 # Licenses that PROHIBIT derivatives (we CANNOT use these)
-PROHIBITED_LICENSES: Set[str] = {
+PROHIBITED_LICENSES: set[str] = {
     "CC BY-ND",
     "CC BY-NC-ND",
 }
@@ -241,6 +245,7 @@ MERLOT_CATEGORIES = [
 # MERLOT Source Handler
 # =============================================================================
 
+
 @SourceRegistry.register
 class MERLOTHandler(CurriculumSourceHandler):
     """
@@ -260,10 +265,10 @@ class MERLOTHandler(CurriculumSourceHandler):
     """
 
     def __init__(self):
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._api_key: Optional[str] = None
-        self._catalog_cache: Dict[str, CourseCatalogEntry] = {}
-        self._raw_data_cache: Dict[str, Dict[str, Any]] = {}
+        self._session: aiohttp.ClientSession | None = None
+        self._api_key: str | None = None
+        self._catalog_cache: dict[str, CourseCatalogEntry] = {}
+        self._raw_data_cache: dict[str, dict[str, Any]] = {}
 
         # Load API key (environment variable takes precedence)
         self._load_api_key()
@@ -286,6 +291,7 @@ class MERLOTHandler(CurriculumSourceHandler):
         # Try to load from plugin settings
         try:
             from ...core.discovery import get_plugin_discovery
+
             discovery = get_plugin_discovery()
             state = discovery._states.get("merlot")
             if state and state.settings.get("api_key"):
@@ -301,7 +307,7 @@ class MERLOTHandler(CurriculumSourceHandler):
             "Request a key at: https://www.merlot.org/merlot/signWebServicesForm.htm"
         )
 
-    def configure(self, settings: Dict[str, Any]) -> None:
+    def configure(self, settings: dict[str, Any]) -> None:
         """
         Configure the plugin with new settings.
 
@@ -319,7 +325,7 @@ class MERLOTHandler(CurriculumSourceHandler):
                 self._api_key = None
                 logger.info("MERLOT API key cleared")
 
-    def get_configuration_schema(self) -> Dict[str, Any]:
+    def get_configuration_schema(self) -> dict[str, Any]:
         """
         Return the configuration schema for the management UI.
 
@@ -343,7 +349,7 @@ class MERLOTHandler(CurriculumSourceHandler):
             "test_endpoint": "/api/plugins/merlot/test",
         }
 
-    async def test_api_key(self, api_key: Optional[str] = None) -> Dict[str, Any]:
+    async def test_api_key(self, api_key: str | None = None) -> dict[str, Any]:
         """
         Test if an API key is valid by making a simple API request.
 
@@ -445,7 +451,7 @@ class MERLOTHandler(CurriculumSourceHandler):
         )
 
     @property
-    def default_license(self) -> Optional[LicenseInfo]:
+    def default_license(self) -> LicenseInfo | None:
         # No default license - each material has its own
         return None
 
@@ -457,9 +463,9 @@ class MERLOTHandler(CurriculumSourceHandler):
         self,
         page: int = 1,
         page_size: int = 20,
-        filters: Optional[Dict[str, Any]] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[CourseCatalogEntry], int, Dict[str, List[str]]]:
+        filters: dict[str, Any] | None = None,
+        search: str | None = None,
+    ) -> tuple[list[CourseCatalogEntry], int, dict[str, list[str]]]:
         """
         Get paginated course catalog from MERLOT.
 
@@ -507,7 +513,9 @@ class MERLOTHandler(CurriculumSourceHandler):
             # CRITICAL: License check
             license_type = material.get("creativeCommons", "")
             if not _is_license_allowed(license_type):
-                logger.debug(f"Skipping material {material.get('materialId')} - license: {license_type}")
+                logger.debug(
+                    f"Skipping material {material.get('materialId')} - license: {license_type}"
+                )
                 continue
 
             # Quality filter
@@ -662,7 +670,7 @@ class MERLOTHandler(CurriculumSourceHandler):
         self,
         query: str,
         limit: int = 20,
-    ) -> List[CourseCatalogEntry]:
+    ) -> list[CourseCatalogEntry]:
         """Search materials by query."""
         courses, _, _ = await self.get_course_catalog(
             page=1,
@@ -694,8 +702,8 @@ class MERLOTHandler(CurriculumSourceHandler):
         self,
         course_id: str,
         output_dir: Path,
-        progress_callback: Optional[Callable[[float, str], None]] = None,
-        selected_lectures: Optional[List[str]] = None,
+        progress_callback: Callable[[float, str], None] | None = None,
+        selected_lectures: list[str] | None = None,
     ) -> Path:
         """
         Download material content.
@@ -733,7 +741,9 @@ class MERLOTHandler(CurriculumSourceHandler):
             raise ValueError(f"No source URL for material: {course_id}")
 
         # Fetch content from source
-        content_data = await self._fetch_source_content(source_url, material_output_dir, progress_callback)
+        content_data = await self._fetch_source_content(
+            source_url, material_output_dir, progress_callback
+        )
 
         if progress_callback:
             progress_callback(80, "Saving metadata...")
@@ -779,8 +789,8 @@ class MERLOTHandler(CurriculumSourceHandler):
         self,
         source_url: str,
         output_dir: Path,
-        progress_callback: Optional[Callable[[float, str], None]] = None,
-    ) -> Dict[str, Any]:
+        progress_callback: Callable[[float, str], None] | None = None,
+    ) -> dict[str, Any]:
         """
         Fetch content from the source URL.
 
@@ -797,6 +807,12 @@ class MERLOTHandler(CurriculumSourceHandler):
         try:
             # Check robots.txt compliance
             # (simplified - in production, use robotparser)
+
+            try:
+                await assert_url_allowed(source_url)
+            except UnsafeURLError as e:
+                logger.warning(f"Blocked unsafe source URL {source_url}: {e}")
+                return content_data
 
             async with session.get(
                 source_url,
@@ -855,6 +871,7 @@ class MERLOTHandler(CurriculumSourceHandler):
         """Extract readable text from HTML."""
         try:
             from bs4 import BeautifulSoup
+
             soup = BeautifulSoup(html, "html.parser")
 
             # Remove script and style elements
@@ -951,7 +968,7 @@ class MERLOTHandler(CurriculumSourceHandler):
     # API Methods
     # =========================================================================
 
-    async def _search_materials(self, params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    async def _search_materials(self, params: dict[str, Any]) -> list[dict[str, Any]]:
         """Search MERLOT API for materials."""
         session = await self._get_session()
 
@@ -972,7 +989,7 @@ class MERLOTHandler(CurriculumSourceHandler):
             logger.error(f"MERLOT API error: {e}")
             return []
 
-    async def _get_material_detail(self, material_id: str) -> Optional[Dict[str, Any]]:
+    async def _get_material_detail(self, material_id: str) -> dict[str, Any] | None:
         """Get detailed information about a specific material."""
         session = await self._get_session()
 
@@ -1000,7 +1017,7 @@ class MERLOTHandler(CurriculumSourceHandler):
     # Helper Methods
     # =========================================================================
 
-    def _material_to_entry(self, material: Dict[str, Any]) -> CourseCatalogEntry:
+    def _material_to_entry(self, material: dict[str, Any]) -> CourseCatalogEntry:
         """Convert MERLOT material to CourseCatalogEntry."""
         material_type = material.get("materialType", "")
 
@@ -1010,11 +1027,13 @@ class MERLOTHandler(CurriculumSourceHandler):
         if "transcript" in material_type.lower():
             features.append(CourseFeature(type="transcript", available=True))
         if material.get("peerReviewRating"):
-            features.append(CourseFeature(
-                type="peer_reviewed",
-                available=True,
-                count=int(float(material.get("peerReviewRating", 0)))
-            ))
+            features.append(
+                CourseFeature(
+                    type="peer_reviewed",
+                    available=True,
+                    count=int(float(material.get("peerReviewRating", 0))),
+                )
+            )
 
         # Get license info
         license_type = material.get("creativeCommons", "")
@@ -1065,7 +1084,7 @@ class MERLOTHandler(CurriculumSourceHandler):
         }
         return level_map.get(level, "")
 
-    def _get_filter_options(self) -> Dict[str, List[str]]:
+    def _get_filter_options(self) -> dict[str, list[str]]:
         """Get available filter options."""
         return {
             "subjects": MERLOT_CATEGORIES,

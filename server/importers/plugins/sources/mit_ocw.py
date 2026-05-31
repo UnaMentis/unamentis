@@ -16,6 +16,8 @@ Download Strategy:
 - We parse the downloaded HTML to extract lecture structure and content
 """
 
+from __future__ import annotations
+
 __version__ = "1.0.0"
 __author__ = "UnaMentis Team"
 __url__ = "https://ocw.mit.edu/"
@@ -27,8 +29,9 @@ import logging
 import re
 import subprocess
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 from urllib.parse import urljoin
 
 import aiohttp
@@ -54,6 +57,7 @@ from ...core.models import (
     NormalizedCourseDetail,
 )
 from ...core.registry import SourceRegistry
+from ...security.url_guard import UnsafeURLError, assert_url_allowed, safe_extract_zip
 
 logger = logging.getLogger(__name__)
 
@@ -70,8 +74,7 @@ MIT_OCW_LICENSE = LicenseInfo(
     conditions=["attribution", "noncommercial", "sharealike"],
     attribution_required=True,
     attribution_format=(
-        "Content from MIT OpenCourseWare (ocw.mit.edu), "
-        "licensed under CC-BY-NC-SA 4.0."
+        "Content from MIT OpenCourseWare (ocw.mit.edu), licensed under CC-BY-NC-SA 4.0."
     ),
     holder_name="Massachusetts Institute of Technology",
     holder_url="https://ocw.mit.edu/",
@@ -89,10 +92,10 @@ MIT_OCW_LICENSE = LicenseInfo(
 CATALOG_FILE = Path(__file__).parent.parent.parent / "data" / "mit_ocw_catalog.json"
 
 # In-memory cache of courses loaded from JSON
-_COURSES_CACHE: Optional[List[Dict[str, Any]]] = None
+_COURSES_CACHE: list[dict[str, Any]] | None = None
 
 
-def _load_courses_from_catalog() -> List[Dict[str, Any]]:
+def _load_courses_from_catalog() -> list[dict[str, Any]]:
     """Load courses from the JSON catalog file."""
     global _COURSES_CACHE
 
@@ -104,7 +107,7 @@ def _load_courses_from_catalog() -> List[Dict[str, Any]]:
         return []
 
     try:
-        with open(CATALOG_FILE, "r", encoding="utf-8") as f:
+        with open(CATALOG_FILE, encoding="utf-8") as f:
             data = json.load(f)
             _COURSES_CACHE = data.get("courses", [])
             logger.info(f"Loaded {len(_COURSES_CACHE)} courses from MIT OCW catalog")
@@ -114,21 +117,22 @@ def _load_courses_from_catalog() -> List[Dict[str, Any]]:
         return []
 
 
-def _get_catalog_metadata() -> Dict[str, Any]:
+def _get_catalog_metadata() -> dict[str, Any]:
     """Get metadata from the catalog file."""
     if not CATALOG_FILE.exists():
         return {}
 
     try:
-        with open(CATALOG_FILE, "r", encoding="utf-8") as f:
+        with open(CATALOG_FILE, encoding="utf-8") as f:
             data = json.load(f)
             return data.get("metadata", {})
     except Exception as e:
         logger.error(f"Failed to load MIT OCW catalog metadata: {e}")
         return {}
 
+
 # Subject/Department categories (loaded from catalog metadata or fallback)
-def _get_mit_subjects() -> List[str]:
+def _get_mit_subjects() -> list[str]:
     """Get list of MIT departments/subjects."""
     metadata = _get_catalog_metadata()
     if metadata.get("departments"):
@@ -172,6 +176,7 @@ def _get_mit_subjects() -> List[str]:
 # MIT OCW Source Handler
 # =============================================================================
 
+
 @SourceRegistry.register
 class MITOCWHandler(CurriculumSourceHandler):
     """
@@ -185,9 +190,9 @@ class MITOCWHandler(CurriculumSourceHandler):
     """
 
     def __init__(self):
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._catalog_cache: Dict[str, CourseCatalogEntry] = {}
-        self._raw_data_cache: Dict[str, Dict[str, Any]] = {}
+        self._session: aiohttp.ClientSession | None = None
+        self._catalog_cache: dict[str, CourseCatalogEntry] = {}
+        self._raw_data_cache: dict[str, dict[str, Any]] = {}
         self._load_catalog()
 
     def _load_catalog(self):
@@ -198,7 +203,7 @@ class MITOCWHandler(CurriculumSourceHandler):
             self._catalog_cache[entry.id] = entry
             self._raw_data_cache[entry.id] = course_data
 
-    def _course_data_to_entry(self, data: Dict[str, Any]) -> CourseCatalogEntry:
+    def _course_data_to_entry(self, data: dict[str, Any]) -> CourseCatalogEntry:
         """Convert catalog data to CourseCatalogEntry."""
         features = []
         feature_map = {
@@ -262,9 +267,9 @@ class MITOCWHandler(CurriculumSourceHandler):
         self,
         page: int = 1,
         page_size: int = 20,
-        filters: Optional[Dict[str, Any]] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[CourseCatalogEntry], int, Dict[str, List[str]]]:
+        filters: dict[str, Any] | None = None,
+        search: str | None = None,
+    ) -> tuple[list[CourseCatalogEntry], int, dict[str, list[str]]]:
         """Get paginated course catalog."""
         filters = filters or {}
 
@@ -275,7 +280,8 @@ class MITOCWHandler(CurriculumSourceHandler):
         if search:
             search_lower = search.lower()
             courses = [
-                c for c in courses
+                c
+                for c in courses
                 if search_lower in c.title.lower()
                 or search_lower in c.description.lower()
                 or any(search_lower in i.lower() for i in c.instructors)
@@ -296,7 +302,8 @@ class MITOCWHandler(CurriculumSourceHandler):
         if filters.get("features"):
             required_features = set(filters["features"])
             courses = [
-                c for c in courses
+                c
+                for c in courses
                 if required_features.issubset({f.type for f in c.features if f.available})
             ]
 
@@ -347,15 +354,17 @@ class MITOCWHandler(CurriculumSourceHandler):
             fetched_lectures = await self._fetch_lecture_titles(course_url)
             if fetched_lectures:
                 for lec in fetched_lectures:
-                    lectures.append(LectureInfo(
-                        id=lec["id"],
-                        number=lec["number"],
-                        title=lec["title"],
-                        has_video=has_video,
-                        has_transcript=has_transcript,
-                        has_notes=has_notes,
-                        video_url=lec.get("url"),
-                    ))
+                    lectures.append(
+                        LectureInfo(
+                            id=lec["id"],
+                            number=lec["number"],
+                            title=lec["title"],
+                            has_video=has_video,
+                            has_transcript=has_transcript,
+                            has_notes=has_notes,
+                            video_url=lec.get("url"),
+                        )
+                    )
 
         # Fallback to generic titles if fetch failed
         if not lectures:
@@ -366,30 +375,36 @@ class MITOCWHandler(CurriculumSourceHandler):
                     base_url = course_url if course_url.endswith("/") else f"{course_url}/"
                     video_url = f"{base_url}video-lectures/lecture-{i}/"
 
-                lectures.append(LectureInfo(
-                    id=f"lecture-{i}",
-                    number=i,
-                    title=f"Lecture {i}",
-                    has_video=has_video,
-                    has_transcript=has_transcript,
-                    has_notes=has_notes,
-                    video_url=video_url,
-                ))
+                lectures.append(
+                    LectureInfo(
+                        id=f"lecture-{i}",
+                        number=i,
+                        title=f"Lecture {i}",
+                        has_video=has_video,
+                        has_transcript=has_transcript,
+                        has_notes=has_notes,
+                        video_url=video_url,
+                    )
+                )
 
         # Generate assignments/exams (placeholder)
         assignments = []
         if "assignments" in raw_data.get("features", []):
             for i in range(1, 6):  # Assume ~5 assignments
-                assignments.append(AssignmentInfo(
-                    id=f"assignment-{i}",
-                    title=f"Problem Set {i}",
-                    has_solutions=True,
-                ))
+                assignments.append(
+                    AssignmentInfo(
+                        id=f"assignment-{i}",
+                        title=f"Problem Set {i}",
+                        has_solutions=True,
+                    )
+                )
 
         exams = []
         if "exams" in raw_data.get("features", []):
             exams = [
-                ExamInfo(id="midterm", title="Midterm Exam", exam_type="midterm", has_solutions=True),
+                ExamInfo(
+                    id="midterm", title="Midterm Exam", exam_type="midterm", has_solutions=True
+                ),
                 ExamInfo(id="final", title="Final Exam", exam_type="final", has_solutions=True),
             ]
 
@@ -450,37 +465,38 @@ class MITOCWHandler(CurriculumSourceHandler):
             fetched_lectures = await self._fetch_lecture_titles(course_url)
             if fetched_lectures:
                 for lec in fetched_lectures:
-                    topics.append(ContentTopic(
-                        id=lec["id"],
-                        title=lec["title"],
-                        number=lec["number"],
-                        has_video=has_video,
-                        has_transcript=has_transcript,
-                        has_practice=False,
-                    ))
+                    topics.append(
+                        ContentTopic(
+                            id=lec["id"],
+                            title=lec["title"],
+                            number=lec["number"],
+                            has_video=has_video,
+                            has_transcript=has_transcript,
+                            has_practice=False,
+                        )
+                    )
 
         if not topics:
             lecture_count = raw_data.get("lecture_count", 0)
             for i in range(1, lecture_count + 1):
-                topics.append(ContentTopic(
-                    id=f"lecture-{i}",
-                    title=f"Lecture {i}",
-                    number=i,
-                    has_video=has_video,
-                    has_transcript=has_transcript,
-                    has_practice=False,
-                ))
+                topics.append(
+                    ContentTopic(
+                        id=f"lecture-{i}",
+                        title=f"Lecture {i}",
+                        number=i,
+                        has_video=has_video,
+                        has_transcript=has_transcript,
+                        has_practice=False,
+                    )
+                )
 
         # Group topics into units if they have section data
         units = []
         if topics:
-            # Check if we have section data
-            has_sections = any(hasattr(t, 'section') and t.section for t in topics if hasattr(t, 'section'))
-            
             # If fetch_lecture_titles added 'section' to the dicts, we need to access it
             # But here topics contains ContentTopic objects which might not have 'section'
             # We need to preserve the section info when creating ContentTopic or map it differently.
-            
+
             # Let's re-build topics from fetched_lectures to include section info if available
             grouped_lectures = {}
             if course_url and fetched_lectures:
@@ -488,16 +504,18 @@ class MITOCWHandler(CurriculumSourceHandler):
                     section = lec.get("section", "General")
                     if section not in grouped_lectures:
                         grouped_lectures[section] = []
-                    
-                    grouped_lectures[section].append(ContentTopic(
-                        id=lec["id"],
-                        title=lec["title"],
-                        number=lec["number"],
-                        has_video=has_video,
-                        has_transcript=has_transcript,
-                        # Store section title for reference if needed, though mostly for grouping
-                    ))
-                
+
+                    grouped_lectures[section].append(
+                        ContentTopic(
+                            id=lec["id"],
+                            title=lec["title"],
+                            number=lec["number"],
+                            has_video=has_video,
+                            has_transcript=has_transcript,
+                            # Store section title for reference if needed, though mostly for grouping
+                        )
+                    )
+
                 # Create units from groups
                 unit_num = 1
                 for section_title, unit_topics in grouped_lectures.items():
@@ -505,23 +523,27 @@ class MITOCWHandler(CurriculumSourceHandler):
                     display_title = section_title.replace("-", " ").title()
                     # Fix "Week 1" spacing
                     display_title = re.sub(r"Week (\d)", r"Week \1:", display_title)
-                    
-                    units.append(ContentUnit(
-                        id=f"unit-{unit_num}",
-                        title=display_title,
-                        number=unit_num,
-                        topics=unit_topics
-                    ))
+
+                    units.append(
+                        ContentUnit(
+                            id=f"unit-{unit_num}",
+                            title=display_title,
+                            number=unit_num,
+                            topics=unit_topics,
+                        )
+                    )
                     unit_num += 1
-            
+
             # Fallback to flat structure if no grouping
             if not units:
-                units.append(ContentUnit(
-                    id="all-lectures",
-                    title="All Lectures",
-                    number=1,
-                    topics=topics,
-                ))
+                units.append(
+                    ContentUnit(
+                        id="all-lectures",
+                        title="All Lectures",
+                        number=1,
+                        topics=topics,
+                    )
+                )
 
         # Build content structure with MIT OCW terminology
         is_hierarchical = len(units) > 1
@@ -544,16 +566,20 @@ class MITOCWHandler(CurriculumSourceHandler):
         assignments = []
         if "assignments" in raw_data.get("features", []):
             for i in range(1, 6):  # Assume ~5 assignments
-                assignments.append(AssignmentInfo(
-                    id=f"assignment-{i}",
-                    title=f"Problem Set {i}",
-                    has_solutions=True,
-                ))
+                assignments.append(
+                    AssignmentInfo(
+                        id=f"assignment-{i}",
+                        title=f"Problem Set {i}",
+                        has_solutions=True,
+                    )
+                )
 
         exams = []
         if "exams" in raw_data.get("features", []):
             exams = [
-                ExamInfo(id="midterm", title="Midterm Exam", exam_type="midterm", has_solutions=True),
+                ExamInfo(
+                    id="midterm", title="Midterm Exam", exam_type="midterm", has_solutions=True
+                ),
                 ExamInfo(id="final", title="Final Exam", exam_type="final", has_solutions=True),
             ]
 
@@ -586,7 +612,7 @@ class MITOCWHandler(CurriculumSourceHandler):
         self,
         query: str,
         limit: int = 20,
-    ) -> List[CourseCatalogEntry]:
+    ) -> list[CourseCatalogEntry]:
         """Search courses by query."""
         courses, _, _ = await self.get_course_catalog(
             page=1,
@@ -599,7 +625,7 @@ class MITOCWHandler(CurriculumSourceHandler):
     # Lecture Title Fetching
     # =========================================================================
 
-    async def _fetch_lecture_titles(self, course_url: str) -> List[Dict[str, Any]]:
+    async def _fetch_lecture_titles(self, course_url: str) -> list[dict[str, Any]]:
         """
         Fetch actual lecture titles from MIT OCW course pages.
 
@@ -650,21 +676,25 @@ class MITOCWHandler(CurriculumSourceHandler):
 
                         full_url = urljoin(course_url, href)
 
-                        lectures.append({
-                            "id": lecture_id,
-                            "number": int(lesson_num),
-                            "sub_number": int(sub_num),
-                            "title": f"{lesson_num}.{sub_num} {title}",
-                            "url": full_url,
-                            "slug": slug,
-                            "section": section_slug,
-                        })
+                        lectures.append(
+                            {
+                                "id": lecture_id,
+                                "number": int(lesson_num),
+                                "sub_number": int(sub_num),
+                                "title": f"{lesson_num}.{sub_num} {title}",
+                                "url": full_url,
+                                "slug": slug,
+                                "section": section_slug,
+                            }
+                        )
 
                 # Strategy 2: Check /video_galleries/video-lectures/ (Legacy/Standard courses like SICP)
                 if not lectures:
                     try:
                         gallery_url = course_url.rstrip("/") + "/video_galleries/video-lectures/"
-                        async with session.get(gallery_url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                        async with session.get(
+                            gallery_url, timeout=aiohttp.ClientTimeout(total=15)
+                        ) as resp:
                             if resp.status == 200:
                                 html = await resp.text()
                                 soup = BeautifulSoup(html, "html.parser")
@@ -672,13 +702,16 @@ class MITOCWHandler(CurriculumSourceHandler):
 
                                 resource_pattern = re.compile(r"/resources/([^/]+)/?$")
                                 seen_ids = set()
-                                
+
                                 for link in soup.find_all("a", href=True):
                                     href = link.get("href", "")
                                     match = resource_pattern.search(href)
-                                    if match and course_url.split("/courses/")[1].rstrip("/") in href:
+                                    if (
+                                        match
+                                        and course_url.split("/courses/")[1].rstrip("/") in href
+                                    ):
                                         slug = match.group(1)
-                                        
+
                                         num_match = re.match(r"^(\d+[a-z]?)-", slug)
                                         if num_match:
                                             lecture_id = f"lecture-{num_match.group(1)}"
@@ -695,14 +728,16 @@ class MITOCWHandler(CurriculumSourceHandler):
 
                                         full_url = urljoin(gallery_url, href)
 
-                                        lectures.append({
-                                            "id": lecture_id,
-                                            "number": len(lectures) + 1,
-                                            "title": title,
-                                            "url": full_url,
-                                            "slug": slug,
-                                            "section": "Video Lectures"
-                                        })
+                                        lectures.append(
+                                            {
+                                                "id": lecture_id,
+                                                "number": len(lectures) + 1,
+                                                "title": title,
+                                                "url": full_url,
+                                                "slug": slug,
+                                                "section": "Video Lectures",
+                                            }
+                                        )
                     except Exception as e:
                         logger.warning(f"Error checking video gallery: {e}")
 
@@ -711,55 +746,91 @@ class MITOCWHandler(CurriculumSourceHandler):
                 if not lectures:
                     try:
                         # Potential pages that might list lectures
-                        pages_subpaths = ["/pages/lecture-notes/", "/pages/calendar/", "/pages/readings/", "/pages/syllabus/"]
-                        
+                        pages_subpaths = [
+                            "/pages/lecture-notes/",
+                            "/pages/calendar/",
+                            "/pages/readings/",
+                            "/pages/syllabus/",
+                        ]
+
                         for subpath in pages_subpaths:
-                            if lectures: break # Stop if found
-                            
+                            if lectures:
+                                break  # Stop if found
+
                             page_url = course_url.rstrip("/") + subpath
-                            async with session.get(page_url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                            async with session.get(
+                                page_url, timeout=aiohttp.ClientTimeout(total=10)
+                            ) as resp:
                                 if resp.status == 200:
                                     html = await resp.text()
                                     soup = BeautifulSoup(html, "html.parser")
-                                    
+
                                     # Scan ALL rows in the document because of malformed HTML
                                     # (MIT OCW sometimes has <p> tags inside tables breaking them)
                                     all_rows = soup.find_all("tr")
-                                    
+
                                     ses_idx = -1
                                     topic_idx = -1
-                                    
+
                                     for row in all_rows:
                                         # Check if this is a header row
                                         th_cols = row.find_all("th")
                                         if th_cols:
                                             # Normalize headers
-                                            raw_headers = [th.get_text(strip=True).upper() for th in th_cols]
-                                            headers = [re.sub(r"[^A-Z#]", "", h) for h in raw_headers]
-                                            
-                                            if any(kw in headers for kw in ["SES#", "LEC#", "SESSION", "LECTURE", "WEEK"]):
+                                            raw_headers = [
+                                                th.get_text(strip=True).upper() for th in th_cols
+                                            ]
+                                            headers = [
+                                                re.sub(r"[^A-Z#]", "", h) for h in raw_headers
+                                            ]
+
+                                            if any(
+                                                kw in headers
+                                                for kw in [
+                                                    "SES#",
+                                                    "LEC#",
+                                                    "SESSION",
+                                                    "LECTURE",
+                                                    "WEEK",
+                                                ]
+                                            ):
                                                 # Reset indices for new table/section
                                                 ses_idx = -1
                                                 topic_idx = -1
-                                                
+
                                                 for i, h in enumerate(headers):
                                                     if "TOPIC" in h or "TITLE" in h:
                                                         topic_idx = i
-                                                    elif any(kw == h for kw in ["SES#", "LEC#", "SESSION", "LECTURE", "WEEK"]):
+                                                    elif any(
+                                                        kw == h
+                                                        for kw in [
+                                                            "SES#",
+                                                            "LEC#",
+                                                            "SESSION",
+                                                            "LECTURE",
+                                                            "WEEK",
+                                                        ]
+                                                    ):
                                                         ses_idx = i
-                                                
+
                                                 # Fallback logic
-                                                if topic_idx == -1 and ses_idx != -1 and len(headers) > ses_idx + 1:
+                                                if (
+                                                    topic_idx == -1
+                                                    and ses_idx != -1
+                                                    and len(headers) > ses_idx + 1
+                                                ):
                                                     topic_idx = ses_idx + 1
-                                                
+
                                                 if topic_idx != -1:
-                                                    logger.info(f"Found lecture headers in {subpath}: {headers}")
+                                                    logger.info(
+                                                        f"Found lecture headers in {subpath}: {headers}"
+                                                    )
                                             continue
 
                                         # Check if this is a data row and we have valid indices
                                         if topic_idx != -1:
                                             cols = row.find_all(["td", "th"])
-                                            
+
                                             # Validate column count
                                             # Allow for colspan or loose matching? Strict for now.
                                             if len(cols) > topic_idx:
@@ -767,7 +838,7 @@ class MITOCWHandler(CurriculumSourceHandler):
                                                 ses_num_str = ""
                                                 if ses_idx != -1 and len(cols) > ses_idx:
                                                     ses_num_str = cols[ses_idx].get_text(strip=True)
-                                                
+
                                                 # Clean up session number
                                                 ses_match = re.search(r"\d+", ses_num_str)
                                                 if ses_match:
@@ -777,7 +848,7 @@ class MITOCWHandler(CurriculumSourceHandler):
 
                                                 title_text = cols[topic_idx].get_text(strip=True)
                                                 title_text = title_text.strip('"').strip()
-                                                
+
                                                 # Extract PDF
                                                 pdf_url = ""
                                                 for col in cols:
@@ -785,23 +856,32 @@ class MITOCWHandler(CurriculumSourceHandler):
                                                     if link:
                                                         pdf_url = urljoin(page_url, link["href"])
                                                         break
-                                                
+
                                                 if title_text and "exam" not in title_text.lower():
                                                     lecture_id = f"lecture-{ses_num}"
-                                                    if any(l["id"] == lecture_id for l in lectures):
+                                                    if any(
+                                                        lec["id"] == lecture_id for lec in lectures
+                                                    ):
                                                         continue
 
-                                                    lectures.append({
-                                                        "id": lecture_id,
-                                                        "number": ses_num,
-                                                        "title": title_text,
-                                                        "url": page_url,
-                                                        "transcript_url": pdf_url if "transcript" in pdf_url.lower() or "notes" in pdf_url.lower() else "",
-                                                        "section": "Lecture Notes"
-                                                    })
+                                                    lectures.append(
+                                                        {
+                                                            "id": lecture_id,
+                                                            "number": ses_num,
+                                                            "title": title_text,
+                                                            "url": page_url,
+                                                            "transcript_url": pdf_url
+                                                            if "transcript" in pdf_url.lower()
+                                                            or "notes" in pdf_url.lower()
+                                                            else "",
+                                                            "section": "Lecture Notes",
+                                                        }
+                                                    )
 
                                     if lectures:
-                                        logger.info(f"Extracted {len(lectures)} lectures from {subpath}")
+                                        logger.info(
+                                            f"Extracted {len(lectures)} lectures from {subpath}"
+                                        )
                                         break
 
                     except Exception as e:
@@ -818,13 +898,15 @@ class MITOCWHandler(CurriculumSourceHandler):
                             title = link.get_text(strip=True) or f"Lecture {num}"
                             full_url = urljoin(course_url, href)
 
-                            lectures.append({
-                                "id": f"lecture-{num}",
-                                "number": num,
-                                "title": title,
-                                "url": full_url,
-                                "section": "Video Lectures"
-                            })
+                            lectures.append(
+                                {
+                                    "id": f"lecture-{num}",
+                                    "number": num,
+                                    "title": title,
+                                    "url": full_url,
+                                    "section": "Video Lectures",
+                                }
+                            )
 
                 # Sort by number, then sub_number
                 lectures.sort(key=lambda x: (x.get("number", 0), x.get("sub_number", 0)))
@@ -838,7 +920,7 @@ class MITOCWHandler(CurriculumSourceHandler):
 
         return lectures
 
-    async def _fetch_lecture_title_from_page(self, page_url: str) -> Optional[str]:
+    async def _fetch_lecture_title_from_page(self, page_url: str) -> str | None:
         """Fetch the actual title from a lecture page."""
         session = await self._get_session()
         try:
@@ -867,7 +949,7 @@ class MITOCWHandler(CurriculumSourceHandler):
             logger.debug(f"Error fetching page title: {e}")
             return None
 
-    async def _fetch_transcript_url(self, lecture_url: str) -> Optional[str]:
+    async def _fetch_transcript_url(self, lecture_url: str) -> str | None:
         """
         Fetch the transcript PDF URL from a lecture page.
 
@@ -904,8 +986,8 @@ class MITOCWHandler(CurriculumSourceHandler):
             # Try multiple paths for pdftotext
             pdftotext_paths = [
                 "/opt/homebrew/bin/pdftotext",  # macOS ARM Homebrew
-                "/usr/local/bin/pdftotext",     # macOS Intel Homebrew
-                "pdftotext",                     # System PATH
+                "/usr/local/bin/pdftotext",  # macOS Intel Homebrew
+                "pdftotext",  # System PATH
             ]
 
             pdftotext_cmd = None
@@ -931,8 +1013,8 @@ class MITOCWHandler(CurriculumSourceHandler):
                 text = result.stdout.strip()
                 # Clean up the text
                 # Remove excessive whitespace while preserving paragraph breaks
-                text = re.sub(r'\n{3,}', '\n\n', text)
-                text = re.sub(r'[ \t]+', ' ', text)
+                text = re.sub(r"\n{3,}", "\n\n", text)
+                text = re.sub(r"[ \t]+", " ", text)
                 return text
             else:
                 logger.warning(f"pdftotext failed for {pdf_path}: {result.stderr}")
@@ -949,9 +1031,9 @@ class MITOCWHandler(CurriculumSourceHandler):
 
     async def _fetch_lecture_with_transcript(
         self,
-        lecture: Dict[str, Any],
+        lecture: dict[str, Any],
         course_output_dir: Path,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Fetch transcript for a single lecture.
 
@@ -983,19 +1065,19 @@ class MITOCWHandler(CurriculumSourceHandler):
             for pdf_path in course_output_dir.rglob(pdf_filename):
                 found_pdf_path = pdf_path
                 break
-            
+
             if not found_pdf_path:
                 for path in possible_paths:
                     if path.exists():
                         found_pdf_path = path
                         break
-            
+
             # If not found locally (partial download mode), download it now
             if not found_pdf_path and transcript_url:
                 try:
                     download_path = course_output_dir / "static_resources" / pdf_filename
                     download_path.parent.mkdir(parents=True, exist_ok=True)
-                    
+
                     logger.info(f"Downloading transcript PDF from {transcript_url}")
                     async with await self._get_session() as session:
                         async with session.get(transcript_url) as resp:
@@ -1014,7 +1096,7 @@ class MITOCWHandler(CurriculumSourceHandler):
                 if transcript_text:
                     lecture["transcript_text"] = transcript_text
                     logger.info(f"Extracted {len(transcript_text)} chars from {pdf_filename}")
-        
+
         return lecture
 
     # =========================================================================
@@ -1025,8 +1107,8 @@ class MITOCWHandler(CurriculumSourceHandler):
         self,
         course_id: str,
         output_dir: Path,
-        progress_callback: Optional[Callable[[float, str], None]] = None,
-        selected_lectures: Optional[List[str]] = None,
+        progress_callback: Callable[[float, str], None] | None = None,
+        selected_lectures: list[str] | None = None,
     ) -> Path:
         """
         Download course content to local directory.
@@ -1070,7 +1152,7 @@ class MITOCWHandler(CurriculumSourceHandler):
         if fetched_lectures:
             logger.info(f"Fetched {len(fetched_lectures)} lecture titles for {course_id}")
         else:
-            logger.info(f"No lecture titles fetched, will use generic titles")
+            logger.info("No lecture titles fetched, will use generic titles")
 
         if progress_callback:
             progress_callback(10, "Fetching course page...")
@@ -1084,9 +1166,7 @@ class MITOCWHandler(CurriculumSourceHandler):
                     logger.warning(f"Course page returned {resp.status}, trying download page")
                 else:
                     course_html = await resp.text()
-                    await self._parse_course_page(
-                        course_html, course_url, course_output_dir, entry
-                    )
+                    await self._parse_course_page(course_html, course_url, course_output_dir, entry)
         except Exception as e:
             logger.warning(f"Failed to fetch course page: {e}")
 
@@ -1098,10 +1178,13 @@ class MITOCWHandler(CurriculumSourceHandler):
         zip_url = None
 
         try:
+            await assert_url_allowed(download_page_url)
             async with session.get(download_page_url) as resp:
                 if resp.status == 200:
                     download_html = await resp.text()
                     zip_url = await self._find_zip_download_url(download_html, download_page_url)
+        except UnsafeURLError as e:
+            logger.warning(f"Download page URL blocked: {e}")
         except Exception as e:
             logger.warning(f"Failed to fetch download page: {e}")
 
@@ -1113,8 +1196,12 @@ class MITOCWHandler(CurriculumSourceHandler):
             # OPTIMIZATION: If user selected specific lectures, try to avoid downloading the whole ZIP.
             # We'll only skip ZIP if we have a robust way to get content otherwise (which we do via fetch_lecture_with_transcript)
             should_download_zip = True
-            if selected_lectures and len(selected_lectures) < 5:  # Arbitrary threshold for optimization
-                logger.info(f"Partial download ({len(selected_lectures)} lectures): Skipping ZIP to save bandwidth.")
+            if (
+                selected_lectures and len(selected_lectures) < 5
+            ):  # Arbitrary threshold for optimization
+                logger.info(
+                    f"Partial download ({len(selected_lectures)} lectures): Skipping ZIP to save bandwidth."
+                )
                 should_download_zip = False
 
             if should_download_zip:
@@ -1125,7 +1212,9 @@ class MITOCWHandler(CurriculumSourceHandler):
                 except Exception as e:
                     logger.warning(f"Failed to download ZIP: {e}")
             else:
-                logger.info("Skipping ZIP download for partial import - will scrape pages directly.")
+                logger.info(
+                    "Skipping ZIP download for partial import - will scrape pages directly."
+                )
 
         if progress_callback:
             progress_callback(70, "Parsing course content...")
@@ -1192,8 +1281,10 @@ class MITOCWHandler(CurriculumSourceHandler):
         for link in soup.find_all("a", href=True):
             href = link.get("href", "")
             text = link.get_text(strip=True)
-            if any(kw in href.lower() or kw in text.lower()
-                   for kw in ["video", "lecture", "transcript", "pages"]):
+            if any(
+                kw in href.lower() or kw in text.lower()
+                for kw in ["video", "lecture", "transcript", "pages"]
+            ):
                 full_url = urljoin(base_url, href)
                 nav_links.append({"text": text, "url": full_url})
 
@@ -1202,7 +1293,7 @@ class MITOCWHandler(CurriculumSourceHandler):
             with open(links_path, "w") as f:
                 json.dump(nav_links, f, indent=2)
 
-    async def _find_zip_download_url(self, html: str, base_url: str) -> Optional[str]:
+    async def _find_zip_download_url(self, html: str, base_url: str) -> str | None:
         """Find the ZIP download URL from the download page."""
         soup = BeautifulSoup(html, "html.parser")
 
@@ -1224,10 +1315,15 @@ class MITOCWHandler(CurriculumSourceHandler):
         session: aiohttp.ClientSession,
         zip_url: str,
         output_dir: Path,
-        progress_callback: Optional[Callable[[float, str], None]] = None,
+        progress_callback: Callable[[float, str], None] | None = None,
     ):
         """Download and extract the course ZIP file."""
         logger.info(f"Downloading ZIP from {zip_url}")
+
+        try:
+            await assert_url_allowed(zip_url)
+        except UnsafeURLError as e:
+            raise ValueError(f"ZIP download blocked: {e}")
 
         async with session.get(zip_url) as resp:
             if resp.status != 200:
@@ -1252,7 +1348,7 @@ class MITOCWHandler(CurriculumSourceHandler):
 
         zip_buffer = io.BytesIO(zip_data)
         with zipfile.ZipFile(zip_buffer, "r") as zf:
-            zf.extractall(output_dir)
+            safe_extract_zip(zf, output_dir)
 
         logger.info(f"Extracted ZIP to {output_dir}")
 
@@ -1260,10 +1356,10 @@ class MITOCWHandler(CurriculumSourceHandler):
         self,
         output_dir: Path,
         entry: CourseCatalogEntry,
-        raw_data: Dict[str, Any],
-        selected_lectures: Optional[List[str]] = None,
-        fetched_lectures: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+        raw_data: dict[str, Any],
+        selected_lectures: list[str] | None = None,
+        fetched_lectures: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
         """Parse downloaded content to extract structured data."""
         content = {
             "lectures": [],
@@ -1290,7 +1386,7 @@ class MITOCWHandler(CurriculumSourceHandler):
             logger.info(f"Fetching transcripts for {len(lectures_to_process)} lectures...")
             semaphore = asyncio.Semaphore(3)  # Limit to 3 concurrent requests
 
-            async def fetch_with_semaphore(lec: Dict[str, Any]) -> Dict[str, Any]:
+            async def fetch_with_semaphore(lec: dict[str, Any]) -> dict[str, Any]:
                 async with semaphore:
                     return await self._fetch_lecture_with_transcript(lec, output_dir)
 
@@ -1299,16 +1395,18 @@ class MITOCWHandler(CurriculumSourceHandler):
             )
 
             for lec in enriched_lectures:
-                content["lectures"].append({
-                    "id": lec["id"],
-                    "number": lec["number"],
-                    "title": lec["title"],
-                    "has_video": has_video,
-                    "has_transcript": has_transcript,
-                    "url": lec.get("url", ""),
-                    "transcript_text": lec.get("transcript_text", ""),
-                    "transcript_url": lec.get("transcript_url", ""),
-                })
+                content["lectures"].append(
+                    {
+                        "id": lec["id"],
+                        "number": lec["number"],
+                        "title": lec["title"],
+                        "has_video": has_video,
+                        "has_transcript": has_transcript,
+                        "url": lec.get("url", ""),
+                        "transcript_text": lec.get("transcript_text", ""),
+                        "transcript_url": lec.get("transcript_url", ""),
+                    }
+                )
         else:
             # Fall back to parsing HTML files from the output directory
             html_files = list(output_dir.rglob("*.html")) + list(output_dir.rglob("*.htm"))
@@ -1319,7 +1417,7 @@ class MITOCWHandler(CurriculumSourceHandler):
 
             for html_file in html_files:
                 try:
-                    with open(html_file, "r", encoding="utf-8", errors="ignore") as f:
+                    with open(html_file, encoding="utf-8", errors="ignore") as f:
                         html_content = f.read()
 
                     soup = BeautifulSoup(html_content, "html.parser")
@@ -1346,8 +1444,9 @@ class MITOCWHandler(CurriculumSourceHandler):
                         }
 
                         # Extract text content
-                        main_content = soup.find(["main", "article", "div"],
-                                                class_=re.compile(r"content|main|body"))
+                        main_content = soup.find(
+                            ["main", "article", "div"], class_=re.compile(r"content|main|body")
+                        )
                         if main_content:
                             lecture_data["text_preview"] = main_content.get_text(
                                 strip=True, separator=" "
@@ -1386,13 +1485,15 @@ class MITOCWHandler(CurriculumSourceHandler):
                 if selected_lectures and lecture_id not in selected_lectures:
                     continue
 
-                content["lectures"].append({
-                    "id": lecture_id,
-                    "number": i,
-                    "title": f"Lecture {i}",
-                    "has_video": has_video,
-                    "has_transcript": has_transcript,
-                })
+                content["lectures"].append(
+                    {
+                        "id": lecture_id,
+                        "number": i,
+                        "title": f"Lecture {i}",
+                        "has_video": has_video,
+                        "has_transcript": has_transcript,
+                    }
+                )
 
         return content
 
@@ -1440,10 +1541,10 @@ class MITOCWHandler(CurriculumSourceHandler):
     def get_attribution_text(self, course_id: str, course_title: str) -> str:
         """Generate attribution text for a course."""
         return (
-            f'This content is derived from MIT OpenCourseWare (ocw.mit.edu). '
+            f"This content is derived from MIT OpenCourseWare (ocw.mit.edu). "
             f'Original course: "{course_title}" (Course Number: {course_id.split("-")[0]}). '
-            f'Licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC-BY-NC-SA 4.0). '
-            f'Copyright Massachusetts Institute of Technology.'
+            f"Licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC-BY-NC-SA 4.0). "
+            f"Copyright Massachusetts Institute of Technology."
         )
 
     # =========================================================================

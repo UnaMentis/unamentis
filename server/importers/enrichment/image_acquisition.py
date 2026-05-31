@@ -9,55 +9,60 @@ Handles:
 This ensures curricula always have displayable visual assets.
 """
 
+from __future__ import annotations
+
 import asyncio
 import base64
-import hashlib
 import logging
 import re
+import tempfile
 from dataclasses import dataclass
 from enum import Enum
-from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import quote, urlparse
+from typing import Any
 
 import aiohttp
+
+from ..security.url_guard import UnsafeURLError, assert_url_allowed
 
 logger = logging.getLogger(__name__)
 
 
 class ImageSourceType(Enum):
     """Source of the acquired image."""
-    ORIGINAL = "original"          # Downloaded from original URL
-    WIKIMEDIA_SEARCH = "wikimedia" # Found via Wikimedia Commons search
-    GENERATED = "generated"        # Generated placeholder
-    FAILED = "failed"              # All methods failed
+
+    ORIGINAL = "original"  # Downloaded from original URL
+    WIKIMEDIA_SEARCH = "wikimedia"  # Found via Wikimedia Commons search
+    GENERATED = "generated"  # Generated placeholder
+    FAILED = "failed"  # All methods failed
 
 
 @dataclass
 class AcquiredImage:
     """Result of image acquisition."""
+
     success: bool
     source_type: ImageSourceType
-    data: Optional[bytes] = None
-    mime_type: Optional[str] = None
-    new_url: Optional[str] = None
+    data: bytes | None = None
+    mime_type: str | None = None
+    new_url: str | None = None
     width: int = 0
     height: int = 0
-    attribution: Optional[str] = None
-    error: Optional[str] = None
+    attribution: str | None = None
+    error: str | None = None
 
 
 @dataclass
 class ImageAssetInfo:
     """Information about an image asset from UMCF."""
+
     id: str
-    url: Optional[str]
-    local_path: Optional[str]
-    title: Optional[str]
-    alt: Optional[str]
-    caption: Optional[str]
-    audio_description: Optional[str]
+    url: str | None
+    local_path: str | None
+    title: str | None
+    alt: str | None
+    caption: str | None
+    audio_description: str | None
     asset_type: str  # image, diagram, chart, etc.
     width: int = 0
     height: int = 0
@@ -85,15 +90,15 @@ class ImageAcquisitionService:
 
     def __init__(
         self,
-        cache_dir: Optional[Path] = None,
+        cache_dir: Path | None = None,
         max_retries: int = 3,
         timeout: int = 30,
     ):
-        self.cache_dir = cache_dir or Path("/tmp/unamentis_image_cache")
+        self.cache_dir = cache_dir or Path(tempfile.gettempdir()) / "unamentis_image_cache"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.max_retries = max_retries
         self.timeout = timeout
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession | None = None
 
     async def _get_session(self) -> aiohttp.ClientSession:
         """Get or create aiohttp session."""
@@ -102,7 +107,7 @@ class ImageAcquisitionService:
                 timeout=aiohttp.ClientTimeout(total=self.timeout),
                 headers={
                     "User-Agent": "UnaMentis/1.0 (Educational AI Tutor; https://github.com/unamentis)"
-                }
+                },
             )
         return self._session
 
@@ -148,11 +153,19 @@ class ImageAcquisitionService:
         return AcquiredImage(
             success=False,
             source_type=ImageSourceType.FAILED,
-            error=f"All acquisition strategies failed for {asset.id}"
+            error=f"All acquisition strategies failed for {asset.id}",
         )
 
     async def _download_from_url(self, url: str) -> AcquiredImage:
         """Download image from URL."""
+        try:
+            await assert_url_allowed(url)
+        except UnsafeURLError as e:
+            return AcquiredImage(
+                success=False,
+                source_type=ImageSourceType.ORIGINAL,
+                error=f"Blocked unsafe image URL: {e}",
+            )
         try:
             session = await self._get_session()
 
@@ -168,7 +181,7 @@ class ImageAcquisitionService:
                                 return AcquiredImage(
                                     success=False,
                                     source_type=ImageSourceType.ORIGINAL,
-                                    error="Downloaded data is not a valid image"
+                                    error="Downloaded data is not a valid image",
                                 )
 
                             # Get dimensions
@@ -187,7 +200,7 @@ class ImageAcquisitionService:
                             return AcquiredImage(
                                 success=False,
                                 source_type=ImageSourceType.ORIGINAL,
-                                error=f"HTTP 404: Image not found at {url}"
+                                error=f"HTTP 404: Image not found at {url}",
                             )
                         else:
                             if attempt < self.max_retries - 1:
@@ -196,7 +209,7 @@ class ImageAcquisitionService:
                             return AcquiredImage(
                                 success=False,
                                 source_type=ImageSourceType.ORIGINAL,
-                                error=f"HTTP {response.status}"
+                                error=f"HTTP {response.status}",
                             )
                 except asyncio.TimeoutError:
                     if attempt < self.max_retries - 1:
@@ -205,48 +218,44 @@ class ImageAcquisitionService:
                     return AcquiredImage(
                         success=False,
                         source_type=ImageSourceType.ORIGINAL,
-                        error="Download timeout"
+                        error="Download timeout",
                     )
         except Exception as e:
-            return AcquiredImage(
-                success=False,
-                source_type=ImageSourceType.ORIGINAL,
-                error=str(e)
-            )
+            return AcquiredImage(success=False, source_type=ImageSourceType.ORIGINAL, error=str(e))
 
-    def _build_search_query(self, asset: ImageAssetInfo) -> Optional[str]:
+    def _build_search_query(self, asset: ImageAssetInfo) -> str | None:
         """Build a search query from asset metadata."""
         parts = []
 
         # Use title if available
         if asset.title:
             # Clean up the title, removing common non-descriptive words
-            clean_title = re.sub(r'[^\w\s\'-]', ' ', asset.title)
+            clean_title = re.sub(r"[^\w\s\'-]", " ", asset.title)
             # Remove common suffixes that hurt search
-            clean_title = re.sub(r'\s+by\s+', ' ', clean_title, flags=re.IGNORECASE)
-            clean_title = re.sub(r'\s+\d{4}\s*$', '', clean_title)  # Remove years at end
+            clean_title = re.sub(r"\s+by\s+", " ", clean_title, flags=re.IGNORECASE)
+            clean_title = re.sub(r"\s+\d{4}\s*$", "", clean_title)  # Remove years at end
             parts.append(clean_title.strip())
 
         # Also add alt text for more context
         if asset.alt:
-            clean_alt = re.sub(r'[^\w\s\'-]', ' ', asset.alt)
+            clean_alt = re.sub(r"[^\w\s\'-]", " ", asset.alt)
             # Take key words from alt, not the whole thing
             alt_words = clean_alt.split()[:6]  # First 6 words
             if alt_words:
-                parts.append(' '.join(alt_words))
+                parts.append(" ".join(alt_words))
 
         # Use caption as additional context
         if asset.caption:
-            clean_caption = re.sub(r'[^\w\s\'-]', ' ', asset.caption)
+            clean_caption = re.sub(r"[^\w\s\'-]", " ", asset.caption)
             caption_words = clean_caption.split()[:4]
             if caption_words:
-                parts.append(' '.join(caption_words))
+                parts.append(" ".join(caption_words))
 
         if not parts:
             return None
 
         # Combine and deduplicate words
-        all_words = ' '.join(parts).lower().split()
+        all_words = " ".join(parts).lower().split()
         seen = set()
         unique_words = []
         for word in all_words:
@@ -256,7 +265,7 @@ class ImageAcquisitionService:
                 if len(unique_words) >= 6:  # Limit to 6 keywords
                     break
 
-        query = ' '.join(unique_words)
+        query = " ".join(unique_words)
 
         # Add type-specific enhancers
         enhancers = self.SEARCH_ENHANCERS.get(asset.asset_type, [])
@@ -289,7 +298,7 @@ class ImageAcquisitionService:
                     return AcquiredImage(
                         success=False,
                         source_type=ImageSourceType.WIKIMEDIA_SEARCH,
-                        error=f"Wikimedia search failed: HTTP {response.status}"
+                        error=f"Wikimedia search failed: HTTP {response.status}",
                     )
 
                 data = await response.json()
@@ -299,7 +308,7 @@ class ImageAcquisitionService:
                     return AcquiredImage(
                         success=False,
                         source_type=ImageSourceType.WIKIMEDIA_SEARCH,
-                        error="No results found on Wikimedia Commons"
+                        error="No results found on Wikimedia Commons",
                     )
 
                 # Try each result
@@ -316,14 +325,12 @@ class ImageAcquisitionService:
                 return AcquiredImage(
                     success=False,
                     source_type=ImageSourceType.WIKIMEDIA_SEARCH,
-                    error="Could not download any search results"
+                    error="Could not download any search results",
                 )
 
         except Exception as e:
             return AcquiredImage(
-                success=False,
-                source_type=ImageSourceType.WIKIMEDIA_SEARCH,
-                error=str(e)
+                success=False, source_type=ImageSourceType.WIKIMEDIA_SEARCH, error=str(e)
             )
 
     async def _get_wikimedia_image(self, file_title: str) -> AcquiredImage:
@@ -346,7 +353,7 @@ class ImageAcquisitionService:
                     return AcquiredImage(
                         success=False,
                         source_type=ImageSourceType.WIKIMEDIA_SEARCH,
-                        error=f"Failed to get image info: HTTP {response.status}"
+                        error=f"Failed to get image info: HTTP {response.status}",
                     )
 
                 data = await response.json()
@@ -372,10 +379,10 @@ class ImageAcquisitionService:
 
                         attribution = None
                         if artist or license_name:
-                            attribution = f"Image from Wikimedia Commons"
+                            attribution = "Image from Wikimedia Commons"
                             if artist:
                                 # Strip HTML tags
-                                clean_artist = re.sub(r'<[^>]+>', '', artist)
+                                clean_artist = re.sub(r"<[^>]+>", "", artist)
                                 attribution += f" by {clean_artist}"
                             if license_name:
                                 attribution += f" ({license_name})"
@@ -394,14 +401,12 @@ class ImageAcquisitionService:
                 return AcquiredImage(
                     success=False,
                     source_type=ImageSourceType.WIKIMEDIA_SEARCH,
-                    error="Could not extract image URL"
+                    error="Could not extract image URL",
                 )
 
         except Exception as e:
             return AcquiredImage(
-                success=False,
-                source_type=ImageSourceType.WIKIMEDIA_SEARCH,
-                error=str(e)
+                success=False, source_type=ImageSourceType.WIKIMEDIA_SEARCH, error=str(e)
             )
 
     async def _generate_placeholder(self, asset: ImageAssetInfo) -> AcquiredImage:
@@ -419,9 +424,9 @@ class ImageAcquisitionService:
             # Choose color based on asset type
             colors = {
                 "diagram": ("#E3F2FD", "#1976D2"),  # Blue
-                "chart": ("#E8F5E9", "#388E3C"),     # Green
-                "image": ("#FFF3E0", "#F57C00"),     # Orange
-                "map": ("#F3E5F5", "#7B1FA2"),       # Purple
+                "chart": ("#E8F5E9", "#388E3C"),  # Green
+                "image": ("#FFF3E0", "#F57C00"),  # Orange
+                "map": ("#F3E5F5", "#7B1FA2"),  # Purple
                 "equation": ("#ECEFF1", "#455A64"),  # Gray
             }
             bg_color, text_color = colors.get(asset.asset_type, ("#F5F5F5", "#616161"))
@@ -429,30 +434,31 @@ class ImageAcquisitionService:
             # Icon based on type
             icons = {
                 "diagram": "&#x1F4CA;",  # Chart
-                "chart": "&#x1F4C8;",    # Chart with upward trend
-                "image": "&#x1F5BC;",    # Framed picture
-                "map": "&#x1F5FA;",      # World map
+                "chart": "&#x1F4C8;",  # Chart with upward trend
+                "image": "&#x1F5BC;",  # Framed picture
+                "map": "&#x1F5FA;",  # World map
                 "equation": "&#x2211;",  # Sigma
             }
             icon = icons.get(asset.asset_type, "&#x1F5BC;")
 
             # Escape text for SVG
-            safe_text = (display_text
-                        .replace("&", "&amp;")
-                        .replace("<", "&lt;")
-                        .replace(">", "&gt;")
-                        .replace('"', "&quot;"))
+            safe_text = (
+                display_text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace('"', "&quot;")
+            )
 
             svg = f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
   <rect fill="{bg_color}" width="{width}" height="{height}"/>
-  <rect fill="{bg_color}" stroke="{text_color}" stroke-width="2" x="10" y="10" width="{width-20}" height="{height-20}" rx="8"/>
-  <text x="{width//2}" y="{height//2 - 30}" font-family="system-ui, sans-serif" font-size="48" fill="{text_color}" text-anchor="middle">{icon}</text>
-  <text x="{width//2}" y="{height//2 + 30}" font-family="system-ui, sans-serif" font-size="18" fill="{text_color}" text-anchor="middle" font-weight="500">{safe_text}</text>
-  <text x="{width//2}" y="{height//2 + 60}" font-family="system-ui, sans-serif" font-size="12" fill="{text_color}" text-anchor="middle" opacity="0.7">Placeholder - original image unavailable</text>
+  <rect fill="{bg_color}" stroke="{text_color}" stroke-width="2" x="10" y="10" width="{width - 20}" height="{height - 20}" rx="8"/>
+  <text x="{width // 2}" y="{height // 2 - 30}" font-family="system-ui, sans-serif" font-size="48" fill="{text_color}" text-anchor="middle">{icon}</text>
+  <text x="{width // 2}" y="{height // 2 + 30}" font-family="system-ui, sans-serif" font-size="18" fill="{text_color}" text-anchor="middle" font-weight="500">{safe_text}</text>
+  <text x="{width // 2}" y="{height // 2 + 60}" font-family="system-ui, sans-serif" font-size="12" fill="{text_color}" text-anchor="middle" opacity="0.7">Placeholder - original image unavailable</text>
 </svg>'''
 
-            svg_bytes = svg.encode('utf-8')
+            svg_bytes = svg.encode("utf-8")
 
             return AcquiredImage(
                 success=True,
@@ -465,11 +471,7 @@ class ImageAcquisitionService:
             )
 
         except Exception as e:
-            return AcquiredImage(
-                success=False,
-                source_type=ImageSourceType.GENERATED,
-                error=str(e)
-            )
+            return AcquiredImage(success=False, source_type=ImageSourceType.GENERATED, error=str(e))
 
     def _is_valid_image(self, data: bytes) -> bool:
         """Check if data is a valid image."""
@@ -477,50 +479,50 @@ class ImageAcquisitionService:
             return False
 
         # Check magic bytes
-        if data[:8] == b'\x89PNG\r\n\x1a\n':
+        if data[:8] == b"\x89PNG\r\n\x1a\n":
             return True
-        if data[:2] == b'\xff\xd8':  # JPEG
+        if data[:2] == b"\xff\xd8":  # JPEG
             return True
-        if data[:6] in (b'GIF87a', b'GIF89a'):
+        if data[:6] in (b"GIF87a", b"GIF89a"):
             return True
-        if data[:4] == b'RIFF' and data[8:12] == b'WEBP':
+        if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
             return True
-        if b'<svg' in data[:500]:  # SVG
+        if b"<svg" in data[:500]:  # SVG
             return True
 
         return False
 
-    def _get_image_dimensions(self, data: bytes) -> Tuple[int, int]:
+    def _get_image_dimensions(self, data: bytes) -> tuple[int, int]:
         """Get image dimensions from data."""
         try:
             # PNG
-            if data[:8] == b'\x89PNG\r\n\x1a\n':
+            if data[:8] == b"\x89PNG\r\n\x1a\n":
                 if len(data) >= 24:
-                    width = int.from_bytes(data[16:20], 'big')
-                    height = int.from_bytes(data[20:24], 'big')
+                    width = int.from_bytes(data[16:20], "big")
+                    height = int.from_bytes(data[20:24], "big")
                     return width, height
 
             # JPEG
-            if data[:2] == b'\xff\xd8':
+            if data[:2] == b"\xff\xd8":
                 # Find SOF marker
                 i = 2
                 while i < len(data) - 9:
-                    if data[i] == 0xff:
+                    if data[i] == 0xFF:
                         marker = data[i + 1]
-                        if marker in (0xc0, 0xc1, 0xc2):  # SOF markers
-                            height = int.from_bytes(data[i + 5:i + 7], 'big')
-                            width = int.from_bytes(data[i + 7:i + 9], 'big')
+                        if marker in (0xC0, 0xC1, 0xC2):  # SOF markers
+                            height = int.from_bytes(data[i + 5 : i + 7], "big")
+                            width = int.from_bytes(data[i + 7 : i + 9], "big")
                             return width, height
-                        length = int.from_bytes(data[i + 2:i + 4], 'big')
+                        length = int.from_bytes(data[i + 2 : i + 4], "big")
                         i += 2 + length
                     else:
                         i += 1
 
             # GIF
-            if data[:6] in (b'GIF87a', b'GIF89a'):
+            if data[:6] in (b"GIF87a", b"GIF89a"):
                 if len(data) >= 10:
-                    width = int.from_bytes(data[6:8], 'little')
-                    height = int.from_bytes(data[8:10], 'little')
+                    width = int.from_bytes(data[6:8], "little")
+                    height = int.from_bytes(data[8:10], "little")
                     return width, height
 
         except Exception:
@@ -530,9 +532,9 @@ class ImageAcquisitionService:
 
     async def acquire_all_images(
         self,
-        assets: List[ImageAssetInfo],
-        progress_callback: Optional[callable] = None,
-    ) -> Dict[str, AcquiredImage]:
+        assets: list[ImageAssetInfo],
+        progress_callback: callable | None = None,
+    ) -> dict[str, AcquiredImage]:
         """
         Acquire all images for a list of assets.
 
@@ -565,10 +567,10 @@ class ImageAcquisitionService:
 
 # Utility function for use during import
 async def acquire_curriculum_images(
-    media_collection: Dict[str, Any],
+    media_collection: dict[str, Any],
     output_dir: Path,
-    progress_callback: Optional[callable] = None,
-) -> Dict[str, Dict[str, Any]]:
+    progress_callback: callable | None = None,
+) -> dict[str, dict[str, Any]]:
     """
     Acquire all images from a UMCF media collection.
 
@@ -588,33 +590,37 @@ async def acquire_curriculum_images(
 
         for embedded in media_collection.get("embedded", []):
             if embedded.get("type") in ("image", "diagram", "chart", "slideImage"):
-                assets.append(ImageAssetInfo(
-                    id=embedded.get("id", ""),
-                    url=embedded.get("url"),
-                    local_path=embedded.get("localPath"),
-                    title=embedded.get("title"),
-                    alt=embedded.get("alt"),
-                    caption=embedded.get("caption"),
-                    audio_description=embedded.get("audioDescription"),
-                    asset_type=embedded.get("type", "image"),
-                    width=embedded.get("dimensions", {}).get("width", 0),
-                    height=embedded.get("dimensions", {}).get("height", 0),
-                ))
+                assets.append(
+                    ImageAssetInfo(
+                        id=embedded.get("id", ""),
+                        url=embedded.get("url"),
+                        local_path=embedded.get("localPath"),
+                        title=embedded.get("title"),
+                        alt=embedded.get("alt"),
+                        caption=embedded.get("caption"),
+                        audio_description=embedded.get("audioDescription"),
+                        asset_type=embedded.get("type", "image"),
+                        width=embedded.get("dimensions", {}).get("width", 0),
+                        height=embedded.get("dimensions", {}).get("height", 0),
+                    )
+                )
 
         for reference in media_collection.get("reference", []):
             if reference.get("type") in ("image", "diagram", "chart", "slideImage"):
-                assets.append(ImageAssetInfo(
-                    id=reference.get("id", ""),
-                    url=reference.get("url"),
-                    local_path=reference.get("localPath"),
-                    title=reference.get("title"),
-                    alt=reference.get("alt"),
-                    caption=reference.get("caption"),
-                    audio_description=reference.get("audioDescription"),
-                    asset_type=reference.get("type", "image"),
-                    width=reference.get("dimensions", {}).get("width", 0),
-                    height=reference.get("dimensions", {}).get("height", 0),
-                ))
+                assets.append(
+                    ImageAssetInfo(
+                        id=reference.get("id", ""),
+                        url=reference.get("url"),
+                        local_path=reference.get("localPath"),
+                        title=reference.get("title"),
+                        alt=reference.get("alt"),
+                        caption=reference.get("caption"),
+                        audio_description=reference.get("audioDescription"),
+                        asset_type=reference.get("type", "image"),
+                        width=reference.get("dimensions", {}).get("width", 0),
+                        height=reference.get("dimensions", {}).get("height", 0),
+                    )
+                )
 
         if not assets:
             return {}
@@ -652,7 +658,7 @@ async def acquire_curriculum_images(
                     "height": result.height,
                     "new_url": result.new_url,
                     "attribution": result.attribution,
-                    "data_base64": base64.b64encode(result.data).decode('utf-8'),
+                    "data_base64": base64.b64encode(result.data).decode("utf-8"),
                 }
             else:
                 output_data[asset_id] = {
