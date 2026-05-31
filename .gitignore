@@ -44,6 +44,9 @@ build/
 .build/
 DerivedData/
 
+# Generated codebase map (large, machine-generated; regenerate locally via the architecture workflow)
+architecture.json
+
 # Large binary dependencies (download separately)
 llama.xcframework/
 llama-xcframework.tar.gz

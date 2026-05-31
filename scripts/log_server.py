@@ -9,19 +9,28 @@ A simple HTTP server that receives logs from the iOS app and provides:
 - Automatic log rotation
 
 Usage:
-    python3 scripts/log_server.py [--port 8765] [--bind 0.0.0.0]
+    python3 scripts/log_server.py [--port 8765] [--bind 127.0.0.1] [--token TOKEN]
 
 Web Interface:
     http://localhost:8765/           - Main dashboard
-    http://localhost:8765/logs       - JSON API for logs
-    http://localhost:8765/clear      - Clear log buffer
+    http://localhost:8765/logs       - JSON API for logs (token-protected when a token is set)
+    http://localhost:8765/clear      - Clear log buffer (token-protected when a token is set)
 
-For device testing, use --bind 0.0.0.0 and note your Mac's IP address.
-Then configure the app to use that IP.
+Security:
+    The server binds to 127.0.0.1 (loopback) by default. Device logs can contain
+    transcripts, user ids, emails, and prompts, so the data endpoints must not be
+    exposed unauthenticated on a shared network.
+
+    For device testing you must bind a non-loopback address AND set a shared secret:
+        UNAMENTIS_LOG_TOKEN=<secret> python3 scripts/log_server.py --bind 0.0.0.0
+    The server refuses to start on a non-loopback bind without a token. Clients send
+    the token via the X-Log-Token header (or Authorization: Bearer); open the dashboard
+    with http://<ip>:8765/?token=<secret>.
 """
 
 import argparse
 import json
+import secrets
 import socket
 import sys
 import os
@@ -39,6 +48,7 @@ MAX_LOG_BUFFER = 5000
 log_buffer = deque(maxlen=MAX_LOG_BUFFER)
 log_lock = threading.Lock()
 
+
 # ANSI color codes for terminal
 class Colors:
     RESET = "\033[0m"
@@ -55,6 +65,7 @@ class Colors:
     LABEL = "\033[94m"
     FILE = "\033[90m"
     METADATA = "\033[33m"
+
 
 LEVEL_COLORS = {
     "TRACE": Colors.TRACE,
@@ -346,8 +357,11 @@ WEB_TEMPLATE = """<!DOCTYPE html>
             }
         }
 
+        const LOG_TOKEN = new URLSearchParams(location.search).get('token') || '';
+        function authHeaders() { return LOG_TOKEN ? { 'X-Log-Token': LOG_TOKEN } : {}; }
+
         function fetchLogs() {
-            fetch('/logs')
+            fetch('/logs', { headers: authHeaders() })
                 .then(r => r.json())
                 .then(data => {
                     if (data.length !== lastLogCount) {
@@ -360,7 +374,7 @@ WEB_TEMPLATE = """<!DOCTYPE html>
         }
 
         function clearLogs() {
-            fetch('/clear', { method: 'POST' })
+            fetch('/clear', { method: 'POST', headers: authHeaders() })
                 .then(() => { logs = []; lastLogCount = 0; renderLogs(); });
         }
 
@@ -400,16 +414,55 @@ class LogHandler(BaseHTTPRequestHandler):
     quiet: bool = False
     server_ip: str = "localhost"
     port: int = 8765
+    auth_token: Optional[str] = None
 
     def log_message(self, format, *args):
         """Suppress default HTTP logging."""
         pass
 
+    def _is_authorized(self) -> bool:
+        """
+        Authorize a request to a protected endpoint.
+
+        When no token is configured (the loopback-only dev default) all requests
+        are allowed. When a token is configured, the request must present it via
+        the X-Log-Token header, an Authorization: Bearer header, or a ?token=
+        query parameter (so the browser dashboard can carry it). Comparison is
+        constant-time.
+        """
+        token = self.auth_token
+        if not token:
+            return True
+
+        presented = self.headers.get("X-Log-Token", "")
+        if not presented:
+            auth = self.headers.get("Authorization", "")
+            if auth.startswith("Bearer "):
+                presented = auth[len("Bearer ") :].strip()
+        if not presented:
+            presented = parse_qs(urlparse(self.path).query).get("token", [""])[0]
+
+        return bool(presented) and secrets.compare_digest(presented, token)
+
+    def _reject_unauthorized(self):
+        """Send a 401 for an unauthorized request to a protected endpoint."""
+        self.send_response(401)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("WWW-Authenticate", "Bearer")
+        self.end_headers()
+        self.wfile.write(b'{"error": "unauthorized"}')
+
     def do_POST(self):
         """Handle POST requests."""
         if self.path == "/log":
+            if not self._is_authorized():
+                self._reject_unauthorized()
+                return
             self._handle_log()
         elif self.path == "/clear":
+            if not self._is_authorized():
+                self._reject_unauthorized()
+                return
             self._handle_clear()
         else:
             self.send_response(404)
@@ -420,9 +473,14 @@ class LogHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
+        # The dashboard shell and health check carry no log data and stay open;
+        # everything that returns or mutates buffered logs is token-protected.
         if path == "/" or path == "/index.html":
             self._serve_web_interface()
         elif path == "/logs":
+            if not self._is_authorized():
+                self._reject_unauthorized()
+                return
             self._serve_logs_json()
         elif path == "/health":
             self._serve_health()
@@ -469,7 +527,9 @@ class LogHandler(BaseHTTPRequestHandler):
 
     def _serve_web_interface(self):
         """Serve the web interface."""
-        html = WEB_TEMPLATE.replace("{{SERVER_IP}}", self.server_ip).replace("{{PORT}}", str(self.port))
+        html = WEB_TEMPLATE.replace("{{SERVER_IP}}", self.server_ip).replace(
+            "{{PORT}}", str(self.port)
+        )
         self.send_response(200)
         self.send_header("Content-Type", "text/html")
         self.send_header("Content-Length", len(html.encode()))
@@ -503,7 +563,7 @@ class LogHandler(BaseHTTPRequestHandler):
         try:
             dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
             time_str = dt.strftime("%H:%M:%S.%f")[:-3]
-        except:
+        except (ValueError, AttributeError, TypeError):
             time_str = timestamp[:12] if timestamp else "??:??:??"
 
         label = entry.get("label", "unknown")
@@ -524,7 +584,9 @@ class LogHandler(BaseHTTPRequestHandler):
         metadata = entry.get("metadata")
         if metadata:
             meta_str = ", ".join(f"{k}={v}" for k, v in metadata.items())
-            output += f"\n                    {Colors.METADATA}  [{meta_str}]{Colors.RESET}"
+            output += (
+                f"\n                    {Colors.METADATA}  [{meta_str}]{Colors.RESET}"
+            )
 
         print(output)
         sys.stdout.flush()
@@ -544,7 +606,7 @@ def get_local_ip():
         ip = s.getsockname()[0]
         s.close()
         return ip
-    except:
+    except OSError:
         return "127.0.0.1"
 
 
@@ -573,11 +635,40 @@ def print_banner(host: str, port: int, local_ip: str):
 
 def main():
     parser = argparse.ArgumentParser(description="UnaMentis Remote Log Server")
-    parser.add_argument("--port", "-p", type=int, default=8765, help="Port to listen on")
-    parser.add_argument("--bind", "-b", default="0.0.0.0", help="Address to bind to")
+    parser.add_argument(
+        "--port", "-p", type=int, default=8765, help="Port to listen on"
+    )
+    parser.add_argument(
+        "--bind",
+        "-b",
+        default="127.0.0.1",
+        help="Address to bind to (default: 127.0.0.1, loopback only)",
+    )
+    parser.add_argument(
+        "--token",
+        "-t",
+        default=os.environ.get("UNAMENTIS_LOG_TOKEN"),
+        help="Shared secret required on /log, /logs, /clear "
+        "(or set UNAMENTIS_LOG_TOKEN). Required for any non-loopback bind.",
+    )
     parser.add_argument("--output", "-o", help="File to save logs to")
-    parser.add_argument("--quiet", "-q", action="store_true", help="Suppress terminal output")
+    parser.add_argument(
+        "--quiet", "-q", action="store_true", help="Suppress terminal output"
+    )
     args = parser.parse_args()
+
+    # Fail closed: a non-loopback bind exposes potentially PII-bearing logs to
+    # the network, so it must be protected by a shared secret.
+    loopback_binds = {"127.0.0.1", "localhost", "::1", ""}
+    if args.bind not in loopback_binds and not args.token:
+        print(
+            f"{Colors.ERROR}Refusing to bind {args.bind} without a token.{Colors.RESET}\n"
+            f"Device logs may contain PII. Set a shared secret first, e.g.:\n"
+            f"  UNAMENTIS_LOG_TOKEN=$(openssl rand -hex 16) "
+            f"python3 scripts/log_server.py --bind {args.bind}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     local_ip = get_local_ip()
 
@@ -585,6 +676,7 @@ def main():
     LogHandler.quiet = args.quiet
     LogHandler.server_ip = local_ip
     LogHandler.port = args.port
+    LogHandler.auth_token = args.token
 
     server = HTTPServer((args.bind, args.port), LogHandler)
 

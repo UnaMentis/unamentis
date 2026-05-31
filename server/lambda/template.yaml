@@ -23,9 +23,8 @@ Parameters:
 
   JwtSecret:
     Type: String
-    Description: Secret key for JWT signing
+    Description: "Secret key for JWT signing. REQUIRED, no default: a deploy must supply a high-entropy value (>=32 chars, ideally from Secrets Manager/SSM). The code fails closed when unset, so there is no insecure fallback."
     NoEcho: true
-    Default: ""
 
   BetaTokens:
     Type: String

@@ -90,6 +90,7 @@ from auth import (
     register_auth_routes,
     auth_middleware,
     rate_limit_middleware,
+    require_role,
     TokenService,
     TokenConfig,
     RateLimiter,
@@ -155,8 +156,33 @@ except ImportError:
 from feature_flag_keys import FLAG_DEFAULTS
 
 # Configuration
-HOST = os.environ.get("VOICELEARN_MGMT_HOST", "0.0.0.0")  # nosec B104
-PORT = int(os.environ.get("VOICELEARN_MGMT_PORT", "8766"))
+# Bind to loopback by default. Exposing the API on a non-loopback address is an
+# explicit opt-in via UNAMENTIS_MGMT_HOST and, when authentication is disabled,
+# is downgraded back to loopback at startup (see main()) so the API is never
+# served unauthenticated on a shared network. VOICELEARN_MGMT_HOST/PORT are
+# accepted as deprecated aliases for backward compatibility.
+HOST = os.environ.get(
+    "UNAMENTIS_MGMT_HOST", os.environ.get("VOICELEARN_MGMT_HOST", "127.0.0.1")
+)
+PORT = int(
+    os.environ.get(
+        "UNAMENTIS_MGMT_PORT", os.environ.get("VOICELEARN_MGMT_PORT", "8766")
+    )
+)
+
+# CORS: reflect only explicitly-allowed origins (the local consoles by default).
+# A wildcard "*" let any website in a user's browser call these endpoints.
+_DEFAULT_ALLOWED_ORIGINS = (
+    "http://localhost:3000,http://127.0.0.1:3000,"
+    "http://localhost:3001,http://127.0.0.1:3001"
+)
+ALLOWED_ORIGINS = {
+    o.strip()
+    for o in os.environ.get(
+        "UNAMENTIS_ALLOWED_ORIGINS", _DEFAULT_ALLOWED_ORIGINS
+    ).split(",")
+    if o.strip()
+}
 MAX_LOG_ENTRIES = 10000
 MAX_METRICS_HISTORY = 1000
 
@@ -4657,8 +4683,14 @@ async def handle_duplicate_profile(request: web.Request) -> web.Response:
 # =============================================================================
 
 
+# Roles that may be assigned to a user, and the subset considered privileged.
+VALID_USER_ROLES = {"user", "admin", "super_admin"}
+ELEVATED_USER_ROLES = {"admin", "super_admin"}
+
+
+@require_role("admin", "super_admin")
 async def handle_get_admin_users(request: web.Request) -> web.Response:
-    """Get all users for admin panel."""
+    """Get all users for admin panel. Admin only."""
     try:
         auth_api = request.app.get("auth_api")
         if not auth_api:
@@ -4703,8 +4735,9 @@ async def handle_get_admin_users(request: web.Request) -> web.Response:
         return web.json_response({"error": str(e)}, status=500)
 
 
+@require_role("admin", "super_admin")
 async def handle_create_admin_user(request: web.Request) -> web.Response:
-    """Create a new user via admin panel."""
+    """Create a new user via admin panel. Admin only."""
     try:
         auth_api = request.app.get("auth_api")
         if not auth_api:
@@ -4724,6 +4757,20 @@ async def handle_create_admin_user(request: web.Request) -> web.Response:
         if len(password) < 8:
             return web.json_response(
                 {"error": "Password must be at least 8 characters"}, status=400
+            )
+
+        # Validate the requested role against an allowlist, and prevent
+        # privilege escalation: only a super_admin may mint admin/super_admin
+        # accounts. A plain admin can create regular users only.
+        if role not in VALID_USER_ROLES:
+            return web.json_response(
+                {"error": f"Invalid role. Allowed: {sorted(VALID_USER_ROLES)}"},
+                status=400,
+            )
+        if role in ELEVATED_USER_ROLES and request.get("role") != "super_admin":
+            return web.json_response(
+                {"error": "Only a super_admin may create elevated-role accounts"},
+                status=403,
             )
 
         password_hash = auth_api.password_service.hash_password(password)
@@ -4772,8 +4819,9 @@ async def handle_create_admin_user(request: web.Request) -> web.Response:
         return web.json_response({"error": str(e)}, status=500)
 
 
+@require_role("admin", "super_admin")
 async def handle_delete_admin_user(request: web.Request) -> web.Response:
-    """Delete a user via admin panel."""
+    """Delete a user via admin panel. Admin only."""
     try:
         auth_api = request.app.get("auth_api")
         if not auth_api:
@@ -4971,7 +5019,7 @@ def create_app() -> web.Application:
     # Limit request body size to 1MB to prevent DoS attacks via large JSON payloads
     app = web.Application(client_max_size=1024 * 1024)
 
-    # CORS middleware
+    # CORS middleware: reflect only explicitly-allowed origins (default-deny).
     @web.middleware
     async def cors_middleware(request: web.Request, handler):
         if request.method == "OPTIONS":
@@ -4979,13 +5027,16 @@ def create_app() -> web.Application:
         else:
             response = await handler(request)
 
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = (
-            "GET, POST, PUT, DELETE, OPTIONS"
-        )
-        response.headers["Access-Control-Allow-Headers"] = (
-            "Content-Type, X-Client-ID, X-Client-Name"
-        )
+        origin = request.headers.get("Origin", "")
+        if origin in ALLOWED_ORIGINS:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Vary"] = "Origin"
+            response.headers["Access-Control-Allow-Methods"] = (
+                "GET, POST, PUT, DELETE, OPTIONS"
+            )
+            response.headers["Access-Control-Allow-Headers"] = (
+                "Authorization, Content-Type, X-Client-ID, X-Client-Name"
+            )
         return response
 
     app.middlewares.append(cors_middleware)
@@ -5129,6 +5180,13 @@ def create_app() -> web.Application:
     # The auth routes are registered here as placeholders; full initialization
     # happens when AUTH_SECRET_KEY is set in environment.
     auth_secret = os.environ.get("AUTH_SECRET_KEY")
+
+    # Rate limiting is enabled unconditionally (independent of auth). It is safe
+    # and beneficial regardless of whether authentication is configured; tying it
+    # to AUTH_SECRET_KEY previously meant one misconfiguration removed both the
+    # auth and brute-force controls at once.
+    app["rate_limiter"] = RateLimiter()
+
     if auth_secret:
         token_config = TokenConfig(
             secret_key=auth_secret,
@@ -5141,24 +5199,29 @@ def create_app() -> web.Application:
             ),
         )
         token_service = TokenService(token_config)
-        rate_limiter = RateLimiter()
 
         # Store in app for later use when db pool is available
         app["token_service"] = token_service
-        app["rate_limiter"] = rate_limiter
 
         # Set up token service for middleware
         setup_token_service(app, auth_secret)
 
-        # Add auth middleware (applies JWT validation to protected routes)
+        # Add auth middleware (applies JWT validation to protected routes).
+        # Appended before rate_limit_middleware below so auth runs first and the
+        # rate limiter can key on the authenticated user_id.
         app.middlewares.append(auth_middleware)
-        app.middlewares.append(rate_limit_middleware)
 
         logger.info(
             "Authentication system initialized (routes pending database connection)"
         )
     else:
-        logger.warning("AUTH_SECRET_KEY not set - authentication disabled")
+        logger.warning(
+            "AUTH_SECRET_KEY not set - authentication disabled. The API will be "
+            "forced to bind loopback only (see startup bind guard)."
+        )
+
+    # Rate limiting middleware is always active (innermost of the two).
+    app.middlewares.append(rate_limit_middleware)
 
     # Latency Test Harness
     register_latency_harness_routes(app)
@@ -5495,7 +5558,23 @@ def main():
 """)
 
     app = create_app()
-    web.run_app(app, host=HOST, port=PORT, print=None)
+
+    # Fail-closed bind guard: never serve the API unauthenticated on a
+    # non-loopback address. If a public bind is requested without
+    # AUTH_SECRET_KEY, downgrade to loopback rather than exposing every endpoint.
+    bind_host = HOST
+    _loopback = {"127.0.0.1", "localhost", "::1", ""}
+    if bind_host not in _loopback and not os.environ.get("AUTH_SECRET_KEY"):
+        logger.error(
+            "Refusing to bind %s without AUTH_SECRET_KEY: the Management API "
+            "would be served unauthenticated on a non-loopback address. Binding "
+            "127.0.0.1 instead. Set AUTH_SECRET_KEY (and have clients send a "
+            "Bearer token) to expose it.",
+            bind_host,
+        )
+        bind_host = "127.0.0.1"
+
+    web.run_app(app, host=bind_host, port=PORT, print=None)
 
 
 if __name__ == "__main__":

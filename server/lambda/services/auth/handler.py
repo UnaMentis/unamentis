@@ -29,8 +29,6 @@ from shared import db
 from shared.auth import (
     create_jwt,
     get_current_user,
-    require_auth,
-    validate_beta_token,
 )
 from shared.response import (
     created_response,
@@ -148,11 +146,15 @@ def handle_register(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return validation_error_response("Validation failed", errors)
 
     # Check if placeholder auth is allowed (only in development)
-    allow_placeholder = os.environ.get("ALLOW_PLACEHOLDER_AUTH", "false").lower() == "true"
+    allow_placeholder = (
+        os.environ.get("ALLOW_PLACEHOLDER_AUTH", "false").lower() == "true"
+    )
 
     if not allow_placeholder:
         # In production, require actual registration implementation
-        logger.warning(f"Registration attempt blocked - placeholder auth disabled: {email}")
+        logger.warning(
+            f"Registration attempt blocked - placeholder auth disabled: {email}"
+        )
         return error_response(
             "Registration not yet implemented. Set ALLOW_PLACEHOLDER_AUTH=true for development.",
             status_code=501,
@@ -160,7 +162,9 @@ def handle_register(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
     # WARNING: Placeholder implementation - no actual user creation
     # TODO: Implement actual registration logic with database
-    logger.warning(f"PLACEHOLDER AUTH: Registration attempt for {email} - DO NOT USE IN PRODUCTION")
+    logger.warning(
+        f"PLACEHOLDER AUTH: Registration attempt for {email} - DO NOT USE IN PRODUCTION"
+    )
 
     return created_response(
         {
@@ -190,20 +194,26 @@ def handle_login(event: dict[str, Any], context: Any) -> dict[str, Any]:
             {"credentials": ["Email and password are required"]},
         )
 
-    # Check if placeholder auth is allowed (only in development)
-    allow_placeholder = os.environ.get("ALLOW_PLACEHOLDER_AUTH", "false").lower() == "true"
+    # Placeholder auth mints a real signed JWT without verifying credentials, so
+    # it is permitted ONLY in an explicit dev environment AND when the flag is
+    # set. It must never be reachable in prod regardless of the flag.
+    allow_placeholder = (
+        os.environ.get("ALLOW_PLACEHOLDER_AUTH", "false").lower() == "true"
+        and os.environ.get("ENVIRONMENT", "").strip().lower() == "dev"
+    )
 
     if not allow_placeholder:
-        # In production, require actual authentication implementation
         logger.warning(f"Login attempt blocked - placeholder auth disabled: {email}")
         return error_response(
-            "Authentication not yet implemented. Set ALLOW_PLACEHOLDER_AUTH=true for development.",
+            "Authentication not yet implemented.",
             status_code=501,
         )
 
     # WARNING: Placeholder implementation - accepts any credentials
     # TODO: Implement actual login logic with password verification
-    logger.warning(f"PLACEHOLDER AUTH: Login attempt for {email} - DO NOT USE IN PRODUCTION")
+    logger.warning(
+        f"PLACEHOLDER AUTH: Login attempt for {email} - DO NOT USE IN PRODUCTION"
+    )
 
     # Create a placeholder JWT
     token = create_jwt(
@@ -300,9 +310,7 @@ def handle_forgot_password(event: dict[str, Any], context: Any) -> dict[str, Any
     logger.info(f"Password reset requested for: {email}")
 
     # Always return success to prevent email enumeration
-    return success_response(
-        message="If the email exists, a reset link has been sent"
-    )
+    return success_response(message="If the email exists, a reset link has been sent")
 
 
 def handle_reset_password(event: dict[str, Any], context: Any) -> dict[str, Any]:

@@ -34,6 +34,12 @@ Instead, please email richard@amerman.net with:
 
 ## Scope
 
-This security policy applies to the UnaMentis iOS application and its associated components in this repository.
+This security policy applies to the components in this repository: the server
+infrastructure (USM Core, the Management API, the Operations Console, and the
+Web Client), the curriculum system and importers, and the project documentation.
+
+The client applications live in their own repositories and are covered by the
+security policy there: [unamentis-ios](https://github.com/UnaMentis/unamentis-ios)
+and [unamentis-android](https://github.com/UnaMentis/unamentis-android).
 
 Third-party dependencies have their own security policies. Please report vulnerabilities in those projects to their respective maintainers.

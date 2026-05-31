@@ -2340,8 +2340,18 @@ class TestHandleDuplicateProfile:
 class TestHandleGetAdminUsers:
     """Tests for handle_get_admin_users endpoint."""
 
+    async def test_get_admin_users_requires_admin(self, mock_request):
+        """Unauthenticated callers are rejected by the require_role gate."""
+        mock_request.__contains__ = MagicMock(return_value=False)  # no user_id
+        mock_request.app = {}
+
+        with pytest.raises(web.HTTPUnauthorized):
+            await handle_get_admin_users(mock_request)
+
     async def test_get_admin_users_no_auth(self, mock_request):
-        """Test get admin users when auth not configured."""
+        """Authenticated admin, but auth_api backend not configured -> 503."""
+        mock_request.__contains__ = MagicMock(return_value=True)
+        mock_request.get = MagicMock(return_value="admin")
         mock_request.app = {}
 
         response = await handle_get_admin_users(mock_request)
@@ -2353,8 +2363,18 @@ class TestHandleGetAdminUsers:
 class TestHandleCreateAdminUser:
     """Tests for handle_create_admin_user endpoint."""
 
+    async def test_create_admin_user_requires_admin(self, mock_request):
+        """Unauthenticated callers cannot create users (require_role gate)."""
+        mock_request.__contains__ = MagicMock(return_value=False)  # no user_id
+        mock_request.app = {}
+
+        with pytest.raises(web.HTTPUnauthorized):
+            await handle_create_admin_user(mock_request)
+
     async def test_create_admin_user_no_auth(self, mock_request):
-        """Test create admin user when auth not configured."""
+        """Authenticated admin, but auth_api backend not configured -> 503."""
+        mock_request.__contains__ = MagicMock(return_value=True)
+        mock_request.get = MagicMock(return_value="admin")
         mock_request.app = {}
         mock_request.json = AsyncMock(
             return_value={"email": "test@test.com", "password": "password123"}
@@ -2369,6 +2389,8 @@ class TestHandleCreateAdminUser:
 
         Note: Uses MagicMock for db pool since validation fails before DB access.
         """
+        mock_request.__contains__ = MagicMock(return_value=True)
+        mock_request.get = MagicMock(return_value="admin")
         mock_auth = MagicMock()  # ALLOWED: validation fails before DB access
         mock_auth.db = MagicMock()  # ALLOWED: validation fails before DB access
         mock_request.app = {"auth_api": mock_auth}
@@ -2383,6 +2405,8 @@ class TestHandleCreateAdminUser:
 
         Note: Uses MagicMock for db pool since validation fails before DB access.
         """
+        mock_request.__contains__ = MagicMock(return_value=True)
+        mock_request.get = MagicMock(return_value="admin")
         mock_auth = MagicMock()  # ALLOWED: validation fails before DB access
         mock_auth.db = MagicMock()  # ALLOWED: validation fails before DB access
         mock_request.app = {"auth_api": mock_auth}
@@ -2394,13 +2418,64 @@ class TestHandleCreateAdminUser:
 
         assert response.status == 400
 
+    async def test_create_admin_user_rejects_invalid_role(self, mock_request):
+        """An out-of-allowlist role is rejected with 400."""
+        mock_request.__contains__ = MagicMock(return_value=True)
+        mock_request.get = MagicMock(return_value="super_admin")
+        mock_auth = MagicMock()  # ALLOWED: validation fails before DB access
+        mock_auth.db = MagicMock()  # ALLOWED: validation fails before DB access
+        mock_request.app = {"auth_api": mock_auth}
+        mock_request.json = AsyncMock(
+            return_value={
+                "email": "test@test.com",
+                "password": "password123",
+                "role": "root",
+            }
+        )
+
+        response = await handle_create_admin_user(mock_request)
+
+        assert response.status == 400
+
+    async def test_create_admin_user_admin_cannot_create_elevated(self, mock_request):
+        """A plain admin cannot mint admin/super_admin accounts (no self-escalation)."""
+        mock_request.__contains__ = MagicMock(return_value=True)
+        mock_request.get = MagicMock(
+            return_value="admin"
+        )  # requester is admin, not super_admin
+        mock_auth = MagicMock()  # ALLOWED: authz fails before DB access
+        mock_auth.db = MagicMock()  # ALLOWED: authz fails before DB access
+        mock_request.app = {"auth_api": mock_auth}
+        mock_request.json = AsyncMock(
+            return_value={
+                "email": "test@test.com",
+                "password": "password123",
+                "role": "admin",
+            }
+        )
+
+        response = await handle_create_admin_user(mock_request)
+
+        assert response.status == 403
+
 
 @pytest.mark.asyncio
 class TestHandleDeleteAdminUser:
     """Tests for handle_delete_admin_user endpoint."""
 
+    async def test_delete_admin_user_requires_admin(self, mock_request):
+        """Unauthenticated callers cannot delete users (require_role gate)."""
+        mock_request.__contains__ = MagicMock(return_value=False)  # no user_id
+        mock_request.app = {}
+        mock_request.match_info = {"user_id": str(uuid.uuid4())}
+
+        with pytest.raises(web.HTTPUnauthorized):
+            await handle_delete_admin_user(mock_request)
+
     async def test_delete_admin_user_no_auth(self, mock_request):
-        """Test delete admin user when auth not configured."""
+        """Authenticated admin, but auth_api backend not configured -> 503."""
+        mock_request.__contains__ = MagicMock(return_value=True)
+        mock_request.get = MagicMock(return_value="admin")
         mock_request.app = {}
         mock_request.match_info = {"user_id": str(uuid.uuid4())}
 

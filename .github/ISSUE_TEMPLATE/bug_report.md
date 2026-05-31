@@ -27,9 +27,14 @@ What actually happened.
 
 ## Environment
 
-- iOS Version: [e.g., 18.0]
-- Device: [e.g., iPhone 16 Pro]
-- App Version: [e.g., 0.1.0]
+- Component: [e.g., Management API, Operations Console, Web Client, USM Core, Importers]
+- OS: [e.g., macOS 15, Ubuntu 24.04]
+- Runtime version: [e.g., Python 3.11, Node 20, Rust 1.x]
+- Version/commit: [e.g., 0.1.0 or commit SHA]
+
+> For iOS or Android client bugs, please file in the
+> [unamentis-ios](https://github.com/UnaMentis/unamentis-ios) or
+> [unamentis-android](https://github.com/UnaMentis/unamentis-android) repository.
 
 ## Screenshots
 

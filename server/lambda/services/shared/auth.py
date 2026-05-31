@@ -9,6 +9,7 @@ Provides:
 
 import logging
 import os
+import secrets
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import wraps
@@ -18,6 +19,16 @@ import jwt
 
 logger = logging.getLogger(__name__)
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
+
+
+def _is_dev_environment() -> bool:
+    """True only when ENVIRONMENT is explicitly set to 'dev'."""
+    return os.environ.get("ENVIRONMENT", "").strip().lower() == "dev"
+
+
+# Per-process ephemeral secret used only in dev when JWT_SECRET is unset, so
+# local testing works without committing a forgeable constant to the repo.
+_DEV_EPHEMERAL_JWT_SECRET: str | None = None
 
 
 class AuthError(Exception):
@@ -48,12 +59,40 @@ def _get_beta_tokens() -> set[str]:
 
 
 def _get_jwt_secret() -> str:
-    """Get JWT secret from environment."""
+    """Get the JWT signing secret from the environment.
+
+    Fails closed: a missing JWT_SECRET raises outside an explicit dev
+    environment. We never fall back to a constant committed in the source, which
+    would let anyone reading this open-source repo forge valid (even admin)
+    tokens against a misconfigured deployment. In dev, a per-process random
+    secret is generated so local testing works without minting forgeable tokens.
+    """
     secret = os.environ.get("JWT_SECRET", "")
-    if not secret:
-        logger.warning("JWT_SECRET not set, using insecure default for development")
-        return "insecure-dev-secret-do-not-use-in-prod"
-    return secret
+    if secret:
+        if len(secret) < 32 and not _is_dev_environment():
+            raise AuthError(
+                "JWT_SECRET is too short. Use at least 32 bytes of high-entropy "
+                "randomness.",
+                status_code=500,
+            )
+        return secret
+
+    if _is_dev_environment():
+        global _DEV_EPHEMERAL_JWT_SECRET
+        if _DEV_EPHEMERAL_JWT_SECRET is None:
+            _DEV_EPHEMERAL_JWT_SECRET = secrets.token_urlsafe(48)
+            logger.warning(
+                "JWT_SECRET not set; ENVIRONMENT=dev, using a random per-process "
+                "secret. Tokens will not validate across restarts or instances. "
+                "Set JWT_SECRET for any shared or persistent use."
+            )
+        return _DEV_EPHEMERAL_JWT_SECRET
+
+    raise AuthError(
+        "JWT_SECRET is not configured. Refusing to sign or validate tokens with "
+        "an insecure default. Set JWT_SECRET to a high-entropy value (>=32 bytes).",
+        status_code=500,
+    )
 
 
 def validate_beta_token(token: str) -> bool:
@@ -68,10 +107,19 @@ def validate_beta_token(token: str) -> bool:
     """
     valid_tokens = _get_beta_tokens()
 
-    # In development, allow any token if no tokens are configured
+    # Fail closed: an unconfigured token list must not authenticate every bearer
+    # string. Only an explicit dev environment accepts any non-empty token.
     if not valid_tokens:
-        logger.warning("No beta tokens configured, allowing all tokens in dev mode")
-        return bool(token)
+        if _is_dev_environment():
+            logger.warning(
+                "No beta tokens configured; ENVIRONMENT=dev, accepting any "
+                "non-empty token."
+            )
+            return bool(token)
+        logger.error(
+            "No beta tokens configured; rejecting beta-token auth. Set BETA_TOKENS."
+        )
+        return False
 
     return token in valid_tokens
 

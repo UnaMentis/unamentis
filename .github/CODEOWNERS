@@ -4,12 +4,11 @@
 # Default owners for everything in the repo
 * @sirfifer
 
-# Core app architecture - requires owner review
-/UnaMentis/ @sirfifer
-/UnaMentisTests/ @sirfifer
-
 # Server components
 /server/ @sirfifer
+
+# Curriculum system and specification
+/curriculum/ @sirfifer
 
 # CI/CD and infrastructure - be extra careful
 /.github/ @sirfifer
@@ -19,7 +18,7 @@
 # but still needs review
 /docs/ @sirfifer
 
-# Package and project configuration
-Package.swift @sirfifer
-project.yml @sirfifer
-*.xcodeproj/** @sirfifer
+# Security-sensitive configuration and policy
+/LICENSE @sirfifer
+/SECURITY.md @sirfifer
+/.gitignore @sirfifer

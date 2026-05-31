@@ -11,67 +11,69 @@ from typing import Callable, List, Optional, Set
 from aiohttp import web
 import jwt
 
-from .token_service import TokenService, TokenConfig, AccessTokenPayload
+from .token_service import TokenService, TokenConfig
 
 logger = logging.getLogger(__name__)
 
 # Public routes that don't require authentication
 PUBLIC_ROUTES: Set[str] = {
-    '/health',
-    '/api/health',
-    '/api/auth/login',
-    '/api/auth/register',
-    '/api/auth/refresh',
-    '/api/auth/forgot-password',
-    '/api/auth/reset-password',
-    '/api/auth/oauth/google/authorize',
-    '/api/auth/oauth/google/callback',
-    '/api/auth/oauth/apple/authorize',
-    '/api/auth/oauth/apple/callback',
-    '/api/auth/oauth/github/authorize',
-    '/api/auth/oauth/github/callback',
+    "/health",
+    "/api/health",
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/auth/refresh",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
+    "/api/auth/oauth/google/authorize",
+    "/api/auth/oauth/google/callback",
+    "/api/auth/oauth/apple/authorize",
+    "/api/auth/oauth/apple/callback",
+    "/api/auth/oauth/github/authorize",
+    "/api/auth/oauth/github/callback",
 }
 
-# Routes that start with these prefixes are public
-# Note: Management console routes are public as they run on internal/trusted networks
+# Routes that start with these prefixes are public.
+#
+# The API is DEFAULT-DENY: this list is kept deliberately minimal. OAuth callback
+# subpaths are the only namespace that needs prefix matching. Every other
+# namespace (admin, curricula, tts, plugins, deployments, import, sources,
+# system, models, services, kb, modules, sessions, fov, ws, stats, clients,
+# servers) now requires a valid access token. Mutating and administrative
+# handlers additionally enforce require_role('admin'/'super_admin').
+#
+# The previous "internal/trusted networks" assumption was false: the server can
+# bind non-loopback and is documented to be exposed via tunnels, so leaving these
+# namespaces public made every mutating endpoint reachable unauthenticated.
 PUBLIC_PREFIXES: List[str] = [
-    '/api/auth/oauth/',
-    '/api/admin/',          # Admin management console routes
-    '/api/stats',           # Dashboard stats
-    '/api/metrics',         # Dashboard metrics
-    '/api/logs',            # Dashboard logs
-    '/api/clients',         # Dashboard clients
-    '/api/servers',         # Dashboard servers
-    '/api/curricula',       # Curriculum management
-    '/api/system/',         # System configuration
-    '/api/import/',         # Import management
-    '/api/sources',         # Source management
-    '/api/plugins',         # Plugin management
-    '/api/models',          # Model management
-    '/api/services',        # Service management
-    '/api/fov',             # FOV context management
-    '/api/sessions',        # FOV session management
-    '/api/tts',             # TTS cache and generation (dev mode)
-    '/api/deployments',     # Scheduled deployments (dev mode)
-    '/api/kb',              # Knowledge Bowl packs and questions
-    '/api/modules',         # Module management
-    '/ws',                  # WebSocket connections
+    "/api/auth/oauth/",
 ]
 
+# Paths that are public for specific HTTP methods only. Used for unauthenticated
+# client telemetry intake; reading or clearing the same path still requires auth
+# (e.g. POST /api/logs is intake, DELETE /api/logs clears and stays protected).
+PUBLIC_METHOD_ROUTES: dict = {
+    "/api/logs": {"POST"},
+    "/api/metrics": {"POST"},
+}
 
-def is_public_route(path: str) -> bool:
+
+def is_public_route(path: str, method: str = "GET") -> bool:
     """Check if a route is public (doesn't require auth).
 
     Uses strict prefix matching to avoid matching unintended paths.
-    For example, '/api/services' should match '/api/services/foo'
-    but not '/api/servicesX'.
+    For example, '/api/auth/oauth' should match '/api/auth/oauth/google'
+    but not '/api/auth/oauthX'. Method-specific public routes (telemetry
+    intake) are honored only for their allowed methods.
     """
     if path in PUBLIC_ROUTES:
         return True
+    allowed_methods = PUBLIC_METHOD_ROUTES.get(path)
+    if allowed_methods and method.upper() in allowed_methods:
+        return True
     for prefix in PUBLIC_PREFIXES:
         # Require exact match or slash-delimited boundary
-        normalized_prefix = prefix.rstrip('/')
-        if path == normalized_prefix or path.startswith(normalized_prefix + '/'):
+        normalized_prefix = prefix.rstrip("/")
+        if path == normalized_prefix or path.startswith(normalized_prefix + "/"):
             return True
     return False
 
@@ -92,26 +94,26 @@ async def auth_middleware(request: web.Request, handler: Callable) -> web.Respon
         - request['device_id']: Device UUID string
         - request['permissions']: List of permission strings
     """
-    # Skip auth for public routes
-    if is_public_route(request.path):
+    # Skip auth for public routes (method-aware for telemetry intake)
+    if is_public_route(request.path, request.method):
         return await handler(request)
 
     # Get token service from app
-    token_service: Optional[TokenService] = request.app.get('token_service')
+    token_service: Optional[TokenService] = request.app.get("token_service")
     if not token_service:
         logger.error("Token service not configured")
         raise web.HTTPInternalServerError(
             text='{"error": "Authentication not configured"}',
-            content_type='application/json'
+            content_type="application/json",
         )
 
     # Extract token from Authorization header
-    auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
         raise web.HTTPUnauthorized(
             text='{"error": "Missing or invalid Authorization header", "code": "AUTH_REQUIRED"}',
-            content_type='application/json',
-            headers={'WWW-Authenticate': 'Bearer realm="unamentis"'}
+            content_type="application/json",
+            headers={"WWW-Authenticate": 'Bearer realm="unamentis"'},
         )
 
     token = auth_header[7:]  # Remove 'Bearer ' prefix
@@ -121,25 +123,29 @@ async def auth_middleware(request: web.Request, handler: Callable) -> web.Respon
         payload = token_service.validate_access_token(token)
 
         # Inject user context into request
-        request['user'] = payload
-        request['user_id'] = payload.user_id
-        request['org_id'] = payload.organization_id
-        request['role'] = payload.role
-        request['device_id'] = payload.device_id
-        request['permissions'] = payload.permissions
+        request["user"] = payload
+        request["user_id"] = payload.user_id
+        request["org_id"] = payload.organization_id
+        request["role"] = payload.role
+        request["device_id"] = payload.device_id
+        request["permissions"] = payload.permissions
 
     except jwt.ExpiredSignatureError:
         raise web.HTTPUnauthorized(
             text='{"error": "Token expired", "code": "TOKEN_EXPIRED"}',
-            content_type='application/json',
-            headers={'WWW-Authenticate': 'Bearer realm="unamentis", error="invalid_token", error_description="Token expired"'}
+            content_type="application/json",
+            headers={
+                "WWW-Authenticate": 'Bearer realm="unamentis", error="invalid_token", error_description="Token expired"'
+            },
         )
     except jwt.InvalidTokenError as e:
         logger.warning(f"Invalid token: {e}")
         raise web.HTTPUnauthorized(
             text='{"error": "Invalid token", "code": "TOKEN_INVALID"}',
-            content_type='application/json',
-            headers={'WWW-Authenticate': 'Bearer realm="unamentis", error="invalid_token"'}
+            content_type="application/json",
+            headers={
+                "WWW-Authenticate": 'Bearer realm="unamentis", error="invalid_token"'
+            },
         )
 
     return await handler(request)
@@ -156,14 +162,16 @@ def require_auth(handler: Callable) -> Callable:
             user_id = request['user_id']
             ...
     """
+
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.Response:
-        if 'user_id' not in request:
+        if "user_id" not in request:
             raise web.HTTPUnauthorized(
                 text='{"error": "Authentication required", "code": "AUTH_REQUIRED"}',
-                content_type='application/json'
+                content_type="application/json",
             )
         return await handler(request)
+
     return wrapper
 
 
@@ -176,28 +184,33 @@ def require_role(*allowed_roles: str) -> Callable:
         async def admin_only_handler(request):
             ...
     """
+
     def decorator(handler: Callable) -> Callable:
         @functools.wraps(handler)
         async def wrapper(request: web.Request) -> web.Response:
-            if 'user_id' not in request:
+            if "user_id" not in request:
                 raise web.HTTPUnauthorized(
                     text='{"error": "Authentication required", "code": "AUTH_REQUIRED"}',
-                    content_type='application/json'
+                    content_type="application/json",
                 )
 
-            user_role = request.get('role', 'user')
+            user_role = request.get("role", "user")
             if user_role not in allowed_roles:
                 raise web.HTTPForbidden(
                     text=f'{{"error": "Insufficient permissions", "code": "FORBIDDEN", "required_roles": {list(allowed_roles)}}}',
-                    content_type='application/json'
+                    content_type="application/json",
                 )
 
             return await handler(request)
+
         return wrapper
+
     return decorator
 
 
-def require_permission(*required_permissions: str, require_all: bool = True) -> Callable:
+def require_permission(
+    *required_permissions: str, require_all: bool = True
+) -> Callable:
     """
     Decorator to require specific permissions for a handler.
 
@@ -210,30 +223,37 @@ def require_permission(*required_permissions: str, require_all: bool = True) -> 
         async def user_management_handler(request):
             ...
     """
+
     def decorator(handler: Callable) -> Callable:
         @functools.wraps(handler)
         async def wrapper(request: web.Request) -> web.Response:
-            if 'user_id' not in request:
+            if "user_id" not in request:
                 raise web.HTTPUnauthorized(
                     text='{"error": "Authentication required", "code": "AUTH_REQUIRED"}',
-                    content_type='application/json'
+                    content_type="application/json",
                 )
 
-            user_permissions = set(request.get('permissions', []))
+            user_permissions = set(request.get("permissions", []))
 
             if require_all:
-                has_permission = all(p in user_permissions for p in required_permissions)
+                has_permission = all(
+                    p in user_permissions for p in required_permissions
+                )
             else:
-                has_permission = any(p in user_permissions for p in required_permissions)
+                has_permission = any(
+                    p in user_permissions for p in required_permissions
+                )
 
             if not has_permission:
                 raise web.HTTPForbidden(
                     text=f'{{"error": "Insufficient permissions", "code": "FORBIDDEN", "required_permissions": {list(required_permissions)}}}',
-                    content_type='application/json'
+                    content_type="application/json",
                 )
 
             return await handler(request)
+
         return wrapper
+
     return decorator
 
 
@@ -247,25 +267,29 @@ def require_org_membership(handler: Callable) -> Callable:
             org_id = request['org_id']  # Guaranteed to be set
             ...
     """
+
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.Response:
-        if 'user_id' not in request:
+        if "user_id" not in request:
             raise web.HTTPUnauthorized(
                 text='{"error": "Authentication required", "code": "AUTH_REQUIRED"}',
-                content_type='application/json'
+                content_type="application/json",
             )
 
-        if not request.get('org_id'):
+        if not request.get("org_id"):
             raise web.HTTPForbidden(
                 text='{"error": "Organization membership required", "code": "ORG_REQUIRED"}',
-                content_type='application/json'
+                content_type="application/json",
             )
 
         return await handler(request)
+
     return wrapper
 
 
-def setup_token_service(app: web.Application, secret_key: str, **kwargs) -> TokenService:
+def setup_token_service(
+    app: web.Application, secret_key: str, **kwargs
+) -> TokenService:
     """
     Set up the token service for an aiohttp application.
 
@@ -279,5 +303,5 @@ def setup_token_service(app: web.Application, secret_key: str, **kwargs) -> Toke
     """
     config = TokenConfig(secret_key=secret_key, **kwargs)
     token_service = TokenService(config)
-    app['token_service'] = token_service
+    app["token_service"] = token_service
     return token_service

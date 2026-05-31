@@ -4,16 +4,17 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use axum::{
-    extract::{Path, Query, State, WebSocketUpgrade},
-    http::StatusCode,
-    response::{IntoResponse, Json},
+    extract::{Path, Query, Request, State, WebSocketUpgrade},
+    http::{header, HeaderValue, Method, StatusCode},
+    middleware::{self, Next},
+    response::{IntoResponse, Json, Response},
     routing::{get, post},
     Router,
 };
 use serde::Deserialize;
 use tokio::sync::RwLock;
 use tower_http::cors::CorsLayer;
-use tracing::{info, instrument};
+use tracing::{info, instrument, warn};
 
 use crate::events::EventBus;
 use crate::monitor::ProcessMonitor;
@@ -28,6 +29,10 @@ pub struct AppState {
     pub instances: Arc<RwLock<InstanceRegistry>>,
     pub monitor: Arc<dyn ProcessMonitor>,
     pub event_bus: Arc<EventBus>,
+    /// Optional bearer token required for mutating (POST/PUT/DELETE) requests.
+    /// When None (the loopback-only default) mutating requests are
+    /// unauthenticated; a non-loopback bind requires a token (see run_server).
+    pub auth_token: Option<Arc<str>>,
 }
 
 /// Run the HTTP/WebSocket server
@@ -39,12 +44,54 @@ pub async fn run_server(
     monitor: Arc<dyn ProcessMonitor>,
     event_bus: Arc<EventBus>,
 ) -> Result<()> {
+    let bind_host = std::env::var("USM_BIND_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let auth_token = std::env::var("USM_AUTH_TOKEN")
+        .ok()
+        .filter(|t| !t.is_empty());
+
+    // Fail closed: USM Core starts and stops arbitrary processes, so it must
+    // never be exposed on a non-loopback address without a shared-secret token.
+    // If asked to bind publicly without one, downgrade to loopback rather than
+    // serving an unauthenticated process-manager control plane to the network.
+    let is_loopback = matches!(bind_host.as_str(), "127.0.0.1" | "localhost" | "::1");
+    let bind_host = if !is_loopback && auth_token.is_none() {
+        warn!(
+            host = %bind_host,
+            "USM_BIND_HOST is non-loopback but USM_AUTH_TOKEN is unset; refusing to \
+             expose an unauthenticated control plane. Binding 127.0.0.1 instead."
+        );
+        "127.0.0.1".to_string()
+    } else {
+        bind_host
+    };
+    let auth_enabled = auth_token.is_some();
+
     let state = AppState {
         templates,
         instances,
         monitor,
         event_bus,
+        auth_token: auth_token.map(Arc::<str>::from),
     };
+
+    // CORS: restrict to the local consoles instead of allowing any origin. A
+    // permissive layer let any web page drive the process manager from a
+    // victim's browser and enabled DNS-rebinding against the bind.
+    let cors = CorsLayer::new()
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
+        .allow_origin([
+            HeaderValue::from_static("http://localhost:3000"),
+            HeaderValue::from_static("http://127.0.0.1:3000"),
+            HeaderValue::from_static("http://localhost:3001"),
+            HeaderValue::from_static("http://127.0.0.1:3001"),
+        ]);
 
     let app = Router::new()
         // Health check
@@ -64,15 +111,68 @@ pub async fn run_server(
         .route("/api/metrics", get(get_metrics))
         // WebSocket
         .route("/ws", get(websocket_handler))
-        // CORS
-        .layer(CorsLayer::permissive())
+        // Require a token on mutating requests (inner), then CORS (outer).
+        .layer(middleware::from_fn_with_state(state.clone(), require_token))
+        .layer(cors)
         .with_state(state);
 
-    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await?;
-    info!(port = port, "USM Core server listening");
+    let listener = tokio::net::TcpListener::bind(format!("{}:{}", bind_host, port)).await?;
+    info!(
+        host = %bind_host,
+        port = port,
+        auth = auth_enabled,
+        "USM Core server listening"
+    );
 
     axum::serve(listener, app).await?;
     Ok(())
+}
+
+/// Constant-time comparison to avoid leaking the token via response timing.
+fn tokens_match(provided: &str, expected: &str) -> bool {
+    let a = provided.as_bytes();
+    let b = expected.as_bytes();
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = 0u8;
+    for (x, y) in a.iter().zip(b.iter()) {
+        diff |= x ^ y;
+    }
+    diff == 0
+}
+
+/// Require a bearer token for mutating requests when one is configured.
+///
+/// Read-only requests (GET, including the WebSocket upgrade) always pass so the
+/// dashboard can observe state. Mutating requests (POST/PUT/DELETE/PATCH) must
+/// present `Authorization: Bearer <token>` or `X-USM-Token: <token>` when a
+/// token is configured. With no token configured (the loopback-only default)
+/// all requests pass.
+async fn require_token(State(state): State<AppState>, req: Request, next: Next) -> Response {
+    let mutating = matches!(
+        *req.method(),
+        Method::POST | Method::PUT | Method::DELETE | Method::PATCH
+    );
+    if mutating {
+        if let Some(expected) = &state.auth_token {
+            let provided = req
+                .headers()
+                .get(header::AUTHORIZATION)
+                .and_then(|v| v.to_str().ok())
+                .and_then(|s| s.strip_prefix("Bearer "))
+                .or_else(|| {
+                    req.headers()
+                        .get("x-usm-token")
+                        .and_then(|v| v.to_str().ok())
+                });
+            match provided {
+                Some(p) if tokens_match(p, expected) => {},
+                _ => return StatusCode::UNAUTHORIZED.into_response(),
+            }
+        }
+    }
+    next.run(req).await
 }
 
 // === Health Check ===

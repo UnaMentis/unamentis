@@ -3,7 +3,7 @@
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI](https://github.com/UnaMentis/unamentis/actions/workflows/ci.yml/badge.svg)](https://github.com/UnaMentis/unamentis/actions/workflows/ci.yml)
+[![Server CI](https://github.com/UnaMentis/unamentis/actions/workflows/server.yml/badge.svg)](https://github.com/UnaMentis/unamentis/actions/workflows/server.yml)
 [![codecov](https://codecov.io/gh/UnaMentis/unamentis/branch/main/graph/badge.svg)](https://codecov.io/gh/UnaMentis/unamentis)
 [![Code Quality](https://img.shields.io/badge/code%20quality-A-brightgreen)](docs/quality/CODE_QUALITY_INITIATIVE.md)
 [![Backers on Open Collective](https://opencollective.com/unamentis/backers/badge.svg)](https://opencollective.com/unamentis)
@@ -84,8 +84,8 @@ cp .env.example .env
 cd server/management && python -m management.app   # Management API (port 8766)
 cd server/web && pnpm install && pnpm dev           # Operations Console (port 3000)
 
-# 4. Run tests
-./scripts/test-quick.sh
+# 4. Run a quick check (latency harness, mock mode)
+python -m latency_harness.cli --suite quick_validation --mock
 ```
 
 For iOS client setup, see the [unamentis-ios](https://github.com/UnaMentis/unamentis-ios) repository.
@@ -93,19 +93,16 @@ See [Quick Start Guide](docs/QUICKSTART.md) for complete server setup.
 
 ## Current Status
 
-**Part 1 Complete (Autonomous Implementation)**
-- All unit tests pass (126+ tests)
-- All integration tests pass (16+ tests)
-- Core components implemented: SessionManager, AudioEngine, CurriculumEngine, TelemetryEngine
-- All UI views connected to data sources
-- TTS playback with streaming audio support
-- Debug/Testing UI for subsystem validation
+This repository (server infrastructure, curriculum, and project documentation) is being prepared for public open-source release. The iOS client is in pre-beta in its own repository, [unamentis-ios](https://github.com/UnaMentis/unamentis-ios).
 
-**Part 2 Pending (Requires User Participation)**
-- API key configuration
-- Physical device testing
-- Content setup and curriculum creation
-- Performance optimization
+**Server components implemented**
+- USM Core (Rust service manager), Management API (Python/aiohttp), Operations Console and Web Client (Next.js), and the curriculum importer framework.
+- UMCF curriculum specification (v1.0) with JSON Schema.
+- Automated latency test harness with baseline regression detection.
+
+**In progress**
+- Security hardening ahead of public release (see [docs/reviews/](docs/reviews/)).
+- Curriculum import and content setup.
 
 See [docs/TASK_STATUS.md](docs/TASK_STATUS.md) for detailed task tracking.
 
@@ -128,18 +125,15 @@ The wiki is the primary resource for contributors and maintainers.
 - [Quick Start Guide](docs/QUICKSTART.md) - START HERE
 - [Setup Guide](docs/setup/SETUP.md)
 - [Testing Guide](docs/testing/TESTING.md)
-- [Debug & Testing UI](docs/testing/DEBUG_TESTING_UI.md) - Built-in troubleshooting tools
 
 ### Curriculum Format (UMCF)
 - [Curriculum Overview](curriculum/README.md) - **Comprehensive guide to UMCF**
 - [UMCF Specification](curriculum/spec/UMCF_SPECIFICATION.md) - Format specification
 - [Standards Traceability](curriculum/spec/STANDARDS_TRACEABILITY.md) - Standards mapping
 - [Import Architecture](curriculum/importers/IMPORTER_ARCHITECTURE.md) - Import system design
-- [Pronunciation Guide](docs/ios/PRONUNCIATION_GUIDE.md) - TTS pronunciation enhancement system
 
 ### Architecture & Design
 - [Project Overview](docs/architecture/PROJECT_OVERVIEW.md) - High-level architecture
-- [Enterprise Architecture](docs/ENTERPRISE_ARCHITECTURE.md) - Comprehensive system design
 - [Patch Panel Architecture](docs/architecture/PATCH_PANEL_ARCHITECTURE.md) - LLM routing system
 - [Technical Design Document](docs/architecture/UnaMentis_TDD.md) - Complete TDD
 
@@ -156,11 +150,8 @@ The wiki is the primary resource for contributors and maintainers.
 ## Development
 
 ```bash
-# Quick tests
-./scripts/test-quick.sh
-
-# All tests
-./scripts/test-all.sh
+# Run server tests (Python)
+cd server/management && python -m pytest
 
 # Format code
 ./scripts/format.sh
@@ -262,9 +253,9 @@ curriculum/
 
 UnaMentis includes three web-based interfaces:
 
-### Web Client (voice tutoring)
-Browser-based voice tutoring that matches iOS app capabilities:
-- Real-time voice conversations with AI tutors (OpenAI Realtime API via WebRTC)
+### Web Client (voice learning)
+Browser-based voice learning that matches iOS app capabilities:
+- Real-time voice conversations with the AI learning partner (OpenAI Realtime API via WebRTC)
 - Full curriculum browser and lesson playback
 - Rich visual asset display (formulas, diagrams, maps, charts)
 - Responsive design for desktop and mobile browsers
@@ -332,7 +323,7 @@ Application and content management:
 
 ## Curriculum System (UMCF)
 
-UnaMentis includes a comprehensive curriculum format specification: the **Una Mentis Curriculum Format (UMCF)**. This is a JSON-based standard designed specifically for conversational AI tutoring.
+UnaMentis includes a comprehensive curriculum format specification: the **Una Mentis Curriculum Format (UMCF)**. This is a JSON-based standard designed specifically for conversational AI learning.
 
 ### Key Features
 
@@ -364,7 +355,7 @@ See [curriculum/importers/](curriculum/importers/) for specifications.
 
 ### Future Direction
 
-UMCF may be spun off as a standalone project to enable adoption by other tutoring systems. The specification is designed for academic review and potential standardization.
+UMCF may be spun off as a standalone project to enable adoption by other learning systems. The specification is designed for academic review and potential standardization.
 
 ---
 
@@ -424,4 +415,4 @@ Contributions are welcome! Please read our [Contributing Guide](docs/CONTRIBUTIN
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
-Copyright (c) 2025 Richard Amerman
+Copyright (c) 2025-2026 Richard Amerman

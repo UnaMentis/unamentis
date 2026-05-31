@@ -8,7 +8,6 @@ Supports both in-memory (development) and Redis (production) backends.
 import asyncio
 import logging
 import time
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional, Tuple
 
@@ -64,9 +63,11 @@ class InMemoryRateLimiter:
 
     def __init__(self, limits: Optional[Dict[str, RateLimitConfig]] = None):
         self.limits = limits or DEFAULT_LIMITS
-        self._buckets: Dict[str, RateLimitState] = defaultdict(
-            lambda: RateLimitState(tokens=0, last_update=time.time())
-        )
+        # New buckets are created on first sight inside check_rate_limit, seeded
+        # to a full burst allowance. A plain dict (not a defaultdict that seeds
+        # tokens=0) ensures a brand-new client is not rejected on its very first
+        # request.
+        self._buckets: Dict[str, RateLimitState] = {}
         # Lazily created: asyncio.Lock() requires a running event loop on Python <3.10
         self._lock: Optional[asyncio.Lock] = None
 
@@ -100,7 +101,14 @@ class InMemoryRateLimiter:
 
         async with self._async_lock:
             now = time.time()
-            state = self._buckets[bucket_key]
+            state = self._buckets.get(bucket_key)
+            if state is None:
+                # First request from this client/category: start with a full
+                # bucket so the first request is always allowed. Seeding an
+                # empty bucket (tokens=0) would 429 every brand-new client,
+                # locking new users out of their first login/registration.
+                state = RateLimitState(tokens=float(config.burst), last_update=now)
+                self._buckets[bucket_key] = state
 
             # Calculate tokens to add based on time passed
             time_passed = now - state.last_update
