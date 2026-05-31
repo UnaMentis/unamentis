@@ -115,3 +115,6 @@ server/web/.next/
 # Archive files in project root
 /*.zip
 /*.tar.gz
+
+# Stray importer/test curriculum stubs (real examples are named by course)
+curriculum/examples/realistic/test-*.umcf
