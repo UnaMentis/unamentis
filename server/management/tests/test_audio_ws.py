@@ -19,7 +19,7 @@ from audio_ws import (
 )
 
 
-class MockWebSocketResponse:
+class MockWebSocketResponse:  # ALLOWED: in-memory aiohttp WebSocketResponse double; a real WS needs a live HTTP upgrade unavailable in a unit test
     """Mock WebSocket response for testing."""
 
     def __init__(self):
@@ -44,14 +44,18 @@ class MockWebSocketResponse:
 
     def add_message(self, msg_type, data):
         """Add a message to the receive queue."""
-        msg = MagicMock()
+        msg = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
         msg.type = msg_type
         msg.data = json.dumps(data) if isinstance(data, dict) else data
         self._receive_queue.put_nowait(msg)
 
     def add_close(self):
         """Add close message."""
-        msg = MagicMock()
+        msg = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
         msg.type = WSMsgType.CLOSE
         self._receive_queue.put_nowait(msg)
 
@@ -64,7 +68,7 @@ class MockWebSocketResponse:
         return await self._receive_queue.get()
 
 
-class MockPlaybackState:
+class MockPlaybackState:  # ALLOWED: in-memory double of an internal playback value object
     """Mock playback state."""
 
     def __init__(self):
@@ -75,7 +79,7 @@ class MockPlaybackState:
         self.is_playing = False
 
 
-class MockVoiceConfig:
+class MockVoiceConfig:  # ALLOWED: in-memory double of an internal voice-config value object
     """Mock voice configuration."""
 
     def __init__(self):
@@ -94,7 +98,7 @@ class MockVoiceConfig:
         }
 
 
-class MockUserSession:
+class MockUserSession:  # ALLOWED: in-memory double of an internal session value object
     """Mock user session."""
 
     def __init__(self, session_id: str = "test-session", user_id: str = "test-user"):
@@ -124,7 +128,7 @@ class MockUserSession:
         self.playback_state.topic_id = topic_id
 
 
-class MockSessionManager:
+class MockSessionManager:  # ALLOWED: in-memory double of the internal session-manager collaborator
     """Mock session manager."""
 
     def __init__(self):
@@ -147,7 +151,7 @@ class MockSessionManager:
         return session
 
 
-class MockSessionCache:
+class MockSessionCache:  # ALLOWED: in-memory double of the internal session-cache collaborator
     """Mock session cache integration."""
 
     def __init__(self):
@@ -227,9 +231,15 @@ class TestAudioWebSocketHandlerInit:
         handler = AudioWebSocketHandler(MockSessionManager(), MockSessionCache())
 
         handler.set_topic_segments("curriculum-1", "topic-1", ["Old 1", "Old 2"])
-        handler.set_topic_segments("curriculum-1", "topic-1", ["New 1", "New 2", "New 3"])
+        handler.set_topic_segments(
+            "curriculum-1", "topic-1", ["New 1", "New 2", "New 3"]
+        )
 
-        assert handler.get_topic_segments("curriculum-1", "topic-1") == ["New 1", "New 2", "New 3"]
+        assert handler.get_topic_segments("curriculum-1", "topic-1") == [
+            "New 1",
+            "New 2",
+            "New 3",
+        ]
 
     def test_get_topic_segments_nonexistent_topic_in_existing_curriculum(self):
         """Test getting segments for non-existent topic in existing curriculum."""
@@ -264,13 +274,15 @@ class TestConnectionHandling:
         session = MockUserSession("existing-session", "user-1")
         handler.session_manager.sessions["existing-session"] = session
 
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
         request.query = {"session_id": "existing-session"}
 
         ws = MockWebSocketResponse()
         ws.add_close()  # Immediately close
 
-        with patch.object(handler, 'handle_connection') as mock_handle:
+        with patch.object(handler, "handle_connection"):
             # Test that session lookup works
             found_session = handler.session_manager.get_user_session("existing-session")
             assert found_session is session
@@ -278,7 +290,9 @@ class TestConnectionHandling:
     @pytest.mark.asyncio
     async def test_connection_with_user_id_creates_session(self, handler):
         """Test connection with user_id creates new session."""
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
         request.query = {"user_id": "new-user"}
 
         # Session manager should create new session
@@ -340,10 +354,14 @@ class TestMessageLoop:
         session_manager = MockSessionManager()
         session_cache = MockSessionCache()
         handler = AudioWebSocketHandler(session_manager, session_cache)
-        handler.set_topic_segments("test-curriculum", "test-topic", [
-            "Segment one text",
-            "Segment two text",
-        ])
+        handler.set_topic_segments(
+            "test-curriculum",
+            "test-topic",
+            [
+                "Segment one text",
+                "Segment two text",
+            ],
+        )
         return handler
 
     @pytest.fixture
@@ -381,10 +399,13 @@ class TestMessageLoop:
     async def test_handle_messages_text_type_request_audio(self, handler, session):
         """Test handling TEXT message with request_audio type."""
         ws = MockWebSocketResponse()
-        ws.add_message(WSMsgType.TEXT, {
-            "type": "request_audio",
-            "segment_index": 0,
-        })
+        ws.add_message(
+            WSMsgType.TEXT,
+            {
+                "type": "request_audio",
+                "segment_index": 0,
+            },
+        )
         ws.add_close()
 
         await handler._handle_messages(ws, session)
@@ -395,10 +416,13 @@ class TestMessageLoop:
     async def test_handle_messages_text_type_sync(self, handler, session):
         """Test handling TEXT message with sync type."""
         ws = MockWebSocketResponse()
-        ws.add_message(WSMsgType.TEXT, {
-            "type": "sync",
-            "segment_index": 1,
-        })
+        ws.add_message(
+            WSMsgType.TEXT,
+            {
+                "type": "sync",
+                "segment_index": 1,
+            },
+        )
         ws.add_close()
 
         await handler._handle_messages(ws, session)
@@ -409,11 +433,14 @@ class TestMessageLoop:
     async def test_handle_messages_text_type_barge_in(self, handler, session):
         """Test handling TEXT message with barge_in type."""
         ws = MockWebSocketResponse()
-        ws.add_message(WSMsgType.TEXT, {
-            "type": "barge_in",
-            "segment_index": 0,
-            "offset_ms": 500,
-        })
+        ws.add_message(
+            WSMsgType.TEXT,
+            {
+                "type": "barge_in",
+                "segment_index": 0,
+                "offset_ms": 500,
+            },
+        )
         ws.add_close()
 
         await handler._handle_messages(ws, session)
@@ -424,10 +451,13 @@ class TestMessageLoop:
     async def test_handle_messages_text_type_voice_config(self, handler, session):
         """Test handling TEXT message with voice_config type."""
         ws = MockWebSocketResponse()
-        ws.add_message(WSMsgType.TEXT, {
-            "type": "voice_config",
-            "voice_id": "alloy",
-        })
+        ws.add_message(
+            WSMsgType.TEXT,
+            {
+                "type": "voice_config",
+                "voice_id": "alloy",
+            },
+        )
         ws.add_close()
 
         await handler._handle_messages(ws, session)
@@ -438,11 +468,14 @@ class TestMessageLoop:
     async def test_handle_messages_text_type_set_topic(self, handler, session):
         """Test handling TEXT message with set_topic type."""
         ws = MockWebSocketResponse()
-        ws.add_message(WSMsgType.TEXT, {
-            "type": "set_topic",
-            "curriculum_id": "test-curriculum",
-            "topic_id": "test-topic",
-        })
+        ws.add_message(
+            WSMsgType.TEXT,
+            {
+                "type": "set_topic",
+                "curriculum_id": "test-curriculum",
+                "topic_id": "test-topic",
+            },
+        )
         ws.add_close()
 
         await handler._handle_messages(ws, session)
@@ -455,7 +488,9 @@ class TestMessageLoop:
         ws = MockWebSocketResponse()
 
         # Create an error message
-        error_msg = MagicMock()
+        error_msg = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
         error_msg.type = WSMsgType.ERROR
         ws._receive_queue.put_nowait(error_msg)
 
@@ -486,20 +521,29 @@ class TestMessageLoop:
         """Test handling multiple messages in sequence."""
         ws = MockWebSocketResponse()
 
-        ws.add_message(WSMsgType.TEXT, {
-            "type": "set_topic",
-            "curriculum_id": "test-curriculum",
-            "topic_id": "test-topic",
-        })
-        ws.add_message(WSMsgType.TEXT, {
-            "type": "request_audio",
-            "segment_index": 0,
-        })
-        ws.add_message(WSMsgType.TEXT, {
-            "type": "sync",
-            "segment_index": 0,
-            "offset_ms": 1000,
-        })
+        ws.add_message(
+            WSMsgType.TEXT,
+            {
+                "type": "set_topic",
+                "curriculum_id": "test-curriculum",
+                "topic_id": "test-topic",
+            },
+        )
+        ws.add_message(
+            WSMsgType.TEXT,
+            {
+                "type": "request_audio",
+                "segment_index": 0,
+            },
+        )
+        ws.add_message(
+            WSMsgType.TEXT,
+            {
+                "type": "sync",
+                "segment_index": 0,
+                "offset_ms": 1000,
+            },
+        )
         ws.add_close()
 
         await handler._handle_messages(ws, session)
@@ -520,10 +564,13 @@ class TestMessageLoop:
 
         handler._handle_sync = raise_exception
 
-        ws.add_message(WSMsgType.TEXT, {
-            "type": "sync",
-            "segment_index": 0,
-        })
+        ws.add_message(
+            WSMsgType.TEXT,
+            {
+                "type": "sync",
+                "segment_index": 0,
+            },
+        )
         ws.add_close()
 
         await handler._handle_messages(ws, session)
@@ -547,11 +594,15 @@ class TestMessageHandling:
         session_manager = MockSessionManager()
         session_cache = MockSessionCache()
         handler = AudioWebSocketHandler(session_manager, session_cache)
-        handler.set_topic_segments("test-curriculum", "test-topic", [
-            "Segment one text",
-            "Segment two text",
-            "Segment three text",
-        ])
+        handler.set_topic_segments(
+            "test-curriculum",
+            "test-topic",
+            [
+                "Segment one text",
+                "Segment two text",
+                "Segment three text",
+            ],
+        )
         return handler
 
     @pytest.fixture
@@ -564,10 +615,14 @@ class TestMessageHandling:
         """Test successful audio request."""
         ws = MockWebSocketResponse()
 
-        await handler._handle_audio_request(ws, session, {
-            "type": "request_audio",
-            "segment_index": 0,
-        })
+        await handler._handle_audio_request(
+            ws,
+            session,
+            {
+                "type": "request_audio",
+                "segment_index": 0,
+            },
+        )
 
         assert len(ws.sent_messages) == 1
         msg = ws.sent_messages[0]
@@ -657,11 +712,15 @@ class TestMessageHandling:
         """Test sync message updates playback state."""
         ws = MockWebSocketResponse()
 
-        await handler._handle_sync(ws, session, {
-            "segment_index": 5,
-            "offset_ms": 1500,
-            "is_playing": True,
-        })
+        await handler._handle_sync(
+            ws,
+            session,
+            {
+                "segment_index": 5,
+                "offset_ms": 1500,
+                "is_playing": True,
+            },
+        )
 
         assert session.playback_state.segment_index == 5
         assert session.playback_state.offset_ms == 1500
@@ -685,10 +744,14 @@ class TestMessageHandling:
         ws = MockWebSocketResponse()
         session.playback_state.is_playing = True
 
-        await handler._handle_barge_in(ws, session, {
-            "segment_index": 5,
-            "offset_ms": 2000,
-        })
+        await handler._handle_barge_in(
+            ws,
+            session,
+            {
+                "segment_index": 5,
+                "offset_ms": 2000,
+            },
+        )
 
         assert session.playback_state.is_playing is False
         assert session.playback_state.segment_index == 5
@@ -699,10 +762,14 @@ class TestMessageHandling:
         """Test barge-in sends acknowledgment."""
         ws = MockWebSocketResponse()
 
-        await handler._handle_barge_in(ws, session, {
-            "segment_index": 3,
-            "offset_ms": 1000,
-        })
+        await handler._handle_barge_in(
+            ws,
+            session,
+            {
+                "segment_index": 3,
+                "offset_ms": 1000,
+            },
+        )
 
         assert ws.sent_messages[0]["type"] == "barge_in_ack"
         assert ws.sent_messages[0]["segment_index"] == 3
@@ -713,11 +780,15 @@ class TestMessageHandling:
         """Test voice config updates session settings."""
         ws = MockWebSocketResponse()
 
-        await handler._handle_voice_config(ws, session, {
-            "voice_id": "shimmer",
-            "tts_provider": "openai",
-            "speed": 1.2,
-        })
+        await handler._handle_voice_config(
+            ws,
+            session,
+            {
+                "voice_id": "shimmer",
+                "tts_provider": "openai",
+                "speed": 1.2,
+            },
+        )
 
         assert session.voice_config.voice_id == "shimmer"
         assert session.voice_config.tts_provider == "openai"
@@ -738,10 +809,14 @@ class TestMessageHandling:
         """Test set topic updates session."""
         ws = MockWebSocketResponse()
 
-        await handler._handle_set_topic(ws, session, {
-            "curriculum_id": "test-curriculum",
-            "topic_id": "test-topic",
-        })
+        await handler._handle_set_topic(
+            ws,
+            session,
+            {
+                "curriculum_id": "test-curriculum",
+                "topic_id": "test-topic",
+            },
+        )
 
         assert session.playback_state.curriculum_id == "test-curriculum"
         assert session.playback_state.topic_id == "test-topic"
@@ -751,10 +826,14 @@ class TestMessageHandling:
         """Test set topic sends response with segment count."""
         ws = MockWebSocketResponse()
 
-        await handler._handle_set_topic(ws, session, {
-            "curriculum_id": "test-curriculum",
-            "topic_id": "test-topic",
-        })
+        await handler._handle_set_topic(
+            ws,
+            session,
+            {
+                "curriculum_id": "test-curriculum",
+                "topic_id": "test-topic",
+            },
+        )
 
         assert ws.sent_messages[0]["type"] == "topic_set"
         assert ws.sent_messages[0]["total_segments"] == 3
@@ -784,26 +863,36 @@ class TestMessageHandling:
         """Test set topic with only curriculum_id returns error."""
         ws = MockWebSocketResponse()
 
-        await handler._handle_set_topic(ws, session, {"curriculum_id": "test-curriculum"})
+        await handler._handle_set_topic(
+            ws, session, {"curriculum_id": "test-curriculum"}
+        )
 
         assert ws.sent_messages[0]["type"] == "error"
         assert "Missing" in ws.sent_messages[0]["error"]
 
     @pytest.mark.asyncio
-    async def test_handle_set_topic_unknown_topic_returns_zero_segments(self, handler, session):
+    async def test_handle_set_topic_unknown_topic_returns_zero_segments(
+        self, handler, session
+    ):
         """Test set topic for unknown topic returns zero segments."""
         ws = MockWebSocketResponse()
 
-        await handler._handle_set_topic(ws, session, {
-            "curriculum_id": "unknown-curriculum",
-            "topic_id": "unknown-topic",
-        })
+        await handler._handle_set_topic(
+            ws,
+            session,
+            {
+                "curriculum_id": "unknown-curriculum",
+                "topic_id": "unknown-topic",
+            },
+        )
 
         assert ws.sent_messages[0]["type"] == "topic_set"
         assert ws.sent_messages[0]["total_segments"] == 0
 
     @pytest.mark.asyncio
-    async def test_handle_audio_request_with_explicit_curriculum_topic(self, handler, session):
+    async def test_handle_audio_request_with_explicit_curriculum_topic(
+        self, handler, session
+    ):
         """Test audio request with explicit curriculum_id and topic_id in message."""
         ws = MockWebSocketResponse()
 
@@ -812,11 +901,15 @@ class TestMessageHandling:
         session.playback_state.topic_id = "other-topic"
 
         # Request with explicit IDs
-        await handler._handle_audio_request(ws, session, {
-            "segment_index": 0,
-            "curriculum_id": "test-curriculum",
-            "topic_id": "test-topic",
-        })
+        await handler._handle_audio_request(
+            ws,
+            session,
+            {
+                "segment_index": 0,
+                "curriculum_id": "test-curriculum",
+                "topic_id": "test-topic",
+            },
+        )
 
         assert ws.sent_messages[0]["type"] == "audio"
 
@@ -831,7 +924,9 @@ class TestMessageHandling:
         assert ws.sent_messages[0]["cache_hit"] is False
 
     @pytest.mark.asyncio
-    async def test_handle_audio_request_with_default_segment_index(self, handler, session):
+    async def test_handle_audio_request_with_default_segment_index(
+        self, handler, session
+    ):
         """Test audio request uses default segment_index 0."""
         ws = MockWebSocketResponse()
 
@@ -855,10 +950,14 @@ class TestMessageHandling:
         """Test sync with is_playing set to false."""
         ws = MockWebSocketResponse()
 
-        await handler._handle_sync(ws, session, {
-            "segment_index": 0,
-            "is_playing": False,
-        })
+        await handler._handle_sync(
+            ws,
+            session,
+            {
+                "segment_index": 0,
+                "is_playing": False,
+            },
+        )
 
         assert session.playback_state.is_playing is False
 
@@ -878,11 +977,15 @@ class TestMessageHandling:
         """Test barge-in includes utterance (for logging)."""
         ws = MockWebSocketResponse()
 
-        await handler._handle_barge_in(ws, session, {
-            "segment_index": 1,
-            "offset_ms": 500,
-            "utterance": "Wait, I have a question",
-        })
+        await handler._handle_barge_in(
+            ws,
+            session,
+            {
+                "segment_index": 1,
+                "offset_ms": 500,
+                "utterance": "Wait, I have a question",
+            },
+        )
 
         # Barge-in should still send ack (utterance is for logging/future use)
         assert ws.sent_messages[0]["type"] == "barge_in_ack"
@@ -892,14 +995,18 @@ class TestMessageHandling:
         """Test voice config with all parameters including optional ones."""
         ws = MockWebSocketResponse()
 
-        await handler._handle_voice_config(ws, session, {
-            "voice_id": "shimmer",
-            "tts_provider": "chatterbox",
-            "speed": 1.5,
-            "exaggeration": 0.8,
-            "cfg_weight": 0.5,
-            "language": "en-US",
-        })
+        await handler._handle_voice_config(
+            ws,
+            session,
+            {
+                "voice_id": "shimmer",
+                "tts_provider": "chatterbox",
+                "speed": 1.5,
+                "exaggeration": 0.8,
+                "cfg_weight": 0.5,
+                "language": "en-US",
+            },
+        )
 
         assert session.voice_config.voice_id == "shimmer"
         assert session.voice_config.tts_provider == "chatterbox"
@@ -918,9 +1025,13 @@ class TestMessageHandling:
         session.voice_config.speed = 1.0
 
         # Update only speed
-        await handler._handle_voice_config(ws, session, {
-            "speed": 1.3,
-        })
+        await handler._handle_voice_config(
+            ws,
+            session,
+            {
+                "speed": 1.3,
+            },
+        )
 
         # voice_id should remain unchanged
         assert session.voice_config.voice_id == "nova"
@@ -1016,14 +1127,24 @@ class TestRouteHandlers:
     async def test_handle_audio_websocket_no_handler(self):
         """Test WebSocket handler when not initialized returns error."""
         # Mock the WebSocketResponse creation
-        with patch('audio_ws.web.WebSocketResponse') as MockWS:
-            mock_ws = AsyncMock()
-            mock_ws.prepare = AsyncMock()
-            mock_ws.send_json = AsyncMock()
-            mock_ws.close = AsyncMock()
+        with patch("audio_ws.web.WebSocketResponse") as MockWS:
+            mock_ws = (
+                AsyncMock()
+            )  # ALLOWED: aiohttp/session test double for WS-handler unit test
+            mock_ws.prepare = (
+                AsyncMock()
+            )  # ALLOWED: aiohttp/session test double for WS-handler unit test
+            mock_ws.send_json = (
+                AsyncMock()
+            )  # ALLOWED: aiohttp/session test double for WS-handler unit test
+            mock_ws.close = (
+                AsyncMock()
+            )  # ALLOWED: aiohttp/session test double for WS-handler unit test
             MockWS.return_value = mock_ws
 
-            request = MagicMock()
+            request = (
+                MagicMock()
+            )  # ALLOWED: aiohttp/session test double for WS-handler unit test
             request.app = {}  # No handler set
 
             await handle_audio_websocket(request)
@@ -1038,11 +1159,17 @@ class TestRouteHandlers:
     @pytest.mark.asyncio
     async def test_handle_audio_websocket_with_handler(self):
         """Test WebSocket handler delegates to registered handler."""
-        mock_handler = AsyncMock()
-        mock_ws = MagicMock()
+        mock_handler = (
+            AsyncMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
+        mock_ws = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
         mock_handler.handle_connection = AsyncMock(return_value=mock_ws)
 
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
         request.app = {"audio_ws_handler": mock_handler}
 
         result = await handle_audio_websocket(request)
@@ -1059,7 +1186,11 @@ class TestRouteHandlers:
 
         assert app["audio_ws_handler"] is handler
         # Check route exists
-        routes = [str(r.resource.canonical) for r in app.router.routes() if hasattr(r, 'resource')]
+        routes = [
+            str(r.resource.canonical)
+            for r in app.router.routes()
+            if hasattr(r, "resource")
+        ]
         assert any("/ws/audio" in r for r in routes)
 
     def test_register_audio_websocket_overwrites_existing(self):
@@ -1090,11 +1221,15 @@ class TestIntegration:
         handler = AudioWebSocketHandler(session_manager, session_cache)
 
         # Register segments
-        handler.set_topic_segments("physics-101", "quantum-intro", [
-            "Introduction to quantum mechanics.",
-            "Wave-particle duality explained.",
-            "The uncertainty principle.",
-        ])
+        handler.set_topic_segments(
+            "physics-101",
+            "quantum-intro",
+            [
+                "Introduction to quantum mechanics.",
+                "Wave-particle duality explained.",
+                "The uncertainty principle.",
+            ],
+        )
 
         return handler
 
@@ -1105,10 +1240,14 @@ class TestIntegration:
         ws = MockWebSocketResponse()
 
         # 1. Set topic
-        await handler._handle_set_topic(ws, session, {
-            "curriculum_id": "physics-101",
-            "topic_id": "quantum-intro",
-        })
+        await handler._handle_set_topic(
+            ws,
+            session,
+            {
+                "curriculum_id": "physics-101",
+                "topic_id": "quantum-intro",
+            },
+        )
 
         assert ws.sent_messages[0]["type"] == "topic_set"
         assert ws.sent_messages[0]["total_segments"] == 3
@@ -1120,11 +1259,15 @@ class TestIntegration:
         assert ws.sent_messages[1]["segment_index"] == 0
 
         # 3. Send sync update
-        await handler._handle_sync(ws, session, {
-            "segment_index": 0,
-            "offset_ms": 1500,
-            "is_playing": True,
-        })
+        await handler._handle_sync(
+            ws,
+            session,
+            {
+                "segment_index": 0,
+                "offset_ms": 1500,
+                "is_playing": True,
+            },
+        )
 
         assert ws.sent_messages[2]["type"] == "sync_ack"
 
@@ -1149,11 +1292,15 @@ class TestIntegration:
         assert session.playback_state.is_playing is True
 
         # Barge in
-        await handler._handle_barge_in(ws, session, {
-            "segment_index": 1,
-            "offset_ms": 1000,
-            "utterance": "Wait, can you explain that again?",
-        })
+        await handler._handle_barge_in(
+            ws,
+            session,
+            {
+                "segment_index": 1,
+                "offset_ms": 1000,
+                "utterance": "Wait, can you explain that again?",
+            },
+        )
 
         assert session.playback_state.is_playing is False
         assert ws.sent_messages[-1]["type"] == "barge_in_ack"
@@ -1165,10 +1312,14 @@ class TestIntegration:
         ws = MockWebSocketResponse()
 
         # Change voice config
-        await handler._handle_voice_config(ws, session, {
-            "voice_id": "shimmer",
-            "speed": 0.9,
-        })
+        await handler._handle_voice_config(
+            ws,
+            session,
+            {
+                "voice_id": "shimmer",
+                "speed": 0.9,
+            },
+        )
 
         assert session.voice_config.voice_id == "shimmer"
         assert session.voice_config.speed == 0.9
@@ -1180,6 +1331,24 @@ class TestIntegration:
 # =============================================================================
 
 
+class _FakeTokenPayload:
+    def __init__(self, user_id):
+        self.user_id = user_id
+
+
+class _FakeTokenService:
+    """Stand-in for TokenService in WS-auth tests (not a Mock subclass)."""
+
+    def __init__(self, user_id="token-user", valid=True):
+        self._user_id = user_id
+        self._valid = valid
+
+    def validate_access_token(self, token):
+        if not self._valid:
+            raise ValueError("invalid token")
+        return _FakeTokenPayload(self._user_id)
+
+
 class TestHandleConnectionFlow:
     """Tests for full handle_connection flow."""
 
@@ -1189,10 +1358,14 @@ class TestHandleConnectionFlow:
         session_manager = MockSessionManager()
         session_cache = MockSessionCache()
         handler = AudioWebSocketHandler(session_manager, session_cache)
-        handler.set_topic_segments("test-curriculum", "test-topic", [
-            "Segment one",
-            "Segment two",
-        ])
+        handler.set_topic_segments(
+            "test-curriculum",
+            "test-topic",
+            [
+                "Segment one",
+                "Segment two",
+            ],
+        )
         return handler
 
     @pytest.mark.asyncio
@@ -1202,11 +1375,13 @@ class TestHandleConnectionFlow:
         session = MockUserSession("existing-session", "user-1")
         handler.session_manager.sessions["existing-session"] = session
 
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
         request.query = {"session_id": "existing-session"}
 
         # Mock the WebSocketResponse creation
-        with patch('audio_ws.web.WebSocketResponse') as MockWS:
+        with patch("audio_ws.web.WebSocketResponse") as MockWS:
             mock_ws = MockWebSocketResponse()
             mock_ws.add_close()  # Immediately close connection
             MockWS.return_value = mock_ws
@@ -1223,10 +1398,12 @@ class TestHandleConnectionFlow:
         session = MockUserSession("session-for-user", "user-123")
         handler.session_manager.sessions["session-for-user"] = session
 
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
         request.query = {"user_id": "user-123"}  # No session_id, only user_id
 
-        with patch('audio_ws.web.WebSocketResponse') as MockWS:
+        with patch("audio_ws.web.WebSocketResponse") as MockWS:
             mock_ws = MockWebSocketResponse()
             mock_ws.add_close()
             MockWS.return_value = mock_ws
@@ -1238,10 +1415,13 @@ class TestHandleConnectionFlow:
     @pytest.mark.asyncio
     async def test_handle_connection_creates_new_session_with_user_id(self, handler):
         """Test handle_connection creates new session when user_id provided but no existing session."""
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
+        request.app = {}  # no token_service => auth-disabled path
         request.query = {"user_id": "new-user-456"}
 
-        with patch('audio_ws.web.WebSocketResponse') as MockWS:
+        with patch("audio_ws.web.WebSocketResponse") as MockWS:
             mock_ws = MockWebSocketResponse()
             mock_ws.add_close()
             MockWS.return_value = mock_ws
@@ -1250,15 +1430,20 @@ class TestHandleConnectionFlow:
 
             # Session should have been created
             assert len(handler.session_manager._created_sessions) == 1
-            assert handler.session_manager._created_sessions[0].user_id == "new-user-456"
+            assert (
+                handler.session_manager._created_sessions[0].user_id == "new-user-456"
+            )
 
     @pytest.mark.asyncio
     async def test_handle_connection_no_session_or_user_returns_error(self, handler):
         """Test handle_connection returns error when no session_id or user_id."""
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
+        request.app = {}  # no token_service => auth-disabled path
         request.query = {}  # No session_id or user_id
 
-        with patch('audio_ws.web.WebSocketResponse') as MockWS:
+        with patch("audio_ws.web.WebSocketResponse") as MockWS:
             mock_ws = MockWebSocketResponse()
             MockWS.return_value = mock_ws
 
@@ -1276,10 +1461,12 @@ class TestHandleConnectionFlow:
         session = MockUserSession("test-session", "user-1")
         handler.session_manager.sessions["test-session"] = session
 
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
         request.query = {"session_id": "test-session"}
 
-        with patch('audio_ws.web.WebSocketResponse') as MockWS:
+        with patch("audio_ws.web.WebSocketResponse") as MockWS:
             mock_ws = MockWebSocketResponse()
 
             # Make the iterator raise an exception
@@ -1302,10 +1489,12 @@ class TestHandleConnectionFlow:
         session = MockUserSession("cleanup-session", "user-1")
         handler.session_manager.sessions["cleanup-session"] = session
 
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
         request.query = {"session_id": "cleanup-session"}
 
-        with patch('audio_ws.web.WebSocketResponse') as MockWS:
+        with patch("audio_ws.web.WebSocketResponse") as MockWS:
             mock_ws = MockWebSocketResponse()
             mock_ws.add_close()
             MockWS.return_value = mock_ws
@@ -1368,10 +1557,67 @@ class TestHandleConnectionFlow:
         assert ws1.sent_messages[0]["type"] == "test1"
         assert ws2.sent_messages[0]["type"] == "test2"
 
+    # =============================================================================
+    # AUDIO DATA ENCODING TESTS
+    # =============================================================================
 
-# =============================================================================
-# AUDIO DATA ENCODING TESTS
-# =============================================================================
+    @pytest.mark.asyncio
+    async def test_ws_auth_rejects_missing_token(self, handler):
+        """Auth enabled + no token on the upgrade -> 401 and no session."""
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
+        request.app = {"token_service": _FakeTokenService()}
+        request.headers = {}
+        request.query = {"user_id": "anyone"}
+
+        with pytest.raises(web.HTTPUnauthorized):
+            await handler.handle_connection(request)
+        assert len(handler.session_manager._created_sessions) == 0
+
+    @pytest.mark.asyncio
+    async def test_ws_auth_binds_session_to_token_user_not_query(self, handler):
+        """Session is bound to the token user, not the client-supplied user_id."""
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
+        request.app = {"token_service": _FakeTokenService(user_id="real-user")}
+        request.headers = {"Authorization": "Bearer good-token"}
+        request.query = {"user_id": "attacker"}
+
+        with patch("audio_ws.web.WebSocketResponse") as MockWS:
+            mock_ws = MockWebSocketResponse()
+            mock_ws.add_close()
+            MockWS.return_value = mock_ws
+            await handler.handle_connection(request)
+
+        created = handler.session_manager._created_sessions
+        assert len(created) == 1
+        assert created[0].user_id == "real-user"
+
+    @pytest.mark.asyncio
+    async def test_ws_auth_rejects_other_users_session(self, handler):
+        """An authenticated user cannot attach to another user's session."""
+        victim = MockUserSession("victim-session", "victim-user")
+        handler.session_manager.sessions["victim-session"] = victim
+
+        request = (
+            MagicMock()
+        )  # ALLOWED: aiohttp/session test double for WS-handler unit test
+        request.app = {"token_service": _FakeTokenService(user_id="attacker")}
+        request.headers = {"Authorization": "Bearer good-token"}
+        request.query = {"session_id": "victim-session"}
+
+        with patch("audio_ws.web.WebSocketResponse") as MockWS:
+            mock_ws = MockWebSocketResponse()
+            MockWS.return_value = mock_ws
+            await handler.handle_connection(request)
+
+        assert any(
+            m.get("type") == "error" and "does not belong" in m.get("error", "")
+            for m in mock_ws.sent_messages
+        )
+        assert mock_ws.closed is True
 
 
 class TestAudioDataEncoding:
@@ -1434,7 +1680,9 @@ class TestSessionStateTracking:
         session_cache = MockSessionCache()
         handler = AudioWebSocketHandler(session_manager, session_cache)
         handler.set_topic_segments("curriculum-a", "topic-1", ["Seg 1", "Seg 2"])
-        handler.set_topic_segments("curriculum-b", "topic-2", ["Seg A", "Seg B", "Seg C"])
+        handler.set_topic_segments(
+            "curriculum-b", "topic-2", ["Seg A", "Seg B", "Seg C"]
+        )
         return handler
 
     @pytest.mark.asyncio
@@ -1444,20 +1692,28 @@ class TestSessionStateTracking:
         ws = MockWebSocketResponse()
 
         # Set first topic
-        await handler._handle_set_topic(ws, session, {
-            "curriculum_id": "curriculum-a",
-            "topic_id": "topic-1",
-        })
+        await handler._handle_set_topic(
+            ws,
+            session,
+            {
+                "curriculum_id": "curriculum-a",
+                "topic_id": "topic-1",
+            },
+        )
 
         assert session.playback_state.curriculum_id == "curriculum-a"
         assert session.playback_state.topic_id == "topic-1"
         assert ws.sent_messages[0]["total_segments"] == 2
 
         # Switch to second topic
-        await handler._handle_set_topic(ws, session, {
-            "curriculum_id": "curriculum-b",
-            "topic_id": "topic-2",
-        })
+        await handler._handle_set_topic(
+            ws,
+            session,
+            {
+                "curriculum_id": "curriculum-b",
+                "topic_id": "topic-2",
+            },
+        )
 
         assert session.playback_state.curriculum_id == "curriculum-b"
         assert session.playback_state.topic_id == "topic-2"
@@ -1478,11 +1734,15 @@ class TestSessionStateTracking:
         assert session.playback_state.is_playing is True
 
         # Sync at halfway point
-        await handler._handle_sync(ws, session, {
-            "segment_index": 0,
-            "offset_ms": 1000,
-            "is_playing": True,
-        })
+        await handler._handle_sync(
+            ws,
+            session,
+            {
+                "segment_index": 0,
+                "offset_ms": 1000,
+                "is_playing": True,
+            },
+        )
         assert session.playback_state.offset_ms == 1000
 
         # Request segment 1
@@ -1507,10 +1767,14 @@ class TestSessionStateTracking:
         assert len(session._voice_updates) == 2
 
         # Third update with multiple fields
-        await handler._handle_voice_config(ws, session, {
-            "voice_id": "nova",
-            "tts_provider": "openai",
-        })
+        await handler._handle_voice_config(
+            ws,
+            session,
+            {
+                "voice_id": "nova",
+                "tts_provider": "openai",
+            },
+        )
         assert len(session._voice_updates) == 3
 
 
@@ -1552,11 +1816,15 @@ class TestEdgeCases:
         session = MockUserSession()
         ws = MockWebSocketResponse()
 
-        await handler._handle_sync(ws, session, {
-            "segment_index": 0,
-            "offset_ms": 0,
-            "is_playing": True,
-        })
+        await handler._handle_sync(
+            ws,
+            session,
+            {
+                "segment_index": 0,
+                "offset_ms": 0,
+                "is_playing": True,
+            },
+        )
 
         assert session.playback_state.offset_ms == 0
         assert ws.sent_messages[0]["type"] == "sync_ack"
@@ -1567,11 +1835,15 @@ class TestEdgeCases:
         session = MockUserSession()
         ws = MockWebSocketResponse()
 
-        await handler._handle_sync(ws, session, {
-            "segment_index": 0,
-            "offset_ms": 999999,
-            "is_playing": True,
-        })
+        await handler._handle_sync(
+            ws,
+            session,
+            {
+                "segment_index": 0,
+                "offset_ms": 999999,
+                "is_playing": True,
+            },
+        )
 
         assert session.playback_state.offset_ms == 999999
 
@@ -1583,10 +1855,14 @@ class TestEdgeCases:
         ws = MockWebSocketResponse()
 
         # Update with None should not change original
-        await handler._handle_voice_config(ws, session, {
-            "voice_id": None,
-            "speed": 1.2,
-        })
+        await handler._handle_voice_config(
+            ws,
+            session,
+            {
+                "voice_id": None,
+                "speed": 1.2,
+            },
+        )
 
         # voice_id should remain "original" because None is filtered
         assert session.voice_config.voice_id == "original"
@@ -1600,10 +1876,14 @@ class TestEdgeCases:
         session = MockUserSession()
         ws = MockWebSocketResponse()
 
-        await handler._handle_set_topic(ws, session, {
-            "curriculum_id": "empty-curriculum",
-            "topic_id": "empty-topic",
-        })
+        await handler._handle_set_topic(
+            ws,
+            session,
+            {
+                "curriculum_id": "empty-curriculum",
+                "topic_id": "empty-topic",
+            },
+        )
 
         assert ws.sent_messages[0]["total_segments"] == 0
 

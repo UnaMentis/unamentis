@@ -82,6 +82,8 @@ export interface RegisterRequest {
   email: string;
   password: string;
   display_name: string;
+  /** User confirms they are at least 13 years old (required by the server). */
+  age_attestation: boolean;
   device: DeviceInfo;
 }
 
@@ -143,7 +145,8 @@ export interface AuthContextValue extends AuthState {
   register: (
     email: string,
     password: string,
-    displayName: string
+    displayName: string,
+    ageAttestation: boolean
   ) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;

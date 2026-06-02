@@ -10,16 +10,15 @@ import json
 import hashlib
 import pytest
 from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import MagicMock
 from aiohttp import web
-from aiohttp.test_utils import make_mocked_request
 
 from auth.auth_api import AuthAPI, register_auth_routes
 from auth.token_service import TokenService, TokenConfig
 from auth.password_service import PasswordService
 
 
-class MockConnection:
+class MockConnection:  # ALLOWED: hand-written asyncpg-connection double routing auth_api queries; pre-existing, candidate to migrate to in_memory_db fixture (follow-up)
     """Mock database connection that simulates asyncpg behavior."""
 
     def __init__(self, data_store: dict):
@@ -64,7 +63,11 @@ class MockConnection:
             return self.data_store.get("refresh_tokens", {}).get(token_hash)
 
         # Handle device lookup by user_id and fingerprint
-        if "SELECT id FROM devices" in query and "user_id" in query and "fingerprint" in query:
+        if (
+            "SELECT id FROM devices" in query
+            and "user_id" in query
+            and "fingerprint" in query
+        ):
             user_id = args[0]
             fingerprint = args[1]
             key = f"{user_id}:{fingerprint}"
@@ -73,7 +76,11 @@ class MockConnection:
             return self.data_store.get("devices", {}).get(fingerprint)
 
         # Handle device lookup by id and user_id (for device removal)
-        if "SELECT" in query and "FROM devices WHERE id" in query and "user_id" in query:
+        if (
+            "SELECT" in query
+            and "FROM devices WHERE id" in query
+            and "user_id" in query
+        ):
             device_id = args[0]
             user_id = args[1]
             # Check stored devices by device_id
@@ -109,7 +116,9 @@ class MockConnection:
                     return {
                         "id": user["id"],
                         "email": user["email"],
-                        "display_name": args[1] if len(args) > 1 else user.get("display_name"),
+                        "display_name": args[1]
+                        if len(args) > 1
+                        else user.get("display_name"),
                         "avatar_url": user.get("avatar_url"),
                         "locale": user.get("locale"),
                         "timezone": user.get("timezone"),
@@ -175,7 +184,9 @@ class MockConnection:
                     "name": args[3] if len(args) > 3 else "Unknown",
                     "type": args[4] if len(args) > 4 else "unknown",
                 }
-                self._created_devices_by_fingerprint[f"{user_id}:{fingerprint}"] = self._created_devices_by_id[device_id]
+                self._created_devices_by_fingerprint[f"{user_id}:{fingerprint}"] = (
+                    self._created_devices_by_id[device_id]
+                )
 
         if "INSERT INTO sessions" in query:
             self.data_store.setdefault("created_sessions", []).append(args)
@@ -192,7 +203,7 @@ class MockConnection:
         return None
 
 
-class MockConnectionContext:
+class MockConnectionContext:  # ALLOWED: async-context wrapper around the asyncpg connection double above
     """Context manager for mock connection."""
 
     def __init__(self, conn: MockConnection):
@@ -205,7 +216,7 @@ class MockConnectionContext:
         pass
 
 
-class MockDBPool:
+class MockDBPool:  # ALLOWED: asyncpg pool double over MockConnection; pre-existing, candidate to migrate to in_memory_db fixture (follow-up)
     """Mock database pool."""
 
     def __init__(self, data_store: dict = None):
@@ -247,7 +258,9 @@ def create_mock_request(
     }.get(key, default)
 
     # Setup transport for IP extraction
-    mock_transport = MagicMock()
+    mock_transport = (
+        MagicMock()
+    )  # ALLOWED: framework/db test double for auth-api unit tests
     mock_transport.get_extra_info.return_value = ("127.0.0.1", 12345)
     request.transport = mock_transport
 
@@ -272,11 +285,14 @@ class TestRegistration:
     @pytest.mark.asyncio
     async def test_register_success(self, auth_api):
         """Test successful user registration."""
-        request = create_mock_request(json_data={
-            "email": "newuser@example.com",
-            "password": "SecurePass123!",
-            "display_name": "New User",
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "newuser@example.com",
+                "password": "SecurePass123!",
+                "display_name": "New User",
+                "age_attestation": True,
+            }
+        )
 
         response = await auth_api.register(request)
 
@@ -290,15 +306,18 @@ class TestRegistration:
     @pytest.mark.asyncio
     async def test_register_with_device(self, auth_api):
         """Test registration with device creates tokens."""
-        request = create_mock_request(json_data={
-            "email": "deviceuser@example.com",
-            "password": "SecurePass123!",
-            "device": {
-                "fingerprint": "test-device-fingerprint",
-                "name": "iPhone 15",
-                "type": "ios",
-            },
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "deviceuser@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+                "device": {
+                    "fingerprint": "test-device-fingerprint",
+                    "name": "iPhone 15",
+                    "type": "ios",
+                },
+            }
+        )
 
         response = await auth_api.register(request)
 
@@ -323,9 +342,11 @@ class TestRegistration:
     @pytest.mark.asyncio
     async def test_register_missing_email(self, auth_api):
         """Test registration without email returns 400."""
-        request = create_mock_request(json_data={
-            "password": "SecurePass123!",
-        })
+        request = create_mock_request(
+            json_data={
+                "password": "SecurePass123!",
+            }
+        )
 
         response = await auth_api.register(request)
 
@@ -336,10 +357,12 @@ class TestRegistration:
     @pytest.mark.asyncio
     async def test_register_invalid_email(self, auth_api):
         """Test registration with invalid email format returns 400."""
-        request = create_mock_request(json_data={
-            "email": "not-an-email",
-            "password": "SecurePass123!",
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "not-an-email",
+                "password": "SecurePass123!",
+            }
+        )
 
         response = await auth_api.register(request)
 
@@ -350,9 +373,11 @@ class TestRegistration:
     @pytest.mark.asyncio
     async def test_register_missing_password(self, auth_api):
         """Test registration without password returns 400."""
-        request = create_mock_request(json_data={
-            "email": "user@example.com",
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "user@example.com",
+            }
+        )
 
         response = await auth_api.register(request)
 
@@ -363,10 +388,12 @@ class TestRegistration:
     @pytest.mark.asyncio
     async def test_register_weak_password(self, auth_api):
         """Test registration with weak password returns 400."""
-        request = create_mock_request(json_data={
-            "email": "user@example.com",
-            "password": "weak",
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "user@example.com",
+                "password": "weak",
+            }
+        )
 
         response = await auth_api.register(request)
 
@@ -379,14 +406,15 @@ class TestRegistration:
     async def test_register_email_exists(self, auth_api):
         """Test registration with existing email returns 409."""
         # Setup existing user
-        auth_api.db.data_store["users"] = {
-            "existing@example.com": {"id": uuid.uuid4()}
-        }
+        auth_api.db.data_store["users"] = {"existing@example.com": {"id": uuid.uuid4()}}
 
-        request = create_mock_request(json_data={
-            "email": "existing@example.com",
-            "password": "SecurePass123!",
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "existing@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+            }
+        )
 
         response = await auth_api.register(request)
 
@@ -397,10 +425,13 @@ class TestRegistration:
     @pytest.mark.asyncio
     async def test_register_normalizes_email(self, auth_api):
         """Test that email is normalized to lowercase."""
-        request = create_mock_request(json_data={
-            "email": "  User@EXAMPLE.com  ",
-            "password": "SecurePass123!",
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "  User@EXAMPLE.com  ",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+            }
+        )
 
         response = await auth_api.register(request)
 
@@ -411,10 +442,13 @@ class TestRegistration:
     @pytest.mark.asyncio
     async def test_register_logs_audit_event(self, auth_api):
         """Test that registration creates audit log entry."""
-        request = create_mock_request(json_data={
-            "email": "audit@example.com",
-            "password": "SecurePass123!",
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "audit@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+            }
+        )
 
         await auth_api.register(request)
 
@@ -423,6 +457,56 @@ class TestRegistration:
         assert len(audit_logs) > 0
         # Find user_created event
         events = [log for log in audit_logs if log[3] == "user_created"]
+        assert len(events) > 0
+
+    @pytest.mark.asyncio
+    async def test_register_requires_age_attestation(self, auth_api):
+        """Registration without age attestation returns 400."""
+        request = create_mock_request(
+            json_data={
+                "email": "noage@example.com",
+                "password": "SecurePass123!",
+            }
+        )
+
+        response = await auth_api.register(request)
+
+        assert response.status == 400
+        data = json.loads(response.body)
+        assert data["error"] == "age_attestation_required"
+
+    @pytest.mark.asyncio
+    async def test_register_rejects_false_age_attestation(self, auth_api):
+        """Registration with age_attestation=False returns 400 (under-13 out of scope)."""
+        request = create_mock_request(
+            json_data={
+                "email": "under13@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": False,
+            }
+        )
+
+        response = await auth_api.register(request)
+
+        assert response.status == 400
+        data = json.loads(response.body)
+        assert data["error"] == "age_attestation_required"
+
+    @pytest.mark.asyncio
+    async def test_register_logs_age_attestation_event(self, auth_api):
+        """Successful registration records an age_attestation audit event."""
+        request = create_mock_request(
+            json_data={
+                "email": "ageaudit@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+            }
+        )
+
+        await auth_api.register(request)
+
+        audit_logs = auth_api.db.data_store.get("audit_logs", [])
+        events = [log for log in audit_logs if log[3] == "age_attestation"]
         assert len(events) > 0
 
 
@@ -466,15 +550,17 @@ class TestLogin:
     @pytest.mark.asyncio
     async def test_login_success(self, auth_api):
         """Test successful login returns tokens."""
-        request = create_mock_request(json_data={
-            "email": "test@example.com",
-            "password": auth_api.db.data_store["test_password"],
-            "device": {
-                "fingerprint": "login-device",
-                "name": "Test Device",
-                "type": "ios",
-            },
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "test@example.com",
+                "password": auth_api.db.data_store["test_password"],
+                "device": {
+                    "fingerprint": "login-device",
+                    "name": "Test Device",
+                    "type": "ios",
+                },
+            }
+        )
 
         response = await auth_api.login(request)
 
@@ -500,9 +586,11 @@ class TestLogin:
     @pytest.mark.asyncio
     async def test_login_missing_credentials(self, auth_api):
         """Test login without email/password returns 400."""
-        request = create_mock_request(json_data={
-            "device": {"fingerprint": "test"},
-        })
+        request = create_mock_request(
+            json_data={
+                "device": {"fingerprint": "test"},
+            }
+        )
 
         response = await auth_api.login(request)
 
@@ -513,10 +601,12 @@ class TestLogin:
     @pytest.mark.asyncio
     async def test_login_missing_device(self, auth_api):
         """Test login without device fingerprint returns 400."""
-        request = create_mock_request(json_data={
-            "email": "test@example.com",
-            "password": "password",
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "test@example.com",
+                "password": "password",
+            }
+        )
 
         response = await auth_api.login(request)
 
@@ -527,11 +617,13 @@ class TestLogin:
     @pytest.mark.asyncio
     async def test_login_user_not_found(self, auth_api):
         """Test login with non-existent user returns 401."""
-        request = create_mock_request(json_data={
-            "email": "nonexistent@example.com",
-            "password": "password",
-            "device": {"fingerprint": "test"},
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "nonexistent@example.com",
+                "password": "password",
+                "device": {"fingerprint": "test"},
+            }
+        )
 
         response = await auth_api.login(request)
 
@@ -542,11 +634,13 @@ class TestLogin:
     @pytest.mark.asyncio
     async def test_login_wrong_password(self, auth_api):
         """Test login with wrong password returns 401."""
-        request = create_mock_request(json_data={
-            "email": "test@example.com",
-            "password": "WrongPassword123!",
-            "device": {"fingerprint": "test"},
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "test@example.com",
+                "password": "WrongPassword123!",
+                "device": {"fingerprint": "test"},
+            }
+        )
 
         response = await auth_api.login(request)
 
@@ -559,11 +653,13 @@ class TestLogin:
         """Test login to inactive account returns 403."""
         auth_api.db.data_store["users"]["test@example.com"]["is_active"] = False
 
-        request = create_mock_request(json_data={
-            "email": "test@example.com",
-            "password": auth_api.db.data_store["test_password"],
-            "device": {"fingerprint": "test"},
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "test@example.com",
+                "password": auth_api.db.data_store["test_password"],
+                "device": {"fingerprint": "test"},
+            }
+        )
 
         response = await auth_api.login(request)
 
@@ -576,11 +672,13 @@ class TestLogin:
         """Test login to locked account returns 403."""
         auth_api.db.data_store["users"]["test@example.com"]["is_locked"] = True
 
-        request = create_mock_request(json_data={
-            "email": "test@example.com",
-            "password": auth_api.db.data_store["test_password"],
-            "device": {"fingerprint": "test"},
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "test@example.com",
+                "password": auth_api.db.data_store["test_password"],
+                "device": {"fingerprint": "test"},
+            }
+        )
 
         response = await auth_api.login(request)
 
@@ -591,11 +689,13 @@ class TestLogin:
     @pytest.mark.asyncio
     async def test_login_logs_success_event(self, auth_api):
         """Test successful login creates audit log."""
-        request = create_mock_request(json_data={
-            "email": "test@example.com",
-            "password": auth_api.db.data_store["test_password"],
-            "device": {"fingerprint": "test"},
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "test@example.com",
+                "password": auth_api.db.data_store["test_password"],
+                "device": {"fingerprint": "test"},
+            }
+        )
 
         await auth_api.login(request)
 
@@ -606,11 +706,13 @@ class TestLogin:
     @pytest.mark.asyncio
     async def test_login_logs_failure_event(self, auth_api):
         """Test failed login creates audit log."""
-        request = create_mock_request(json_data={
-            "email": "test@example.com",
-            "password": "WrongPassword",
-            "device": {"fingerprint": "test"},
-        })
+        request = create_mock_request(
+            json_data={
+                "email": "test@example.com",
+                "password": "WrongPassword",
+                "device": {"fingerprint": "test"},
+            }
+        )
 
         await auth_api.login(request)
 
@@ -664,9 +766,11 @@ class TestTokenRefresh:
     @pytest.mark.asyncio
     async def test_refresh_success(self, auth_api):
         """Test successful token refresh."""
-        request = create_mock_request(json_data={
-            "refresh_token": auth_api.db.data_store["test_token"],
-        })
+        request = create_mock_request(
+            json_data={
+                "refresh_token": auth_api.db.data_store["test_token"],
+            }
+        )
 
         response = await auth_api.refresh(request)
 
@@ -699,9 +803,11 @@ class TestTokenRefresh:
     @pytest.mark.asyncio
     async def test_refresh_invalid_token(self, auth_api):
         """Test refresh with invalid token returns 401."""
-        request = create_mock_request(json_data={
-            "refresh_token": "invalid-token",
-        })
+        request = create_mock_request(
+            json_data={
+                "refresh_token": "invalid-token",
+            }
+        )
 
         response = await auth_api.refresh(request)
 
@@ -716,9 +822,11 @@ class TestTokenRefresh:
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         auth_api.db.data_store["refresh_tokens"][token_hash]["is_revoked"] = True
 
-        request = create_mock_request(json_data={
-            "refresh_token": token,
-        })
+        request = create_mock_request(
+            json_data={
+                "refresh_token": token,
+            }
+        )
 
         response = await auth_api.refresh(request)
 
@@ -735,9 +843,11 @@ class TestTokenRefresh:
             datetime.now(timezone.utc) - timedelta(days=1)
         )
 
-        request = create_mock_request(json_data={
-            "refresh_token": token,
-        })
+        request = create_mock_request(
+            json_data={
+                "refresh_token": token,
+            }
+        )
 
         response = await auth_api.refresh(request)
 
@@ -752,9 +862,11 @@ class TestTokenRefresh:
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         auth_api.db.data_store["refresh_tokens"][token_hash]["is_active"] = False
 
-        request = create_mock_request(json_data={
-            "refresh_token": token,
-        })
+        request = create_mock_request(
+            json_data={
+                "refresh_token": token,
+            }
+        )
 
         response = await auth_api.refresh(request)
 
@@ -815,9 +927,11 @@ class TestLogout:
             token_hash: {"token_family": uuid.uuid4()}
         }
 
-        request = create_mock_request(json_data={
-            "refresh_token": test_token,
-        })
+        request = create_mock_request(
+            json_data={
+                "refresh_token": test_token,
+            }
+        )
 
         response = await auth_api.logout(request)
 
@@ -1003,10 +1117,12 @@ class TestPasswordChange:
     @pytest.mark.asyncio
     async def test_change_password_unauthorized(self, auth_api):
         """Test password change without auth returns 401."""
-        request = create_mock_request(json_data={
-            "current_password": "old",
-            "new_password": "new",
-        })
+        request = create_mock_request(
+            json_data={
+                "current_password": "old",
+                "new_password": "new",
+            }
+        )
 
         response = await auth_api.change_password(request)
 
@@ -1282,7 +1398,9 @@ class TestHelperFunctions:
 
     def test_get_client_ip_from_forwarded_header(self, auth_api):
         """Test IP extraction from X-Forwarded-For header."""
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: framework/db test double for auth-api unit tests
         request.headers = {"X-Forwarded-For": "192.168.1.100, 10.0.0.1"}
         request.transport.get_extra_info.return_value = ("127.0.0.1", 12345)
 
@@ -1292,7 +1410,9 @@ class TestHelperFunctions:
 
     def test_get_client_ip_from_transport(self, auth_api):
         """Test IP extraction from transport."""
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: framework/db test double for auth-api unit tests
         request.headers = {}
         request.transport.get_extra_info.return_value = ("192.168.1.50", 12345)
 
@@ -1302,7 +1422,9 @@ class TestHelperFunctions:
 
     def test_get_client_ip_none_when_unavailable(self, auth_api):
         """Test IP extraction returns None when unavailable."""
-        request = MagicMock()
+        request = (
+            MagicMock()
+        )  # ALLOWED: framework/db test double for auth-api unit tests
         request.headers = {}
         request.transport.get_extra_info.return_value = None
 
@@ -1329,7 +1451,9 @@ class TestRouteRegistration:
         register_auth_routes(app, auth_api)
 
         # Check all routes exist
-        routes = [r.resource.canonical for r in app.router.routes() if hasattr(r, 'resource')]
+        routes = [
+            r.resource.canonical for r in app.router.routes() if hasattr(r, "resource")
+        ]
         expected_routes = [
             "/api/auth/register",
             "/api/auth/login",
@@ -1344,7 +1468,9 @@ class TestRouteRegistration:
         ]
 
         for expected in expected_routes:
-            assert any(expected in str(r) for r in routes), f"Route {expected} not found"
+            assert any(expected in str(r) for r in routes), (
+                f"Route {expected} not found"
+            )
 
 
 if __name__ == "__main__":

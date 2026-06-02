@@ -94,6 +94,7 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
+      await user.click(screen.getByLabelText(/at least 13 years old/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -112,6 +113,7 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
+      await user.click(screen.getByLabelText(/at least 13 years old/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -243,10 +245,11 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
+      await user.click(screen.getByLabelText(/at least 13 years old/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
-        expect(api.register).toHaveBeenCalledWith('test@example.com', 'Password123', 'Test User');
+        expect(api.register).toHaveBeenCalledWith('test@example.com', 'Password123', 'Test User', true);
         expect(onSuccess).toHaveBeenCalled();
       });
     });
@@ -266,6 +269,7 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
+      await user.click(screen.getByLabelText(/at least 13 years old/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -289,6 +293,7 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/email/i), 'existing@example.com');
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
+      await user.click(screen.getByLabelText(/at least 13 years old/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -310,6 +315,7 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
+      await user.click(screen.getByLabelText(/at least 13 years old/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -330,6 +336,7 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
+      await user.click(screen.getByLabelText(/at least 13 years old/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {

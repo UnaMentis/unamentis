@@ -21,7 +21,7 @@ from typing import Optional
 from aiohttp import web
 
 from .password_service import PasswordService
-from .token_service import TokenService, TokenConfig, RefreshTokenData
+from .token_service import TokenService
 from .rate_limiter import RateLimiter
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,7 @@ class AuthAPI:
             "email": "user@example.com",
             "password": "securepassword",
             "display_name": "User Name",  // optional
+            "age_attestation": true,  // REQUIRED: user confirms they are 13 or older
             "device": {  // optional, registers device on signup
                 "fingerprint": "device-uuid",
                 "name": "iPhone 15",
@@ -68,27 +69,27 @@ class AuthAPI:
             data = await request.json()
         except Exception:
             return web.json_response(
-                {"error": "invalid_json", "message": "Invalid JSON body"},
-                status=400
+                {"error": "invalid_json", "message": "Invalid JSON body"}, status=400
             )
 
         email = data.get("email", "").strip().lower()
         password = data.get("password", "")
         display_name = data.get("display_name", "").strip() or None
+        age_attestation = data.get("age_attestation", False)
         device_data = data.get("device")
 
         # Validate email
         if not email or "@" not in email:
             return web.json_response(
                 {"error": "invalid_email", "message": "Valid email is required"},
-                status=400
+                status=400,
             )
 
         # Validate password
         if not password:
             return web.json_response(
                 {"error": "invalid_password", "message": "Password is required"},
-                status=400
+                status=400,
             )
 
         # Check password strength
@@ -98,21 +99,35 @@ class AuthAPI:
                 {
                     "error": "weak_password",
                     "message": "Password is too weak",
-                    "suggestions": strength["suggestions"]
+                    "suggestions": strength["suggestions"],
                 },
-                status=400
+                status=400,
+            )
+
+        # Age attestation (13+). Minors under 13 are out of scope for the beta;
+        # this is a self-attestation, not verifiable parental consent.
+        if age_attestation is not True:
+            return web.json_response(
+                {
+                    "error": "age_attestation_required",
+                    "message": (
+                        "You must confirm you are at least 13 years old. "
+                        "UnaMentis is not available to children under 13."
+                    ),
+                },
+                status=400,
             )
 
         async with self.db.acquire() as conn:
             # Check if email already exists
             existing = await conn.fetchrow(
                 "SELECT id FROM users WHERE email = $1 AND organization_id IS NULL",
-                email
+                email,
             )
             if existing:
                 return web.json_response(
                     {"error": "email_exists", "message": "Email already registered"},
-                    status=409
+                    status=409,
                 )
 
             # Get default privacy tier
@@ -148,6 +163,17 @@ class AuthAPI:
                 conn,
                 user_id=user_id,
                 event_type="user_created",
+                event_status="success",
+                ip_address=self._get_client_ip(request),
+                user_agent=request.headers.get("User-Agent"),
+            )
+
+            # Record the 13+ age attestation for audit. Self-attestation only;
+            # full verifiable parental consent is out of scope for the beta.
+            await self._log_auth_event(
+                conn,
+                user_id=user_id,
+                event_type="age_attestation",
                 event_status="success",
                 ip_address=self._get_client_ip(request),
                 user_agent=request.headers.get("User-Agent"),
@@ -197,8 +223,7 @@ class AuthAPI:
             data = await request.json()
         except Exception:
             return web.json_response(
-                {"error": "invalid_json", "message": "Invalid JSON body"},
-                status=400
+                {"error": "invalid_json", "message": "Invalid JSON body"}, status=400
             )
 
         email = data.get("email", "").strip().lower()
@@ -207,14 +232,17 @@ class AuthAPI:
 
         if not email or not password:
             return web.json_response(
-                {"error": "missing_credentials", "message": "Email and password required"},
-                status=400
+                {
+                    "error": "missing_credentials",
+                    "message": "Email and password required",
+                },
+                status=400,
             )
 
         if not device_data.get("fingerprint"):
             return web.json_response(
                 {"error": "missing_device", "message": "Device fingerprint required"},
-                status=400
+                status=400,
             )
 
         async with self.db.acquire() as conn:
@@ -226,7 +254,7 @@ class AuthAPI:
                 FROM users
                 WHERE email = $1 AND organization_id IS NULL
                 """,
-                email
+                email,
             )
 
             if not user:
@@ -239,21 +267,24 @@ class AuthAPI:
                     user_agent=request.headers.get("User-Agent"),
                 )
                 return web.json_response(
-                    {"error": "invalid_credentials", "message": "Invalid email or password"},
-                    status=401
+                    {
+                        "error": "invalid_credentials",
+                        "message": "Invalid email or password",
+                    },
+                    status=401,
                 )
 
             # Check account status
             if not user["is_active"]:
                 return web.json_response(
                     {"error": "account_inactive", "message": "Account is inactive"},
-                    status=403
+                    status=403,
                 )
 
             if user["is_locked"]:
                 return web.json_response(
                     {"error": "account_locked", "message": "Account is locked"},
-                    status=403
+                    status=403,
                 )
 
             # Verify password
@@ -268,8 +299,11 @@ class AuthAPI:
                     user_agent=request.headers.get("User-Agent"),
                 )
                 return web.json_response(
-                    {"error": "invalid_credentials", "message": "Invalid email or password"},
-                    status=401
+                    {
+                        "error": "invalid_credentials",
+                        "message": "Invalid email or password",
+                    },
+                    status=401,
                 )
 
             # Register or update device
@@ -280,7 +314,7 @@ class AuthAPI:
             if not device_result:
                 return web.json_response(
                     {"error": "device_error", "message": "Failed to register device"},
-                    status=500
+                    status=500,
                 )
 
             device_id, tokens = device_result
@@ -289,7 +323,7 @@ class AuthAPI:
             await conn.execute(
                 "UPDATE users SET last_login_at = $1 WHERE id = $2",
                 datetime.now(timezone.utc),
-                user["id"]
+                user["id"],
             )
 
             # Log successful login
@@ -303,16 +337,18 @@ class AuthAPI:
                 user_agent=request.headers.get("User-Agent"),
             )
 
-            return web.json_response({
-                "user": {
-                    "id": str(user["id"]),
-                    "email": user["email"],
-                    "display_name": user["display_name"],
-                    "role": user["role"],
-                },
-                "device": {"id": str(device_id)},
-                "tokens": tokens,
-            })
+            return web.json_response(
+                {
+                    "user": {
+                        "id": str(user["id"]),
+                        "email": user["email"],
+                        "display_name": user["display_name"],
+                        "role": user["role"],
+                    },
+                    "device": {"id": str(device_id)},
+                    "tokens": tokens,
+                }
+            )
 
     # =========================================================================
     # TOKEN REFRESH
@@ -331,15 +367,14 @@ class AuthAPI:
             data = await request.json()
         except Exception:
             return web.json_response(
-                {"error": "invalid_json", "message": "Invalid JSON body"},
-                status=400
+                {"error": "invalid_json", "message": "Invalid JSON body"}, status=400
             )
 
         refresh_token = data.get("refresh_token", "")
         if not refresh_token:
             return web.json_response(
                 {"error": "missing_token", "message": "Refresh token required"},
-                status=400
+                status=400,
             )
 
         # Hash token for lookup
@@ -356,13 +391,13 @@ class AuthAPI:
                 JOIN users u ON rt.user_id = u.id
                 WHERE rt.token_hash = $1
                 """,
-                token_hash
+                token_hash,
             )
 
             if not token_record:
                 return web.json_response(
                     {"error": "invalid_token", "message": "Invalid refresh token"},
-                    status=401
+                    status=401,
                 )
 
             # Check if revoked (possible token reuse attack)
@@ -370,7 +405,7 @@ class AuthAPI:
                 # Revoke entire family as security measure
                 await conn.execute(
                     "SELECT revoke_token_family($1, 'reuse_detected')",
-                    token_record["token_family"]
+                    token_record["token_family"],
                 )
                 logger.warning(
                     f"Token reuse detected for user {token_record['user_id']}, "
@@ -378,21 +413,21 @@ class AuthAPI:
                 )
                 return web.json_response(
                     {"error": "token_reused", "message": "Security violation detected"},
-                    status=401
+                    status=401,
                 )
 
             # Check expiry
             if token_record["expires_at"] < datetime.now(timezone.utc):
                 return web.json_response(
                     {"error": "token_expired", "message": "Refresh token expired"},
-                    status=401
+                    status=401,
                 )
 
             # Check user status
             if not token_record["is_active"]:
                 return web.json_response(
                     {"error": "account_inactive", "message": "Account is inactive"},
-                    status=403
+                    status=403,
                 )
 
             # Revoke old token
@@ -403,7 +438,7 @@ class AuthAPI:
                 WHERE id = $2
                 """,
                 datetime.now(timezone.utc),
-                token_record["id"]
+                token_record["id"],
             )
 
             # Generate new tokens
@@ -445,14 +480,16 @@ class AuthAPI:
                 email=token_record["email"],
                 role=token_record["role"],
                 device_id=str(device_id),
-                organization_id=str(token_record["organization_id"]) if token_record["organization_id"] else None,
+                organization_id=str(token_record["organization_id"])
+                if token_record["organization_id"]
+                else None,
             )
 
             # Update device last seen
             await conn.execute(
                 "UPDATE devices SET last_seen_at = $1 WHERE id = $2",
                 datetime.now(timezone.utc),
-                device_id
+                device_id,
             )
 
             # Log refresh
@@ -466,14 +503,17 @@ class AuthAPI:
                 user_agent=request.headers.get("User-Agent"),
             )
 
-            return web.json_response({
-                "tokens": {
-                    "access_token": access_token,
-                    "refresh_token": new_refresh.token,
-                    "token_type": "Bearer",
-                    "expires_in": self.token_service.config.access_token_lifetime_minutes * 60,
+            return web.json_response(
+                {
+                    "tokens": {
+                        "access_token": access_token,
+                        "refresh_token": new_refresh.token,
+                        "token_type": "Bearer",
+                        "expires_in": self.token_service.config.access_token_lifetime_minutes
+                        * 60,
+                    }
                 }
-            })
+            )
 
     # =========================================================================
     # LOGOUT
@@ -510,7 +550,7 @@ class AuthAPI:
                     WHERE user_id = $2 AND is_revoked = false
                     """,
                     datetime.now(timezone.utc),
-                    uuid.UUID(user_id)
+                    uuid.UUID(user_id),
                 )
                 # End all sessions
                 await conn.execute(
@@ -520,19 +560,19 @@ class AuthAPI:
                     WHERE user_id = $2 AND is_active = true
                     """,
                     datetime.now(timezone.utc),
-                    uuid.UUID(user_id)
+                    uuid.UUID(user_id),
                 )
             elif refresh_token:
                 # Revoke specific token family
                 token_hash = hashlib.sha256(refresh_token.encode()).hexdigest()
                 token_record = await conn.fetchrow(
                     "SELECT token_family FROM refresh_tokens WHERE token_hash = $1",
-                    token_hash
+                    token_hash,
                 )
                 if token_record:
                     await conn.execute(
                         "SELECT revoke_token_family($1, 'logout')",
-                        token_record["token_family"]
+                        token_record["token_family"],
                     )
 
             # Log logout
@@ -559,7 +599,7 @@ class AuthAPI:
         if not user_id:
             return web.json_response(
                 {"error": "unauthorized", "message": "Authentication required"},
-                status=401
+                status=401,
             )
 
         async with self.db.acquire() as conn:
@@ -569,30 +609,35 @@ class AuthAPI:
                        locale, timezone, role, mfa_enabled, created_at, last_login_at
                 FROM users WHERE id = $1
                 """,
-                uuid.UUID(user_id)
+                uuid.UUID(user_id),
             )
 
             if not user:
                 return web.json_response(
-                    {"error": "not_found", "message": "User not found"},
-                    status=404
+                    {"error": "not_found", "message": "User not found"}, status=404
                 )
 
-            return web.json_response({
-                "user": {
-                    "id": str(user["id"]),
-                    "email": user["email"],
-                    "email_verified": user["email_verified"],
-                    "display_name": user["display_name"],
-                    "avatar_url": user["avatar_url"],
-                    "locale": user["locale"],
-                    "timezone": user["timezone"],
-                    "role": user["role"],
-                    "mfa_enabled": user["mfa_enabled"],
-                    "created_at": user["created_at"].isoformat() if user["created_at"] else None,
-                    "last_login_at": user["last_login_at"].isoformat() if user["last_login_at"] else None,
+            return web.json_response(
+                {
+                    "user": {
+                        "id": str(user["id"]),
+                        "email": user["email"],
+                        "email_verified": user["email_verified"],
+                        "display_name": user["display_name"],
+                        "avatar_url": user["avatar_url"],
+                        "locale": user["locale"],
+                        "timezone": user["timezone"],
+                        "role": user["role"],
+                        "mfa_enabled": user["mfa_enabled"],
+                        "created_at": user["created_at"].isoformat()
+                        if user["created_at"]
+                        else None,
+                        "last_login_at": user["last_login_at"].isoformat()
+                        if user["last_login_at"]
+                        else None,
+                    }
                 }
-            })
+            )
 
     async def update_me(self, request: web.Request) -> web.Response:
         """Update current user profile."""
@@ -600,15 +645,14 @@ class AuthAPI:
         if not user_id:
             return web.json_response(
                 {"error": "unauthorized", "message": "Authentication required"},
-                status=401
+                status=401,
             )
 
         try:
             data = await request.json()
         except Exception:
             return web.json_response(
-                {"error": "invalid_json", "message": "Invalid JSON body"},
-                status=400
+                {"error": "invalid_json", "message": "Invalid JSON body"}, status=400
             )
 
         # Allowed fields to update
@@ -618,21 +662,29 @@ class AuthAPI:
         if not updates:
             return web.json_response(
                 {"error": "no_updates", "message": "No valid fields to update"},
-                status=400
+                status=400,
             )
 
         async with self.db.acquire() as conn:
-            # Build update query
-            set_clauses = [f"{k} = ${i+2}" for i, k in enumerate(updates.keys())]
-            set_clauses.append(f"updated_at = ${len(updates)+2}")
+            # Build the dynamic UPDATE. Column identifiers come only from the
+            # fixed `allowed` allowlist above (never raw client input), and every
+            # value is bound as an asyncpg positional parameter ($1..$n). asyncpg
+            # cannot bind identifiers, so the SET clause must be assembled as
+            # text; the allowlist is what keeps that safe. (Bandit B608.)
+            set_clauses = [f"{k} = ${i + 2}" for i, k in enumerate(updates.keys())]
+            set_clauses.append(f"updated_at = ${len(updates) + 2}")
 
             query = f"""
-                UPDATE users SET {', '.join(set_clauses)}
+                UPDATE users SET {", ".join(set_clauses)}
                 WHERE id = $1
                 RETURNING id, email, display_name, avatar_url, locale, timezone, role
-            """
+            """  # nosec B608
 
-            values = [uuid.UUID(user_id)] + list(updates.values()) + [datetime.now(timezone.utc)]
+            values = (
+                [uuid.UUID(user_id)]
+                + list(updates.values())
+                + [datetime.now(timezone.utc)]
+            )
             user = await conn.fetchrow(query, *values)
 
             await self._log_auth_event(
@@ -645,17 +697,19 @@ class AuthAPI:
                 user_agent=request.headers.get("User-Agent"),
             )
 
-            return web.json_response({
-                "user": {
-                    "id": str(user["id"]),
-                    "email": user["email"],
-                    "display_name": user["display_name"],
-                    "avatar_url": user["avatar_url"],
-                    "locale": user["locale"],
-                    "timezone": user["timezone"],
-                    "role": user["role"],
+            return web.json_response(
+                {
+                    "user": {
+                        "id": str(user["id"]),
+                        "email": user["email"],
+                        "display_name": user["display_name"],
+                        "avatar_url": user["avatar_url"],
+                        "locale": user["locale"],
+                        "timezone": user["timezone"],
+                        "role": user["role"],
+                    }
                 }
-            })
+            )
 
     # =========================================================================
     # PASSWORD MANAGEMENT
@@ -675,15 +729,14 @@ class AuthAPI:
         if not user_id:
             return web.json_response(
                 {"error": "unauthorized", "message": "Authentication required"},
-                status=401
+                status=401,
             )
 
         try:
             data = await request.json()
         except Exception:
             return web.json_response(
-                {"error": "invalid_json", "message": "Invalid JSON body"},
-                status=400
+                {"error": "invalid_json", "message": "Invalid JSON body"}, status=400
             )
 
         current_password = data.get("current_password", "")
@@ -691,8 +744,11 @@ class AuthAPI:
 
         if not current_password or not new_password:
             return web.json_response(
-                {"error": "missing_passwords", "message": "Current and new passwords required"},
-                status=400
+                {
+                    "error": "missing_passwords",
+                    "message": "Current and new passwords required",
+                },
+                status=400,
             )
 
         # Check new password strength
@@ -702,18 +758,19 @@ class AuthAPI:
                 {
                     "error": "weak_password",
                     "message": "New password is too weak",
-                    "suggestions": strength["suggestions"]
+                    "suggestions": strength["suggestions"],
                 },
-                status=400
+                status=400,
             )
 
         async with self.db.acquire() as conn:
             user = await conn.fetchrow(
-                "SELECT password_hash FROM users WHERE id = $1",
-                uuid.UUID(user_id)
+                "SELECT password_hash FROM users WHERE id = $1", uuid.UUID(user_id)
             )
 
-            if not PasswordService.verify_password(current_password, user["password_hash"]):
+            if not PasswordService.verify_password(
+                current_password, user["password_hash"]
+            ):
                 await self._log_auth_event(
                     conn,
                     user_id=uuid.UUID(user_id),
@@ -724,8 +781,11 @@ class AuthAPI:
                     user_agent=request.headers.get("User-Agent"),
                 )
                 return web.json_response(
-                    {"error": "invalid_password", "message": "Current password is incorrect"},
-                    status=401
+                    {
+                        "error": "invalid_password",
+                        "message": "Current password is incorrect",
+                    },
+                    status=401,
                 )
 
             # Update password
@@ -740,7 +800,7 @@ class AuthAPI:
                 """,
                 new_hash,
                 now,
-                uuid.UUID(user_id)
+                uuid.UUID(user_id),
             )
 
             # Revoke all refresh tokens except current device
@@ -754,7 +814,7 @@ class AuthAPI:
                     """,
                     now,
                     uuid.UUID(user_id),
-                    uuid.UUID(device_id)
+                    uuid.UUID(device_id),
                 )
 
             await self._log_auth_event(
@@ -778,7 +838,7 @@ class AuthAPI:
         if not user_id:
             return web.json_response(
                 {"error": "unauthorized", "message": "Authentication required"},
-                status=401
+                status=401,
             )
 
         async with self.db.acquire() as conn:
@@ -790,25 +850,31 @@ class AuthAPI:
                 WHERE user_id = $1 AND is_active = true
                 ORDER BY last_seen_at DESC
                 """,
-                uuid.UUID(user_id)
+                uuid.UUID(user_id),
             )
 
-            return web.json_response({
-                "devices": [
-                    {
-                        "id": str(d["id"]),
-                        "name": d["device_name"],
-                        "type": d["device_type"],
-                        "model": d["device_model"],
-                        "os_version": d["os_version"],
-                        "app_version": d["app_version"],
-                        "is_trusted": d["is_trusted"],
-                        "last_seen_at": d["last_seen_at"].isoformat() if d["last_seen_at"] else None,
-                        "created_at": d["created_at"].isoformat() if d["created_at"] else None,
-                    }
-                    for d in devices
-                ]
-            })
+            return web.json_response(
+                {
+                    "devices": [
+                        {
+                            "id": str(d["id"]),
+                            "name": d["device_name"],
+                            "type": d["device_type"],
+                            "model": d["device_model"],
+                            "os_version": d["os_version"],
+                            "app_version": d["app_version"],
+                            "is_trusted": d["is_trusted"],
+                            "last_seen_at": d["last_seen_at"].isoformat()
+                            if d["last_seen_at"]
+                            else None,
+                            "created_at": d["created_at"].isoformat()
+                            if d["created_at"]
+                            else None,
+                        }
+                        for d in devices
+                    ]
+                }
+            )
 
     async def remove_device(self, request: web.Request) -> web.Response:
         """Remove a device and revoke its tokens."""
@@ -818,7 +884,7 @@ class AuthAPI:
         if not user_id:
             return web.json_response(
                 {"error": "unauthorized", "message": "Authentication required"},
-                status=401
+                status=401,
             )
 
         async with self.db.acquire() as conn:
@@ -826,13 +892,12 @@ class AuthAPI:
             device = await conn.fetchrow(
                 "SELECT id FROM devices WHERE id = $1 AND user_id = $2",
                 uuid.UUID(device_id),
-                uuid.UUID(user_id)
+                uuid.UUID(user_id),
             )
 
             if not device:
                 return web.json_response(
-                    {"error": "not_found", "message": "Device not found"},
-                    status=404
+                    {"error": "not_found", "message": "Device not found"}, status=404
                 )
 
             now = datetime.now(timezone.utc)
@@ -845,13 +910,13 @@ class AuthAPI:
                 WHERE device_id = $2 AND is_revoked = false
                 """,
                 now,
-                uuid.UUID(device_id)
+                uuid.UUID(device_id),
             )
 
             # Deactivate device
             await conn.execute(
                 "UPDATE devices SET is_active = false WHERE id = $1",
-                uuid.UUID(device_id)
+                uuid.UUID(device_id),
             )
 
             await self._log_auth_event(
@@ -876,7 +941,7 @@ class AuthAPI:
         if not user_id:
             return web.json_response(
                 {"error": "unauthorized", "message": "Authentication required"},
-                status=401
+                status=401,
             )
 
         async with self.db.acquire() as conn:
@@ -890,29 +955,41 @@ class AuthAPI:
                 WHERE s.user_id = $1 AND s.is_active = true
                 ORDER BY s.last_activity_at DESC
                 """,
-                uuid.UUID(user_id)
+                uuid.UUID(user_id),
             )
 
-            return web.json_response({
-                "sessions": [
-                    {
-                        "id": str(s["id"]),
-                        "ip_address": str(s["ip_address"]) if s["ip_address"] else None,
-                        "user_agent": s["user_agent"],
-                        "location": {
-                            "country": s["location_country"],
-                            "city": s["location_city"],
-                        } if s["location_country"] else None,
-                        "device": {
-                            "name": s["device_name"],
-                            "type": s["device_type"],
-                        } if s["device_name"] else None,
-                        "created_at": s["created_at"].isoformat() if s["created_at"] else None,
-                        "last_activity_at": s["last_activity_at"].isoformat() if s["last_activity_at"] else None,
-                    }
-                    for s in sessions
-                ]
-            })
+            return web.json_response(
+                {
+                    "sessions": [
+                        {
+                            "id": str(s["id"]),
+                            "ip_address": str(s["ip_address"])
+                            if s["ip_address"]
+                            else None,
+                            "user_agent": s["user_agent"],
+                            "location": {
+                                "country": s["location_country"],
+                                "city": s["location_city"],
+                            }
+                            if s["location_country"]
+                            else None,
+                            "device": {
+                                "name": s["device_name"],
+                                "type": s["device_type"],
+                            }
+                            if s["device_name"]
+                            else None,
+                            "created_at": s["created_at"].isoformat()
+                            if s["created_at"]
+                            else None,
+                            "last_activity_at": s["last_activity_at"].isoformat()
+                            if s["last_activity_at"]
+                            else None,
+                        }
+                        for s in sessions
+                    ]
+                }
+            )
 
     async def terminate_session(self, request: web.Request) -> web.Response:
         """Terminate a specific session."""
@@ -922,7 +999,7 @@ class AuthAPI:
         if not user_id:
             return web.json_response(
                 {"error": "unauthorized", "message": "Authentication required"},
-                status=401
+                status=401,
             )
 
         async with self.db.acquire() as conn:
@@ -934,13 +1011,12 @@ class AuthAPI:
                 """,
                 datetime.now(timezone.utc),
                 uuid.UUID(session_id),
-                uuid.UUID(user_id)
+                uuid.UUID(user_id),
             )
 
             if result == "UPDATE 0":
                 return web.json_response(
-                    {"error": "not_found", "message": "Session not found"},
-                    status=404
+                    {"error": "not_found", "message": "Session not found"}, status=404
                 )
 
             await self._log_auth_event(
@@ -975,7 +1051,7 @@ class AuthAPI:
         existing = await conn.fetchrow(
             "SELECT id FROM devices WHERE user_id = $1 AND device_fingerprint = $2",
             user_id,
-            fingerprint
+            fingerprint,
         )
 
         now = datetime.now(timezone.utc)
@@ -1063,8 +1139,7 @@ class AuthAPI:
 
         # Get user info for access token
         user = await conn.fetchrow(
-            "SELECT email, role, organization_id FROM users WHERE id = $1",
-            user_id
+            "SELECT email, role, organization_id FROM users WHERE id = $1", user_id
         )
 
         access_token, _ = self.token_service.generate_access_token(
@@ -1072,7 +1147,9 @@ class AuthAPI:
             email=user["email"],
             role=user["role"],
             device_id=str(device_id),
-            organization_id=str(user["organization_id"]) if user["organization_id"] else None,
+            organization_id=str(user["organization_id"])
+            if user["organization_id"]
+            else None,
         )
 
         # Create session

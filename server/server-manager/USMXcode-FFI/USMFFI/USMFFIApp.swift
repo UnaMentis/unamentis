@@ -50,7 +50,7 @@ struct SettingsView: View {
             HStack {
                 Text("USM Core Port:")
                     .font(.caption)
-                Text("8767")
+                Text("8787")
                     .font(.caption)
                     .monospacedDigit()
             }
@@ -77,6 +77,6 @@ struct SettingsView: View {
             Spacer()
         }
         .padding()
-        .frame(width: 320, minHeight: 250, maxHeight: 400)
+        .frame(minWidth: 320, maxWidth: 320, minHeight: 250, maxHeight: 400)
     }
 }

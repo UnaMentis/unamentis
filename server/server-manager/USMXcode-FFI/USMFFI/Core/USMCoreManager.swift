@@ -69,9 +69,9 @@ final class USMCoreManager: ObservableObject {
         }
     }
 
-    deinit {
-        refreshTimer?.invalidate()
-    }
+    // No timer cleanup in deinit: refreshTimer uses [weak self], and this
+    // manager lives for the app's lifetime. Touching main-actor state from a
+    // nonisolated deinit is rejected under Swift 6 concurrency.
 
     // MARK: - Setup
 

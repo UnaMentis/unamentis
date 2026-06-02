@@ -3,7 +3,33 @@
 > **Purpose**: Technical specification for privacy-preserving storage and management of user learning preferences, usage patterns, and personal data in UnaMentis.
 >
 > **Last Updated**: December 2024
-> **Status**: Living Document
+> **Status**: Living Document (target architecture, not all shipped)
+
+---
+
+> ⚠️ **Current beta behavior (authoritative).** The sections below describe the
+> long-term privacy architecture and vision (on-device-first, zero-knowledge,
+> COPPA/FERPA, a GDPR data-subject dashboard). Several of these are not yet
+> shipped. What the hosted beta actually does today:
+>
+> - **Account data is stored on the server:** email, a hashed password, a device
+>   fingerprint, and the user agent.
+> - **Aggregate, non-content telemetry** (latency, turn and interruption counts,
+>   costs, thermal/network events) is uploaded, keyed to a per-install random ID.
+>   No transcripts or learning content reach the UnaMentis server.
+> - **Cloud voice providers receive audio and transcripts** during inference (see
+>   [SUBPROCESSORS.md](SUBPROCESSORS.md)). On-device providers keep audio local.
+> - **Client IP is coarsened** (IPv4 to /24, IPv6 to /48) on telemetry and log
+>   intake; the exact IP from those endpoints is not stored.
+> - **Age:** a 13+ self-attestation is required at registration; under-13 is out
+>   of scope. Verifiable parental consent (COPPA) is NOT implemented.
+> - **Not yet implemented:** hardware-backed on-device encryption as the default,
+>   consent-gated sync, automated data export and deletion, enforced retention,
+>   multi-tenant/FERPA isolation, and the privacy dashboard. Treat references to
+>   these below as roadmap, not current functionality.
+> - Do not describe the beta as "zero-knowledge", "COPPA compliant", or
+>   "FERPA-ready". The user-facing statement of current practice is the Privacy
+>   Policy served at `/privacy` in the web client.
 
 ---
 

@@ -80,7 +80,7 @@ describe('Auth API', () => {
     it('should register a new user', async () => {
       (client.post as Mock).mockResolvedValue(mockAuthResponse);
 
-      const result = await register('test@example.com', 'password123', 'Test User');
+      const result = await register('test@example.com', 'password123', 'Test User', true);
 
       expect(client.post).toHaveBeenCalledWith(
         '/auth/register',
@@ -88,6 +88,7 @@ describe('Auth API', () => {
           email: 'test@example.com',
           password: 'password123',
           display_name: 'Test User',
+          age_attestation: true,
           device: expect.any(Object),
         }),
         { skipAuth: true }
@@ -100,9 +101,9 @@ describe('Auth API', () => {
     it('should propagate errors from registration', async () => {
       (client.post as Mock).mockRejectedValue(new Error('Email already exists'));
 
-      await expect(register('test@example.com', 'password123', 'Test User')).rejects.toThrow(
-        'Email already exists'
-      );
+      await expect(
+        register('test@example.com', 'password123', 'Test User', true)
+      ).rejects.toThrow('Email already exists');
     });
   });
 

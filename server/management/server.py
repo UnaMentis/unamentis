@@ -107,6 +107,9 @@ from latency_harness_api import (
 # Import diagnostic logging system
 from diagnostic_logging import diag_logger, get_diagnostic_config, set_diagnostic_config
 
+# Coarsen client IPs captured on telemetry/log intake (privacy, audit finding B10)
+from ip_privacy import coarsen_ip
+
 # Import FOV context management API
 from fov_context_api import setup_fov_context_routes
 
@@ -1004,7 +1007,7 @@ async def handle_receive_log(request: web.Request) -> web.Response:
         data = await request.json()
         client_id = request.headers.get("X-Client-ID", "unknown")
         client_name = request.headers.get("X-Client-Name", "Unknown Device")
-        client_ip = request.remote or "unknown"
+        client_ip = coarsen_ip(request.remote)
 
         # Update or create client
         if client_id not in state.clients:
@@ -1141,7 +1144,7 @@ async def handle_receive_metrics(request: web.Request) -> web.Response:
         # Update client
         if client_id not in state.clients:
             state.clients[client_id] = RemoteClient(
-                id=client_id, name=client_name, ip_address=request.remote or "unknown"
+                id=client_id, name=client_name, ip_address=coarsen_ip(request.remote)
             )
         client = state.clients[client_id]
         client.last_seen = time.time()
@@ -1288,7 +1291,7 @@ async def handle_client_heartbeat(request: web.Request) -> web.Response:
                 device_model=data.get("device_model", ""),
                 os_version=data.get("os_version", ""),
                 app_version=data.get("app_version", ""),
-                ip_address=request.remote or "unknown",
+                ip_address=coarsen_ip(request.remote),
             )
 
         client = state.clients[client_id]

@@ -27,7 +27,7 @@ Quality curriculum, often from institutions like MIT, combined with AI that guid
 
 - **Genuine Understanding**: We reinforce real comprehension through teachback, productive struggle, and spaced retrieval
 - **Quality Curriculum**: Content from respected sources (MIT, CK-12, and more), designed for voice-based delivery
-- **Privacy-First**: On-device capabilities, user control, and transparent data practices
+- **Privacy-Aware**: On-device provider options are supported. The hosted beta uploads only aggregate, non-content telemetry (latency, counts, costs) keyed to a per-install random ID, and uses third-party AI providers for cloud STT/TTS/LLM. See the [Privacy Policy](docs/PRIVACY_PRESERVING_USER_DATA.md) and [Sub-Processors](docs/SUBPROCESSORS.md) for what is collected and where it goes. 13+ only.
 - **Open Source Core**: The fundamental infrastructure will always remain open source
 
 See [About UnaMentis](docs/ABOUT.md) for our complete philosophy and [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md) for the founding vision.
@@ -66,7 +66,7 @@ The right model depends on the task, the moment, and the cost. The architecture 
 
 - Swap providers without code changes
 - Use different models for different tasks (fast/cheap for simple responses, powerful for complex explanations)
-- Run entirely on-device for privacy, offline use, or zero API costs
+- Optionally run on-device providers for offline use or zero API costs (note: the hosted beta defaults to cloud providers and uploads aggregate telemetry; fully on-device operation is an advanced/self-host configuration, not the default beta experience)
 - Self-host models on local servers for cost control
 - A/B test provider combinations to find optimal setups
 

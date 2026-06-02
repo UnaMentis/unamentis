@@ -24,6 +24,7 @@ interface FormErrors {
   email?: string;
   password?: string;
   confirmPassword?: string;
+  ageAttestation?: string;
   general?: string;
 }
 
@@ -83,6 +84,7 @@ export function RegisterForm({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [ageAttestation, setAgeAttestation] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -123,9 +125,14 @@ export function RegisterForm({
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
+    // Age attestation (13+). UnaMentis is not available to children under 13.
+    if (!ageAttestation) {
+      newErrors.ageAttestation = 'You must confirm you are at least 13 years old';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [displayName, email, password, confirmPassword]);
+  }, [displayName, email, password, confirmPassword, ageAttestation]);
 
   /**
    * Handle form submission.
@@ -142,7 +149,7 @@ export function RegisterForm({
       setErrors({});
 
       try {
-        await register(email, password, displayName.trim());
+        await register(email, password, displayName.trim(), ageAttestation);
         onSuccess?.();
       } catch (error) {
         if (error instanceof ApiError) {
@@ -156,6 +163,11 @@ export function RegisterForm({
             case 'weak_password':
               setErrors({ password: 'Password is too weak' });
               break;
+            case 'age_attestation_required':
+              setErrors({
+                ageAttestation: 'You must confirm you are at least 13 years old',
+              });
+              break;
             default:
               setErrors({ general: error.message });
           }
@@ -166,7 +178,7 @@ export function RegisterForm({
         setIsSubmitting(false);
       }
     },
-    [displayName, email, password, register, validateForm, onSuccess]
+    [displayName, email, password, ageAttestation, register, validateForm, onSuccess]
   );
 
   const isLoading = authLoading || isSubmitting;
@@ -328,6 +340,36 @@ export function RegisterForm({
             className="mt-1 text-sm text-red-600 dark:text-red-400"
           >
             {errors.confirmPassword}
+          </p>
+        )}
+      </div>
+
+      {/* Age attestation (13+) */}
+      <div>
+        <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <input
+            id="register-age-attestation"
+            type="checkbox"
+            checked={ageAttestation}
+            onChange={(e) => setAgeAttestation(e.target.checked)}
+            disabled={isLoading}
+            aria-invalid={!!errors.ageAttestation}
+            aria-describedby={
+              errors.ageAttestation ? 'register-age-attestation-error' : undefined
+            }
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+          />
+          <span>
+            I confirm that I am at least 13 years old. UnaMentis is not available to
+            children under 13.
+          </span>
+        </label>
+        {errors.ageAttestation && (
+          <p
+            id="register-age-attestation-error"
+            className="mt-1 text-sm text-red-600 dark:text-red-400"
+          >
+            {errors.ageAttestation}
           </p>
         )}
       </div>

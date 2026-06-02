@@ -5,6 +5,7 @@
  * Handles bidirectional voice conversation with lowest latency.
  */
 
+import { tokenManager } from '../api/token-manager';
 import type {
   STTResult,
   LLMToken,
@@ -77,10 +78,16 @@ export class OpenAIRealtimeProvider {
     this.handlers = handlers;
 
     try {
-      // 1. Get ephemeral token from our API
+      // 1. Get ephemeral token from our API. The token route requires auth to
+      // defend against denial-of-wallet, so forward the access token.
+      const tokenHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      const accessToken = await tokenManager.getValidToken();
+      if (accessToken) {
+        tokenHeaders['Authorization'] = `Bearer ${accessToken}`;
+      }
       const tokenResponse = await fetch('/api/realtime/token', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: tokenHeaders,
         body: JSON.stringify({
           model: config.model || 'gpt-4o-realtime-preview',
           voice: config.voice || 'coral',

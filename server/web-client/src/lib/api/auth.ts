@@ -100,12 +100,14 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
  * @param email - User email address
  * @param password - User password
  * @param displayName - User display name
+ * @param ageAttestation - User confirms they are at least 13 years old (required)
  * @returns Auth response with user and tokens
  */
 export async function register(
   email: string,
   password: string,
-  displayName: string
+  displayName: string,
+  ageAttestation: boolean
 ): Promise<AuthResponse> {
   const device = await getDeviceInfo();
 
@@ -113,6 +115,7 @@ export async function register(
     email,
     password,
     display_name: displayName,
+    age_attestation: ageAttestation,
     device,
   };
 

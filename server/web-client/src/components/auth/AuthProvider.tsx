@@ -137,12 +137,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async (
       email: string,
       password: string,
-      displayName: string
+      displayName: string,
+      ageAttestation: boolean
     ): Promise<void> => {
       updateState({ isLoading: true, error: null });
 
       try {
-        const response = await apiRegister(email, password, displayName);
+        const response = await apiRegister(
+          email,
+          password,
+          displayName,
+          ageAttestation
+        );
         setUser(response.user);
       } catch (error) {
         const message =

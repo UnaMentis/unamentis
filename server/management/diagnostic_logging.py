@@ -39,24 +39,26 @@ import sys
 import time
 import json
 import socket
-import traceback
 from datetime import datetime, timezone
 from functools import wraps
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
-from dataclasses import dataclass, field, asdict
+from typing import Any, Callable, Dict, Optional
+from dataclasses import dataclass, asdict
 from enum import Enum
+
+from ip_privacy import coarsen_ip
 
 # =============================================================================
 # Configuration
 # =============================================================================
 
+
 class LogFormat(Enum):
     """Supported log output formats."""
-    CONSOLE = "console"      # Human-readable for development
-    JSON = "json"            # Structured JSON (Elasticsearch, Splunk, etc.)
-    GELF = "gelf"            # Graylog Extended Log Format
-    SYSLOG = "syslog"        # RFC 5424 syslog
+
+    CONSOLE = "console"  # Human-readable for development
+    JSON = "json"  # Structured JSON (Elasticsearch, Splunk, etc.)
+    GELF = "gelf"  # Graylog Extended Log Format
+    SYSLOG = "syslog"  # RFC 5424 syslog
 
 
 # Configuration via environment variables with defaults
@@ -64,9 +66,15 @@ DIAGNOSTIC_ENABLED = os.environ.get("DIAGNOSTIC_LOGGING", "true").lower() == "tr
 DIAGNOSTIC_LEVEL = os.environ.get("DIAGNOSTIC_LEVEL", "DEBUG")
 DIAGNOSTIC_FORMAT = os.environ.get("DIAGNOSTIC_FORMAT", "console")
 DIAGNOSTIC_LOG_FILE = os.environ.get("DIAGNOSTIC_LOG_FILE", "")
-DIAGNOSTIC_LOG_REQUESTS = os.environ.get("DIAGNOSTIC_LOG_REQUESTS", "true").lower() == "true"
-DIAGNOSTIC_LOG_RESPONSES = os.environ.get("DIAGNOSTIC_LOG_RESPONSES", "true").lower() == "true"
-DIAGNOSTIC_LOG_TIMING = os.environ.get("DIAGNOSTIC_LOG_TIMING", "true").lower() == "true"
+DIAGNOSTIC_LOG_REQUESTS = (
+    os.environ.get("DIAGNOSTIC_LOG_REQUESTS", "true").lower() == "true"
+)
+DIAGNOSTIC_LOG_RESPONSES = (
+    os.environ.get("DIAGNOSTIC_LOG_RESPONSES", "true").lower() == "true"
+)
+DIAGNOSTIC_LOG_TIMING = (
+    os.environ.get("DIAGNOSTIC_LOG_TIMING", "true").lower() == "true"
+)
 DIAGNOSTIC_SYSLOG_HOST = os.environ.get("DIAGNOSTIC_SYSLOG_HOST", "")
 DIAGNOSTIC_SYSLOG_PORT = int(os.environ.get("DIAGNOSTIC_SYSLOG_PORT", "514"))
 DIAGNOSTIC_SYSLOG_PROTOCOL = os.environ.get("DIAGNOSTIC_SYSLOG_PROTOCOL", "udp")
@@ -76,17 +84,33 @@ DIAGNOSTIC_FACILITY = os.environ.get("DIAGNOSTIC_FACILITY", "local0")
 
 # Syslog facility mapping
 SYSLOG_FACILITIES = {
-    "kern": 0, "user": 1, "mail": 2, "daemon": 3,
-    "auth": 4, "syslog": 5, "lpr": 6, "news": 7,
-    "uucp": 8, "cron": 9, "authpriv": 10, "ftp": 11,
-    "local0": 16, "local1": 17, "local2": 18, "local3": 19,
-    "local4": 20, "local5": 21, "local6": 22, "local7": 23,
+    "kern": 0,
+    "user": 1,
+    "mail": 2,
+    "daemon": 3,
+    "auth": 4,
+    "syslog": 5,
+    "lpr": 6,
+    "news": 7,
+    "uucp": 8,
+    "cron": 9,
+    "authpriv": 10,
+    "ftp": 11,
+    "local0": 16,
+    "local1": 17,
+    "local2": 18,
+    "local3": 19,
+    "local4": 20,
+    "local5": 21,
+    "local6": 22,
+    "local7": 23,
 }
 
 
 @dataclass
 class DiagnosticConfig:
     """Configuration for diagnostic logging."""
+
     enabled: bool = DIAGNOSTIC_ENABLED
     level: str = DIAGNOSTIC_LEVEL
     format: str = DIAGNOSTIC_FORMAT
@@ -107,6 +131,7 @@ class DiagnosticConfig:
 # =============================================================================
 # Log Formatters
 # =============================================================================
+
 
 class JSONFormatter(logging.Formatter):
     """
@@ -133,7 +158,7 @@ class JSONFormatter(logging.Formatter):
                 "file": record.filename,
                 "line": record.lineno,
                 "function": record.funcName,
-            }
+            },
         }
 
         # Add extra fields from record
@@ -159,10 +184,10 @@ class GELFFormatter(logging.Formatter):
 
     LEVEL_MAP = {
         logging.CRITICAL: 2,  # Critical
-        logging.ERROR: 3,     # Error
-        logging.WARNING: 4,   # Warning
-        logging.INFO: 6,      # Informational
-        logging.DEBUG: 7,     # Debug
+        logging.ERROR: 3,  # Error
+        logging.WARNING: 4,  # Warning
+        logging.INFO: 6,  # Informational
+        logging.DEBUG: 7,  # Debug
     }
 
     def __init__(self, app_name: str = "unamentis"):
@@ -195,8 +220,12 @@ class GELFFormatter(logging.Formatter):
 
         # Add exception info if present
         if record.exc_info:
-            gelf_msg["_exception_type"] = record.exc_info[0].__name__ if record.exc_info[0] else None
-            gelf_msg["_exception_message"] = str(record.exc_info[1]) if record.exc_info[1] else None
+            gelf_msg["_exception_type"] = (
+                record.exc_info[0].__name__ if record.exc_info[0] else None
+            )
+            gelf_msg["_exception_message"] = (
+                str(record.exc_info[1]) if record.exc_info[1] else None
+            )
             gelf_msg["_stacktrace"] = self.formatException(record.exc_info)
 
         return json.dumps(gelf_msg, default=str)
@@ -238,19 +267,19 @@ class SyslogFormatter(logging.Formatter):
         # Structured data (SD-ELEMENT)
         sd = "-"  # NILVALUE if no structured data
         if hasattr(record, "context") and record.context:
+
             def escape_sd_value(val):
                 """Escape value for syslog structured data (RFC 5424)."""
                 s = str(val)
                 s = s.replace("\\", "\\\\")  # Escape backslashes first
-                s = s.replace('"', '\\"')    # Escape quotes
-                s = s.replace("]", "\\]")    # Escape closing bracket
+                s = s.replace('"', '\\"')  # Escape quotes
+                s = s.replace("]", "\\]")  # Escape closing bracket
                 return s
 
             sd_params = " ".join(
-                f'{k}="{escape_sd_value(v)}"'
-                for k, v in record.context.items()
+                f'{k}="{escape_sd_value(v)}"' for k, v in record.context.items()
             )
-            sd = f'[meta@0 {sd_params}]'
+            sd = f"[meta@0 {sd_params}]"
 
         # RFC 5424 format:
         # <PRI>VERSION TIMESTAMP HOSTNAME APP-NAME PROCID MSGID SD MSG
@@ -275,7 +304,9 @@ class ConsoleFormatter(logging.Formatter):
         context_str = ""
         if hasattr(record, "context") and record.context:
             try:
-                context_str = " | " + json.dumps(record.context, default=str, separators=(',', ':'))
+                context_str = " | " + json.dumps(
+                    record.context, default=str, separators=(",", ":")
+                )
             except Exception:
                 context_str = f" | {record.context}"
 
@@ -290,6 +321,7 @@ class ConsoleFormatter(logging.Formatter):
 # =============================================================================
 # Diagnostic Logger
 # =============================================================================
+
 
 class DiagnosticLogger:
     """
@@ -325,8 +357,7 @@ class DiagnosticLogger:
             return GELFFormatter(app_name=self.config.app_name)
         elif fmt == "syslog":
             return SyslogFormatter(
-                app_name=self.config.app_name,
-                facility=self.config.facility
+                app_name=self.config.app_name, facility=self.config.facility
             )
         else:  # console (default)
             return ConsoleFormatter()
@@ -361,17 +392,22 @@ class DiagnosticLogger:
         # Remote syslog handler (optional)
         if self.config.syslog_host:
             try:
-                socktype = socket.SOCK_DGRAM if self.config.syslog_protocol.lower() == "udp" else socket.SOCK_STREAM
+                socktype = (
+                    socket.SOCK_DGRAM
+                    if self.config.syslog_protocol.lower() == "udp"
+                    else socket.SOCK_STREAM
+                )
                 syslog_handler = logging.handlers.SysLogHandler(
                     address=(self.config.syslog_host, self.config.syslog_port),
                     facility=SYSLOG_FACILITIES.get(self.config.facility.lower(), 16),
                     socktype=socktype,
                 )
                 # For remote syslog, we use the syslog formatter regardless of config
-                syslog_handler.setFormatter(SyslogFormatter(
-                    app_name=self.config.app_name,
-                    facility=self.config.facility
-                ))
+                syslog_handler.setFormatter(
+                    SyslogFormatter(
+                        app_name=self.config.app_name, facility=self.config.facility
+                    )
+                )
                 self._logger.addHandler(syslog_handler)
             except Exception as e:
                 print(f"Warning: Could not create syslog handler: {e}")
@@ -379,7 +415,13 @@ class DiagnosticLogger:
         # Prevent propagation to root logger
         self._logger.propagate = False
 
-    def _log_with_context(self, level: int, message: str, context: Optional[Dict[str, Any]] = None, exc_info: bool = False):
+    def _log_with_context(
+        self,
+        level: int,
+        message: str,
+        context: Optional[Dict[str, Any]] = None,
+        exc_info: bool = False,
+    ):
         """Log a message with optional context dict attached to the record."""
         if not self.config.enabled:
             return
@@ -421,7 +463,12 @@ class DiagnosticLogger:
         """Log warning message."""
         self._log_with_context(logging.WARNING, message, context)
 
-    def error(self, message: str, context: Optional[Dict[str, Any]] = None, exc_info: bool = False):
+    def error(
+        self,
+        message: str,
+        context: Optional[Dict[str, Any]] = None,
+        exc_info: bool = False,
+    ):
         """Log error message."""
         self._log_with_context(logging.ERROR, message, context, exc_info=exc_info)
 
@@ -429,8 +476,15 @@ class DiagnosticLogger:
         """Log exception with traceback."""
         self._log_with_context(logging.ERROR, message, context, exc_info=True)
 
-    def request(self, method: str, path: str, body: Any = None, headers: Optional[Dict] = None,
-                query: Optional[Dict] = None, client_ip: str = ""):
+    def request(
+        self,
+        method: str,
+        path: str,
+        body: Any = None,
+        headers: Optional[Dict] = None,
+        query: Optional[Dict] = None,
+        client_ip: str = "",
+    ):
         """Log incoming HTTP request."""
         if not self.config.enabled or not self.config.log_requests:
             return
@@ -439,20 +493,24 @@ class DiagnosticLogger:
             "event_type": "http_request",
             "http_method": method,
             "http_path": path,
-            "client_ip": client_ip,
+            "client_ip": coarsen_ip(client_ip),
         }
         if query:
             context["http_query"] = query
         if body and self.config.log_requests:
             # Truncate large bodies
-            body_str = json.dumps(body, default=str) if isinstance(body, dict) else str(body)
+            body_str = (
+                json.dumps(body, default=str) if isinstance(body, dict) else str(body)
+            )
             if len(body_str) > 1000:
                 body_str = body_str[:1000] + "...[truncated]"
             context["http_body"] = body_str
 
         self._log_with_context(logging.INFO, f"HTTP Request: {method} {path}", context)
 
-    def response(self, status: int, body: Any = None, duration_ms: Optional[float] = None):
+    def response(
+        self, status: int, body: Any = None, duration_ms: Optional[float] = None
+    ):
         """Log outgoing HTTP response."""
         if not self.config.enabled or not self.config.log_responses:
             return
@@ -466,15 +524,28 @@ class DiagnosticLogger:
             context["duration_ms"] = round(duration_ms, 2)
         if body and self.config.log_responses:
             # Truncate large bodies
-            body_str = json.dumps(body, default=str) if isinstance(body, dict) else str(body)
+            body_str = (
+                json.dumps(body, default=str) if isinstance(body, dict) else str(body)
+            )
             if len(body_str) > 500:
                 body_str = body_str[:500] + "...[truncated]"
             context["http_body"] = body_str
 
-        level = logging.INFO if status < 400 else logging.WARNING if status < 500 else logging.ERROR
+        level = (
+            logging.INFO
+            if status < 400
+            else logging.WARNING
+            if status < 500
+            else logging.ERROR
+        )
         self._log_with_context(level, f"HTTP Response: {status}", context)
 
-    def timing(self, operation: str, duration_ms: float, context: Optional[Dict[str, Any]] = None):
+    def timing(
+        self,
+        operation: str,
+        duration_ms: float,
+        context: Optional[Dict[str, Any]] = None,
+    ):
         """Log timing information for an operation."""
         if not self.config.enabled or not self.config.log_timing:
             return
@@ -497,13 +568,15 @@ class DiagnosticLogger:
         else:
             ctx["duration_category"] = "very_slow"
 
-        self._log_with_context(logging.INFO, f"Timing: {operation} ({duration_ms:.2f}ms)", ctx)
+        self._log_with_context(
+            logging.INFO, f"Timing: {operation} ({duration_ms:.2f}ms)", ctx
+        )
 
     def separator(self, label: str = ""):
         """Log a visual separator for readability (console format only)."""
         if self.config.enabled and self.config.format.lower() == "console":
             if label:
-                self._logger.info(f"{'='*20} {label} {'='*20}")
+                self._logger.info(f"{'=' * 20} {label} {'=' * 20}")
             else:
                 self._logger.info("=" * 50)
 
@@ -525,6 +598,7 @@ def log_request(func: Callable) -> Callable:
         async def handle_something(request: web.Request) -> web.Response:
             ...
     """
+
     @wraps(func)
     async def wrapper(request, *args, **kwargs):
         start_time = time.time()
@@ -545,7 +619,7 @@ def log_request(func: Callable) -> Callable:
             path=request.path,
             body=body,
             query=dict(request.query) if request.query else None,
-            client_ip=request.remote or ""
+            client_ip=request.remote or "",
         )
 
         # Execute handler
@@ -555,16 +629,14 @@ def log_request(func: Callable) -> Callable:
             # Log response
             duration_ms = (time.time() - start_time) * 1000
             response_body = None
-            if hasattr(response, 'text'):
+            if hasattr(response, "text"):
                 try:
                     response_body = json.loads(response.text)
                 except Exception:
                     response_body = response.text[:200] if response.text else None
 
             diag_logger.response(
-                status=response.status,
-                body=response_body,
-                duration_ms=duration_ms
+                status=response.status, body=response_body, duration_ms=duration_ms
             )
 
             return response
@@ -574,7 +646,7 @@ def log_request(func: Callable) -> Callable:
             diag_logger.error(
                 f"Handler error: {type(e).__name__}: {e}",
                 context={"path": request.path, "duration_ms": duration_ms},
-                exc_info=True
+                exc_info=True,
             )
             raise
 
@@ -626,4 +698,6 @@ def set_diagnostic_config(**kwargs) -> Dict[str, Any]:
 
 if diag_logger.is_enabled():
     diag_logger.separator("DIAGNOSTIC LOGGING INITIALIZED")
-    diag_logger.info("Diagnostic logging is ENABLED", context=diag_logger.config.to_dict())
+    diag_logger.info(
+        "Diagnostic logging is ENABLED", context=diag_logger.config.to_dict()
+    )

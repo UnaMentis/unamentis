@@ -8,10 +8,9 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Optional
 
-import aiohttp
 from aiohttp import web, WSMsgType
 
-from fov_context import SessionManager, UserSession, UserVoiceConfig
+from fov_context import SessionManager, UserSession
 from session_cache_integration import SessionCacheIntegration
 
 logger = logging.getLogger(__name__)
@@ -57,7 +56,9 @@ class AudioWebSocketHandler:
         # Segment data by curriculum (set by server.py)
         self._segments_by_topic: Dict[str, Dict[str, List[str]]] = {}
 
-    def set_topic_segments(self, curriculum_id: str, topic_id: str, segments: List[str]) -> None:
+    def set_topic_segments(
+        self, curriculum_id: str, topic_id: str, segments: List[str]
+    ) -> None:
         """Register segments for a topic.
 
         Args:
@@ -69,11 +70,26 @@ class AudioWebSocketHandler:
             self._segments_by_topic[curriculum_id] = {}
         self._segments_by_topic[curriculum_id][topic_id] = segments
 
-    def get_topic_segments(self, curriculum_id: str, topic_id: str) -> Optional[List[str]]:
+    def get_topic_segments(
+        self, curriculum_id: str, topic_id: str
+    ) -> Optional[List[str]]:
         """Get segments for a topic."""
         if curriculum_id in self._segments_by_topic:
             return self._segments_by_topic[curriculum_id].get(topic_id)
         return None
+
+    @staticmethod
+    def _extract_ws_token(request: web.Request) -> Optional[str]:
+        """Extract an access token from a WebSocket upgrade request.
+
+        Native clients can set the Authorization header; browsers (which cannot
+        set WS headers) may pass it as a ?token= query parameter.
+        """
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            return auth_header[7:].strip()
+        token = request.query.get("token")
+        return token.strip() if token else None
 
     async def handle_connection(self, request: web.Request) -> web.WebSocketResponse:
         """Handle a new WebSocket connection.
@@ -84,8 +100,36 @@ class AudioWebSocketHandler:
         Returns:
             WebSocket response
         """
+        # Authenticate the WebSocket upgrade when auth is enabled. The token
+        # service is present only when AUTH_SECRET_KEY is configured; in that
+        # mode the connection MUST present a valid access token (via the
+        # Authorization: Bearer header or a ?token= query param), and the user
+        # identity is taken from the token, NOT from the client-supplied
+        # user_id query param. Without this, any client could attach to or
+        # create another learner's live voice session (session hijack).
+        token_service = request.app.get("token_service")
+        authed_user_id: Optional[str] = None
+        if token_service is not None:
+            token = self._extract_ws_token(request)
+            if not token:
+                raise web.HTTPUnauthorized(
+                    text='{"error": "Authentication required", "code": "AUTH_REQUIRED"}',
+                    content_type="application/json",
+                )
+            try:
+                payload = token_service.validate_access_token(token)
+            except Exception:
+                raise web.HTTPUnauthorized(
+                    text='{"error": "Invalid or expired token", "code": "TOKEN_INVALID"}',
+                    content_type="application/json",
+                )
+            authed_user_id = payload.user_id
+
         session_id = request.query.get("session_id")
-        user_id = request.query.get("user_id")
+        requested_user_id = request.query.get("user_id")
+        # When authenticated, the user is the token subject; never trust the
+        # client-supplied user_id.
+        user_id = authed_user_id if authed_user_id is not None else requested_user_id
 
         ws = web.WebSocketResponse()
         await ws.prepare(request)
@@ -95,6 +139,26 @@ class AudioWebSocketHandler:
 
         if session_id:
             session = self.session_manager.get_user_session(session_id)
+            # An authenticated client may only attach to its own session.
+            if (
+                session is not None
+                and authed_user_id is not None
+                and session.user_id != authed_user_id
+            ):
+                logger.warning(
+                    "WS session ownership mismatch: user %s requested session %s owned by %s",
+                    authed_user_id,
+                    session_id,
+                    session.user_id,
+                )
+                await ws.send_json(
+                    {
+                        "type": "error",
+                        "error": "Session does not belong to this user",
+                    }
+                )
+                await ws.close()
+                return ws
 
         if not session and user_id:
             session = self.session_manager.get_user_session_by_user(user_id)
@@ -103,16 +167,20 @@ class AudioWebSocketHandler:
             if user_id:
                 session = self.session_manager.create_user_session(user_id)
             else:
-                await ws.send_json({
-                    "type": "error",
-                    "error": "No session_id or user_id provided",
-                })
+                await ws.send_json(
+                    {
+                        "type": "error",
+                        "error": "No session_id or user_id provided",
+                    }
+                )
                 await ws.close()
                 return ws
 
         # Register connection
         self._connections[session.session_id] = ws
-        logger.info(f"WebSocket connected: session {session.session_id}, user {session.user_id}")
+        logger.info(
+            f"WebSocket connected: session {session.session_id}, user {session.user_id}"
+        )
 
         try:
             await self._handle_messages(ws, session)
@@ -126,7 +194,9 @@ class AudioWebSocketHandler:
 
         return ws
 
-    async def _handle_messages(self, ws: web.WebSocketResponse, session: UserSession) -> None:
+    async def _handle_messages(
+        self, ws: web.WebSocketResponse, session: UserSession
+    ) -> None:
         """Handle incoming messages from a WebSocket connection."""
         async for msg in ws:
             if msg.type == WSMsgType.TEXT:
@@ -150,22 +220,28 @@ class AudioWebSocketHandler:
                         await self._handle_set_topic(ws, session, data)
 
                     else:
-                        await ws.send_json({
-                            "type": "error",
-                            "error": f"Unknown message type: {msg_type}",
-                        })
+                        await ws.send_json(
+                            {
+                                "type": "error",
+                                "error": f"Unknown message type: {msg_type}",
+                            }
+                        )
 
                 except json.JSONDecodeError:
-                    await ws.send_json({
-                        "type": "error",
-                        "error": "Invalid JSON message",
-                    })
+                    await ws.send_json(
+                        {
+                            "type": "error",
+                            "error": "Invalid JSON message",
+                        }
+                    )
                 except Exception as e:
                     logger.error(f"Error handling message: {e}")
-                    await ws.send_json({
-                        "type": "error",
-                        "error": str(e),
-                    })
+                    await ws.send_json(
+                        {
+                            "type": "error",
+                            "error": str(e),
+                        }
+                    )
 
             elif msg.type == WSMsgType.ERROR:
                 logger.error(f"WebSocket error: {ws.exception()}")
@@ -191,67 +267,79 @@ class AudioWebSocketHandler:
         }
         """
         segment_index = data.get("segment_index", 0)
-        curriculum_id = data.get("curriculum_id") or session.playback_state.curriculum_id
+        curriculum_id = (
+            data.get("curriculum_id") or session.playback_state.curriculum_id
+        )
         topic_id = data.get("topic_id") or session.playback_state.topic_id
 
         if not curriculum_id or not topic_id:
-            await ws.send_json({
-                "type": "error",
-                "error": "No curriculum_id or topic_id set",
-            })
+            await ws.send_json(
+                {
+                    "type": "error",
+                    "error": "No curriculum_id or topic_id set",
+                }
+            )
             return
 
         # Get segments for topic
         segments = self.get_topic_segments(curriculum_id, topic_id)
         if not segments:
-            await ws.send_json({
-                "type": "error",
-                "error": f"No segments found for {curriculum_id}/{topic_id}",
-            })
+            await ws.send_json(
+                {
+                    "type": "error",
+                    "error": f"No segments found for {curriculum_id}/{topic_id}",
+                }
+            )
             return
 
         if segment_index < 0 or segment_index >= len(segments):
-            await ws.send_json({
-                "type": "error",
-                "error": f"Invalid segment_index: {segment_index}",
-            })
+            await ws.send_json(
+                {
+                    "type": "error",
+                    "error": f"Invalid segment_index: {segment_index}",
+                }
+            )
             return
 
         segment_text = segments[segment_index]
 
         # Get audio (from cache or generate)
         try:
-            audio_data, cache_hit, duration = await self.session_cache.get_audio_for_segment(
-                session, segment_text
-            )
+            (
+                audio_data,
+                cache_hit,
+                duration,
+            ) = await self.session_cache.get_audio_for_segment(session, segment_text)
 
             # Update playback state
             session.update_playback(segment_index, 0, True)
 
             # Send audio response
-            await ws.send_json({
-                "type": "audio",
-                "segment_index": segment_index,
-                "audio_base64": base64.b64encode(audio_data).decode("utf-8"),
-                "duration_seconds": duration,
-                "cache_hit": cache_hit,
-                "total_segments": len(segments),
-            })
+            await ws.send_json(
+                {
+                    "type": "audio",
+                    "segment_index": segment_index,
+                    "audio_base64": base64.b64encode(audio_data).decode("utf-8"),
+                    "duration_seconds": duration,
+                    "cache_hit": cache_hit,
+                    "total_segments": len(segments),
+                }
+            )
 
             # Trigger prefetch for upcoming segments
             asyncio.create_task(
-                self.session_cache.prefetch_upcoming(
-                    session, segment_index, segments
-                )
+                self.session_cache.prefetch_upcoming(session, segment_index, segments)
             )
 
         except Exception as e:
             logger.error(f"Error getting audio for segment {segment_index}: {e}")
-            await ws.send_json({
-                "type": "error",
-                "error": f"Failed to get audio: {str(e)}",
-                "segment_index": segment_index,
-            })
+            await ws.send_json(
+                {
+                    "type": "error",
+                    "error": f"Failed to get audio: {str(e)}",
+                    "segment_index": segment_index,
+                }
+            )
 
     async def _handle_sync(
         self,
@@ -276,11 +364,13 @@ class AudioWebSocketHandler:
         session.update_playback(segment_index, offset_ms, is_playing)
 
         # Acknowledge
-        await ws.send_json({
-            "type": "sync_ack",
-            "segment_index": segment_index,
-            "server_time": datetime.now().isoformat(),
-        })
+        await ws.send_json(
+            {
+                "type": "sync_ack",
+                "segment_index": segment_index,
+                "server_time": datetime.now().isoformat(),
+            }
+        )
 
     async def _handle_barge_in(
         self,
@@ -300,7 +390,6 @@ class AudioWebSocketHandler:
         """
         segment_index = data.get("segment_index", session.playback_state.segment_index)
         offset_ms = data.get("offset_ms", 0)
-        utterance = data.get("utterance")
 
         # Update playback state (stopped)
         session.update_playback(segment_index, offset_ms, False)
@@ -311,11 +400,13 @@ class AudioWebSocketHandler:
         )
 
         # Acknowledge
-        await ws.send_json({
-            "type": "barge_in_ack",
-            "segment_index": segment_index,
-            "offset_ms": offset_ms,
-        })
+        await ws.send_json(
+            {
+                "type": "barge_in_ack",
+                "segment_index": segment_index,
+                "offset_ms": offset_ms,
+            }
+        )
 
         # If there's an utterance, the client will handle it via the conversation API
 
@@ -344,10 +435,12 @@ class AudioWebSocketHandler:
             language=data.get("language"),
         )
 
-        await ws.send_json({
-            "type": "voice_config_ack",
-            "voice_config": session.voice_config.to_dict(),
-        })
+        await ws.send_json(
+            {
+                "type": "voice_config_ack",
+                "voice_config": session.voice_config.to_dict(),
+            }
+        )
 
     async def _handle_set_topic(
         self,
@@ -368,10 +461,12 @@ class AudioWebSocketHandler:
         topic_id = data.get("topic_id")
 
         if not curriculum_id or not topic_id:
-            await ws.send_json({
-                "type": "error",
-                "error": "Missing curriculum_id or topic_id",
-            })
+            await ws.send_json(
+                {
+                    "type": "error",
+                    "error": "Missing curriculum_id or topic_id",
+                }
+            )
             return
 
         session.set_current_topic(curriculum_id, topic_id)
@@ -380,12 +475,14 @@ class AudioWebSocketHandler:
         segments = self.get_topic_segments(curriculum_id, topic_id)
         segment_count = len(segments) if segments else 0
 
-        await ws.send_json({
-            "type": "topic_set",
-            "curriculum_id": curriculum_id,
-            "topic_id": topic_id,
-            "total_segments": segment_count,
-        })
+        await ws.send_json(
+            {
+                "type": "topic_set",
+                "curriculum_id": curriculum_id,
+                "topic_id": topic_id,
+                "total_segments": segment_count,
+            }
+        )
 
     async def broadcast_to_session(self, session_id: str, message: dict) -> bool:
         """Send a message to a specific session's WebSocket.
@@ -424,7 +521,9 @@ async def handle_audio_websocket(request: web.Request) -> web.WebSocketResponse:
     return await handler.handle_connection(request)
 
 
-def register_audio_websocket(app: web.Application, handler: AudioWebSocketHandler) -> None:
+def register_audio_websocket(
+    app: web.Application, handler: AudioWebSocketHandler
+) -> None:
     """Register audio WebSocket route.
 
     Args:

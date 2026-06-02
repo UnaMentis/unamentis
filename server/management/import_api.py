@@ -28,6 +28,7 @@ from importers.core.models import ImportConfig, ImportStatus
 
 # Import diagnostic logging
 from diagnostic_logging import diag_logger
+from ip_privacy import coarsen_ip
 
 logger = logging.getLogger(__name__)
 
@@ -442,7 +443,7 @@ async def handle_start_import(request: web.Request) -> web.Response:
                 "sourceId": data.get("sourceId"),
                 "courseId": data.get("courseId"),
                 "selectedLectures": data.get("selectedLectures", []),
-                "client_ip": request.remote,
+                "client_ip": coarsen_ip(request.remote),
             },
         )
 
