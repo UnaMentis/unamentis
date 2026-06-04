@@ -1214,7 +1214,8 @@ CREATE TABLE auth_audit_log (
         'session_created', 'session_terminated',
         'user_created', 'user_updated', 'user_deleted',
         'role_changed', 'permission_changed',
-        'data_export', 'data_deletion'
+        'data_export', 'data_deletion',
+        'age_attestation'
     )),
     event_status VARCHAR(20) NOT NULL CHECK (event_status IN ('success', 'failure')),
     event_details JSONB DEFAULT '{}',

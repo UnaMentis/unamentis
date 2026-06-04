@@ -34,7 +34,6 @@ vi.mock('../client', () => ({
 vi.mock('../token-manager', () => ({
   tokenManager: {
     setTokens: vi.fn(),
-    getRefreshToken: vi.fn(),
     clear: vi.fn(),
     setRefreshCallback: vi.fn(),
   },
@@ -137,50 +136,41 @@ describe('Auth API', () => {
   });
 
   describe('refreshTokens', () => {
-    it('should refresh tokens', async () => {
+    it('should refresh using the cookie (no refresh token passed from JS)', async () => {
       const refreshResponse = { tokens: mockTokenPair };
       (client.post as Mock).mockResolvedValue(refreshResponse);
 
-      const result = await refreshTokens('old-refresh-token');
+      const result = await refreshTokens();
 
-      expect(client.post).toHaveBeenCalledWith(
-        '/auth/refresh',
-        { refresh_token: 'old-refresh-token' },
-        { skipAuth: true }
-      );
+      expect(client.post).toHaveBeenCalledWith('/auth/refresh', {}, { skipAuth: true });
 
       expect(result.tokens).toEqual(mockTokenPair);
     });
   });
 
   describe('logout', () => {
-    it('should logout and clear tokens', async () => {
-      (tokenManager.getRefreshToken as Mock).mockReturnValue('refresh-token');
+    it('should logout and clear tokens (refresh token comes from the cookie)', async () => {
       (client.post as Mock).mockResolvedValue({});
 
       await logout();
 
       expect(client.post).toHaveBeenCalledWith('/auth/logout', {
-        refresh_token: 'refresh-token',
         all_devices: false,
       });
       expect(tokenManager.clear).toHaveBeenCalled();
     });
 
     it('should logout from all devices when specified', async () => {
-      (tokenManager.getRefreshToken as Mock).mockReturnValue('refresh-token');
       (client.post as Mock).mockResolvedValue({});
 
       await logout(true);
 
       expect(client.post).toHaveBeenCalledWith('/auth/logout', {
-        refresh_token: 'refresh-token',
         all_devices: true,
       });
     });
 
     it('should clear tokens even if logout API fails', async () => {
-      (tokenManager.getRefreshToken as Mock).mockReturnValue('refresh-token');
       (client.post as Mock).mockRejectedValue(new Error('Network error'));
 
       await logout();
@@ -188,12 +178,14 @@ describe('Auth API', () => {
       expect(tokenManager.clear).toHaveBeenCalled();
     });
 
-    it('should skip API call if no refresh token', async () => {
-      (tokenManager.getRefreshToken as Mock).mockReturnValue(null);
+    it('should always call the API since the cookie supplies the refresh token', async () => {
+      (client.post as Mock).mockResolvedValue({});
 
       await logout();
 
-      expect(client.post).not.toHaveBeenCalled();
+      expect(client.post).toHaveBeenCalledWith('/auth/logout', {
+        all_devices: false,
+      });
       expect(tokenManager.clear).toHaveBeenCalled();
     });
   });

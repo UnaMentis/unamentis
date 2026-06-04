@@ -310,4 +310,126 @@ describe('Auth API Route', () => {
       expect(fetchCall[1].headers['connection']).toBeUndefined();
     });
   });
+
+  describe('refresh token cookie (B6)', () => {
+    function jsonResponse(status: number, payload: unknown) {
+      return {
+        status,
+        text: async () => JSON.stringify(payload),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+      };
+    }
+
+    it('moves the login refresh token into an HttpOnly, SameSite=Strict cookie and strips it from the body', async () => {
+      (global.fetch as Mock).mockResolvedValueOnce(
+        jsonResponse(200, {
+          user: { id: '123' },
+          tokens: {
+            access_token: 'access-abc',
+            refresh_token: 'refresh-xyz',
+            token_type: 'Bearer',
+            expires_in: 900,
+          },
+        })
+      );
+
+      const request = new NextRequest(`${baseUrl}/api/auth/login`, {
+        method: 'POST',
+        body: JSON.stringify({ email: 'a@b.com', password: 'x' }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const response = await POST(request, { params: Promise.resolve({ path: ['login'] }) });
+
+      const setCookie = response.headers.get('set-cookie') || '';
+      expect(setCookie).toContain('unamentis_refresh=refresh-xyz');
+      expect(setCookie.toLowerCase()).toContain('httponly');
+      expect(setCookie.toLowerCase()).toContain('samesite=strict');
+      expect(setCookie).toContain('Path=/api/auth');
+
+      const body = await response.json();
+      expect(body.tokens.access_token).toBe('access-abc');
+      expect(body.tokens.refresh_token).toBeUndefined();
+    });
+
+    it('injects the cookie token into the upstream refresh body and rotates the cookie', async () => {
+      (global.fetch as Mock).mockResolvedValueOnce(
+        jsonResponse(200, {
+          tokens: {
+            access_token: 'access-new',
+            refresh_token: 'refresh-rotated',
+            token_type: 'Bearer',
+            expires_in: 900,
+          },
+        })
+      );
+
+      const request = new NextRequest(`${baseUrl}/api/auth/refresh`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json', Cookie: 'unamentis_refresh=refresh-old' },
+      });
+      const response = await POST(request, { params: Promise.resolve({ path: ['refresh'] }) });
+
+      const fetchCall = (global.fetch as Mock).mock.calls[0];
+      expect(JSON.parse(fetchCall[1].body)).toEqual({ refresh_token: 'refresh-old' });
+
+      const setCookie = response.headers.get('set-cookie') || '';
+      expect(setCookie).toContain('unamentis_refresh=refresh-rotated');
+
+      const body = await response.json();
+      expect(body.tokens.access_token).toBe('access-new');
+      expect(body.tokens.refresh_token).toBeUndefined();
+    });
+
+    it('clears the cookie and forwards the token on logout', async () => {
+      (global.fetch as Mock).mockResolvedValueOnce(
+        jsonResponse(200, { message: 'Logged out successfully' })
+      );
+
+      const request = new NextRequest(`${baseUrl}/api/auth/logout`, {
+        method: 'POST',
+        body: JSON.stringify({ all_devices: false }),
+        headers: { 'Content-Type': 'application/json', Cookie: 'unamentis_refresh=refresh-old' },
+      });
+      const response = await POST(request, { params: Promise.resolve({ path: ['logout'] }) });
+
+      const fetchCall = (global.fetch as Mock).mock.calls[0];
+      expect(JSON.parse(fetchCall[1].body)).toEqual({
+        all_devices: false,
+        refresh_token: 'refresh-old',
+      });
+
+      const setCookie = response.headers.get('set-cookie') || '';
+      expect(setCookie).toContain('unamentis_refresh=');
+      expect(setCookie).toContain('Max-Age=0');
+    });
+
+    it('clears the cookie when a refresh fails', async () => {
+      (global.fetch as Mock).mockResolvedValueOnce(
+        jsonResponse(401, { error: 'invalid_token' })
+      );
+
+      const request = new NextRequest(`${baseUrl}/api/auth/refresh`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+        headers: { 'Content-Type': 'application/json', Cookie: 'unamentis_refresh=refresh-old' },
+      });
+      const response = await POST(request, { params: Promise.resolve({ path: ['refresh'] }) });
+
+      expect(response.status).toBe(401);
+      const setCookie = response.headers.get('set-cookie') || '';
+      expect(setCookie).toContain('Max-Age=0');
+    });
+
+    it('does not set a cookie for non-token auth routes', async () => {
+      (global.fetch as Mock).mockResolvedValueOnce(
+        jsonResponse(200, { user: { id: '123' } })
+      );
+
+      const request = new NextRequest(`${baseUrl}/api/auth/me`);
+      const response = await GET(request, { params: Promise.resolve({ path: ['me'] }) });
+
+      expect(response.headers.get('set-cookie')).toBeNull();
+    });
+  });
 });

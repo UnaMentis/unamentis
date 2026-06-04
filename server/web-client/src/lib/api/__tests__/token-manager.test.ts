@@ -26,11 +26,18 @@ describe('TokenManager', () => {
   });
 
   describe('setTokens', () => {
-    it('should store tokens correctly', () => {
+    it('should store the access token without persisting a refresh token', () => {
       tokenManager.setTokens(mockTokenPair);
 
       expect(tokenManager.getAccessToken()).toBe(mockTokenPair.access_token);
-      expect(tokenManager.getRefreshToken()).toBe(mockTokenPair.refresh_token);
+      // The refresh token must never be written to localStorage (B6); it lives
+      // in an HttpOnly cookie the client cannot read.
+      expect(localStorage.getItem('unamentis_refresh_token')).toBeNull();
+      if (mockTokenPair.refresh_token) {
+        expect(JSON.stringify(localStorage)).not.toContain(mockTokenPair.refresh_token);
+      }
+      // A non-sensitive session hint is recorded so a reload attempts a refresh.
+      expect(localStorage.getItem('unamentis_session')).toBe('1');
     });
 
     it('should call onTokenChange callback when tokens are set', () => {
@@ -169,8 +176,18 @@ describe('TokenManager', () => {
       tokenManager.clear();
 
       expect(tokenManager.getAccessToken()).toBeNull();
-      expect(tokenManager.getRefreshToken()).toBeNull();
       expect(tokenManager.hasTokens()).toBe(false);
+      expect(localStorage.getItem('unamentis_session')).toBeNull();
+    });
+
+    it('should purge any pre-migration refresh token from localStorage', () => {
+      localStorage.setItem('unamentis_refresh_token', 'old-secret');
+      localStorage.setItem('unamentis_token_expires', '123');
+
+      tokenManager.clear();
+
+      expect(localStorage.getItem('unamentis_refresh_token')).toBeNull();
+      expect(localStorage.getItem('unamentis_token_expires')).toBeNull();
     });
 
     it('should call onTokenChange with null when cleared', () => {

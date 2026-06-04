@@ -159,19 +159,17 @@ export async function login(
 }
 
 /**
- * Refresh the access token using the refresh token.
+ * Refresh the access token.
  *
- * @param refreshToken - The refresh token to use
- * @returns New token pair
+ * The refresh token is supplied by the HttpOnly `unamentis_refresh` cookie,
+ * which the auth proxy injects into the upstream request, so no token is passed
+ * from JS. A new access token is returned in the body; the rotated refresh token
+ * is set back as a cookie by the proxy.
+ *
+ * @returns New token pair (access token only; refresh token stays in the cookie)
  */
-export async function refreshTokens(
-  refreshToken: string
-): Promise<RefreshResponse> {
-  const response = await post<RefreshResponse>(
-    '/auth/refresh',
-    { refresh_token: refreshToken },
-    { skipAuth: true }
-  );
+export async function refreshTokens(): Promise<RefreshResponse> {
+  const response = await post<RefreshResponse>('/auth/refresh', {}, { skipAuth: true });
 
   return response;
 }
@@ -182,19 +180,17 @@ export async function refreshTokens(
  * @param allDevices - If true, logout from all devices
  */
 export async function logout(allDevices: boolean = false): Promise<void> {
-  const refreshToken = tokenManager.getRefreshToken();
+  // The refresh token is supplied by the cookie (the proxy injects it and clears
+  // it on the way back); the access token authenticates the call. We always
+  // attempt the server-side revoke, then clear local state regardless.
+  const request: LogoutRequest = {
+    all_devices: allDevices,
+  };
 
-  if (refreshToken) {
-    const request: LogoutRequest = {
-      refresh_token: refreshToken,
-      all_devices: allDevices,
-    };
-
-    try {
-      await post('/auth/logout', request);
-    } catch {
-      // Ignore errors on logout - we're clearing tokens anyway
-    }
+  try {
+    await post('/auth/logout', request);
+  } catch {
+    // Ignore errors on logout - we're clearing tokens anyway
   }
 
   // Clear local tokens
@@ -280,8 +276,9 @@ export async function terminateSession(
   return del<{ message: string }>(`/auth/sessions/${sessionId}`);
 }
 
-// Initialize token manager with refresh callback
-tokenManager.setRefreshCallback(async (refreshToken: string) => {
-  const response = await refreshTokens(refreshToken);
+// Initialize token manager with refresh callback (refresh token comes from the
+// HttpOnly cookie, so the callback takes no argument).
+tokenManager.setRefreshCallback(async () => {
+  const response = await refreshTokens();
   return response.tokens;
 });

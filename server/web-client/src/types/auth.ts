@@ -53,7 +53,12 @@ export interface RegisteredDevice {
 
 export interface TokenPair {
   access_token: string;
-  refresh_token: string;
+  /**
+   * Present only in the raw Management API response. The browser never receives
+   * it: the auth proxy strips it into an HttpOnly cookie (B6), so it is optional
+   * on the client-facing type.
+   */
+  refresh_token?: string;
   token_type: 'Bearer';
   expires_in: number;
 }
@@ -98,7 +103,8 @@ export interface RefreshTokenRequest {
 }
 
 export interface LogoutRequest {
-  refresh_token: string;
+  /** Supplied by the HttpOnly cookie via the auth proxy; not sent from JS. */
+  refresh_token?: string;
   all_devices?: boolean;
 }
 
