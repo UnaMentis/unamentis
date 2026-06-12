@@ -24,11 +24,11 @@
 	<array>
 		<integer>4</integer>
 	</array>
+	<key>WKApplication</key>
+	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
 	<string>com.unamentis.app</string>
 	<key>WKRunsIndependentlyOfCompanionApp</key>
 	<false/>
-	<key>WKApplication</key>
-	<true/>
 </dict>
 </plist>

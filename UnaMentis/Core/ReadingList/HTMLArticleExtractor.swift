@@ -1,12 +1,11 @@
 // UnaMentis - HTMLArticleExtractor
 // Extracts article content from HTML pages for reading list import.
-// Uses swift-readability (Mozilla Readability.js port) with SwiftSoup fallback.
+// Uses SwiftSoup for HTML parsing and content extraction.
 //
 // Part of Core/ReadingList
 
 import Foundation
 import Logging
-import SwiftReadability
 import SwiftSoup
 
 // MARK: - Extraction Result
@@ -26,11 +25,7 @@ public struct HTMLExtractionResult: Sendable {
 
 // MARK: - HTML Article Extractor
 
-/// Extracts readable article text from HTML pages using Mozilla's Readability algorithm.
-///
-/// Primary extraction uses swift-readability (a pure Swift port of Mozilla Readability.js,
-/// the same algorithm used by Firefox Reader View). Falls back to basic SwiftSoup text
-/// extraction for pages that don't have article-like structure.
+/// Extracts readable article text from HTML pages using SwiftSoup.
 public struct HTMLArticleExtractor: Sendable {
 
     private static let logger = Logger(label: "com.unamentis.readinglist.htmlextractor")
@@ -40,42 +35,14 @@ public struct HTMLArticleExtractor: Sendable {
     /// Extract article content from an HTML string
     /// - Parameters:
     ///   - html: Raw HTML content
-    ///   - url: Source URL (used by Readability for resolving relative links)
+    ///   - url: Source URL (unused, kept for API compatibility)
     /// - Returns: Extracted article with title, author, and clean text
     public func extractArticle(from html: String, url: URL? = nil) -> HTMLExtractionResult {
-        let baseURL = url ?? URL(string: "about:blank")!
-
-        // Primary: Mozilla Readability algorithm
-        do {
-            let readability = Readability(
-                html: html,
-                url: baseURL
-            )
-            if let result = try readability.parse() {
-                let text = result.textContent.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !text.isEmpty {
-                    Self.logger.info(
-                        "Readability extracted \(text.count) chars, title: \(result.title ?? "none")"
-                    )
-                    return HTMLExtractionResult(
-                        title: result.title,
-                        author: result.byline,
-                        text: postProcess(text)
-                    )
-                }
-            }
-        } catch {
-            Self.logger.warning("Readability parse failed: \(error.localizedDescription)")
-        }
-
-        // Fallback: basic SwiftSoup extraction for non-article pages
-        Self.logger.info("Falling back to basic SwiftSoup extraction")
         return basicExtraction(from: html)
     }
 
-    // MARK: - Fallback Extraction
+    // MARK: - Extraction
 
-    /// Basic text extraction using SwiftSoup when Readability can't find article structure
     private func basicExtraction(from html: String) -> HTMLExtractionResult {
         do {
             let doc = try SwiftSoup.parse(html)
