@@ -38,6 +38,7 @@ export {
   terminateSession,
   generateDeviceFingerprint,
   getDeviceInfo,
+  POLICIES_VERSION,
 } from './auth';
 
 // SWR Hooks

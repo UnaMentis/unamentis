@@ -8,12 +8,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Optional, Dict, List, Any
-import uuid
 
 
 # ============================================================================
 # Enums
 # ============================================================================
+
 
 class ClientType(str, Enum):
     IOS_SIMULATOR = "ios_simulator"
@@ -62,14 +62,15 @@ class ResponseType(str, Enum):
 
 
 class RegressionSeverity(str, Enum):
-    MINOR = "minor"       # 10-20% regression
-    MODERATE = "moderate" # 20-50% regression
-    SEVERE = "severe"     # >50% regression
+    MINOR = "minor"  # 10-20% regression
+    MODERATE = "moderate"  # 20-50% regression
+    SEVERE = "severe"  # >50% regression
 
 
 # ============================================================================
 # Provider Configurations
 # ============================================================================
+
 
 @dataclass
 class STTTestConfig:
@@ -238,9 +239,11 @@ class AudioEngineTestConfig:
 # Test Configuration
 # ============================================================================
 
+
 @dataclass
 class TestConfiguration:
     """Complete configuration for a single test execution."""
+
     id: str
     scenario_name: str
     repetition: int
@@ -285,9 +288,11 @@ class TestConfiguration:
 # Test Scenario
 # ============================================================================
 
+
 @dataclass
 class TestScenario:
     """Definition of a test scenario."""
+
     id: str
     name: str
     description: str
@@ -320,7 +325,9 @@ class TestScenario:
             repetitions=data.get("repetitions", 10),
             user_utterance_audio_path=data.get("userUtteranceAudioPath"),
             user_utterance_text=data.get("userUtteranceText"),
-            expected_response_type=ResponseType(data.get("expectedResponseType", "medium")),
+            expected_response_type=ResponseType(
+                data.get("expectedResponseType", "medium")
+            ),
         )
 
 
@@ -328,9 +335,11 @@ class TestScenario:
 # Test Result
 # ============================================================================
 
+
 @dataclass
 class TestResult:
     """Complete result from a single test execution."""
+
     id: str
     config_id: str
     scenario_name: str
@@ -461,9 +470,11 @@ class TestResult:
 # Client Status
 # ============================================================================
 
+
 @dataclass
 class ClientCapabilities:
     """Capabilities of a test client."""
+
     supported_stt_providers: List[str]
     supported_llm_providers: List[str]
     supported_tts_providers: List[str]
@@ -476,6 +487,7 @@ class ClientCapabilities:
 @dataclass
 class ClientStatus:
     """Current status of a test client."""
+
     client_id: str
     client_type: ClientType
     is_connected: bool
@@ -489,9 +501,11 @@ class ClientStatus:
 # Test Run
 # ============================================================================
 
+
 @dataclass
 class TestRun:
     """A complete test run (execution of a test suite)."""
+
     id: str
     suite_name: str
     suite_id: str
@@ -563,6 +577,7 @@ class TestRun:
 # ============================================================================
 # Analysis Report
 # ============================================================================
+
 
 @dataclass
 class LatencyBreakdown:
@@ -647,6 +662,7 @@ class AnalysisReport:
 # Test Suite Definition
 # ============================================================================
 
+
 @dataclass
 class ParameterSpace:
     stt_configs: List[STTTestConfig]
@@ -670,13 +686,17 @@ class ParameterSpace:
             stt_configs=[STTTestConfig.from_dict(c) for c in data["sttConfigs"]],
             llm_configs=[LLMTestConfig.from_dict(c) for c in data["llmConfigs"]],
             tts_configs=[TTSTestConfig.from_dict(c) for c in data["ttsConfigs"]],
-            audio_configs=[AudioEngineTestConfig.from_dict(c) for c in data.get("audioConfigs", [{"sampleRate": 24000}])],
+            audio_configs=[
+                AudioEngineTestConfig.from_dict(c)
+                for c in data.get("audioConfigs", [{"sampleRate": 24000}])
+            ],
         )
 
 
 @dataclass
 class TestSuiteDefinition:
     """Complete test suite definition."""
+
     id: str
     name: str
     description: str
@@ -750,6 +770,7 @@ class TestSuiteDefinition:
 # Predefined Test Suites
 # ============================================================================
 
+
 def create_quick_validation_suite() -> TestSuiteDefinition:
     """Quick validation suite for CI/CD."""
     return TestSuiteDefinition(
@@ -770,7 +791,9 @@ def create_quick_validation_suite() -> TestSuiteDefinition:
         network_profiles=[NetworkProfile.LOCALHOST],
         parameter_space=ParameterSpace(
             stt_configs=[STTTestConfig(provider="deepgram")],
-            llm_configs=[LLMTestConfig(provider="anthropic", model="claude-3-5-haiku-20241022")],
+            llm_configs=[
+                LLMTestConfig(provider="anthropic", model="claude-3-5-haiku-20241022")
+            ],
             tts_configs=[TTSTestConfig(provider="chatterbox")],
         ),
     )
@@ -816,7 +839,7 @@ def create_provider_comparison_suite() -> TestSuiteDefinition:
             llm_configs=[
                 LLMTestConfig(provider="anthropic", model="claude-3-5-haiku-20241022"),
                 LLMTestConfig(provider="openai", model="gpt-4o-mini"),
-                LLMTestConfig(provider="selfhosted", model="qwen2.5:7b"),
+                LLMTestConfig(provider="selfhosted", model="qwen2.5:14b-instruct"),
             ],
             tts_configs=[
                 TTSTestConfig(provider="chatterbox"),
@@ -831,9 +854,11 @@ def create_provider_comparison_suite() -> TestSuiteDefinition:
 # Performance Baseline
 # ============================================================================
 
+
 @dataclass
 class BaselineMetrics:
     """Metrics captured for a baseline."""
+
     median_e2e_ms: float
     p99_e2e_ms: float
     min_e2e_ms: float
@@ -878,6 +903,7 @@ class BaselineMetrics:
 @dataclass
 class PerformanceBaseline:
     """Performance baseline for regression detection."""
+
     id: str
     name: str
     description: str
@@ -895,10 +921,10 @@ class PerformanceBaseline:
             "runId": self.run_id,
             "createdAt": self.created_at.isoformat(),
             "isActive": self.is_active,
-            "configMetrics": {
-                k: v.to_dict() for k, v in self.config_metrics.items()
-            },
-            "overallMetrics": self.overall_metrics.to_dict() if self.overall_metrics else None,
+            "configMetrics": {k: v.to_dict() for k, v in self.config_metrics.items()},
+            "overallMetrics": self.overall_metrics.to_dict()
+            if self.overall_metrics
+            else None,
         }
 
     @classmethod
@@ -915,5 +941,6 @@ class PerformanceBaseline:
                 for k, v in data.get("configMetrics", {}).items()
             },
             overall_metrics=BaselineMetrics.from_dict(data["overallMetrics"])
-            if data.get("overallMetrics") else None,
+            if data.get("overallMetrics")
+            else None,
         )

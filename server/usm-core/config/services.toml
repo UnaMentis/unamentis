@@ -21,7 +21,12 @@ display_name = "Ollama LLM Server"
 description = "Local LLM inference server"
 default_port = 11434
 port_range = [11434, 11450]
-start_command = "OLLAMA_HOST=0.0.0.0:{port} /opt/homebrew/bin/ollama serve"
+# Served real-time default model: qwen2.5:14b-instruct (fallback qwen2.5:7b-instruct).
+# Env mirrors the ollama LaunchAgent so the server runs fully on the Metal GPU and
+# keeps the model warm whichever way it is started: KEEP_ALIVE holds the model
+# resident across requests, FLASH_ATTENTION enables flash attention, and
+# MAX_LOADED_MODELS=1 keeps a single model in VRAM. Do NOT set OLLAMA_NUM_GPU=0.
+start_command = "OLLAMA_HOST=0.0.0.0:{port} OLLAMA_KEEP_ALIVE=24h OLLAMA_FLASH_ATTENTION=1 OLLAMA_MAX_LOADED_MODELS=1 /opt/homebrew/bin/ollama serve"
 health_endpoint = "http://localhost:{port}/api/tags"
 health_timeout_ms = 10000
 category = "core"

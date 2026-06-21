@@ -8,7 +8,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { NextRequest } from 'next/server';
-import { POST, __resetRateState } from '../realtime/token/route';
+import { POST } from '../realtime/token/route';
+import { __resetRateState } from '../realtime/token/rate-limit';
 
 const URL = 'http://localhost:3000/api/realtime/token';
 
@@ -134,6 +135,63 @@ describe('Realtime Token Route (denial-of-wallet defenses)', () => {
     const body = await res.json();
     expect(JSON.stringify(body)).not.toContain('OpenAI');
     expect(body.details).toBeUndefined();
+  });
+
+  it('refuses the mint when the durable budget API returns 429', async () => {
+    (global.fetch as Mock).mockImplementation(async (url: string) => {
+      if (String(url).includes('/api/auth/me')) {
+        return { ok: true, status: 200, json: async () => ({ id: 'user-1' }) };
+      }
+      if (String(url).includes('/api/realtime/budget/reserve')) {
+        return {
+          ok: false,
+          status: 429,
+          json: async () => ({ allowed: false, reason: 'daily token budget exceeded' }),
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          client_secret: { value: 'ephemeral-abc', expires_at: 12345 },
+          model: 'gpt-4o-realtime-preview-2024-12-17',
+          voice: 'coral',
+        }),
+        text: async () => '',
+      };
+    });
+    const res = await POST(authedRequest());
+    expect(res.status).toBe(429);
+    // The exhausted budget must stop the paid upstream call.
+    const calledOpenAI = (global.fetch as Mock).mock.calls.some((c) =>
+      String(c[0]).includes('api.openai.com')
+    );
+    expect(calledOpenAI).toBe(false);
+  });
+
+  it('falls back to in-memory guards when the budget API is unreachable', async () => {
+    (global.fetch as Mock).mockImplementation(async (url: string) => {
+      if (String(url).includes('/api/auth/me')) {
+        return { ok: true, status: 200, json: async () => ({ id: 'user-1' }) };
+      }
+      if (String(url).includes('/api/realtime/budget/reserve')) {
+        throw new Error('connection refused');
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          client_secret: { value: 'ephemeral-abc', expires_at: 12345 },
+          model: 'gpt-4o-realtime-preview-2024-12-17',
+          voice: 'coral',
+        }),
+        text: async () => '',
+      };
+    });
+    const res = await POST(authedRequest());
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.token).toBe('ephemeral-abc');
   });
 
   it('allows minting without auth when REALTIME_TOKEN_REQUIRE_AUTH=false', async () => {

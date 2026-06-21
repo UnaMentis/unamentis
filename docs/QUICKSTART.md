@@ -1,260 +1,142 @@
 # UnaMentis - Quick Start Guide
 
-**Get up and running with UnaMentis iOS**
+**Get the UnaMentis server stack running locally.**
+
+This repository contains the server infrastructure, curriculum system, and project-wide documentation. For the iOS app, see the [unamentis-ios](https://github.com/UnaMentis/unamentis-ios) repository. The Android client ([unamentis-android](https://github.com/UnaMentis/unamentis-android)) is paused.
 
 ---
 
-## Project Status
+## What You Get
 
-UnaMentis is a fully-implemented voice-based AI tutoring app with:
-
-- **Voice conversation pipeline** - Audio capture, VAD, STT, LLM, TTS
-- **Curriculum system** - Topics, documents, progress tracking
-- **Multiple STT providers** - Deepgram, AssemblyAI, GLM-ASR (server + on-device)
-- **Multiple TTS providers** - ElevenLabs, Deepgram Aura
-- **Multiple LLM providers** - Anthropic Claude, OpenAI GPT
-- **Analytics & telemetry** - Latency tracking, cost monitoring
-- **Core Data persistence** - Sessions, curriculum, progress
-- **AI-driven testing** - iOS Simulator MCP integration
+- **Management API** (Python/aiohttp, port 8766): curriculum, imports, telemetry, TTS caching
+- **Operations Console** (Next.js, port 3000): system health, logs, Voice Lab, Curriculum Studio
+- **Web Client** (Next.js): browser-based voice learning
+- **USM Core** (Rust, port 8787): cross-platform service manager
+- **Latency test harness** (Python CLI): automated voice-pipeline latency testing
+- **Curriculum importers**: source plugins for MIT OCW, CK-12, EngageNY, MERLOT, and Knowledge Bowl question sources
 
 ---
 
 ## Prerequisites
 
-- **macOS**: 14.0+ (Sonoma or later)
-- **Xcode**: 15.4+
-- **Swift**: 6.0 (comes with Xcode)
-- **iOS Target**: 18.0+
+- **macOS or Linux**
+- **Python**: 3.11+
+- **Node.js**: 20+ with **pnpm**
+- **Rust**: stable toolchain (only needed for USM Core)
 
 Optional:
-- API keys for cloud providers (Deepgram, ElevenLabs, Anthropic, OpenAI)
-- GLM-ASR models for on-device speech recognition (~2.4GB)
+- API keys for cloud providers (Deepgram, ElevenLabs, Anthropic, OpenAI, AssemblyAI)
+- Local inference servers (Ollama, whisper.cpp, Piper) for zero-cost providers
 
 ---
 
-## Step 1: Clone and Build (5 minutes)
+## Step 1: Clone and Configure (5 minutes)
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/unamentis.git
+git clone https://github.com/UnaMentis/unamentis.git
 cd unamentis
 
-# Build with Swift Package Manager
-swift build
-
-# Or open in Xcode
-open Package.swift
+# Create your environment file
+cp .env.example .env
+# Edit .env and add the API keys you have; everything degrades gracefully without them
 ```
-
-Build should complete with **zero errors**.
 
 ---
 
-## Step 2: Run Tests (2 minutes)
+## Step 2: Start the Management API (port 8766)
 
 ```bash
-# Run all tests
-swift test
-
-# Or use the test script
-./scripts/test-quick.sh
+cd server/management
+./run.sh
 ```
 
-Expected: **103+ unit tests, 16+ integration tests passing**
+Then open http://localhost:8766 to confirm it is up.
 
 ---
 
-## Step 3: Configure API Keys (Optional)
-
-For cloud-based providers, add API keys:
-
-1. Copy the environment template:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Edit `.env` with your keys:
-   ```
-   DEEPGRAM_API_KEY=your_key
-   ELEVENLABS_API_KEY=your_key
-   ANTHROPIC_API_KEY=your_key
-   OPENAI_API_KEY=your_key
-   ASSEMBLYAI_API_KEY=your_key
-   ```
-
-3. Keys are loaded by `APIKeyManager` at runtime
-
-**No API keys?** The app works with on-device GLM-ASR (if models present).
-
----
-
-## Step 4: Set Up On-Device Models (Optional)
-
-For on-device speech recognition without API costs:
-
-1. **Download models** (~2.4GB total):
-   - GLMASRWhisperEncoder.mlpackage (1.2 GB)
-   - GLMASRAudioAdapter.mlpackage (56 MB)
-   - GLMASREmbedHead.mlpackage (232 MB)
-   - glm-asr-nano-q4km.gguf (935 MB)
-
-2. **Place in models directory**:
-   ```
-   models/glm-asr-nano/
-   ├── GLMASRWhisperEncoder.mlpackage/
-   ├── GLMASRAudioAdapter.mlpackage/
-   ├── GLMASREmbedHead.mlpackage/
-   └── glm-asr-nano-q4km.gguf
-   ```
-
-3. **Add to Xcode target** (Copy Bundle Resources)
-
-See [GLM_ASR_ON_DEVICE_GUIDE.md](GLM_ASR_ON_DEVICE_GUIDE.md) for details.
-
----
-
-## Step 5: Run in Simulator (5 minutes)
+## Step 3: Start the Operations Console (port 3000)
 
 ```bash
-# Build for simulator
-xcodebuild build \
-    -scheme UnaMentis \
-    -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
-
-# Or in Xcode: Select iPhone 17 Pro simulator, press Cmd+R
+cd server/web
+pnpm install
+pnpm dev
 ```
 
----
-
-## Project Structure
-
-```
-UnaMentis/
-├── Core/                    # Core business logic
-│   ├── Audio/               # AudioEngine, VAD integration
-│   ├── Session/             # SessionManager, state machine
-│   ├── Curriculum/          # CurriculumEngine, DocumentProcessor
-│   ├── Persistence/         # Core Data, ManagedObjects
-│   └── Telemetry/           # TelemetryEngine, MetricsSnapshot
-├── Services/                # External service integrations
-│   ├── STT/                 # Speech-to-text providers
-│   │   ├── DeepgramSTTService.swift
-│   │   ├── AssemblyAISTTService.swift
-│   │   ├── GLMASRSTTService.swift        # Server-based
-│   │   └── GLMASROnDeviceSTTService.swift # On-device
-│   ├── TTS/                 # Text-to-speech providers
-│   ├── LLM/                 # Language model providers
-│   └── Protocols/           # Service protocols
-├── UI/                      # SwiftUI views
-│   ├── Session/             # Main conversation view
-│   ├── Curriculum/          # Curriculum browser
-│   ├── History/             # Session history
-│   ├── Analytics/           # Metrics dashboard
-│   └── Settings/            # Configuration & debug tools
-└── UnaMentis.xcdatamodeld  # Core Data model
-```
+Open http://localhost:3000 for system health, logs, Curriculum Studio, and Voice Lab.
 
 ---
 
-## Key Files
+## Step 4: Run the Latency Harness (2 minutes)
 
-| File | Purpose |
-|------|---------|
-| `Package.swift` | SPM package definition |
-| `UnaMentis/Core/Session/SessionManager.swift` | Main conversation orchestrator |
-| `UnaMentis/Core/Audio/AudioEngine.swift` | Audio capture & playback |
-| `UnaMentis/Services/STT/GLMASROnDeviceSTTService.swift` | On-device STT |
-| `docs/architecture/UnaMentis_TDD.md` | Technical design document |
-
----
-
-## Development Workflows
-
-### Make Code Changes
-
-1. Edit files in UnaMentis/
-2. Build: `swift build` or Cmd+B in Xcode
-3. Test: `swift test` or Cmd+U in Xcode
-4. Commit when tests pass
-
-### Run on Device
-
-1. Connect iPhone (15 Pro or later recommended)
-2. Select device in Xcode
-3. Build and run (Cmd+R)
-4. Grant microphone permission when prompted
-
-### AI-Assisted Testing
-
-With ios-simulator-mcp installed, Claude Code can:
-- Boot simulators
-- Install and launch apps
-- Take screenshots
-- Tap, swipe, type
-- Verify UI state
-
-See [AI_SIMULATOR_TESTING.md](AI_SIMULATOR_TESTING.md) for details.
-
----
-
-## Troubleshooting
-
-### Build fails with Core Data errors
-
-Core Data model uses manual NSManagedObject subclasses:
 ```bash
-# Ensure ManagedObjects directory exists
-ls UnaMentis/Core/Persistence/ManagedObjects/
+cd server
+
+# List available suites
+python -m latency_harness.cli --list-suites
+
+# Quick validation in mock mode (no API keys needed)
+python -m latency_harness.cli --suite quick_validation --mock
+
+# Real providers (requires keys in .env)
+python -m latency_harness.cli --suite quick_validation --no-mock
 ```
 
-### Build fails with llama.cpp errors
+See [LATENCY_TEST_HARNESS_GUIDE.md](LATENCY_TEST_HARNESS_GUIDE.md) for full documentation.
 
-C++ interop requires Xcode (not SPM CLI for some operations):
+---
+
+## Step 5: Build USM Core (Optional)
+
 ```bash
-# Open in Xcode instead
-open Package.swift
+cd server/usm-core
+cargo build            # Debug build
+cargo test             # Run tests
 ```
 
-### Tests fail in simulator
+USM Core serves the service-management API on port 8787. See [server/usm-core/README.md](../server/usm-core/README.md).
 
-Some tests require iOS 18.0 simulator:
+---
+
+## Running Tests
+
+All test commands use tracked tooling only:
+
 ```bash
-# Check available simulators
-xcrun simctl list devices
+# Management API tests
+cd server/management && python -m pytest
+
+# Importer tests
+cd server/importers && python -m pytest
+
+# Rust tests (USM Core)
+./scripts/test-rust.sh
+
+# Operations Console tests
+cd server/web && pnpm test
 ```
 
 ---
 
-## Documentation Index
+## Repository Structure
 
-| Document | Purpose |
-|----------|---------|
-| [UnaMentis_TDD.md](UnaMentis_TDD.md) | Full technical design |
-| [SETUP.md](SETUP.md) | Detailed setup instructions |
-| [TESTING.md](TESTING.md) | Testing guide |
-| [GLM_ASR_ON_DEVICE_GUIDE.md](GLM_ASR_ON_DEVICE_GUIDE.md) | On-device STT setup |
-| [GLM_ASR_NANO_2512.md](GLM_ASR_NANO_2512.md) | GLM-ASR model overview |
-| [AI_SIMULATOR_TESTING.md](AI_SIMULATOR_TESTING.md) | AI testing workflow |
-| [TASK_STATUS.md](TASK_STATUS.md) | Implementation status |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
-| [DEBUG_TESTING_UI.md](DEBUG_TESTING_UI.md) | Built-in debug tools |
-
----
-
-## Next Steps
-
-1. **Run the app** - Build and launch in simulator
-2. **Explore the code** - Start with SessionManager.swift
-3. **Read the TDD** - [UnaMentis_TDD.md](UnaMentis_TDD.md) has full architecture details
-4. **Set up models** - For on-device STT, see [GLM_ASR_ON_DEVICE_GUIDE.md](GLM_ASR_ON_DEVICE_GUIDE.md)
-5. **Configure APIs** - Add provider keys for cloud services
-6. **Explore curriculum format** - See [Curriculum Overview](../curriculum/README.md) for UMCF specification
+```
+unamentis/
+├── server/
+│   ├── usm-core/        # Rust service manager (port 8787)
+│   ├── management/      # Management API (port 8766)
+│   ├── web/             # Operations Console (port 3000)
+│   ├── web-client/      # Web Client (browser voice learning)
+│   ├── importers/       # Curriculum import framework
+│   └── latency_harness/ # Latency testing CLI
+├── curriculum/          # UMCF specification and examples
+└── docs/                # Cross-cutting documentation
+```
 
 ---
 
 ## Curriculum System (UMCF)
 
-UnaMentis uses the **Una Mentis Curriculum Format (UMCF)** for structured educational content. This is a JSON-based format designed specifically for conversational AI tutoring.
+UnaMentis uses the **Una Mentis Curriculum Format (UMCF)** for structured educational content. This is a JSON-based format designed for conversational AI learning.
 
 ### Quick Overview
 
@@ -270,16 +152,34 @@ UnaMentis uses the **Una Mentis Curriculum Format (UMCF)** for structured educat
 | [Curriculum README](../curriculum/README.md) | **Comprehensive overview** |
 | [UMCF Specification](../curriculum/spec/UMCF_SPECIFICATION.md) | Format specification |
 | [JSON Schema](../curriculum/spec/umcf-schema.json) | Schema for validation |
-| [Examples](../curriculum/examples/) | Minimal and realistic examples |
+| [Examples](../curriculum/examples/) | Example UMCF library |
 
 ### Import System
 
-UMCF includes importers for external content:
-- **CK-12**: K-12 FlexBooks (EPUB)
-- **Fast.ai**: Jupyter notebooks for AI/ML
-- **AI Enrichment**: Transform sparse content to rich UMCF
+Source importers are implemented for MIT OCW, CK-12, EngageNY, and MERLOT; the AI enrichment pipeline that upgrades imported content to rich UMCF is in progress. See [Import Architecture](../curriculum/importers/IMPORTER_ARCHITECTURE.md).
 
-See [Import Architecture](../curriculum/importers/IMPORTER_ARCHITECTURE.md) for details.
+---
+
+## Documentation Index
+
+| Document | Purpose |
+|----------|---------|
+| [STATUS.md](STATUS.md) | Honest "what works today" summary |
+| [PROJECT_OVERVIEW.md](architecture/PROJECT_OVERVIEW.md) | Authoritative project overview |
+| [UnaMentis_TDD.md](architecture/UnaMentis_TDD.md) | Full technical design |
+| [SETUP.md](setup/SETUP.md) | Detailed setup instructions |
+| [TESTING.md](testing/TESTING.md) | Testing guide |
+| [TASK_STATUS.md](TASK_STATUS.md) | Implementation status |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
+
+---
+
+## Next Steps
+
+1. **Explore the Operations Console** at http://localhost:3000
+2. **Browse the curriculum format** in [curriculum/README.md](../curriculum/README.md)
+3. **Run a latency suite** against your provider keys
+4. **Set up the iOS app** from [unamentis-ios](https://github.com/UnaMentis/unamentis-ios)
 
 ---
 

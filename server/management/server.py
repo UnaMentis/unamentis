@@ -46,6 +46,7 @@ _load_env_file()
 # Add aiohttp for async HTTP server with WebSocket support
 try:
     from aiohttp import web
+    from aiohttp.web_log import AccessLogger
     import aiohttp
 except ImportError:
     print("Installing required dependencies...")
@@ -53,6 +54,7 @@ except ImportError:
 
     subprocess.check_call([sys.executable, "-m", "pip", "install", "aiohttp"])
     from aiohttp import web
+    from aiohttp.web_log import AccessLogger
     import aiohttp
 
 try:
@@ -88,6 +90,7 @@ from media_api import register_media_routes
 from auth import (
     AuthAPI,
     register_auth_routes,
+    auth_ip_retention_loop,
     auth_middleware,
     rate_limit_middleware,
     require_role,
@@ -109,6 +112,12 @@ from diagnostic_logging import diag_logger, get_diagnostic_config, set_diagnosti
 
 # Coarsen client IPs captured on telemetry/log intake (privacy, audit finding B10)
 from ip_privacy import coarsen_ip
+
+# Durable telemetry persistence (audit findings T1/T8)
+from telemetry_store import TelemetryStore, DEFAULT_DB_PATH as TELEMETRY_DEFAULT_DB_PATH
+
+# Realtime token budget API (denial-of-wallet residual)
+from realtime_budget_api import register_realtime_budget_routes
 
 # Import FOV context management API
 from fov_context_api import setup_fov_context_routes
@@ -188,6 +197,54 @@ ALLOWED_ORIGINS = {
 }
 MAX_LOG_ENTRIES = 10000
 MAX_METRICS_HISTORY = 1000
+
+# Telemetry intake hardening (audit findings T7/ND2):
+# - Reject metrics bodies above this size before parsing (the route is public).
+# - Cap the total bytes retained in the in-memory hot cache, independent of
+#   the entry-count cap, so oversized snapshots cannot pin memory.
+MAX_METRICS_BODY_BYTES = 64 * 1024
+MAX_METRICS_CACHE_BYTES = 8 * 1024 * 1024
+
+# Explicit allow-list of intake payload fields. Anything else (including
+# transcript-shaped data) is dropped server-side before storage or broadcast,
+# so no free-form client content can ever be retained.
+ALLOWED_METRICS_FIELDS = frozenset(
+    {
+        "timestamp",
+        "sessionId",
+        "sessionDuration",
+        "turnsTotal",
+        "interruptions",
+        "sttLatencyMedian",
+        "sttLatencyP99",
+        "llmTTFTMedian",
+        "llmTTFTP99",
+        "ttsTTFBMedian",
+        "ttsTTFBP99",
+        "e2eLatencyMedian",
+        "e2eLatencyP99",
+        "ttfaMedian",
+        "ttfaP99",
+        "errorCount",
+        "errorsByStage",
+        "sttCost",
+        "ttsCost",
+        "llmCost",
+        "totalCost",
+        "thermalThrottleEvents",
+        "networkDegradations",
+    }
+)
+
+# Known pipeline stages for errorsByStage; unknown stage keys are dropped.
+METRICS_ERROR_STAGES = frozenset(
+    {"stt", "llm", "tts", "e2e", "vad", "audio", "network", "other"}
+)
+
+# Durable telemetry database location (override for tests/deployments)
+TELEMETRY_DB_PATH = Path(
+    os.environ.get("TELEMETRY_DB_PATH", str(TELEMETRY_DEFAULT_DB_PATH))
+)
 
 # Service paths (relative to unamentis-ios root)
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -464,6 +521,15 @@ class MetricsSnapshot:
     tts_ttfb_p99: float = 0.0
     e2e_latency_median: float = 0.0
     e2e_latency_p99: float = 0.0
+    # Time-to-first-audio (full pipeline, in ms; audit finding T4)
+    ttfa_median: float = 0.0
+    ttfa_p99: float = 0.0
+    # Errors (audit finding T2)
+    error_count: int = 0
+    error_rate: float = 0.0
+    errors_by_stage: Dict[str, int] = field(default_factory=dict)
+    # Session identity for dedupe (audit finding ND3)
+    session_id: str = ""
     # Costs
     stt_cost: float = 0.0
     tts_cost: float = 0.0
@@ -472,7 +538,7 @@ class MetricsSnapshot:
     # Device stats
     thermal_throttle_events: int = 0
     network_degradations: int = 0
-    # Raw data for charts
+    # Sanitized payload for charts (allow-listed fields only, audit finding T7)
     raw_data: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -606,6 +672,13 @@ class ManagementState:
     def __init__(self):
         self.logs: deque = deque(maxlen=MAX_LOG_ENTRIES)
         self.metrics_history: deque = deque(maxlen=MAX_METRICS_HISTORY)
+        # Parallel deque of approximate per-snapshot byte sizes plus a running
+        # total, so the hot cache is capped by bytes as well as count (ND2).
+        self._metrics_history_sizes: deque = deque(maxlen=MAX_METRICS_HISTORY)
+        self.metrics_history_bytes: int = 0
+        # Session ids already counted per client (ND3 dedupe), hydrated from
+        # the telemetry store on startup.
+        self.session_ids_by_client: Dict[str, Set[str]] = {}
         self.clients: Dict[str, RemoteClient] = {}
         self.servers: Dict[str, ServerStatus] = {}
         self.models: Dict[str, ModelInfo] = {}
@@ -628,6 +701,35 @@ class ManagementState:
         self._init_managed_services()
         # Load curricula from disk
         self._load_curricula()
+
+    def append_metrics_snapshot(self, snapshot: "MetricsSnapshot") -> None:
+        """Append a snapshot to the hot cache with a byte-aware cap (ND2).
+
+        The deque maxlen bounds entry count; this additionally evicts oldest
+        entries while the approximate retained byte total exceeds
+        MAX_METRICS_CACHE_BYTES.
+        """
+        size = len(json.dumps(asdict(snapshot), default=str).encode("utf-8"))
+
+        def _evict_oldest() -> None:
+            self.metrics_history.popleft()
+            # Sizes can diverge if tests append to metrics_history directly;
+            # guard rather than assume lockstep.
+            if self._metrics_history_sizes:
+                self.metrics_history_bytes -= self._metrics_history_sizes.popleft()
+
+        # Account for entries the deque maxlen is about to push out.
+        while len(self.metrics_history) >= MAX_METRICS_HISTORY:
+            _evict_oldest()
+        # Evict oldest entries until the new snapshot fits the byte budget.
+        while (
+            self.metrics_history
+            and self.metrics_history_bytes + size > MAX_METRICS_CACHE_BYTES
+        ):
+            _evict_oldest()
+        self.metrics_history.append(snapshot)
+        self._metrics_history_sizes.append(size)
+        self.metrics_history_bytes += size
 
     def _init_default_servers(self):
         """Initialize default server configurations."""
@@ -1134,10 +1236,100 @@ async def handle_clear_logs(request: web.Request) -> web.Response:
 # =============================================================================
 
 
-async def handle_receive_metrics(request: web.Request) -> web.Response:
-    """Receive metrics snapshot from iOS clients."""
+def _coerce_metric_float(value: Any, lo: float = 0.0, hi: float = 1e12) -> float:
+    """Coerce an intake value to a clamped non-negative float."""
     try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if result != result:  # NaN guard
+        return 0.0
+    return min(max(result, lo), hi)
+
+
+def _coerce_metric_int(value: Any, lo: int = 0, hi: int = 1_000_000_000) -> int:
+    """Coerce an intake value to a clamped non-negative int."""
+    try:
+        result = int(value)
+    except (TypeError, ValueError):
+        return 0
+    return min(max(result, lo), hi)
+
+
+def sanitize_metrics_payload(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Filter a metrics intake payload to the explicit allow-list (T7).
+
+    Unknown fields (including any transcript-shaped data) are dropped before
+    storage or broadcast, and every kept value is coerced to its expected
+    type with bounded size, so client-supplied content can never be retained
+    verbatim.
+    """
+    dropped = [k for k in data if k not in ALLOWED_METRICS_FIELDS]
+    if dropped:
+        logger.debug(f"Dropped {len(dropped)} unknown metrics fields: {dropped[:10]}")
+
+    clean: Dict[str, Any] = {}
+    for key in ("timestamp", "sessionId"):
+        if key in data and isinstance(data[key], str):
+            clean[key] = data[key][:64]
+    for key in (
+        "sessionDuration",
+        "sttLatencyMedian",
+        "sttLatencyP99",
+        "llmTTFTMedian",
+        "llmTTFTP99",
+        "ttsTTFBMedian",
+        "ttsTTFBP99",
+        "e2eLatencyMedian",
+        "e2eLatencyP99",
+        "ttfaMedian",
+        "ttfaP99",
+        "sttCost",
+        "ttsCost",
+        "llmCost",
+        "totalCost",
+    ):
+        if key in data:
+            clean[key] = _coerce_metric_float(data[key])
+    for key in (
+        "turnsTotal",
+        "interruptions",
+        "errorCount",
+        "thermalThrottleEvents",
+        "networkDegradations",
+    ):
+        if key in data:
+            clean[key] = _coerce_metric_int(data[key])
+
+    stages = data.get("errorsByStage")
+    if isinstance(stages, dict):
+        clean["errorsByStage"] = {
+            stage: _coerce_metric_int(count)
+            for stage, count in stages.items()
+            if isinstance(stage, str) and stage in METRICS_ERROR_STAGES
+        }
+
+    return clean
+
+
+async def handle_receive_metrics(request: web.Request) -> web.Response:
+    """Receive metrics snapshot from iOS clients.
+
+    The route is public (clients post telemetry without auth), so the body is
+    size-capped (ND2), validated against an explicit field allow-list (T7),
+    and persisted through the telemetry store (T1) behind the in-memory hot
+    cache.
+    """
+    try:
+        # Early oversized-payload rejection, before parsing (ND2).
+        content_length = request.content_length
+        if content_length is not None and content_length > MAX_METRICS_BODY_BYTES:
+            return web.json_response({"error": "Payload too large"}, status=413)
+
         data = await request.json()
+        if not isinstance(data, dict):
+            return web.json_response({"error": "Expected JSON object"}, status=400)
+        data = sanitize_metrics_payload(data)
         client_id = request.headers.get("X-Client-ID", "unknown")
         client_name = request.headers.get("X-Client-Name", "Unknown Device")
 
@@ -1149,9 +1341,24 @@ async def handle_receive_metrics(request: web.Request) -> web.Response:
         client = state.clients[client_id]
         client.last_seen = time.time()
         client.status = "online"
-        client.total_sessions += 1
 
-        # Create metrics snapshot
+        # Count unique sessions, not POSTs (ND3). Periodic snapshots within
+        # one session carry the same sessionId; only the first one counts.
+        # Legacy clients without a sessionId keep the old per-POST behavior.
+        session_id = data.get("sessionId", "")
+        if session_id:
+            seen = state.session_ids_by_client.setdefault(client_id, set())
+            if session_id not in seen:
+                seen.add(session_id)
+                client.total_sessions += 1
+        else:
+            client.total_sessions += 1
+
+        error_count = data.get("errorCount", 0)
+        turns_total = data.get("turnsTotal", 0)
+
+        # Create metrics snapshot (typed fields only; raw_data carries the
+        # sanitized payload for charts, never the original body).
         snapshot = MetricsSnapshot(
             id=str(uuid.uuid4()),
             client_id=client_id,
@@ -1159,7 +1366,7 @@ async def handle_receive_metrics(request: web.Request) -> web.Response:
             timestamp=data.get("timestamp", datetime.utcnow().isoformat() + "Z"),
             received_at=time.time(),
             session_duration=data.get("sessionDuration", 0),
-            turns_total=data.get("turnsTotal", 0),
+            turns_total=turns_total,
             interruptions=data.get("interruptions", 0),
             stt_latency_median=data.get("sttLatencyMedian", 0),
             stt_latency_p99=data.get("sttLatencyP99", 0),
@@ -1169,6 +1376,12 @@ async def handle_receive_metrics(request: web.Request) -> web.Response:
             tts_ttfb_p99=data.get("ttsTTFBP99", 0),
             e2e_latency_median=data.get("e2eLatencyMedian", 0),
             e2e_latency_p99=data.get("e2eLatencyP99", 0),
+            ttfa_median=data.get("ttfaMedian", 0),
+            ttfa_p99=data.get("ttfaP99", 0),
+            error_count=error_count,
+            error_rate=round(error_count / max(turns_total, 1), 4),
+            errors_by_stage=data.get("errorsByStage", {}),
+            session_id=session_id,
             stt_cost=data.get("sttCost", 0),
             tts_cost=data.get("ttsCost", 0),
             llm_cost=data.get("llmCost", 0),
@@ -1178,11 +1391,35 @@ async def handle_receive_metrics(request: web.Request) -> web.Response:
             raw_data=data,
         )
 
-        state.metrics_history.append(snapshot)
+        state.append_metrics_snapshot(snapshot)
         state.stats["total_metrics_received"] += 1
 
-        # Broadcast to WebSocket clients
-        await broadcast_message("metrics", asdict(snapshot))
+        # Write-through to the durable store (T1); the hot cache stays the
+        # serving path, so intake survives a store hiccup.
+        app = getattr(request, "app", None)
+        store = app.get("telemetry_store") if app is not None else None
+        if store is not None:
+            try:
+                persisted = asdict(snapshot)
+                persisted.pop("raw_data", None)
+                await store.save_snapshot(persisted)
+                await store.upsert_client(
+                    client_id=client.id,
+                    name=client.name,
+                    first_seen=client.first_seen,
+                    last_seen=client.last_seen,
+                    total_sessions=client.total_sessions,
+                )
+                if session_id:
+                    await store.record_session(client_id, session_id)
+            except Exception as e:
+                logger.warning(f"Telemetry persistence failed: {e}")
+
+        # Broadcast to WebSocket clients, excluding raw_data (ND2: do not
+        # amplify client-supplied bytes to every dashboard socket).
+        broadcast_payload = asdict(snapshot)
+        broadcast_payload.pop("raw_data", None)
+        await broadcast_message("metrics", broadcast_payload)
 
         return web.json_response({"status": "ok"})
 
@@ -1209,28 +1446,48 @@ async def handle_get_metrics(request: web.Request) -> web.Response:
         # Calculate aggregates
         if metrics:
             avg_e2e = sum(m.e2e_latency_median for m in metrics) / len(metrics)
+            avg_e2e_p99 = sum(m.e2e_latency_p99 for m in metrics) / len(metrics)
             avg_llm = sum(m.llm_ttft_median for m in metrics) / len(metrics)
             avg_stt = sum(m.stt_latency_median for m in metrics) / len(metrics)
             avg_tts = sum(m.tts_ttfb_median for m in metrics) / len(metrics)
+            avg_ttfa = sum(m.ttfa_median for m in metrics) / len(metrics)
+            avg_ttfa_p99 = sum(m.ttfa_p99 for m in metrics) / len(metrics)
             total_cost = sum(m.total_cost for m in metrics)
-            total_sessions = len(set(m.id for m in metrics))
+            # Count unique sessions, not snapshots (ND3). Legacy snapshots
+            # without a session_id fall back to their snapshot id.
+            total_sessions = len({m.session_id or m.id for m in metrics})
             total_turns = sum(m.turns_total for m in metrics)
+            total_errors = sum(m.error_count for m in metrics)
+            avg_error_rate = round(total_errors / max(total_turns, 1), 4)
+            errors_by_stage: Dict[str, int] = {}
+            for m in metrics:
+                for stage, count in (m.errors_by_stage or {}).items():
+                    errors_by_stage[stage] = errors_by_stage.get(stage, 0) + count
         else:
-            avg_e2e = avg_llm = avg_stt = avg_tts = total_cost = total_sessions = (
-                total_turns
+            avg_e2e = avg_e2e_p99 = avg_llm = avg_stt = avg_tts = avg_ttfa = (
+                avg_ttfa_p99
+            ) = total_cost = total_sessions = total_turns = total_errors = (
+                avg_error_rate
             ) = 0
+            errors_by_stage = {}
 
         return web.json_response(
             {
                 "metrics": [asdict(m) for m in metrics],
                 "aggregates": {
                     "avg_e2e_latency": round(avg_e2e, 2),
+                    "avg_e2e_p99": round(avg_e2e_p99, 2),
                     "avg_llm_ttft": round(avg_llm, 2),
                     "avg_stt_latency": round(avg_stt, 2),
                     "avg_tts_ttfb": round(avg_tts, 2),
+                    "avg_ttfa": round(avg_ttfa, 2),
+                    "avg_ttfa_p99": round(avg_ttfa_p99, 2),
                     "total_cost": round(total_cost, 4),
                     "total_sessions": total_sessions,
                     "total_turns": total_turns,
+                    "total_errors": total_errors,
+                    "avg_error_rate": avg_error_rate,
+                    "errors_by_stage": errors_by_stage,
                 },
             }
         )
@@ -1238,6 +1495,41 @@ async def handle_get_metrics(request: web.Request) -> web.Response:
     except Exception as e:
         logger.error(f"Error getting metrics: {e}")
         return web.json_response({"error": str(e)}, status=500)
+
+
+async def hydrate_telemetry_state(store: TelemetryStore) -> None:
+    """Reload the telemetry hot cache from the durable store (T1).
+
+    Restores recent snapshots into the in-memory deque, the client registry,
+    and the per-client session-id sets used for session dedupe, so the
+    Operations Console picks up where it left off after a restart.
+    """
+    snapshots = await store.load_recent_snapshots(MAX_METRICS_HISTORY)
+    for row in snapshots:
+        try:
+            state.append_metrics_snapshot(MetricsSnapshot(**row))
+        except TypeError as e:
+            logger.warning(f"Skipping incompatible persisted snapshot: {e}")
+
+    for row in await store.load_clients():
+        client_id = row["client_id"]
+        if client_id in state.clients:
+            client = state.clients[client_id]
+            client.total_sessions = max(
+                client.total_sessions, int(row.get("total_sessions", 0))
+            )
+        else:
+            state.clients[client_id] = RemoteClient(
+                id=client_id,
+                name=row.get("name", "Unknown Device"),
+                first_seen=row.get("first_seen", time.time()),
+                last_seen=row.get("last_seen", time.time()),
+                status="offline",
+                total_sessions=int(row.get("total_sessions", 0)),
+            )
+
+    for client_id, session_ids in (await store.load_session_ids()).items():
+        state.session_ids_by_client.setdefault(client_id, set()).update(session_ids)
 
 
 # =============================================================================
@@ -1949,10 +2241,15 @@ def load_model_config() -> dict:
                 return json.load(f)
         except (json.JSONDecodeError, IOError) as e:
             logger.warning(f"Failed to load model config: {e}")
-    # Return default config
+    # Return default config. The local real-time LLM is qwen2.5:14b-instruct,
+    # served warm on the Metal GPU via ollama (see docs/reviews USM Core audit,
+    # Appendix A). qwen2.5:7b-instruct is the faster fallback.
     return {
         "services": {
-            "llm": {"default_model": None, "fallback_model": None},
+            "llm": {
+                "default_model": "qwen2.5:14b-instruct",
+                "fallback_model": "qwen2.5:7b-instruct",
+            },
             "tts": {"default_provider": "vibevoice", "default_voice": "nova"},
             "stt": {"default_model": "whisper"},
         }
@@ -5061,6 +5358,10 @@ def create_app() -> web.Application:
     app.router.add_post("/api/metrics", handle_receive_metrics)
     app.router.add_get("/api/metrics", handle_get_metrics)
 
+    # Realtime token budget (durable daily counters for the web client's
+    # realtime token route; denial-of-wallet residual)
+    register_realtime_budget_routes(app)
+
     # Clients
     app.router.add_get("/api/clients", handle_get_clients)
     app.router.add_post("/api/clients/heartbeat", handle_client_heartbeat)
@@ -5419,6 +5720,13 @@ def create_app() -> web.Application:
                 else:
                     logger.warning("[Startup] Auth routes setup failed")
 
+                # Auth-path IP retention (privacy, audit finding B10): scrub
+                # exact IPs from auth_audit_log / refresh_tokens after the
+                # disclosed retention window. Runs now and once per 24h.
+                app["auth_ip_retention_task"] = asyncio.create_task(
+                    auth_ip_retention_loop(db_pool)
+                )
+
                 # Initialize KB Questions repository
                 try:
                     from kb_questions_repository import KBQuestionsRepository
@@ -5433,6 +5741,20 @@ def create_app() -> web.Application:
             logger.warning(
                 "[Startup] DATABASE_URL not set, auth database features disabled"
             )
+
+        # Initialize durable telemetry persistence and hydrate the hot cache
+        # so the Operations Console survives restarts (T1/T8).
+        try:
+            telemetry_store = TelemetryStore(TELEMETRY_DB_PATH)
+            await telemetry_store.start()
+            app["telemetry_store"] = telemetry_store
+            await hydrate_telemetry_state(telemetry_store)
+            logger.info(
+                f"[Startup] Telemetry store ready "
+                f"({len(state.metrics_history)} snapshots hydrated)"
+            )
+        except Exception as e:
+            logger.error(f"[Startup] Telemetry store failed: {e}")
 
         # Start resource monitoring and idle management
         await resource_monitor.start()
@@ -5491,6 +5813,16 @@ def create_app() -> web.Application:
                 pass
             logger.info("[Cleanup] KB audio prefetch task cancelled")
 
+        # Cancel auth IP retention task if running
+        task = app.get("auth_ip_retention_task")
+        if task and not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            logger.info("[Cleanup] Auth IP retention task cancelled")
+
         # Close database pool if it exists
         if "db_pool" in app:
             await app["db_pool"].close()
@@ -5518,6 +5850,11 @@ def create_app() -> web.Application:
             await app["bonjour_advertiser"].stop()
             logger.info("[Cleanup] Bonjour advertising stopped")
 
+        # Close the telemetry store
+        if "telemetry_store" in app:
+            await app["telemetry_store"].stop()
+            logger.info("[Cleanup] Telemetry store closed")
+
         await resource_monitor.stop()
         await idle_manager.stop()
         await metrics_history.stop()
@@ -5528,6 +5865,46 @@ def create_app() -> web.Application:
     app.on_cleanup.append(on_cleanup)
 
     return app
+
+
+# Sensitive query keys that must never reach access logs. Browser WebSocket
+# clients pass the bearer token as ?token= because they cannot set headers on
+# the upgrade request, so the default aiohttp access logger would otherwise
+# write live JWTs into plaintext logs.
+_SENSITIVE_QUERY_RE = re.compile(
+    r"([?&][\w.-]*(?:token|key|secret|password))=[^&\s]*", re.IGNORECASE
+)
+
+
+class RedactingAccessLogger(AccessLogger):
+    """Access logger that redacts sensitive query parameters."""
+
+    def __init__(self, logger, log_format=AccessLogger.LOG_FORMAT):
+        super().__init__(logger, log_format)
+        # AccessLogger.compile_format binds every atom formatter to the BASE
+        # class (getattr(AccessLogger, ...)) and caches the compiled list
+        # globally, so simply overriding _format_r would be silently
+        # bypassed. Recompile locally and swap in the redacting request-line
+        # formatter, leaving the shared cache untouched.
+        log_fmt, methods = self.compile_format(log_format)
+        base_format_r = AccessLogger._format_r
+        self._log_format = log_fmt
+        self._methods = [
+            km._replace(method=type(self)._format_r)
+            if km.method is base_format_r
+            else km
+            for km in methods
+        ]
+
+    @staticmethod
+    def _format_r(request, response, time_taken) -> str:
+        if request is None:
+            return "-"
+        path_qs = _SENSITIVE_QUERY_RE.sub(r"\1=REDACTED", request.path_qs)
+        return (
+            f"{request.method} {path_qs} "
+            f"HTTP/{request.version.major}.{request.version.minor}"
+        )
 
 
 def main():
@@ -5577,7 +5954,13 @@ def main():
         )
         bind_host = "127.0.0.1"
 
-    web.run_app(app, host=bind_host, port=PORT, print=None)
+    web.run_app(
+        app,
+        host=bind_host,
+        port=PORT,
+        print=None,
+        access_log_class=RedactingAccessLogger,
+    )
 
 
 if __name__ == "__main__":

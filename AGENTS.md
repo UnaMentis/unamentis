@@ -170,11 +170,9 @@ There are TWO separate web interfaces. Do not confuse them:
 
 ### Build & Test Commands
 ```bash
-# Server tests
-./scripts/test-quick.sh          # Unit tests only (fast)
-./scripts/test-all.sh            # All tests + 80% coverage enforcement
-./scripts/test-integration.sh    # Integration tests only
-./scripts/test-ci.sh             # Direct runner with env var config
+# Note: the test-quick.sh/test-all.sh/test-ci.sh runners are iOS scripts that
+# live in the unamentis-ios repository (and are untracked here). Use the
+# component commands below in this repo.
 
 # Rust (USM Core)
 cd server/usm-core && cargo build          # Debug build
@@ -213,7 +211,7 @@ For iOS build and test commands, see the [unamentis-ios](https://github.com/UnaM
 
 Work is NOT complete until you have:
 1. Run `./scripts/lint.sh` and verified 0 violations
-2. Run `./scripts/test-quick.sh` and verified ALL tests pass
+2. Run the relevant test suite (for example `cd server/management && pytest`) and verified ALL tests pass
 3. Actually observed the test output yourself (not assumed it passes)
 
 **FAILURE MODE TO AVOID:**

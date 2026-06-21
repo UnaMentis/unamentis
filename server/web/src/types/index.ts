@@ -39,6 +39,15 @@ export interface MetricsSnapshot {
   tts_ttfb_p99: number;
   e2e_latency_median: number;
   e2e_latency_p99: number;
+  // Time to first audio (ms). Optional: older clients do not report it.
+  ttfa_median?: number;
+  ttfa_p99?: number;
+  // Errors. Optional: older clients do not report them.
+  error_count?: number;
+  error_rate?: number;
+  errors_by_stage?: Record<string, number>;
+  // Session identity (used for session dedupe server-side). Optional.
+  session_id?: string;
   // Costs
   stt_cost: number;
   tts_cost: number;
@@ -238,6 +247,14 @@ export interface MetricsResponse {
     total_cost: number;
     total_sessions: number;
     total_turns: number;
+    // Newer management API fields. Optional so the console renders
+    // gracefully against older backends that do not send them.
+    avg_e2e_p99?: number;
+    avg_ttfa?: number;
+    avg_ttfa_p99?: number;
+    total_errors?: number;
+    avg_error_rate?: number;
+    errors_by_stage?: Record<string, number>;
   };
 }
 

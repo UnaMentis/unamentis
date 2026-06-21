@@ -7,8 +7,9 @@
  */
 
 import { useState, useCallback, type FormEvent } from 'react';
+import Link from 'next/link';
 import { useAuth } from './AuthProvider';
-import { ApiError } from '@/lib/api';
+import { ApiError, POLICIES_VERSION } from '@/lib/api';
 
 interface RegisterFormProps {
   /** Called after successful registration */
@@ -25,6 +26,7 @@ interface FormErrors {
   password?: string;
   confirmPassword?: string;
   ageAttestation?: string;
+  policyAcceptance?: string;
   general?: string;
 }
 
@@ -73,11 +75,7 @@ function isStrongPassword(password: string): { valid: boolean; message?: string 
   return { valid: true };
 }
 
-export function RegisterForm({
-  onSuccess,
-  onSwitchToLogin,
-  className = '',
-}: RegisterFormProps) {
+export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: RegisterFormProps) {
   const { register, isLoading: authLoading } = useAuth();
 
   const [displayName, setDisplayName] = useState('');
@@ -85,6 +83,7 @@ export function RegisterForm({
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [ageAttestation, setAgeAttestation] = useState(false);
+  const [policyAcceptance, setPolicyAcceptance] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -130,9 +129,14 @@ export function RegisterForm({
       newErrors.ageAttestation = 'You must confirm you are at least 13 years old';
     }
 
+    // Explicit, versioned Terms of Service + Privacy Policy acceptance.
+    if (!policyAcceptance) {
+      newErrors.policyAcceptance = 'You must accept the Terms of Service and Privacy Policy';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [displayName, email, password, confirmPassword, ageAttestation]);
+  }, [displayName, email, password, confirmPassword, ageAttestation, policyAcceptance]);
 
   /**
    * Handle form submission.
@@ -149,7 +153,7 @@ export function RegisterForm({
       setErrors({});
 
       try {
-        await register(email, password, displayName.trim(), ageAttestation);
+        await register(email, password, displayName.trim(), ageAttestation, POLICIES_VERSION);
         onSuccess?.();
       } catch (error) {
         if (error instanceof ApiError) {
@@ -166,6 +170,11 @@ export function RegisterForm({
             case 'age_attestation_required':
               setErrors({
                 ageAttestation: 'You must confirm you are at least 13 years old',
+              });
+              break;
+            case 'policy_acceptance_required':
+              setErrors({
+                policyAcceptance: 'You must accept the Terms of Service and Privacy Policy',
               });
               break;
             default:
@@ -211,10 +220,8 @@ export function RegisterForm({
           onChange={(e) => setDisplayName(e.target.value)}
           disabled={isLoading}
           aria-invalid={!!errors.displayName}
-          aria-describedby={
-            errors.displayName ? 'register-display-name-error' : undefined
-          }
-          className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 dark:bg-gray-800 dark:text-white ${
+          aria-describedby={errors.displayName ? 'register-display-name-error' : undefined}
+          className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 dark:bg-gray-800 dark:text-white ${
             errors.displayName
               ? 'border-red-500 focus:border-red-500'
               : 'border-gray-300 focus:border-blue-500 dark:border-gray-600'
@@ -248,7 +255,7 @@ export function RegisterForm({
           disabled={isLoading}
           aria-invalid={!!errors.email}
           aria-describedby={errors.email ? 'register-email-error' : undefined}
-          className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 dark:bg-gray-800 dark:text-white ${
+          className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 dark:bg-gray-800 dark:text-white ${
             errors.email
               ? 'border-red-500 focus:border-red-500'
               : 'border-gray-300 focus:border-blue-500 dark:border-gray-600'
@@ -256,10 +263,7 @@ export function RegisterForm({
           placeholder="you@example.com"
         />
         {errors.email && (
-          <p
-            id="register-email-error"
-            className="mt-1 text-sm text-red-600 dark:text-red-400"
-          >
+          <p id="register-email-error" className="mt-1 text-sm text-red-600 dark:text-red-400">
             {errors.email}
           </p>
         )}
@@ -281,10 +285,8 @@ export function RegisterForm({
           onChange={(e) => setPassword(e.target.value)}
           disabled={isLoading}
           aria-invalid={!!errors.password}
-          aria-describedby={
-            errors.password ? 'register-password-error' : 'register-password-hint'
-          }
-          className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 dark:bg-gray-800 dark:text-white ${
+          aria-describedby={errors.password ? 'register-password-error' : 'register-password-hint'}
+          className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 dark:bg-gray-800 dark:text-white ${
             errors.password
               ? 'border-red-500 focus:border-red-500'
               : 'border-gray-300 focus:border-blue-500 dark:border-gray-600'
@@ -292,17 +294,11 @@ export function RegisterForm({
           placeholder="Create a strong password"
         />
         {errors.password ? (
-          <p
-            id="register-password-error"
-            className="mt-1 text-sm text-red-600 dark:text-red-400"
-          >
+          <p id="register-password-error" className="mt-1 text-sm text-red-600 dark:text-red-400">
             {errors.password}
           </p>
         ) : (
-          <p
-            id="register-password-hint"
-            className="mt-1 text-xs text-gray-500 dark:text-gray-400"
-          >
+          <p id="register-password-hint" className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             At least 8 characters with uppercase, lowercase, and number
           </p>
         )}
@@ -324,10 +320,8 @@ export function RegisterForm({
           onChange={(e) => setConfirmPassword(e.target.value)}
           disabled={isLoading}
           aria-invalid={!!errors.confirmPassword}
-          aria-describedby={
-            errors.confirmPassword ? 'register-confirm-password-error' : undefined
-          }
-          className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 dark:bg-gray-800 dark:text-white ${
+          aria-describedby={errors.confirmPassword ? 'register-confirm-password-error' : undefined}
+          className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 dark:bg-gray-800 dark:text-white ${
             errors.confirmPassword
               ? 'border-red-500 focus:border-red-500'
               : 'border-gray-300 focus:border-blue-500 dark:border-gray-600'
@@ -354,14 +348,12 @@ export function RegisterForm({
             onChange={(e) => setAgeAttestation(e.target.checked)}
             disabled={isLoading}
             aria-invalid={!!errors.ageAttestation}
-            aria-describedby={
-              errors.ageAttestation ? 'register-age-attestation-error' : undefined
-            }
+            aria-describedby={errors.ageAttestation ? 'register-age-attestation-error' : undefined}
             className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
           />
           <span>
-            I confirm that I am at least 13 years old. UnaMentis is not available to
-            children under 13.
+            I confirm that I am at least 13 years old. UnaMentis is not available to children under
+            13.
           </span>
         </label>
         {errors.ageAttestation && (
@@ -374,11 +366,56 @@ export function RegisterForm({
         )}
       </div>
 
+      {/* Terms of Service + Privacy Policy acceptance */}
+      <div>
+        <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <input
+            id="register-policy-acceptance"
+            type="checkbox"
+            checked={policyAcceptance}
+            onChange={(e) => setPolicyAcceptance(e.target.checked)}
+            disabled={isLoading}
+            aria-invalid={!!errors.policyAcceptance}
+            aria-describedby={
+              errors.policyAcceptance ? 'register-policy-acceptance-error' : undefined
+            }
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+          />
+          <span>
+            I accept the{' '}
+            <Link
+              href="/terms"
+              target="_blank"
+              className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
+            >
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link
+              href="/privacy"
+              target="_blank"
+              className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
+        {errors.policyAcceptance && (
+          <p
+            id="register-policy-acceptance-error"
+            className="mt-1 text-sm text-red-600 dark:text-red-400"
+          >
+            {errors.policyAcceptance}
+          </p>
+        )}
+      </div>
+
       {/* Submit button */}
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">

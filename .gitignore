@@ -118,3 +118,8 @@ server/web/.next/
 
 # Stray importer/test curriculum stubs (real examples are named by course)
 curriculum/examples/realistic/test-*.umcf
+
+# Local Cloudflare wrangler cache (not for the repo)
+.wrangler/
+# Local curriculum SQLite database (local data, not source)
+server/database/curriculum.db

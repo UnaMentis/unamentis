@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart3, RefreshCw, TrendingUp, Clock, DollarSign, MessageCircle } from 'lucide-react';
+import { RefreshCw, TrendingUp } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { MetricsSnapshot } from '@/types';
@@ -36,24 +36,34 @@ function MetricCard({
   );
 }
 
+// Default aggregate shape. Newer fields (P99, TTFA, errors) are merged over
+// these defaults so the panel renders gracefully against older backends.
+const DEFAULT_AGGREGATES = {
+  avg_e2e_latency: 0,
+  avg_e2e_p99: 0,
+  avg_llm_ttft: 0,
+  avg_stt_latency: 0,
+  avg_tts_ttfb: 0,
+  avg_ttfa: 0,
+  avg_ttfa_p99: 0,
+  total_cost: 0,
+  total_sessions: 0,
+  total_turns: 0,
+  total_errors: 0,
+  avg_error_rate: 0,
+  errors_by_stage: {} as Record<string, number>,
+};
+
 export function MetricsPanel() {
   const [metrics, setMetrics] = useState<MetricsSnapshot[]>([]);
-  const [aggregates, setAggregates] = useState({
-    avg_e2e_latency: 0,
-    avg_llm_ttft: 0,
-    avg_stt_latency: 0,
-    avg_tts_ttfb: 0,
-    total_cost: 0,
-    total_sessions: 0,
-    total_turns: 0,
-  });
+  const [aggregates, setAggregates] = useState(DEFAULT_AGGREGATES);
   const [loading, setLoading] = useState(true);
 
   const fetchMetrics = async () => {
     try {
       const response = await getMetrics({ limit: 50 });
       setMetrics(response.metrics);
-      setAggregates(response.aggregates);
+      setAggregates({ ...DEFAULT_AGGREGATES, ...response.aggregates });
     } catch (error) {
       console.error('Failed to fetch metrics:', error);
     } finally {
@@ -78,6 +88,12 @@ export function MetricsPanel() {
           badgeColor="bg-indigo-500/20 text-indigo-400"
         />
         <MetricCard
+          label="Avg E2E Latency"
+          value={aggregates.avg_e2e_p99 ? `${aggregates.avg_e2e_p99} ms` : '--'}
+          badge="p99"
+          badgeColor="bg-rose-500/20 text-rose-400"
+        />
+        <MetricCard
           label="LLM TTFT"
           value={`${aggregates.avg_llm_ttft} ms`}
           badge="median"
@@ -95,7 +111,42 @@ export function MetricsPanel() {
           badge="median"
           badgeColor="bg-blue-500/20 text-blue-400"
         />
+        <MetricCard
+          label="Time to First Audio"
+          value={aggregates.avg_ttfa ? `${aggregates.avg_ttfa} ms` : '--'}
+          badge="median"
+          badgeColor="bg-cyan-500/20 text-cyan-400"
+        />
+        <MetricCard
+          label="Time to First Audio"
+          value={aggregates.avg_ttfa_p99 ? `${aggregates.avg_ttfa_p99} ms` : '--'}
+          badge="p99"
+          badgeColor="bg-rose-500/20 text-rose-400"
+        />
+        <MetricCard
+          label="Error Rate"
+          value={`${(aggregates.avg_error_rate * 100).toFixed(1)}%`}
+          badge={`${aggregates.total_errors} total`}
+          badgeColor="bg-red-500/20 text-red-400"
+        />
       </div>
+
+      {/* Errors by pipeline stage (only when the backend reports any) */}
+      {Object.keys(aggregates.errors_by_stage).length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
+          <span className="text-slate-500">Errors by stage:</span>
+          {Object.entries(aggregates.errors_by_stage)
+            .sort(([, a], [, b]) => b - a)
+            .map(([stage, count]) => (
+              <span
+                key={stage}
+                className="px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-300 text-xs"
+              >
+                {stage}: {count}
+              </span>
+            ))}
+        </div>
+      )}
 
       {/* Session History Table */}
       <Card>
@@ -129,7 +180,16 @@ export function MetricsPanel() {
                   E2E
                 </th>
                 <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wider px-4 py-3">
+                  E2E P99
+                </th>
+                <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wider px-4 py-3">
                   LLM
+                </th>
+                <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wider px-4 py-3">
+                  TTFA
+                </th>
+                <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wider px-4 py-3">
+                  Errors
                 </th>
                 <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wider px-4 py-3">
                   Cost
@@ -139,13 +199,13 @@ export function MetricsPanel() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center text-slate-500 py-8">
+                  <td colSpan={10} className="text-center text-slate-500 py-8">
                     Loading metrics...
                   </td>
                 </tr>
               ) : metrics.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center text-slate-500 py-8">
+                  <td colSpan={10} className="text-center text-slate-500 py-8">
                     No session data yet
                   </td>
                 </tr>
@@ -174,6 +234,19 @@ export function MetricsPanel() {
                     <td className="px-4 py-3 text-sm">
                       <span
                         className={cn(
+                          m.e2e_latency_p99 < 1000
+                            ? 'text-emerald-400'
+                            : m.e2e_latency_p99 < 1500
+                              ? 'text-amber-400'
+                              : 'text-red-400'
+                        )}
+                      >
+                        {m.e2e_latency_p99}ms
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span
+                        className={cn(
                           m.llm_ttft_median < 400
                             ? 'text-emerald-400'
                             : m.llm_ttft_median < 600
@@ -183,6 +256,18 @@ export function MetricsPanel() {
                       >
                         {m.llm_ttft_median}ms
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-300">
+                      {m.ttfa_median ? `${m.ttfa_median}ms` : '--'}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {m.error_count == null ? (
+                        <span className="text-slate-500">--</span>
+                      ) : (
+                        <span className={m.error_count > 0 ? 'text-red-400' : 'text-slate-300'}>
+                          {m.error_count}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-300">{formatCost(m.total_cost)}</td>
                   </tr>

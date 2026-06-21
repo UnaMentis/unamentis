@@ -81,11 +81,11 @@ cp .env.example .env
 # Edit .env and add your keys
 
 # 3. Start server components
-cd server/management && python -m management.app   # Management API (port 8766)
+cd server/management && ./run.sh                    # Management API (port 8766)
 cd server/web && pnpm install && pnpm dev           # Operations Console (port 3000)
 
-# 4. Run a quick check (latency harness, mock mode)
-python -m latency_harness.cli --suite quick_validation --mock
+# 4. Run a quick check (latency harness, mock mode; run from server/)
+cd server && python -m latency_harness.cli --suite quick_validation --mock
 ```
 
 For iOS client setup, see the [unamentis-ios](https://github.com/UnaMentis/unamentis-ios) repository.
@@ -93,18 +93,20 @@ See [Quick Start Guide](docs/QUICKSTART.md) for complete server setup.
 
 ## Current Status
 
-This repository (server infrastructure, curriculum, and project documentation) is being prepared for public open-source release. The iOS client is in pre-beta in its own repository, [unamentis-ios](https://github.com/UnaMentis/unamentis-ios).
+This repository (server infrastructure, curriculum, and project documentation) is being prepared for public open-source release. The iOS client is in pre-beta in its own repository, [unamentis-ios](https://github.com/UnaMentis/unamentis-ios). TestFlight submission is being prepared but has not happened yet.
 
 **Server components implemented**
-- USM Core (Rust service manager), Management API (Python/aiohttp), Operations Console and Web Client (Next.js), and the curriculum importer framework.
+- USM Core (Rust service manager), Management API (Python/aiohttp), Operations Console and Web Client (Next.js).
+- Curriculum importer framework: source importers implemented for MIT OCW, CK-12, EngageNY, and MERLOT; the AI enrichment pipeline is in progress; an example UMCF library ships in `curriculum/examples/`.
 - UMCF curriculum specification (v1.0) with JSON Schema.
 - Automated latency test harness with baseline regression detection.
+- Beta hardening (June 2026): consent records with policy versioning at registration, privacy-aware telemetry persistence (allow-listed metrics, byte caps, TTFA/P99/error-rate), Content-Security-Policy with reporting on both web apps, and a daily realtime spend budget.
 
 **In progress**
 - Security hardening ahead of public release (see [docs/reviews/](docs/reviews/)).
-- Curriculum import and content setup.
+- Curriculum import enrichment and content setup.
 
-See [docs/TASK_STATUS.md](docs/TASK_STATUS.md) for detailed task tracking.
+See [docs/STATUS.md](docs/STATUS.md) for an honest "what works today" summary and [docs/TASK_STATUS.md](docs/TASK_STATUS.md) for detailed task tracking.
 
 ## Documentation
 
@@ -142,6 +144,7 @@ The wiki is the primary resource for contributors and maintainers.
 - iOS Style Guide and Best Practices are maintained in the [unamentis-ios](https://github.com/UnaMentis/unamentis-ios) repository
 
 ### Project
+- [Project Status](docs/STATUS.md) - Honest "what works today" summary
 - [Contributing](docs/CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)
 - [Changelog](CHANGELOG.md)
@@ -192,13 +195,14 @@ See [docs/LATENCY_TEST_HARNESS_GUIDE.md](docs/LATENCY_TEST_HARNESS_GUIDE.md) for
 
 ## Code Quality Infrastructure
 
-UnaMentis implements a comprehensive **5-phase Code Quality Initiative** that enables enterprise-grade quality standards through intelligent automation:
+UnaMentis implements a comprehensive **5-phase Code Quality Initiative** that enables rigorous quality standards through intelligent automation:
 
 ### Quality Gates
 
 | Gate | Threshold | Enforcement |
 |------|-----------|-------------|
-| Code Coverage | 80% minimum | CI fails if below |
+| Code Coverage (server) | Reported to Codecov | Informational; thresholds ratcheting up (web client build fails below a 5% floor) |
+| Code Coverage (iOS) | 80% target | Gate lives in unamentis-ios CI and is currently soft |
 | Latency (P50) | 500ms | CI warns/fails on regression |
 | Linting | Zero violations | Pre-commit hook |
 | Security Scan | Zero critical findings | CI + weekly audit |
@@ -212,7 +216,7 @@ UnaMentis implements a comprehensive **5-phase Code Quality Initiative** that en
 - **Performance Testing**: Automated latency regression detection
 - **Security Scanning**: CodeQL, Gitleaks, pip-audit, npm audit
 - **DORA Metrics**: Apache DevLake for engineering health
-- **Mutation Testing**: Weekly validation with mutmut (Python), Stryker (Web)
+- **Mutation Testing**: Weekly advisory run (non-blocking) with mutmut (Python), Stryker (Web)
 - **Chaos Engineering**: Voice pipeline resilience testing (see [runbook](docs/testing/CHAOS_ENGINEERING_RUNBOOK.md))
 
 ### Feature Flags
@@ -287,14 +291,18 @@ Application and content management:
 - **Web Client**: Next.js/React (voice learning for browsers)
 - **Importers**: Python with pluggy plugin architecture
 
+The tables below are highlights. The canonical provider matrix lives in [PROJECT_OVERVIEW.md](docs/architecture/PROJECT_OVERVIEW.md#ai-models--providers).
+
 ### Speech-to-Text (STT)
 | Provider | Model | Type | Notes |
 |----------|-------|------|-------|
 | Apple Speech | Native | On-device | Zero cost, ~150ms latency |
-| GLM-ASR | Whisper encoder + GLM-ASR-Nano | On-device | CoreML + llama.cpp, requires A17+ |
+| FluidAudio | Parakeet realtime EOU (CoreML) | On-device | Streaming partials with native end-of-utterance signal |
+| GLM-ASR | Whisper encoder + GLM-ASR-Nano | On-device or self-hosted | CoreML + llama.cpp on newer iPhones; SGLang/vLLM server |
 | Groq | Whisper-large-v3-turbo | Cloud | Free tier (14,400 req/day), 300x real-time |
 | Deepgram | Nova-3 | Cloud | WebSocket streaming, ~300ms latency |
 | AssemblyAI | Universal-2 | Cloud | Word-level timestamps |
+| OpenAI | Whisper | Cloud | High accuracy, batch processing |
 | Self-hosted | Whisper-compatible | Local | whisper.cpp, faster-whisper |
 
 ### Text-to-Speech (TTS)
@@ -302,21 +310,26 @@ Application and content management:
 |----------|-------|------|-------|
 | Apple TTS | AVSpeechSynthesizer | On-device | Zero cost, ~50ms TTFB |
 | Kyutai | TTS 1.6B | Self-hosted | 40+ voices, emotion control, batch processing |
-| Kyutai | Pocket TTS (100M) | On-device/CPU | 8 voices, sub-50ms latency |
+| Kyutai | Pocket TTS (100M) | On-device/CPU | 8 voices, voice cloning, ~200ms TTFB |
 | Chatterbox | Chatterbox-turbo (350M) | Self-hosted | Emotion control, voice cloning |
+| Chatterbox | Chatterbox-multilingual (500M) | Self-hosted | 23 languages, expressive speech |
+| Fish Speech | V1.5 (~2B) | Self-hosted | Zero-shot voice cloning, 30+ languages |
 | Deepgram | Aura-2 | Cloud | Multiple voices, 24kHz |
 | ElevenLabs | Turbo v2.5 | Cloud | Premium quality, WebSocket |
 | VibeVoice | VibeVoice-Realtime-0.5B | Self-hosted | Microsoft model, real-time |
+| Piper | Various voices | Self-hosted | OpenAI-compatible endpoint |
 
 ### Large Language Models (LLM)
 | Provider | Model | Type | Notes |
 |----------|-------|------|-------|
-| On-device | Ministral-3B-Instruct-Q4_K_M | On-device | Primary on-device, via llama.cpp |
+| On-device | Ministral-3B-Instruct-Q4_K_M | On-device | Primary on-device, via llama.cpp (functional as of June 2026) |
 | On-device | TinyLlama-1.1B-Chat | On-device | Fallback, smaller footprint |
 | Ollama | Mistral 7B | Self-hosted | **Primary server model** |
 | Ollama | qwen2.5:32b, llama3.2:3b | Self-hosted | Alternative server models |
+| llama.cpp server / vLLM | Any GGUF or HuggingFace model | Self-hosted | OpenAI-compatible endpoints |
 | Anthropic | Claude 3.5 Sonnet | Cloud | Primary cloud model |
 | OpenAI | GPT-4o / GPT-4o-mini | Cloud | Alternative cloud option |
+| OpenAI Realtime | gpt-4o-realtime-preview | Cloud (WebRTC) | Web client real-time voice |
 
 ### Voice Activity Detection (VAD)
 - **Silero VAD**: Core ML model for on-device speech detection
@@ -414,5 +427,7 @@ Contributions are welcome! Please read our [Contributing Guide](docs/CONTRIBUTIN
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+The UnaMentis name and logos are trademarks and are not covered by the MIT license. See [TRADEMARK.md](TRADEMARK.md) for the trademark policy.
 
 Copyright (c) 2025-2026 Richard Amerman

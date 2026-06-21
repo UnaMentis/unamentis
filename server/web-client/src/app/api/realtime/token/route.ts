@@ -8,11 +8,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { allowIdentity, reserveDaily } from './rate-limit';
 
 const MANAGEMENT_API_URL = process.env.MANAGEMENT_API_URL || 'http://localhost:8766';
-
-const MINUTE_MS = 60_000;
-const DAY_MS = 86_400_000;
 
 interface TokenRequest {
   model?: string;
@@ -46,17 +44,8 @@ function getConfig() {
   };
 }
 
-// In-memory guard state (per server instance).
-const perIdentity = new Map<string, number[]>();
-let dayStart = 0;
-let dayCount = 0;
-
-/** Test-only: reset in-memory rate state between cases. */
-export function __resetRateState(): void {
-  perIdentity.clear();
-  dayStart = 0;
-  dayCount = 0;
-}
+// Rate-limit guards live in ./rate-limit because Next.js route modules may
+// only export HTTP method handlers and route config fields.
 
 function clientIp(request: NextRequest): string {
   const fwd = request.headers.get('x-forwarded-for');
@@ -64,38 +53,46 @@ function clientIp(request: NextRequest): string {
   return request.headers.get('x-real-ip') ?? 'unknown';
 }
 
-/** Reserve one slot against the global daily cap. Returns false when exhausted. */
-function reserveDaily(now: number, dailyCap: number): boolean {
-  if (now - dayStart >= DAY_MS) {
-    dayStart = now;
-    dayCount = 0;
+/**
+ * Reserve one mint against the Management API's durable daily budget
+ * (telemetry-store backed counter that survives restarts and is shared
+ * across instances, with a per-IP daily quota).
+ *
+ * Returns:
+ * - { allowed: true } when the reservation succeeded,
+ * - { allowed: false } when a daily ceiling is hit (HTTP 429),
+ * - null when the budget API is unreachable or unconfigured, in which case
+ *   the caller falls back to the in-memory guards above.
+ */
+async function reserveDurableBudget(request: NextRequest): Promise<{ allowed: boolean } | null> {
+  try {
+    const authHeader = request.headers.get('authorization');
+    const res = await fetch(`${MANAGEMENT_API_URL}/api/realtime/budget/reserve`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { Authorization: authHeader } : {}),
+      },
+      body: JSON.stringify({ clientIp: clientIp(request) }),
+    });
+    if (res.status === 429) {
+      return { allowed: false };
+    }
+    if (!res.ok) {
+      return null;
+    }
+    const data = await res.json().catch(() => ({}));
+    return { allowed: data?.allowed !== false };
+  } catch {
+    return null;
   }
-  if (dayCount >= dailyCap) {
-    return false;
-  }
-  dayCount += 1;
-  return true;
-}
-
-/** Record a hit for an identity. Returns false when over the per-minute limit. */
-function allowIdentity(identity: string, now: number, perMinute: number): boolean {
-  const recent = (perIdentity.get(identity) ?? []).filter((t) => now - t < MINUTE_MS);
-  if (recent.length >= perMinute) {
-    perIdentity.set(identity, recent);
-    return false;
-  }
-  recent.push(now);
-  perIdentity.set(identity, recent);
-  return true;
 }
 
 /**
  * Validate the caller against the Management API.
  * Returns { ok, userId } where ok is false (fail closed) on any error.
  */
-async function authenticate(
-  request: NextRequest
-): Promise<{ ok: boolean; userId: string | null }> {
+async function authenticate(request: NextRequest): Promise<{ ok: boolean; userId: string | null }> {
   const authHeader = request.headers.get('authorization');
   if (!authHeader) {
     return { ok: false, userId: null };
@@ -122,10 +119,7 @@ export async function POST(request: NextRequest) {
 
     if (!apiKey) {
       console.error('[Realtime Token] OPENAI_API_KEY not configured');
-      return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
     }
 
     const config = getConfig();
@@ -155,6 +149,19 @@ export async function POST(request: NextRequest) {
     // 3. Global daily wallet cap (denial-of-wallet ceiling).
     if (!reserveDaily(now, config.dailyCap)) {
       console.warn('[Realtime Token] Daily mint cap reached');
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
+    // 4. Durable daily spend ceiling: a Management-API counter that survives
+    // restarts and is shared across instances (REALTIME_DAILY_TOKEN_BUDGET,
+    // plus a per-IP daily quota). Falls back to the in-memory guards above
+    // when the budget API is unreachable.
+    const durable = await reserveDurableBudget(request);
+    if (durable !== null && !durable.allowed) {
+      console.warn('[Realtime Token] Durable daily token budget exhausted');
       return NextResponse.json(
         { error: 'Service temporarily unavailable. Please try again later.' },
         { status: 429 }

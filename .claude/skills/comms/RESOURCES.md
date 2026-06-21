@@ -7,7 +7,6 @@
 | all-unamentis | C0A5EE6FUT0 | all, general, main, everyone |
 | org-general | C0A6EC0QJ9Y | org |
 | org-marketing | C0A69UF198S | marketing |
-| org-monitize | C0A6JK80Z40 | monetize, money |
 | tech-general | C0A5PC9SV0T | tech |
 | tech-ios | C0A5LST6Q7P | ios, apple |
 | tech-android | C0A6J3WAV5K | android, droid |
@@ -43,7 +42,6 @@
 | Ongoing and Repeat Work | 694f012115d52a09d69f2943 | ongoing, repeat, recurring |
 | General | 694f02ae9f6bef6967e7122c | general |
 | Website | 694f026dd323a5f4ebe735ed | website, web, site |
-| Monitization | 694f02978776fce0f64e05c3 | monetize, money, revenue |
 
 ### My Trello board (Personal)
 **Board ID:** `694c5cf887afefaabf980d02`
@@ -70,4 +68,3 @@
 | server | tech-server | Tech Work | Server |
 | modules | - | Tech Work | Modules |
 | website | - | Org-Business Work | Website |
-| monetize | org-monitize | Org-Business Work | Monitization |

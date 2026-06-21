@@ -27,7 +27,7 @@ That's a big part of what we want to do: **to engage the student and reinforce t
 
 ## How This Shapes UnaMentis
 
-### AI as Tutor, Not Substitute
+### AI as Learning Partner, Not Substitute
 
 We use AI to deliver personalized instruction at scale. But our goal isn't to give answers. It's to build genuine understanding through:
 

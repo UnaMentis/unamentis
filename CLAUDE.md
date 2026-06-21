@@ -4,14 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## CRITICAL: Git Commit Policy
 
-**YOU MUST NEVER COMMIT OR PUSH TO GIT.** This is the highest priority mandate.
+**Claude may commit ONLY on an explicit, real-time command from the human, and must NEVER push.**
 
-- **ONLY stage changes** using `git add`
-- **NEVER run** `git commit`, `git push`, or any command that creates commits
-- The human developer will handle all commits to ensure proper contributor attribution
-- This applies even when asked to "commit" something - instead, stage the changes and inform the user they are ready
+- **Staging** (`git add`) is always allowed.
+- **Committing** (`git commit`) is allowed ONLY when the human gives a direct, in-the-moment instruction to commit (for example, "commit this"). There is no standing or blanket permission: each commit needs its own explicit go-ahead, so the human keeps the final call and the commit message is right. Without that explicit command, stage the changes and tell the human they are ready.
+- **Pushing** (`git push`, or anything that publishes to a remote) is NEVER done by Claude. The human handles all pushes.
 
-This rule ensures proper attribution and maintains the integrity of the contribution history. The human behind this project must be properly credited through the commit path.
+This keeps the human making the final call on what lands and preserves the integrity of the contribution history.
 
 ## Project Overview
 

@@ -1105,7 +1105,8 @@ CREATE TABLE consent_records (
     -- Consent category
     consent_category VARCHAR(50) NOT NULL CHECK (consent_category IN (
         'core_tutoring', 'progress_tracking', 'analytics',
-        'progress_sharing', 'third_party_ai', 'marketing'
+        'progress_sharing', 'third_party_ai', 'marketing',
+        'age_attestation', 'terms_of_service', 'privacy_policy'
     )),
 
     -- Status

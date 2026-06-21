@@ -13,7 +13,6 @@ on:
         type: choice
         options:
           - all
-          - ios
           - python
           - web
 
@@ -202,76 +201,7 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Mutation testing helps verify that your tests actually catch bugs, not just execute code.**" >> $GITHUB_STEP_SUMMARY
 
-  # iOS mutation testing with Muter (when available)
-  ios-mutation:
-    name: iOS Mutation Testing
-    runs-on: macos-14
-    if: github.event.inputs.target == 'ios'
-    # Note: iOS mutation testing is optional and only runs on manual trigger
-    # Muter is complex to set up in CI and resource-intensive
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Select Xcode 16.2
-      run: sudo xcode-select -s /Applications/Xcode_16.2.app
-
-    - name: Install Muter
-      run: |
-        brew install muter
-      continue-on-error: true
-
-    - name: Create placeholder model files
-      run: |
-        mkdir -p models
-        touch models/llama-3.2-3b-instruct-q4_k_m.gguf
-        touch models/ministral-3b-instruct-q4_k_m.gguf
-        touch models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
-
-    - name: Run Muter
-      id: muter
-      run: |
-        # Muter configuration
-        cat > muter.conf.json << 'EOF'
-        {
-          "executable": "/usr/bin/xcodebuild",
-          "arguments": [
-            "test",
-            "-project", "UnaMentis.xcodeproj",
-            "-scheme", "UnaMentis",
-            "-destination", "platform=iOS Simulator,name=iPhone 16 Pro",
-            "-only-testing:UnaMentisTests/Unit",
-            "CODE_SIGNING_ALLOWED=NO"
-          ],
-          "exclude": [
-            "UnaMentisTests/**",
-            "**/Generated/**"
-          ]
-        }
-        EOF
-
-        # Run Muter (this is resource-intensive)
-        muter run --skip-coverage --format json > muter-results.json 2>&1 || true
-      continue-on-error: true
-
-    - name: Upload Muter report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: muter-report
-        path: muter-results.json
-        retention-days: 30
-      continue-on-error: true
-
-    - name: Summary
-      if: always()
-      run: |
-        echo "## iOS Mutation Testing Results" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "iOS mutation testing with Muter completed." >> $GITHUB_STEP_SUMMARY
-        echo "Check the uploaded artifact for detailed results." >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Note:** iOS mutation testing is resource-intensive and runs only on manual trigger." >> $GITHUB_STEP_SUMMARY
+  # iOS mutation testing (Muter) lives in the unamentis-ios repository.
 
   # Summary job
   summary:

@@ -30,10 +30,42 @@ import {
   getMockStats,
   generateMockLog,
 } from './mock-data';
+import {
+  getMgmtApiToken,
+  recordAuthRequired,
+  recordLiveData,
+  recordMockFallback,
+} from './data-source-status';
 
 // Configuration
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true' || !BACKEND_URL;
+
+/**
+ * Thrown when the management API rejects a request with 401/403.
+ * Auth failures are never papered over with mock data (ND1): callers see the
+ * error and the DataSourceBanner shows the 'authentication required' state.
+ */
+export class ApiAuthError extends Error {
+  readonly status: number;
+  readonly endpoint: string;
+
+  constructor(status: number, endpoint: string) {
+    super(`Authentication required for ${endpoint} (HTTP ${status})`);
+    this.name = 'ApiAuthError';
+    this.status = status;
+    this.endpoint = endpoint;
+  }
+}
+
+/**
+ * Authorization header for management API calls when a token is configured
+ * (runtime token from localStorage or NEXT_PUBLIC_MGMT_API_TOKEN for dev).
+ */
+export function getAuthHeaders(): Record<string, string> {
+  const token = getMgmtApiToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 // In-memory state for demo mode (simulates backend state)
 let demoLogs: LogEntry[] = [...mockLogs];
@@ -67,17 +99,30 @@ async function fetchWithFallback<T>(
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
         ...options?.headers,
       },
     });
+
+    if (response.status === 401 || response.status === 403) {
+      // Authentication failure is not a reason to show sample data (ND1).
+      recordAuthRequired(endpoint);
+      throw new ApiAuthError(response.status, endpoint);
+    }
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    return await response.json();
+    const data = (await response.json()) as T;
+    recordLiveData(endpoint);
+    return data;
   } catch (error) {
+    if (error instanceof ApiAuthError) {
+      throw error;
+    }
     console.warn(`Backend unavailable, using mock data for ${endpoint}:`, error);
+    recordMockFallback(endpoint);
     return mockFn();
   }
 }
@@ -165,17 +210,31 @@ export async function getMetrics(params?: {
 
     // Calculate aggregates
     const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+    const totalTurns = filtered.reduce((sum, m) => sum + m.turns_total, 0);
+    const totalErrors = filtered.reduce((sum, m) => sum + (m.error_count ?? 0), 0);
+    const errorsByStage: Record<string, number> = {};
+    for (const m of filtered) {
+      for (const [stage, count] of Object.entries(m.errors_by_stage ?? {})) {
+        errorsByStage[stage] = (errorsByStage[stage] ?? 0) + count;
+      }
+    }
 
     return {
       metrics: filtered,
       aggregates: {
         avg_e2e_latency: Math.round(avg(filtered.map((m) => m.e2e_latency_median)) * 100) / 100,
+        avg_e2e_p99: Math.round(avg(filtered.map((m) => m.e2e_latency_p99)) * 100) / 100,
         avg_llm_ttft: Math.round(avg(filtered.map((m) => m.llm_ttft_median)) * 100) / 100,
         avg_stt_latency: Math.round(avg(filtered.map((m) => m.stt_latency_median)) * 100) / 100,
         avg_tts_ttfb: Math.round(avg(filtered.map((m) => m.tts_ttfb_median)) * 100) / 100,
+        avg_ttfa: Math.round(avg(filtered.map((m) => m.ttfa_median ?? 0)) * 100) / 100,
+        avg_ttfa_p99: Math.round(avg(filtered.map((m) => m.ttfa_p99 ?? 0)) * 100) / 100,
         total_cost: Math.round(filtered.reduce((sum, m) => sum + m.total_cost, 0) * 10000) / 10000,
         total_sessions: filtered.length,
-        total_turns: filtered.reduce((sum, m) => sum + m.turns_total, 0),
+        total_turns: totalTurns,
+        total_errors: totalErrors,
+        avg_error_rate: Math.round((totalErrors / Math.max(totalTurns, 1)) * 10000) / 10000,
+        errors_by_stage: errorsByStage,
       },
     };
   });
@@ -646,7 +705,7 @@ import type {
 
 const mockModelConfig: ModelConfig = {
   services: {
-    llm: { default_model: null, fallback_model: null },
+    llm: { default_model: 'qwen2.5:14b-instruct', fallback_model: 'qwen2.5:7b-instruct' },
     tts: { default_provider: 'vibevoice', default_voice: 'nova' },
     stt: { default_model: 'whisper' },
   },

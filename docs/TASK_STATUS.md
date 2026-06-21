@@ -4,7 +4,7 @@ This document tracks all tasks for the UnaMentis project. Tasks are divided into
 - **Part 1**: Autonomous tasks (AI agent can complete independently)
 - **Part 2**: Collaborative tasks (requires user participation, e.g. API keys, device testing)
 
-**Last Updated:** May 2026
+**Last Updated:** June 2026
 
 ---
 
@@ -17,8 +17,41 @@ This document tracks all tasks for the UnaMentis project. Tasks are divided into
 | 2026-04-13 | iOS app extracted from monorepo into `unamentis-ios` |
 | 2026-04-29 | Multi-repo documentation strategy established (`unamentis` as project hub) |
 | 2026-05-04 | Pre-TestFlight readiness audit complete; CI repaired, signing configured |
+| 2026-05-30 | Security/OSS readiness audit ([docs/reviews/SECURITY_OSS_READINESS_AUDIT_2026-05-30.md](reviews/SECURITY_OSS_READINESS_AUDIT_2026-05-30.md)) |
+| 2026-05-31 | First-beta readiness plan ([docs/reviews/BETA_READINESS_PLAN_2026-05-31.md](reviews/BETA_READINESS_PLAN_2026-05-31.md)) |
+| 2026-06-10/11 | Beta execution sprint: security, privacy, telemetry, on-device LLM (see below) |
 
-**Next milestone:** First TestFlight beta submission (Part 2 gates: see Sections 11-13).
+**Next milestone:** First TestFlight beta submission (not yet submitted).
+
+---
+
+## 2026-06-10/11: Beta Execution Sprint
+
+Tracked in [docs/planning/BETA_EXECUTION_PLAN_2026-06-10.md](planning/BETA_EXECUTION_PLAN_2026-06-10.md) with change-by-change records in [docs/planning/EXECUTION_LOG_2026-06-10.md](planning/EXECUTION_LOG_2026-06-10.md). Completed work:
+
+**Server security and privacy**
+- Consent records written at registration with policy versioning (age, terms, privacy) and `age_verified_at`; explicit policy-acceptance in the register form
+- Coarsened intake IPs plus a 90-day retention sweep for auth audit IPs
+- Content-Security-Policy on both Next.js apps: enforcing plus report-only headers with `/api/csp-report` ingestion
+- Daily realtime spend budget (durable daily mint ceiling plus per-IP quota) against denial-of-wallet
+- WebSocket `?token=` redaction in access logs
+
+**Telemetry end-to-end**
+- SQLite telemetry persistence (metrics/logs/clients survive restart) replacing in-memory deques
+- Allow-list field validation with byte caps (64KB body cap, byte-aware cache)
+- Typed error-count/error-rate, TTFA, and P99 metrics in intake and API; unique-session counting
+- Operations Console: live-vs-mock banner, auth token support, P99/TTFA/error-rate display
+
+**iOS (unamentis-ios)**
+- Consent-gated telemetry with 13+ onboarding attestation, revocable in Settings
+- HTTPS-capable telemetry endpoint configuration; TTFA and typed error counts in uploads
+- IDFV exporter compiled out of release builds; SystemBootTime privacy-manifest reason added
+- SwiftReadability pinned to a revision; transcript logging demoted in release builds
+- **On-device LLM working:** llama.cpp b7263 xcframework, `LLAMA_AVAILABLE` in Debug and Release, Ministral 3B GGUF proven generating in the iPhone 17 Pro simulator via `OnDeviceLLMService`
+
+**Deferred from the sprint**
+- USM Core crash supervision loop (post-beta per the 2026-05-31 plan)
+- TestFlight submission itself (human decision)
 
 ---
 
@@ -28,7 +61,7 @@ This document tracks all tasks for the UnaMentis project. Tasks are divided into
 |-----------|--------|-------|
 | Repo Structure | **Multi-repo** | `unamentis` (server/hub), `unamentis-ios`, `unamentis-android`, `unamentis-models` |
 | iOS Build | **Compiles** | Swift 6 strict concurrency, Xcode project generated via XcodeGen |
-| iOS Unit Tests | **85 test files** | 80% coverage threshold enforced via `test-ci.sh` |
+| iOS Unit Tests | **98 test files** | 80% coverage is a target; the `test-ci.sh` gate lives in `unamentis-ios` and is currently soft (see the unamentis-ios audit) |
 | iOS Integration Tests | **Multi-component** | Voice session, telemetry, audio pipeline, Core Data |
 | iOS CI (GitHub Actions) | **Repaired 2026-05-04** | hook-audit + placeholder model failures fixed |
 | iOS Signing | **Configured 2026-05-04** | DEVELOPMENT_TEAM set, automatic signing for distribution |
@@ -37,7 +70,9 @@ This document tracks all tasks for the UnaMentis project. Tasks are divided into
 | GLM-ASR On-Device | **Implemented** | On-device STT with CoreML + llama.cpp |
 | Siri & App Intents | **Implemented** | Voice commands, deep links, entities |
 | Privacy Manifest | **Complete** | PrivacyInfo.xcprivacy with required-reasons APIs declared |
-| Android Client | **In Progress** | Separate repo, parity build-out underway |
+| On-Device LLM | **Working (2026-06-11)** | llama.cpp b7263 + Ministral 3B GGUF generating in simulator |
+| Server Beta Hardening | **Landed 2026-06-10/11** | Consent records, telemetry persistence, CSP, spend budget (see sprint section above) |
+| Android Client | **Paused** | Separate repo, paused since February 2026 |
 
 ---
 

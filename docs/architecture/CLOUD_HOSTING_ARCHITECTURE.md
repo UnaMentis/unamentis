@@ -41,6 +41,8 @@ This document provides the comprehensive architecture for hosting UnaMentis on A
 
 ## Lambda Expansion Philosophy
 
+> **Status (June 2026): Future direction, parked for the first beta.** The Lambda data-plane handlers (curriculum, metrics) are `not_implemented` stubs. The first beta runs on the aiohttp Management API behind HTTPS instead (see [BETA_READINESS_PLAN_2026-05-31.md](../reviews/BETA_READINESS_PLAN_2026-05-31.md)). Treat this section as a future-direction document, not current deployment guidance.
+
 The architecture assumes Lambda services **will expand significantly**:
 - Current: ~40% Lambda-ready
 - Target: ~70-80% Lambda (expand as we migrate more)

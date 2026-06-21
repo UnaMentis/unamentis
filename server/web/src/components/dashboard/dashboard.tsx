@@ -27,6 +27,7 @@ import { useEffect, useCallback } from 'react';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import { Zap, CheckCircle, Users, FileText, AlertTriangle, AlertCircle } from 'lucide-react';
 import { Header } from './header';
+import { DataSourceBanner } from './data-source-banner';
 import {
   SectionNav,
   NavTabs,
@@ -153,6 +154,7 @@ export function Dashboard() {
           }}
           connected={connected}
         />
+        <DataSourceBanner />
         <SectionNav activeSection={activeSection} onSectionChange={handleSectionChange} />
         <NavTabs activeSection={activeSection} activeTab={activeTab} onTabChange={setActiveTab} />
       </div>

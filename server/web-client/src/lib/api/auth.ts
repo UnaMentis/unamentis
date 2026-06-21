@@ -24,6 +24,15 @@ import { tokenManager } from './token-manager';
 const APP_VERSION = '1.0.0';
 
 /**
+ * Version of the Terms of Service / Privacy Policy bundle currently served at
+ * /terms and /privacy. Sent with registration so the server records which
+ * version the user accepted. Must match POLICY_VERSION in
+ * server/management/auth/auth_api.py; bump both together when either
+ * document changes.
+ */
+export const POLICIES_VERSION = '2026-06-10';
+
+/**
  * Generate a device fingerprint for device registration.
  * Uses browser characteristics to create a semi-stable identifier.
  */
@@ -81,8 +90,7 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
   else if (ua.includes('Windows')) osName = 'Windows';
   else if (ua.includes('Linux')) osName = 'Linux';
   else if (ua.includes('Android')) osName = 'Android';
-  else if (ua.includes('iOS') || ua.includes('iPhone') || ua.includes('iPad'))
-    osName = 'iOS';
+  else if (ua.includes('iOS') || ua.includes('iPhone') || ua.includes('iPad')) osName = 'iOS';
 
   return {
     fingerprint,
@@ -101,13 +109,15 @@ export async function getDeviceInfo(): Promise<DeviceInfo> {
  * @param password - User password
  * @param displayName - User display name
  * @param ageAttestation - User confirms they are at least 13 years old (required)
+ * @param acceptedPoliciesVersion - Terms/Privacy version the user accepted (required)
  * @returns Auth response with user and tokens
  */
 export async function register(
   email: string,
   password: string,
   displayName: string,
-  ageAttestation: boolean
+  ageAttestation: boolean,
+  acceptedPoliciesVersion: string = POLICIES_VERSION
 ): Promise<AuthResponse> {
   const device = await getDeviceInfo();
 
@@ -116,6 +126,7 @@ export async function register(
     password,
     display_name: displayName,
     age_attestation: ageAttestation,
+    accepted_policies_version: acceptedPoliciesVersion,
     device,
   };
 
@@ -136,10 +147,7 @@ export async function register(
  * @param password - User password
  * @returns Auth response with user and tokens
  */
-export async function login(
-  email: string,
-  password: string
-): Promise<AuthResponse> {
+export async function login(email: string, password: string): Promise<AuthResponse> {
   const device = await getDeviceInfo();
 
   const request: LoginRequest = {
@@ -212,9 +220,7 @@ export async function getCurrentUser(): Promise<{ user: User }> {
  * @param updates - Profile updates
  * @returns Updated user profile
  */
-export async function updateCurrentUser(
-  updates: UserUpdateRequest
-): Promise<{ user: User }> {
+export async function updateCurrentUser(updates: UserUpdateRequest): Promise<{ user: User }> {
   return patch<{ user: User }>('/auth/me', updates);
 }
 
@@ -250,9 +256,7 @@ export async function listDevices(): Promise<DeviceListResponse> {
  *
  * @param deviceId - Device ID to remove
  */
-export async function removeDevice(
-  deviceId: string
-): Promise<{ message: string }> {
+export async function removeDevice(deviceId: string): Promise<{ message: string }> {
   return del<{ message: string }>(`/auth/devices/${deviceId}`);
 }
 
@@ -270,9 +274,7 @@ export async function listSessions(): Promise<SessionListResponse> {
  *
  * @param sessionId - Session ID to terminate
  */
-export async function terminateSession(
-  sessionId: string
-): Promise<{ message: string }> {
+export async function terminateSession(sessionId: string): Promise<{ message: string }> {
   return del<{ message: string }>(`/auth/sessions/${sessionId}`);
 }
 

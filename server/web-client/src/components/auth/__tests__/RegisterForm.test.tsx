@@ -8,7 +8,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RegisterForm } from '../RegisterForm';
 import { AuthProvider } from '../AuthProvider';
-import { ApiError } from '@/lib/api';
+import { ApiError, POLICIES_VERSION } from '@/lib/api';
 import * as api from '@/lib/api';
 
 // Mock the API module
@@ -53,6 +53,8 @@ describe('RegisterForm', () => {
         expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/at least 13 years old/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/accept the terms of service/i)).toBeInTheDocument();
       });
     });
 
@@ -95,6 +97,7 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
       await user.click(screen.getByLabelText(/at least 13 years old/i));
+      await user.click(screen.getByLabelText(/accept the terms of service/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -114,6 +117,7 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
       await user.click(screen.getByLabelText(/at least 13 years old/i));
+      await user.click(screen.getByLabelText(/accept the terms of service/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -167,7 +171,9 @@ describe('RegisterForm', () => {
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
-        expect(screen.getByText(/password must contain at least one uppercase letter/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/password must contain at least one uppercase letter/i)
+        ).toBeInTheDocument();
       });
     });
 
@@ -185,7 +191,9 @@ describe('RegisterForm', () => {
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
-        expect(screen.getByText(/password must contain at least one lowercase letter/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/password must contain at least one lowercase letter/i)
+        ).toBeInTheDocument();
       });
     });
 
@@ -224,13 +232,40 @@ describe('RegisterForm', () => {
         expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
       });
     });
+
+    it('should show error when terms and privacy policy are not accepted', async () => {
+      renderWithAuth(<RegisterForm />);
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/display name/i)).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByLabelText(/display name/i), 'Test User');
+      await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/^password$/i), 'Password123');
+      await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
+      await user.click(screen.getByLabelText(/at least 13 years old/i));
+      await user.click(screen.getByRole('button', { name: /create account/i }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/must accept the terms of service and privacy policy/i)
+        ).toBeInTheDocument();
+      });
+      expect(api.register).not.toHaveBeenCalled();
+    });
   });
 
   describe('submission', () => {
     it('should call register on valid submission', async () => {
       (api.register as Mock).mockResolvedValue({
         user: { id: '1', email: 'test@example.com', display_name: 'Test User' },
-        tokens: { access_token: 'token', refresh_token: 'refresh', token_type: 'Bearer', expires_in: 900 },
+        tokens: {
+          access_token: 'token',
+          refresh_token: 'refresh',
+          token_type: 'Bearer',
+          expires_in: 900,
+        },
         device: { id: 'device-1' },
       });
 
@@ -246,10 +281,17 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
       await user.click(screen.getByLabelText(/at least 13 years old/i));
+      await user.click(screen.getByLabelText(/accept the terms of service/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
-        expect(api.register).toHaveBeenCalledWith('test@example.com', 'Password123', 'Test User', true);
+        expect(api.register).toHaveBeenCalledWith(
+          'test@example.com',
+          'Password123',
+          'Test User',
+          true,
+          POLICIES_VERSION
+        );
         expect(onSuccess).toHaveBeenCalled();
       });
     });
@@ -270,6 +312,7 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
       await user.click(screen.getByLabelText(/at least 13 years old/i));
+      await user.click(screen.getByLabelText(/accept the terms of service/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -294,6 +337,7 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
       await user.click(screen.getByLabelText(/at least 13 years old/i));
+      await user.click(screen.getByLabelText(/accept the terms of service/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -316,10 +360,40 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
       await user.click(screen.getByLabelText(/at least 13 years old/i));
+      await user.click(screen.getByLabelText(/accept the terms of service/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/password is too weak/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should show error for policy_acceptance_required from API', async () => {
+      const apiError = new ApiError(
+        'Policy acceptance required',
+        400,
+        'policy_acceptance_required'
+      );
+      (api.register as Mock).mockRejectedValue(apiError);
+
+      renderWithAuth(<RegisterForm />);
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/display name/i)).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByLabelText(/display name/i), 'Test User');
+      await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/^password$/i), 'Password123');
+      await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
+      await user.click(screen.getByLabelText(/at least 13 years old/i));
+      await user.click(screen.getByLabelText(/accept the terms of service/i));
+      await user.click(screen.getByRole('button', { name: /create account/i }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/must accept the terms of service and privacy policy/i)
+        ).toBeInTheDocument();
       });
     });
 
@@ -337,6 +411,7 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/^password$/i), 'Password123');
       await user.type(screen.getByLabelText(/confirm password/i), 'Password123');
       await user.click(screen.getByLabelText(/at least 13 years old/i));
+      await user.click(screen.getByLabelText(/accept the terms of service/i));
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {

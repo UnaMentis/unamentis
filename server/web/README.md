@@ -37,9 +37,12 @@ python server.py
 
 ```bash
 # .env.local
-BACKEND_URL=http://localhost:8766
 NEXT_PUBLIC_USE_MOCK=false
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8766
+# Optional: dev-time operator token when the management API has auth enabled.
+# At runtime, a token can also be entered in the console banner (stored in
+# localStorage) and takes precedence over this value.
+NEXT_PUBLIC_MGMT_API_TOKEN=
 ```
 
 3. Start the frontend:
@@ -50,11 +53,23 @@ npm run dev
 
 ## Environment Variables
 
-| Variable                  | Description                      | Default      |
-| ------------------------- | -------------------------------- | ------------ |
-| `BACKEND_URL`             | Python backend URL (server-side) | Empty (mock) |
-| `NEXT_PUBLIC_USE_MOCK`    | Force mock data mode             | `true`       |
-| `NEXT_PUBLIC_BACKEND_URL` | Backend URL (client-side)        | Empty        |
+| Variable                     | Description                                           | Default |
+| ---------------------------- | ----------------------------------------------------- | ------- |
+| `NEXT_PUBLIC_USE_MOCK`       | Force mock data mode                                  | `true`  |
+| `NEXT_PUBLIC_BACKEND_URL`    | Management API URL (client-side)                      | Empty   |
+| `NEXT_PUBLIC_MGMT_API_TOKEN` | Dev operator token for the management API (optional)  | Empty   |
+
+Note: the old server-side `BACKEND_URL` variable is gone. The Next API proxy
+routes that read it (`/api/metrics`, `/api/clients`, `/api/logs`, `/api/stats`,
+`/api/servers`, `/api/models`) were removed because the console fetches the
+management API directly via `NEXT_PUBLIC_BACKEND_URL`, and the proxies served
+mock data whenever `BACKEND_URL` was unset.
+
+When the backend is configured but a request fails, the console shows a
+warning banner ("Showing sample data: backend unreachable") instead of
+silently substituting mock data. A 401/403 from the management API surfaces
+a distinct "authentication required" banner with a token entry field; the
+token is persisted in localStorage and sent as `Authorization: Bearer`.
 
 ## Architecture
 

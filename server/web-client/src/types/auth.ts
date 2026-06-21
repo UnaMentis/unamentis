@@ -89,6 +89,11 @@ export interface RegisterRequest {
   display_name: string;
   /** User confirms they are at least 13 years old (required by the server). */
   age_attestation: boolean;
+  /**
+   * Version of the Terms of Service / Privacy Policy bundle the user accepted
+   * (required by the server, recorded in consent_records).
+   */
+  accepted_policies_version: string;
   device: DeviceInfo;
 }
 
@@ -152,7 +157,8 @@ export interface AuthContextValue extends AuthState {
     email: string,
     password: string,
     displayName: string,
-    ageAttestation: boolean
+    ageAttestation: boolean,
+    acceptedPoliciesVersion: string
   ) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;

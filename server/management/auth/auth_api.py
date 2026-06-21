@@ -20,11 +20,22 @@ from datetime import datetime, timezone
 from typing import Optional
 from aiohttp import web
 
+from ip_privacy import coarsen_ip
+
 from .password_service import PasswordService
 from .token_service import TokenService
 from .rate_limiter import RateLimiter
 
 logger = logging.getLogger(__name__)
+
+# Version of the Terms of Service / Privacy Policy bundle that registration
+# records consent against. Bump this date whenever either document changes in
+# a way that requires re-acceptance.
+POLICY_VERSION = "2026-06-10"
+
+# consent_records.privacy_policy_version is VARCHAR(20); reject anything longer
+# rather than truncating a value the user supposedly accepted.
+_MAX_POLICY_VERSION_LENGTH = 20
 
 
 class AuthAPI:
@@ -55,6 +66,7 @@ class AuthAPI:
             "password": "securepassword",
             "display_name": "User Name",  // optional
             "age_attestation": true,  // REQUIRED: user confirms they are 13 or older
+            "accepted_policies_version": "2026-06-10",  // REQUIRED: Terms + Privacy version accepted
             "device": {  // optional, registers device on signup
                 "fingerprint": "device-uuid",
                 "name": "iPhone 15",
@@ -76,6 +88,7 @@ class AuthAPI:
         password = data.get("password", "")
         display_name = data.get("display_name", "").strip() or None
         age_attestation = data.get("age_attestation", False)
+        accepted_policies_version = data.get("accepted_policies_version")
         device_data = data.get("device")
 
         # Validate email
@@ -118,6 +131,27 @@ class AuthAPI:
                 status=400,
             )
 
+        # Explicit, versioned Terms of Service + Privacy Policy acceptance.
+        # The client sends the version string it presented to the user; the
+        # consent_records rows below are recorded against that version.
+        if isinstance(accepted_policies_version, str):
+            accepted_policies_version = accepted_policies_version.strip()
+        if (
+            not accepted_policies_version
+            or not isinstance(accepted_policies_version, str)
+            or len(accepted_policies_version) > _MAX_POLICY_VERSION_LENGTH
+        ):
+            return web.json_response(
+                {
+                    "error": "policy_acceptance_required",
+                    "message": (
+                        "You must accept the Terms of Service and Privacy "
+                        "Policy to create an account."
+                    ),
+                },
+                status=400,
+            )
+
         async with self.db.acquire() as conn:
             # Check if email already exists
             existing = await conn.fetchrow(
@@ -142,12 +176,15 @@ class AuthAPI:
             user_id = uuid.uuid4()
             now = datetime.now(timezone.utc)
 
+            # age_verified_at records when the (self-attested) 13+ age gate was
+            # passed; registration cannot reach this point without it.
             await conn.execute(
                 """
                 INSERT INTO users (
                     id, email, password_hash, password_updated_at,
-                    display_name, privacy_tier_id, created_at, updated_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+                    display_name, privacy_tier_id, age_verified_at,
+                    created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $7)
                 """,
                 user_id,
                 email,
@@ -177,6 +214,17 @@ class AuthAPI:
                 event_status="success",
                 ip_address=self._get_client_ip(request),
                 user_agent=request.headers.get("User-Agent"),
+            )
+
+            # Versioned consent records (GDPR/COPPA audit trail): one row each
+            # for the age attestation and the Terms of Service / Privacy
+            # Policy acceptance the user just gave.
+            await self._record_registration_consent(
+                conn,
+                user_id=user_id,
+                granted_at=now,
+                policy_version=accepted_policies_version,
+                request=request,
             )
 
             response_data = {
@@ -1175,6 +1223,52 @@ class AuthAPI:
         }
 
         return device_id, tokens
+
+    async def _record_registration_consent(
+        self,
+        conn,
+        user_id: uuid.UUID,
+        granted_at: datetime,
+        policy_version: str,
+        request: web.Request,
+    ) -> None:
+        """Write versioned consent_records rows for a new registration.
+
+        One row per category: the 13+ age attestation plus the explicit Terms
+        of Service and Privacy Policy acceptance. The audit context stores a
+        SHA-256 hash of the privacy-coarsened client IP (never the exact
+        address) and a hash of the user agent, matching the hashed-context
+        columns in schema.sql.
+        """
+        client_ip = self._get_client_ip(request)
+        ip_hash = hashlib.sha256(coarsen_ip(client_ip).encode()).hexdigest()
+        user_agent = request.headers.get("User-Agent")
+        user_agent_hash = (
+            hashlib.sha256(user_agent.encode()).hexdigest() if user_agent else None
+        )
+
+        for category in ("age_attestation", "terms_of_service", "privacy_policy"):
+            await conn.execute(
+                """
+                INSERT INTO consent_records (
+                    id, user_id, consent_category, status, granted_at,
+                    legal_basis, is_minor, privacy_policy_version,
+                    ip_address_hash, user_agent_hash, collection_method,
+                    created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $5, $5)
+                """,
+                uuid.uuid4(),
+                user_id,
+                category,
+                "granted",
+                granted_at,
+                "consent",
+                False,
+                policy_version,
+                ip_hash,
+                user_agent_hash,
+                "registration_form",
+            )
 
     async def _log_auth_event(
         self,

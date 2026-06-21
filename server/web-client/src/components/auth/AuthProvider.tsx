@@ -121,8 +121,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const response = await apiLogin(email, password);
         setUser(response.user);
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Login failed';
+        const message = error instanceof Error ? error.message : 'Login failed';
         updateState({ isLoading: false, error: message });
         throw error;
       }
@@ -138,7 +137,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       email: string,
       password: string,
       displayName: string,
-      ageAttestation: boolean
+      ageAttestation: boolean,
+      acceptedPoliciesVersion: string
     ): Promise<void> => {
       updateState({ isLoading: true, error: null });
 
@@ -147,12 +147,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           email,
           password,
           displayName,
-          ageAttestation
+          ageAttestation,
+          acceptedPoliciesVersion
         );
         setUser(response.user);
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Registration failed';
+        const message = error instanceof Error ? error.message : 'Registration failed';
         updateState({ isLoading: false, error: message });
         throw error;
       }
@@ -198,9 +198,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [state, login, register, logout, refreshToken]
   );
 
-  return (
-    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
 
 /**

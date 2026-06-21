@@ -21,8 +21,25 @@
 >   [SUBPROCESSORS.md](SUBPROCESSORS.md)). On-device providers keep audio local.
 > - **Client IP is coarsened** (IPv4 to /24, IPv6 to /48) on telemetry and log
 >   intake; the exact IP from those endpoints is not stored.
+> - **Security logs keep exact IPs, time-bounded.** Account-security events
+>   (login, registration, token refresh, device registration) record the exact
+>   client IP in the auth audit log and on refresh tokens. Rationale: abuse and
+>   credential-stuffing forensics need to distinguish individual hosts, and a
+>   coarsened /24 cannot tell an attacker from a victim on the same network. A
+>   retention sweep (`server/management/auth/ip_retention.py`, run at startup
+>   and every 24 hours) nulls these IPs after 90 days (audit-log rows older
+>   than 90 days, and expired or revoked refresh tokens issued more than 90
+>   days ago). This window is disclosed on the web client's `/privacy` page;
+>   change both together.
 > - **Age:** a 13+ self-attestation is required at registration; under-13 is out
 >   of scope. Verifiable parental consent (COPPA) is NOT implemented.
+> - **Registration consent records:** registration requires explicit acceptance
+>   of the Terms of Service and Privacy Policy (versioned, currently
+>   `2026-06-10`) in addition to the age attestation. The server writes
+>   `consent_records` rows for `age_attestation`, `terms_of_service`, and
+>   `privacy_policy` with the accepted version and a SHA-256 hash of the
+>   coarsened client IP (never the exact address), and stamps
+>   `users.age_verified_at`.
 > - **Not yet implemented:** hardware-backed on-device encryption as the default,
 >   consent-gated sync, automated data export and deletion, enforced retention,
 >   multi-tenant/FERPA isolation, and the privacy dashboard. Treat references to

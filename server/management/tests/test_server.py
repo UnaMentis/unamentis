@@ -367,6 +367,7 @@ def mock_request(real_state):
     request.match_info = {}
     request.headers = {}
     request.remote = "127.0.0.1"
+    request.content_length = None
 
     # Create real app with state
     app = web.Application()

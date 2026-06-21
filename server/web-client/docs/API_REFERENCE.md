@@ -73,6 +73,8 @@ Create a new user account.
   "email": "user@example.com",
   "password": "securepassword",
   "display_name": "User Name",
+  "age_attestation": true,
+  "accepted_policies_version": "2026-06-10",
   "device": {
     "fingerprint": "device-uuid",
     "name": "Chrome on macOS",
@@ -83,6 +85,11 @@ Create a new user account.
   }
 }
 ```
+
+`age_attestation` (required) confirms the user is at least 13 years old.
+`accepted_policies_version` (required) is the version of the Terms of
+Service / Privacy Policy bundle the user accepted (see `POLICIES_VERSION` in
+`src/lib/api/auth.ts`).
 
 **Response (201):**
 ```json
@@ -108,6 +115,8 @@ Create a new user account.
 **Errors:**
 - `400 invalid_email` - Invalid email format
 - `400 weak_password` - Password too weak
+- `400 age_attestation_required` - Missing or false age attestation
+- `400 policy_acceptance_required` - Missing Terms/Privacy acceptance version
 - `409 email_exists` - Email already registered
 
 ---

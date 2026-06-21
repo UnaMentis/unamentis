@@ -18,7 +18,7 @@ export default function PrivacyPage() {
   return (
     <main className="min-h-screen">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b">
+      <div className="flex items-center gap-2 border-b px-4 py-3">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -26,32 +26,40 @@ export default function PrivacyPage() {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-6 max-w-2xl space-y-6 text-sm leading-relaxed">
+      <div className="container mx-auto max-w-2xl space-y-6 px-4 py-6 text-sm leading-relaxed">
         <p className="text-muted-foreground">
-          Beta draft, last updated 2026-05-31. This describes our current data
-          practices and is pending legal review. UnaMentis is for users 13 and
-          older.
+          Beta draft v1.0, last updated 2026-06-10. This describes our current data practices and is
+          pending legal review. UnaMentis is for users 13 and older.
         </p>
 
         <section className="space-y-2">
           <h2 className="text-base font-semibold">What we collect</h2>
-          <ul className="list-disc pl-5 space-y-1">
+          <ul className="list-disc space-y-1 pl-5">
             <li>
-              <strong>Account data:</strong> your email, a securely hashed
-              password, basic device information (a device fingerprint and the
-              app/browser user agent), used to create and secure your account.
+              <strong>Account data:</strong> your email, a securely hashed password, basic device
+              information (a device fingerprint and the app/browser user agent), used to create and
+              secure your account.
             </li>
             <li>
-              <strong>Aggregate session telemetry:</strong> non-content metrics
-              such as session length, turn and interruption counts, latency,
-              estimated costs, and thermal/network events. This is keyed to a
-              per-install random identifier and contains no transcripts or
-              learning content.
+              <strong>Aggregate session telemetry:</strong> non-content metrics such as session
+              length, turn and interruption counts, latency, estimated costs, and thermal/network
+              events. This is keyed to a per-install random identifier and contains no transcripts
+              or learning content.
             </li>
             <li>
-              <strong>Network address:</strong> on telemetry and log intake we
-              coarsen your IP address before storing it (IPv4 to a /24 network,
-              IPv6 to a /48). We do not store your exact IP from these endpoints.
+              <strong>Network address:</strong> on telemetry and log intake we coarsen your IP
+              address before storing it (IPv4 to a /24 network, IPv6 to a /48). We do not store your
+              exact IP from these endpoints.
+            </li>
+            <li>
+              <strong>Security logs:</strong> for account-security events (login, registration,
+              token refresh) we retain your exact IP address for 90 days to detect and investigate
+              abuse such as credential stuffing. After 90 days it is deleted or coarsened.
+            </li>
+            <li>
+              <strong>Consent records:</strong> when you register we store a versioned record of
+              your age attestation and your acceptance of the Terms of Service and Privacy Policy,
+              with a hash of your coarsened IP address.
             </li>
           </ul>
         </section>
@@ -59,11 +67,10 @@ export default function PrivacyPage() {
         <section className="space-y-2">
           <h2 className="text-base font-semibold">Voice and transcripts</h2>
           <p>
-            UnaMentis servers do not store voice recordings or transcripts. When
-            you use a cloud voice provider, your audio and transcripts are sent
-            to a third-party AI provider to produce responses. Their handling and
-            retention are governed by that provider. If you select on-device
-            providers, audio stays on your device.
+            UnaMentis servers do not store voice recordings or transcripts. When you use a cloud
+            voice provider, your audio and transcripts are sent to a third-party AI provider to
+            produce responses. Their handling and retention are governed by that provider. If you
+            select on-device providers, audio stays on your device.
           </p>
         </section>
 
@@ -86,29 +93,30 @@ export default function PrivacyPage() {
         <section className="space-y-2">
           <h2 className="text-base font-semibold">Children</h2>
           <p>
-            UnaMentis is intended for users 13 and older. Registration requires a
-            self-attestation that you are at least 13. We do not knowingly collect
-            data from children under 13. Verifiable parental consent flows are not
-            offered in the beta.
+            UnaMentis is intended for users 13 and older. Registration requires a self-attestation
+            that you are at least 13. We do not knowingly collect data from children under 13.
+            Verifiable parental consent flows are not offered in the beta.
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="text-base font-semibold">Your choices</h2>
           <p>
-            We aim to minimize the data we store. Automated self-service export
-            and deletion are not yet available in the beta; to request export or
-            deletion of your account data, contact support. Enforced retention
-            schedules and an in-app privacy dashboard are planned and not yet
-            implemented.
+            We aim to minimize the data we store. Automated self-service export and deletion are not
+            yet available in the beta; to request export or deletion of your account data, contact
+            support. Enforced retention schedules and an in-app privacy dashboard are planned and
+            not yet implemented.
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="text-base font-semibold">Contact</h2>
           <p>
-            Questions about privacy: contact support through the channel provided
-            with your beta invitation.
+            Questions about privacy:{' '}
+            <a href="mailto:info@unamentis.org" className="text-primary hover:underline">
+              info@unamentis.org
+            </a>
+            .
           </p>
         </section>
       </div>

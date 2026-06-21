@@ -67,10 +67,7 @@ jobs:
         run: |
           mkdir -p .arch-output/live
 
-          if [ -f "architecture.json" ]; then
-            echo "Using pre-built architecture JSON"
-            cp architecture.json .arch-output/architecture.json
-          elif [ -f "solution-explorer.json" ]; then
+          if [ -f "solution-explorer.json" ]; then
             python3 .solution-explorer/analyze.py --config solution-explorer.json \
               -o .arch-output/architecture.json --compact
           else

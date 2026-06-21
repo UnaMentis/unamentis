@@ -1,28 +1,30 @@
 # UnaMentis - Project Overview
 
+**Last Updated:** June 2026
+
 ## Purpose
 
-UnaMentis is an AI-powered voice tutoring platform that enables extended (60-90+ minute) educational conversations. The project addresses limitations in existing voice AI (like ChatGPT's Advanced Voice Mode) by providing low-latency, natural voice interaction with curriculum-driven learning.
+UnaMentis is a voice AI learning platform that enables extended (60-90+ minute) learning conversations. The project addresses limitations in existing voice AI (like ChatGPT's Advanced Voice Mode) by providing low-latency, natural voice interaction with curriculum-driven learning.
 
-**Vision:** AI-powered learning that makes you smarter, not dependent. A personalized tutor that works with you over long stretches of time, understands your learning progress and style, and evolves into a true personal tutor, while ensuring genuine understanding through teachback, productive struggle, and spaced retrieval.
+**Vision:** AI-powered learning that makes you smarter, not dependent. A personalized learning partner that works with you over long stretches of time, understands your learning progress and style, and evolves into a true learning companion, while ensuring genuine understanding through teachback, productive struggle, and spaced retrieval.
 
 **Core Principle:** AI is at the core of what we're building, but the real core is the individual learner. UnaMentis exists to strengthen, not replace, the cognitive work of genuine understanding.
 
 **Development Model:** 100% AI-assisted development (Claude Code mostly).
 
-See [About UnaMentis](ABOUT.md) for our complete philosophy and values.
+See [About UnaMentis](../ABOUT.md) for our complete philosophy and values.
 
 ---
 
 ## Client Applications
 
-UnaMentis provides voice tutoring across multiple platforms:
+UnaMentis provides voice-based learning across multiple platforms:
 
 | Client | Platform | Technology | Status | Repository |
 |--------|----------|------------|--------|------------|
-| **iOS App** | iPhone/iPad | Swift 6.0, SwiftUI | TestFlight beta prep (May 2026) | [`unamentis-ios`](https://github.com/UnaMentis/unamentis-ios) (separate repo) |
-| **Web Client** | Browsers | Next.js 15+, React 19, TypeScript | Feature-complete | This repo (`server/web-client/`) |
-| **Android App** | Android | Kotlin | In development | [`unamentis-android`](https://github.com/UnaMentis/unamentis-android) (separate repo) |
+| **iOS App** | iPhone/iPad | Swift 6.0, SwiftUI | Pre-beta, TestFlight prep (June 2026, not yet submitted) | [`unamentis-ios`](https://github.com/UnaMentis/unamentis-ios) (separate repo) |
+| **Web Client** | Browsers | Next.js 15+, React 19, TypeScript | Functional pre-beta (voice, curriculum, visual assets) | This repo (`server/web-client/`) |
+| **Android App** | Android | Kotlin | Paused since February 2026 | [`unamentis-android`](https://github.com/UnaMentis/unamentis-android) (separate repo) |
 
 ### iOS App (Primary)
 - **Target Devices:** iPhone 16/17 Pro Max (optimized), iPad
@@ -35,9 +37,9 @@ UnaMentis provides voice tutoring across multiple platforms:
 - **Features:** Voice conversations, curriculum browser, visual assets, responsive design
 
 ### Android App
-- **Status:** Active development in separate repository
+- **Status:** Paused since February 2026 (separate repository)
 - **Technology:** Kotlin with on-device inference support
-- **Note:** Feature parity with iOS is the goal; currently implementing core voice pipeline
+- **Note:** Feature parity with iOS is the long-term goal; core voice pipeline work is on hold while the iOS beta lands
 
 ---
 
@@ -51,7 +53,7 @@ UnaMentis is a multi-repo project. The `unamentis` repo serves as the project hu
 |------|---------|
 | `unamentis` (this repo) | Server infrastructure, curriculum, project hub, cross-cutting documentation |
 | `unamentis-ios` | iOS client (Swift 6.0/SwiftUI), TestFlight beta prep |
-| `unamentis-android` | Android client (Kotlin), in development |
+| `unamentis-android` | Android client (Kotlin), paused since February 2026 |
 | `unamentis-models` | Shared ML model artifacts (Ministral, Kyutai TTS, etc.) |
 
 ### This Repo Layout
@@ -65,7 +67,7 @@ unamentis/
 │   │   └── USMXcode-FFI/      # USM-FFI app (Swift, uses USM Core)
 │   ├── management/            # Management API (Python/aiohttp, port 8766)
 │   ├── web/                   # Operations Console (Next.js/React, port 3000)
-│   ├── web-client/            # Web Client (Next.js, voice tutoring for browsers)
+│   ├── web-client/            # Web Client (Next.js, voice learning for browsers)
 │   ├── database/              # Shared SQLite curriculum database
 │   ├── importers/             # Curriculum import framework
 │   └── latency_harness/       # Automated latency testing CLI
@@ -87,7 +89,7 @@ unamentis/
 |-----------|----------|------------|---------|
 | **USM Core** | `server/usm-core/` | Rust, Tokio, Axum | Cross-platform service manager (port 8787) |
 | **USM-FFI** | `server/server-manager/USMXcode-FFI/` | Swift 6.0, SwiftUI | macOS menu bar app (uses USM Core) |
-| Web Client | `server/web-client/` | Next.js 15+, React, TypeScript | Voice tutoring for browsers |
+| Web Client | `server/web-client/` | Next.js 15+, React, TypeScript | Voice learning for browsers |
 | Management API | `server/management/` | Python, aiohttp | Backend API (port 8766) |
 | Operations Console | `server/web/` | Next.js 16.1, React 19 | System/content management (port 3000) |
 | Importers | `server/importers/` | Python | Plugin-based curriculum import |
@@ -107,6 +109,7 @@ All components are **protocol-based and swappable**. The system supports multipl
 | Provider | Model | Type | Notes |
 |----------|-------|------|-------|
 | **Apple Speech** | Native | On-device | Zero cost, always available, ~150ms latency |
+| **FluidAudio** | Parakeet realtime EOU (CoreML) | On-device (Neural Engine) | Streaming partials plus native end-of-utterance signal for barge-in; models auto-download on first use |
 | **GLM-ASR (Server)** | GLM-ASR-Nano-2512 | Self-hosted (SGLang/vLLM) | Zero cost, WebSocket streaming, health-based failover to Deepgram |
 | **GLM-ASR (On-device)** | GLM-ASR-Nano-2512 Q4_K_M | On-device (GGUF) | Unified GGUF ~1.06GB, requires iPhone 17 Pro+ (12GB RAM), blocked on llama.cpp wrapper update |
 | **Deepgram** | Nova-3 | Cloud (WebSocket) | ~300ms latency, streaming |
@@ -196,7 +199,7 @@ Kyutai Pocket is the **primary on-device TTS option** in Voice Settings, positio
 
 | Provider | Model | Type | Notes |
 |----------|-------|------|-------|
-| **On-Device** | Ministral-3B-Instruct-Q4_K_M | On-device (llama.cpp) | ~2.1GB, primary on-device |
+| **On-Device** | Ministral-3B-Instruct-Q4_K_M | On-device (llama.cpp) | ~2.1GB, primary on-device; functional as of June 2026 |
 | **On-Device** | TinyLlama-1.1B-Chat | On-device (llama.cpp) | Fallback, smaller footprint |
 | **Anthropic** | Claude 3.5 Sonnet | Cloud | Primary cloud model |
 | **OpenAI** | GPT-4o, GPT-4o-mini | Cloud | Alternative cloud option |
@@ -204,6 +207,10 @@ Kyutai Pocket is the **primary on-device TTS option** in Voice Settings, positio
 | **Ollama** | Mistral 7B, Qwen2.5:32B, Llama3.2:3B | Self-hosted | OpenAI-compatible API |
 | **llama.cpp server** | Any GGUF model | Self-hosted | Custom OpenAI-compatible |
 | **vLLM** | Any HuggingFace model | Self-hosted | High-throughput inference |
+
+#### On-Device LLM Status (June 2026)
+
+On-device LLM inference is now functional in the iOS app. The llama.cpp b7263 xcframework is integrated with `LLAMA_AVAILABLE` enabled in both Debug and Release builds, and `OnDeviceLLMService` has been proven generating tokens with the Ministral 3B GGUF model in the iPhone 17 Pro simulator. Remaining rough edges are cosmetic (a stubbed Load Model button in Settings and model display-name polish). MLX with Qwen3-class models remains the research direction for the next generation of on-device inference.
 
 ### Voice Activity Detection (VAD)
 
@@ -226,12 +233,14 @@ The app works on any device, even without API keys or servers:
 |-----------|-------------------|----------|------------------|
 | **STT** | Apple Speech | - | Yes |
 | **TTS** | **Kyutai Pocket** (100M neural) | Apple TTS | Kyutai requires ~100MB download; Apple TTS always available |
-| **LLM** | OnDeviceLLMService | - | Requires bundled models |
+| **LLM** | OnDeviceLLMService (llama.cpp, Ministral 3B) | - | Requires downloaded GGUF model |
 | **VAD** | Silero VAD | RMS-based detection | Yes |
 
 ---
 
 ## iOS App Architecture
+
+> The iOS app lives in the separate [`unamentis-ios`](https://github.com/UnaMentis/unamentis-ios) repository. This section is a cross-cutting summary; the iOS repo is canonical for code structure and counts.
 
 **Target:** iPhone 16/17 Pro Max | **Minimum:** iOS 18.0 | **Language:** Swift 6.0
 
@@ -251,7 +260,7 @@ UnaMentis/
 │   └── Telemetry/       # TelemetryEngine (latency, cost, events)
 ├── Services/
 │   ├── LLM/             # OpenAI, Anthropic, Self-Hosted, On-Device
-│   ├── STT/             # AssemblyAI, Deepgram, Groq, Apple, GLM-ASR, Router
+│   ├── STT/             # Apple, AssemblyAI, Deepgram, FluidAudio, GLM-ASR, Groq, Self-Hosted, Router
 │   ├── TTS/             # Kyutai Pocket, Chatterbox, ElevenLabs, Deepgram, Apple, VibeVoice
 │   ├── VAD/             # SileroVADService (CoreML)
 │   ├── Embeddings/      # OpenAIEmbeddingService
@@ -273,14 +282,16 @@ UnaMentis/
 
 ### Service Counts
 
+Counts below are service implementations in `unamentis-ios/UnaMentis/Services/` (June 2026):
+
 | Category | Count | Providers |
 |----------|-------|-----------|
-| **STT Providers** | 9 | AssemblyAI, Deepgram, Groq, Apple, GLM-ASR server, GLM-ASR on-device, Self-Hosted, Router, Health Monitor |
-| **TTS Providers** | 8 | **Kyutai Pocket (on-device)**, Chatterbox, VibeVoice, ElevenLabs, Deepgram, Apple, Self-Hosted, Pronunciation Processor |
-| **LLM Providers** | 5 | OpenAI, Anthropic, Self-Hosted, On-Device, Mock |
+| **STT Services** | 8 | Apple, AssemblyAI, Deepgram, FluidAudio, GLM-ASR server, GLM-ASR on-device, Groq, Self-Hosted (plus router and health-monitor infrastructure) |
+| **TTS Services** | 6 | **Kyutai Pocket (on-device)**, Apple, Chatterbox, Deepgram, ElevenLabs, Self-Hosted (one service covering Kyutai 1.6B, VibeVoice, Piper, and Fish Speech endpoints) |
+| **LLM Services** | 4 | Anthropic, OpenAI, Self-Hosted, On-Device (the web client adds OpenAI Realtime) |
 | **UI Views** | 11+ | Session, Curriculum, History, Analytics, Settings, Debug, and supporting views |
-| **Swift Files** | 80+ | Source files across Core, Services, UI |
-| **Test Files** | 29 | Unit and integration tests |
+| **Swift Files** | 270+ | Source files across Core, Services, Modules, UI |
+| **Test Files** | 98 | Unit and integration tests (some currently excluded from the test target; see the unamentis-ios audit) |
 
 ### Session Flow
 
@@ -316,7 +327,7 @@ Seamless topic-to-topic transitions for uninterrupted learning sessions:
 
 ### FOV Context Management
 
-Foveated context management builds optimal LLM context for voice tutoring, inspired by VR foveated rendering where the center of attention gets full detail.
+Foveated context management builds optimal LLM context for voice learning sessions, inspired by VR foveated rendering where the center of attention gets full detail.
 
 **Hierarchical Buffers:**
 
@@ -491,7 +502,7 @@ See [USM Core README](../../server/usm-core/README.md) for detailed documentatio
 - Plugin management API
 - Authentication (JWT tokens, rate limiting)
 - Diagnostic logging and resource monitoring
-- **FOV Context Management** for voice tutoring sessions (see [FOV_CONTEXT_MANAGEMENT.md](FOV_CONTEXT_MANAGEMENT.md))
+- **FOV Context Management** for voice learning sessions (see [FOV_CONTEXT_MANAGEMENT.md](FOV_CONTEXT_MANAGEMENT.md))
 - **TTS Caching System** - Global cross-user audio cache with priority-based generation
 - **Session Management** - Per-user session state with cross-device resume support
 - **Scheduled Deployments** - Admin-triggered curriculum pre-generation
@@ -552,7 +563,7 @@ UnaMentis can connect to local/LAN servers for zero-cost inference:
 
 ### TTS Caching & Session Management
 
-A comprehensive architecture for multi-user tutoring with global audio caching and per-user session state.
+A comprehensive architecture for multi-user learning with global audio caching and per-user session state.
 
 **Components:**
 
@@ -594,9 +605,9 @@ A comprehensive architecture for multi-user tutoring with global audio caching a
 | `/api/tts/prefetch/topic` | POST | Prefetch topic segments |
 | `/api/deployments` | POST/GET | Scheduled pre-generation |
 
-**Corporate Training Example:**
+**Large Cohort Example:**
 ```
-500 employees start "Security Training 2024" simultaneously:
+500 learners start "Security Essentials" simultaneously:
 - Admin pre-generates all segments the night before
 - Day-of: 100% cache hits, 0ms TTS latency for everyone
 - Server easily handles 500 concurrent sessions
@@ -627,7 +638,7 @@ A comprehensive architecture for multi-user tutoring with global audio caching a
 
 ## Curriculum System (UMCF)
 
-**Una Mentis Curriculum Format** - A JSON-based specification designed for conversational AI tutoring.
+**Una Mentis Curriculum Format** - A JSON-based specification designed for conversational AI learning.
 
 ### Specification Status: Complete (v1.0.0)
 - JSON Schema: 1,905 lines, 152 fields
@@ -704,16 +715,19 @@ The framework uses **filesystem-based plugin discovery** with explicit enable/di
 - **Persistent State**: Plugin state persists in `plugins.json`
 - **First-Run Wizard**: New installations prompt users to select plugins
 
-### Implemented Importers
+### Importer Status
+
+Source importers (fetch and parse external catalogs into the local curriculum database) are implemented; the AI enrichment pipeline that upgrades imported content to rich UMCF is in progress. The repo ships an example UMCF library in `curriculum/examples/` rather than imported course content.
 
 | Source | Status | Target Audience | Description |
 |--------|--------|-----------------|-------------|
-| **MIT OpenCourseWare** | Complete | Collegiate | 247 courses loaded, full catalog browser |
-| **CK-12 FlexBooks** | Complete | K-12 (8th grade focus) | EPUB, PDF, HTML import |
-| **EngageNY** | Complete | K-12 | New York State curriculum resources |
-| **MERLOT** | Complete | Higher Ed | MERLOT digital collections |
-| **Fast.ai** | Spec Complete | Collegiate AI/ML | Jupyter notebook import |
-| **Stanford SEE** | Spec Complete | Engineering | PDF, transcript import |
+| **MIT OpenCourseWare** | Source plugin implemented | Collegiate | Catalog browser; courses import into a local curriculum database (247 in the dev instance, not shipped) |
+| **CK-12 FlexBooks** | Source plugin implemented | K-12 (8th grade focus) | EPUB, PDF, HTML import |
+| **EngageNY** | Source plugin implemented | K-12 | New York State curriculum resources |
+| **MERLOT** | Source plugin implemented | Higher Ed | MERLOT digital collections |
+| **Knowledge Bowl sources** | Source plugins implemented | Quiz bowl | QBReader, OpenTriviaQA, DOE Science Bowl, Core Knowledge question importers |
+| **Fast.ai** | Spec complete | Collegiate AI/ML | Jupyter notebook import |
+| **Stanford SEE** | Spec complete | Engineering | PDF, transcript import |
 
 ### Import Pipeline Stages
 
@@ -724,7 +738,7 @@ The framework uses **filesystem-based plugin discovery** with explicit enable/di
 5. **Generate** - Transform to UMCF
 6. **Store** - Save to curriculum database
 
-### AI Enrichment Pipeline (7 Stages)
+### AI Enrichment Pipeline (7 Stages, In Progress)
 
 1. **Content Analysis** - Readability metrics, domain detection, quality indicators
 2. **Structure Inference** - Topic boundaries, hierarchical grouping
@@ -858,11 +872,11 @@ UnaMentis maintains comprehensive App Store compliance documentation with curren
 | Document | Purpose |
 |----------|---------|
 | [APP_STORE_COMPLIANCE.md](../APP_STORE_COMPLIANCE.md) | Comprehensive compliance guide with checklists |
-| [SCALING_SECURITY_MULTITENANCY_ANALYSIS.md](../SCALING_SECURITY_MULTITENANCY_ANALYSIS.md) | Security and multi-tenant architecture analysis |
+| [SCALING_SECURITY_MULTITENANCY_ANALYSIS.md](../archive/SCALING_SECURITY_MULTITENANCY_ANALYSIS.md) | Security and multi-tenant architecture analysis |
 
 ### Security Architecture Analysis
 
-A comprehensive security assessment covering scaling from beta (10-50 users) through mass adoption (millions), with enterprise multi-tenancy considerations.
+A comprehensive security assessment covering scaling from beta (10-50 users) through mass adoption (millions), with multi-tenancy considerations.
 
 **Current Assessment:**
 
@@ -878,14 +892,14 @@ A comprehensive security assessment covering scaling from beta (10-50 users) thr
 1. **Beta (10-50 users):** Current architecture with security fixes
 2. **Early Adopters (50-1,000):** PostgreSQL, proper backend, rate limiting
 3. **Growth (1,000-100,000):** Multi-tenant, multi-region, Kubernetes
-4. **Scale (100,000+):** Enterprise dedicated tenancy, SOC 2 compliance
+4. **Scale (100,000+):** Dedicated tenancy, SOC 2 compliance
 
 **Privacy Architecture:**
 - **Tier 1 (Maximum Privacy):** On-device only (Apple Speech, AVSpeechSynthesizer, On-Device LLM)
 - **Tier 2 (High Privacy):** Self-hosted servers (Whisper, Piper, Ollama)
 - **Tier 3 (Standard Privacy):** Cloud with DPAs (OpenAI, Anthropic, Deepgram)
 
-See [SCALING_SECURITY_MULTITENANCY_ANALYSIS.md](../SCALING_SECURITY_MULTITENANCY_ANALYSIS.md) for the complete analysis.
+See [SCALING_SECURITY_MULTITENANCY_ANALYSIS.md](../archive/SCALING_SECURITY_MULTITENANCY_ANALYSIS.md) for the complete analysis.
 
 ---
 
@@ -900,7 +914,7 @@ Systematic latency testing framework for validating performance against project 
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | Server CLI | `server/latency_harness/` | Test orchestration, analysis, storage |
-| iOS Harness | `UnaMentis/Testing/LatencyHarness/` | High-precision iOS test execution |
+| iOS Harness | `unamentis-ios: UnaMentis/Testing/LatencyHarness/` | High-precision iOS test execution |
 | Web Dashboard | Operations Console → Latency Tests | Real-time monitoring |
 | REST API | Management API (port 8766) | Programmatic access |
 
@@ -953,13 +967,14 @@ See `server/latency_harness/CLAUDE.md` and `docs/LATENCY_TEST_HARNESS_GUIDE.md` 
 
 ## Code Quality Infrastructure
 
-UnaMentis implements a comprehensive **5-phase Code Quality Initiative** that enables enterprise-grade quality standards through intelligent automation. This infrastructure allows a small team to maintain quality typically requiring 10+ engineers.
+UnaMentis implements a comprehensive **5-phase Code Quality Initiative** that enables rigorous quality standards through intelligent automation. This infrastructure allows a small team to maintain quality typically requiring 10+ engineers.
 
 ### Quality Gates
 
 | Gate | Threshold | Enforcement |
 |------|-----------|-------------|
-| Code Coverage (iOS) | 80% minimum | CI fails if below |
+| Code Coverage (server) | Reported to Codecov | Informational; thresholds are ratcheting up (web client build fails below a 5% floor) |
+| Code Coverage (iOS) | 80% target | Gate lives in unamentis-ios CI and is currently soft (see the unamentis-ios audit) |
 | Latency P50 | 500ms | CI warns at +10%, fails at +20% |
 | Latency P99 | 1000ms | CI warns at +10%, fails at +20% |
 | SwiftLint | Zero violations (strict) | Pre-commit hook |
@@ -982,7 +997,7 @@ UnaMentis implements a comprehensive **5-phase Code Quality Initiative** that en
 | Security Scanning | CodeQL, Gitleaks | Vulnerability detection |
 | DORA Metrics | Apache DevLake | Engineering health |
 | Feature Flags | Unleash | Safe rollouts |
-| Mutation Testing | mutmut, Stryker, Muter | Test quality validation |
+| Mutation Testing | mutmut, Stryker | Weekly advisory run, non-blocking (Muter lives in unamentis-ios) |
 | Property Testing | Hypothesis, proptest | Invariant verification (70 Python, 37 Rust tests) |
 | Chaos Engineering | Custom runbook | Voice pipeline resilience |
 
@@ -990,17 +1005,16 @@ UnaMentis implements a comprehensive **5-phase Code Quality Initiative** that en
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| iOS CI | Push/PR | Build, lint, test, coverage |
-| Rust CI | Push/PR | Clippy, rustfmt, cargo test |
-| Server CI | Push/PR | Python linting, tests, coverage |
+| Server CI | Push/PR | Python lint/tests, Rust clippy/rustfmt/tests, property tests, coverage upload |
 | Web Client CI | Push/PR | Lint, typecheck, build, coverage |
-| Nightly E2E | Daily 2am | Full E2E + latency tests |
 | Performance | Push/PR/scheduled | Latency regression check |
 | Security | Push/PR/weekly | Secrets, CodeQL, audits |
 | Quality Metrics | Daily | CI/PR/bug metrics |
 | Feature Flags | Weekly | Stale flag audit |
-| Mutation Testing | Weekly (Sunday 4am) | Test quality validation |
-| Property Tests | Push/PR (server) | Invariant verification |
+| Mutation Testing | Weekly (Sunday 4am) | Advisory test quality run (non-blocking) |
+| Docs Validation | Push/PR (docs) | Link and format checks |
+
+iOS CI (build, lint, test, App Store validation, nightly E2E) runs in the `unamentis-ios` repository.
 
 ### Feature Flag System
 
@@ -1072,67 +1086,51 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 
 ## Current Status
 
-### Complete
-- All iOS services implemented (STT, TTS, LLM, VAD, Embeddings)
-- Full UI (Session, Curriculum, History, Analytics, Settings, Debug)
+For a ruthlessly honest "what works today" summary, see [docs/STATUS.md](../STATUS.md).
+
+### Complete in This Repo (Server, Curriculum, Docs)
 - UMCF 1.0 specification with JSON Schema (1,905 lines)
-- 178+ unit tests across 29 test files (including 23 App Intents tests)
-- 16+ integration tests
-- Telemetry, cost tracking, thermal management
-- Self-hosted server discovery and health monitoring
-- Patch Panel LLM routing system
-- GLM-ASR implementation (server + on-device)
-- Groq STT integration (Whisper API)
-- Chatterbox TTS integration with emotion control
-- VibeVoice TTS integration
-- STT Provider Router with automatic failover
-- Visual asset support design
-- Import architecture with 4 complete importers (MIT OCW, CK-12, EngageNY, MERLOT)
+- Management API (Python/aiohttp) with authentication (JWT, rate limiting)
 - Operations Console (React/TypeScript) with Curriculum Studio
-- Management API (Python/aiohttp)
-- Web Client (Next.js) with voice tutoring, curriculum browser, visual assets
-- iOS Simulator MCP for AI-driven testing
-- Siri & App Intents integration (voice commands, deep links)
-- Graceful degradation architecture
-- Plugin-based importer framework
-- Latency test harness (CLI, REST API, iOS harness, Web dashboard)
+- Web Client (Next.js) with voice learning, curriculum browser, visual assets
+- Plugin-based importer framework with source plugins (MIT OCW, CK-12, EngageNY, MERLOT, plus Knowledge Bowl question sources)
+- Latency test harness (CLI, REST API, Web dashboard; iOS harness in unamentis-ios)
 - FOV Context Management (hierarchical cognitive buffers, confidence monitoring)
-- Curriculum auto-continuation with pre-generation and segment caching
-- CodeRabbit AI code review integration (CLI + VS Code extension)
 - **TTS Caching System** (global cross-user cache, priority-based generation, 1000+ req/sec)
 - **Session Management** (UserSession, PlaybackState, SessionCacheIntegration)
 - **TTSResourcePool** (separate semaphores for live vs background, concurrency control)
-- **Self-hosted STT WebSocket streaming** (whisper.cpp, faster-whisper compatible)
-- **Voice cloning UI** (Chatterbox settings with file picker and audio recorder)
-- **Latency harness audio file loading** (full STT pipeline testing with real audio)
-- **LaTeX formula rendering** (SwiftMath integration with Unicode fallback)
-- **App Store compliance documentation** (PrivacyInfo.xcprivacy, privacy manifest, submission checklists)
-- **Scaling/security/multitenancy analysis** (comprehensive 4-phase roadmap)
-- **UMCF AI curriculum generation prompt** (v1.2.0, complete format compliance)
-- **Specialized modules framework** (high-stakes learning scenarios)
-- **SAT Preparation Module specification** (adaptive testing, strategy training)
-- **Knowledge Bowl Module** (35+ Swift files: answer validation, session management, analytics, 12 domains)
-- **Knowledge Bowl 3-tier validation** (phonetic, n-gram, token, linguistic, semantic embeddings, LLM fallback)
-- **Knowledge Bowl question importers** (Qbreader, OpenTrivia, DOE Science Bowl with merge pipeline)
-- **Knowledge Bowl test suite** (15+ test files covering all validation algorithms and services)
-- **Voice Lab** (AI model selection, TTS experimentation, TTS profiles, batch jobs in Operations Console)
-- **TTS Lab** (model comparison, configuration tuning, batch processing pipeline)
-- **Batch TTS Jobs UI** (job creation wizard, progress polling, item management, lifecycle control)
+- **Voice Lab / TTS Lab** (AI model selection, TTS experimentation, TTS profiles, batch jobs in Operations Console)
 - **Kyutai TTS 1.6B integration** (self-hosted batch processing with 40+ voices)
-- **Kyutai Pocket TTS integration** (100M on-device neural TTS with full settings UI, 8 voices, voice cloning, Rust/Candle inference engine, UniFFI Swift bindings)
-- **USM Core** (Rust cross-platform service manager, HTTP/WebSocket API, C FFI, 47 tests)
-- **USM-FFI** macOS menu bar app (Swift, real-time WebSocket, 16 tests)
-- **Knowledge Bowl Question Pack API** (full CRUD for packs/questions, bundle creation with deduplication, module import)
-- **KB Pack Management UI** (Operations Console: pack browser, question browser, pack creation, bulk operations)
-- **Reading List** with file and URL import, markdown stripping, HTML article extraction (swift-readability/Mozilla Readability), Vision OCR for scanned PDFs, TTS-friendly text chunking
-- **AudioPlaybackOrchestrator** (shared TTS playback actor used by Voice Session, Reading List, and Knowledge Bowl, with configurable prefetch, inter-segment silence, pause/resume/suspend, dynamic segment append, and warm audio engine + TTS caching)
+- **USM Core** (Rust cross-platform service manager, HTTP/WebSocket API, C FFI)
+- **USM-FFI** macOS menu bar app (Swift, real-time WebSocket)
+- **Knowledge Bowl Question Pack API + UI** (full CRUD, bundles with deduplication, bulk operations)
+- **UMCF AI curriculum generation prompt** (v1.2.0, complete format compliance)
+- **Specialized modules framework** (high-stakes learning scenarios; SAT and Knowledge Bowl specs)
+- CodeRabbit AI code review integration (CLI + VS Code extension)
+
+### Complete in the iOS App ([unamentis-ios](https://github.com/UnaMentis/unamentis-ios))
+- All voice pipeline services implemented (STT, TTS, LLM, VAD, Embeddings)
+- Full UI (Session, Curriculum, History, Analytics, Settings, Debug)
+- **On-device LLM inference** (llama.cpp b7263, Ministral 3B GGUF, Debug and Release builds)
+- **Kyutai Pocket TTS** (100M on-device neural TTS, Rust/Candle, UniFFI bindings)
+- GLM-ASR (server + on-device), Groq STT, FluidAudio streaming STT, STT provider routing
+- Chatterbox and VibeVoice TTS integrations, voice cloning UI
+- Patch Panel LLM routing, graceful degradation architecture
+- Telemetry, cost tracking, thermal management
+- Siri & App Intents, Reading List, Knowledge Bowl module with 3-tier answer validation
+- AudioPlaybackOrchestrator (shared TTS playback actor across Session, Reading List, Knowledge Bowl)
+
+### Recently Landed (June 2026 beta/security workstream)
+- **Server:** consent records captured at registration with policy versioning; coarsened intake IPs with 90-day auth IP retention; Content-Security-Policy (enforcing plus report-only, with `/api/csp-report` ingestion) on both Next.js apps; SQLite telemetry persistence with metric allow-list, byte caps, error-rate/TTFA/P99 metrics, and unique-session counting; daily realtime spend budget; WebSocket token redaction in access logs
+- **Operations Console:** live-vs-mock data banner, auth token support, P99/TTFA/error-rate display
+- **iOS:** consent-gated telemetry with 13+ onboarding attestation; HTTPS-capable telemetry endpoint; TTFA and typed error counts in uploads; IDFV exporter compiled out of release builds; on-device LLM proven generating in the iPhone 17 Pro simulator
 
 ### In Progress
-- Android client (separate repository)
-- Visual asset caching optimization
-- AI enrichment pipeline implementation
-- Fast.ai and Stanford SEE importers
-- App Store submission preparation
+- TestFlight submission preparation (not yet submitted)
+- AI enrichment pipeline implementation (importer enrichers/parsers)
+- Curriculum content setup beyond the example UMCF library
+- Fast.ai and Stanford SEE importers (spec complete)
+- Android client (paused since February 2026)
 
 ### Pending User Setup
 - API key configuration (OpenAI, Anthropic, Deepgram, ElevenLabs, AssemblyAI, Groq)
@@ -1225,22 +1223,10 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 
 ## Key Files
 
+### This Repo
+
 | Path | Purpose |
 |------|---------|
-| `UnaMentis/Core/Session/SessionManager.swift` | Orchestrates voice sessions, state machine |
-| `UnaMentis/Core/Curriculum/CurriculumEngine.swift` | Curriculum context generation |
-| `UnaMentis/Core/Routing/PatchPanelService.swift` | LLM endpoint routing |
-| `UnaMentis/Services/STT/STTProviderRouter.swift` | STT failover routing |
-| `UnaMentis/Services/STT/GroqSTTService.swift` | Groq Whisper integration |
-| `UnaMentis/Services/TTS/ChatterboxTTSService.swift` | Chatterbox TTS with emotion control |
-| `UnaMentis/Services/TTS/KyutaiPocketTTSService.swift` | **On-device neural TTS (100M params, Rust/Candle)** |
-| `UnaMentis/Services/TTS/PocketTTSBindings.swift` | UniFFI-generated Swift FFI bindings (1535 lines) |
-| `rust/pocket-tts-ios/` | Rust/Candle inference engine (87 tests passing) |
-| `UnaMentis/Services/TTS/KyutaiPocketTTSConfig.swift` | Kyutai Pocket configuration with presets |
-| `UnaMentis/Services/TTS/KyutaiPocketModelManager.swift` | Model download and state management |
-| `UnaMentis/UI/Settings/KyutaiPocketSettingsView.swift` | Full configuration UI with nerd knobs |
-| `UnaMentis/Services/LLM/SelfHostedLLMService.swift` | Ollama/llama.cpp integration |
-| `UnaMentis/Services/STT/GLMASROnDeviceSTTService.swift` | On-device speech recognition |
 | `curriculum/spec/umcf-schema.json` | UMCF JSON Schema (1,905 lines) |
 | `curriculum/spec/UMCF_SPECIFICATION.md` | Human-readable format spec |
 | `server/management/server.py` | Management API backend |
@@ -1248,25 +1234,34 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 | `server/management/tts_cache/resource_pool.py` | Priority-based TTS generation pool |
 | `server/management/session_cache_integration.py` | Session-cache bridge |
 | `server/management/fov_context/session.py` | UserSession, PlaybackState, SessionManager |
+| `server/management/kb_packs_api.py` | Knowledge Bowl Pack Management API |
 | `server/importers/plugins/sources/mit_ocw.py` | MIT OCW course handler |
 | `server/web/src/components/curriculum/` | Curriculum Studio components |
+| `server/web/src/types/question-packs.ts` | KB pack TypeScript types |
+| `server/web/src/app/api/kb/` | KB Next.js API routes |
 | `server/usm-core/crates/usm-core/src/lib.rs` | USM Core public API |
 | `server/usm-core/crates/usm-core/src/service/` | Service template and instance management |
 | `server/usm-core/crates/usm-core/src/monitor/` | Platform-specific process monitoring |
 | `server/usm-core/crates/usm-ffi/src/lib.rs` | C FFI bindings for Swift |
 | `server/usm-core/config/services.toml` | Service definitions |
 | `server/web-client/src/app/` | Web client application |
-| `UnaMentis/Core/Audio/AudioPlaybackOrchestrator.swift` | **Shared TTS playback orchestrator** (prefetch, pause/resume, dynamic segments) |
-| `UnaMentis/Core/Audio/AudioEngineCache.swift` | Warm AudioEngine singleton cache (2-min timeout between views) |
-| `UnaMentis/Core/Audio/AudioTTSCache.swift` | Warm TTS service singleton cache (2-min timeout) |
-| `UnaMentis/Core/ReadingList/ReadingListManager.swift` | Reading list import, dedup, Core Data management |
-| `UnaMentis/Core/ReadingList/ReadingTextChunker.swift` | Text chunking with Vision OCR fallback for scanned PDFs |
-| `UnaMentis/Core/ReadingList/HTMLArticleExtractor.swift` | Article extraction using swift-readability + SwiftSoup |
-| `UnaMentis/Core/ReadingList/WebArticleFetcher.swift` | Web page fetching with encoding detection |
-| `UnaMentis/Core/ReadingList/MarkdownStripper.swift` | Markdown-to-plaintext for TTS-ready content |
-| `server/management/kb_packs_api.py` | **Knowledge Bowl Pack Management API** |
-| `server/web/src/types/question-packs.ts` | KB pack TypeScript types |
-| `server/web/src/app/api/kb/` | KB Next.js API routes |
+
+### iOS App ([unamentis-ios](https://github.com/UnaMentis/unamentis-ios))
+
+| Path (in unamentis-ios) | Purpose |
+|------|---------|
+| `UnaMentis/Core/Session/SessionManager.swift` | Orchestrates voice sessions, state machine |
+| `UnaMentis/Core/Curriculum/CurriculumEngine.swift` | Curriculum context generation |
+| `UnaMentis/Core/Routing/PatchPanelService.swift` | LLM endpoint routing |
+| `UnaMentis/Core/Audio/AudioPlaybackOrchestrator.swift` | Shared TTS playback orchestrator (prefetch, pause/resume, dynamic segments) |
+| `UnaMentis/Core/ReadingList/` | Reading list import, chunking, article extraction |
+| `UnaMentis/Services/LLM/OnDeviceLLMService.swift` | On-device LLM inference (llama.cpp, Ministral 3B) |
+| `UnaMentis/Services/LLM/SelfHostedLLMService.swift` | Ollama/llama.cpp server integration |
+| `UnaMentis/Services/STT/FluidAudioSTTService.swift` | On-device streaming STT with end-of-utterance signal |
+| `UnaMentis/Services/STT/GLMASROnDeviceSTTService.swift` | On-device speech recognition |
+| `UnaMentis/Services/TTS/KyutaiPocketTTSService.swift` | On-device neural TTS (100M params, Rust/Candle) |
+| `UnaMentis/Services/TTS/ChatterboxTTSService.swift` | Chatterbox TTS with emotion control |
+| `rust/pocket-tts-ios/` | Rust/Candle inference engine |
 
 ---
 
@@ -1275,18 +1270,17 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 ### Getting Started
 | Document | Purpose |
 |----------|---------|
-| [QUICKSTART.md](QUICKSTART.md) | START HERE |
-| [SETUP.md](SETUP.md) | Environment setup |
-| [TESTING.md](TESTING.md) | Testing guide |
-| [DEBUG_TESTING_UI.md](DEBUG_TESTING_UI.md) | Built-in troubleshooting |
+| [QUICKSTART.md](../QUICKSTART.md) | START HERE |
+| [SETUP.md](../setup/SETUP.md) | Environment setup |
+| [TESTING.md](../testing/TESTING.md) | Testing guide |
+| [DEBUG_TESTING_UI.md](../testing/DEBUG_TESTING_UI.md) | Built-in troubleshooting |
 
 ### Architecture & Design
 | Document | Purpose |
 |----------|---------|
 | [UnaMentis_TDD.md](UnaMentis_TDD.md) | Technical Design Document |
-| [ENTERPRISE_ARCHITECTURE.md](ENTERPRISE_ARCHITECTURE.md) | System design |
 | [PATCH_PANEL_ARCHITECTURE.md](PATCH_PANEL_ARCHITECTURE.md) | LLM routing |
-| [FOV_CONTEXT_MANAGEMENT.md](FOV_CONTEXT_MANAGEMENT.md) | Foveated context for voice tutoring |
+| [FOV_CONTEXT_MANAGEMENT.md](FOV_CONTEXT_MANAGEMENT.md) | Foveated context for voice learning |
 | [FALLBACK_ARCHITECTURE.md](FALLBACK_ARCHITECTURE.md) | Graceful degradation |
 
 ### API & Client Specifications
@@ -1300,24 +1294,24 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 ### Curriculum
 | Document | Purpose |
 |----------|---------|
-| [curriculum/README.md](../curriculum/README.md) | UMCF overview |
-| [UMCF_SPECIFICATION.md](../curriculum/spec/UMCF_SPECIFICATION.md) | Format spec |
-| [IMPORTER_ARCHITECTURE.md](../curriculum/importers/IMPORTER_ARCHITECTURE.md) | Import system |
-| [AI_ENRICHMENT_PIPELINE.md](../curriculum/importers/AI_ENRICHMENT_PIPELINE.md) | AI processing |
+| [curriculum/README.md](../../curriculum/README.md) | UMCF overview |
+| [UMCF_SPECIFICATION.md](../../curriculum/spec/UMCF_SPECIFICATION.md) | Format spec |
+| [IMPORTER_ARCHITECTURE.md](../../curriculum/importers/IMPORTER_ARCHITECTURE.md) | Import system |
+| [AI_ENRICHMENT_PIPELINE.md](../../curriculum/importers/AI_ENRICHMENT_PIPELINE.md) | AI processing |
 
 ### Feature Documentation
 | Document | Purpose |
 |----------|---------|
-| [APPLE_INTELLIGENCE.md](APPLE_INTELLIGENCE.md) | Siri & App Intents |
-| [GLM_ASR_ON_DEVICE_GUIDE.md](GLM_ASR_ON_DEVICE_GUIDE.md) | On-device STT |
-| [AI_SIMULATOR_TESTING.md](AI_SIMULATOR_TESTING.md) | AI-driven testing |
-| [VISUAL_ASSET_SUPPORT.md](VISUAL_ASSET_SUPPORT.md) | Curriculum media |
+| [APPLE_INTELLIGENCE.md](../ai-ml/APPLE_INTELLIGENCE.md) | Siri & App Intents |
+| [GLM_ASR_ON_DEVICE_GUIDE.md](../ai-ml/GLM_ASR_ON_DEVICE_GUIDE.md) | On-device STT |
+| [AI_SIMULATOR_TESTING.md](../testing/AI_SIMULATOR_TESTING.md) | AI-driven testing |
+| [VISUAL_ASSET_SUPPORT.md](../ios/VISUAL_ASSET_SUPPORT.md) | Curriculum media |
 
 ### Compliance & Security
 | Document | Purpose |
 |----------|---------|
 | [APP_STORE_COMPLIANCE.md](../APP_STORE_COMPLIANCE.md) | App Store submission guide |
-| [SCALING_SECURITY_MULTITENANCY_ANALYSIS.md](../SCALING_SECURITY_MULTITENANCY_ANALYSIS.md) | Security & scaling roadmap |
+| [SCALING_SECURITY_MULTITENANCY_ANALYSIS.md](../archive/SCALING_SECURITY_MULTITENANCY_ANALYSIS.md) | Security & scaling roadmap |
 | [UMCF_CURRICULUM_PROMPT.md](../UMCF_CURRICULUM_PROMPT.md) | AI curriculum generation |
 
 ### Specialized Modules
@@ -1349,15 +1343,15 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 ### Phase 1-5: Core Implementation (Complete)
 - Voice pipeline, UI, curriculum system, telemetry
 
-### Phase 6: Curriculum Import System (Mostly Complete)
-- MIT OCW, CK-12, EngageNY, MERLOT importers (complete)
+### Phase 6: Curriculum Import System (In Progress)
+- MIT OCW, CK-12, EngageNY, MERLOT importers (source plugins implemented)
 - Curriculum Studio (complete)
 - Plugin management framework (complete)
 - AI enrichment pipeline (in progress)
 - Fast.ai and Stanford SEE importers (spec complete)
 
 ### Phase 7: Cross-Platform & Specialized Modules (In Progress)
-- Android client development
+- Android client development (paused since February 2026)
 - Feature parity across iOS, Web, Android
 - Shared curriculum sync
 - SAT Preparation Module (specification complete)
@@ -1376,12 +1370,12 @@ See [CODE_QUALITY_INITIATIVE.md](../quality/CODE_QUALITY_INITIATIVE.md) for comp
 - Collaborative annotations
 - Additional specialized modules (ACT, GRE, professional certifications)
 
-### Phase 10: Enterprise & Scale (Future)
+### Phase 10: Scale (Future)
 - Multi-tenant architecture implementation
 - Authentication and authorization layer
 - Per-tenant encryption
 - SOC 2 Type II compliance
-- Enterprise dedicated infrastructure options
+- Dedicated infrastructure options
 
 ### Explorations Under Consideration
 - **Learner Profile System:** Voice-native, evidence-based learner profiling
@@ -1399,28 +1393,26 @@ The fundamental core of UnaMentis will always remain open source:
 - All provider integrations
 - Cross-platform support
 
-### Enterprise Features (Future)
-A separate commercial layer may offer:
-- Single sign-on (SSO) integration
-- Advanced reporting and analytics
-- Permission controls and user management
-- Corporate curriculum publishing
-- Priority support
-
 ---
 
 ## File Statistics
 
+### This Repo
+
 | Component | Language | Files | Purpose |
 |-----------|----------|-------|---------|
-| iOS App | Swift | 80+ | Voice tutoring client (primary) |
-| iOS Tests | Swift | 29 | Unit & integration tests |
 | **USM Core** | Rust | 22 | Cross-platform service manager |
 | **USM-FFI** | Swift | 15+ | macOS menu bar app |
-| Web Client | TypeScript/React | 50+ | Voice tutoring for browsers |
+| Web Client | TypeScript/React | 50+ | Voice learning for browsers |
 | Management API | Python | 10+ | Backend API |
 | Operations Console | TypeScript/React | 67 | System/content management |
 | Importers | Python | 25+ | Curriculum ingestion |
 | Curriculum Spec | Markdown/JSON | 19 | Format specification |
 | Documentation | Markdown | 40+ | Comprehensive guides |
-| **TOTAL** | Mixed | 355+ | Full system |
+
+### iOS App (unamentis-ios repo)
+
+| Component | Language | Files | Purpose |
+|-----------|----------|-------|---------|
+| iOS App | Swift | 270+ | Voice learning client (primary) |
+| iOS Tests | Swift | 98 | Unit & integration tests |

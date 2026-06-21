@@ -1,6 +1,6 @@
 # Code Quality Initiative
 
-> How a small team achieves enterprise-grade quality through intelligent automation
+> How a small team achieves production-grade quality through intelligent automation
 
 **Document Purpose:** This comprehensive document details UnaMentis's systematic approach to code quality, performance validation, and engineering excellence. It serves as the source material for website content, conference presentations, and stakeholder communications.
 
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-UnaMentis implements a **5-phase Code Quality Initiative** that enables a small development team to achieve quality standards typically requiring 10+ engineers. Through intelligent automation, AI-assisted code review, and data-driven metrics, the project maintains enterprise-grade quality while moving at startup velocity.
+UnaMentis implements a **5-phase Code Quality Initiative** that enables a small development team to achieve quality standards typically requiring 10+ engineers. Through intelligent automation, AI-assisted code review, and data-driven metrics, the project maintains production-grade quality while moving quickly.
 
 ### Key Achievements
 
@@ -17,13 +17,13 @@ UnaMentis implements a **5-phase Code Quality Initiative** that enables a small 
 | Pre-commit quality gates | Implemented | Issues caught before commit |
 | Hook bypass auditing | Implemented | Detect `--no-verify` usage |
 | Automated dependency management | Implemented | Zero manual dependency tracking |
-| 80% code coverage enforcement | Implemented | CI fails below threshold |
+| 80% code coverage target (iOS) | Partially implemented | Gate lives in unamentis-ios CI and is currently soft; server coverage is reported to Codecov with thresholds ratcheting up |
 | Performance regression detection | Implemented | Automated latency monitoring |
 | Security scanning | Implemented | Secrets, CodeQL, dependency audits |
 | Feature flag lifecycle management | Implemented | Safe rollouts with cleanup tracking |
 | DORA metrics and observability | Implemented | Engineering health visibility |
 | AI-powered code review | Implemented | Every PR reviewed by CodeRabbit |
-| Mutation testing | Implemented | Weekly test quality validation |
+| Mutation testing | Implemented | Weekly advisory run (non-blocking) |
 | Property-based testing | Implemented | 107 property-based tests (70 Python, 37 Rust property tests) |
 | Chaos engineering | Implemented | Voice pipeline resilience testing |
 
@@ -87,24 +87,15 @@ Automated dependency management that eliminates manual tracking:
 
 #### Coverage Enforcement
 
-Code coverage is not a suggestion. It's a gate:
+Honest current state: coverage is measured everywhere, enforced almost nowhere yet.
 
 | Metric | Threshold | Enforcement |
 |--------|-----------|-------------|
-| iOS Coverage | 80% minimum | CI fails if below |
-| Coverage extraction | xccov from xcresult | Automated |
+| iOS Coverage | 80% target | Gate lives in unamentis-ios CI (`test-ci.sh`) and is currently soft; see the unamentis-ios audit |
+| Server Coverage | Reported to Codecov | Informational; thresholds intentionally low while ratcheting up |
+| Web Client Coverage | 5% floor | Build fails below the floor (target 70%) |
+| Coverage extraction | xccov / pytest-cov / vitest | Automated |
 | Display | CI summary output | Always visible |
-
-```yaml
-# From .github/workflows/ios.yml
-- name: Check Coverage
-  run: |
-    COVERAGE=$(xcrun xccov view --report *.xcresult --json | jq '.targets[].lineCoverage')
-    if (( $(echo "$COVERAGE < 0.80" | bc -l) )); then
-      echo "Coverage $COVERAGE is below 80% threshold"
-      exit 1
-    fi
-```
 
 ---
 
@@ -114,7 +105,9 @@ Code coverage is not a suggestion. It's a gate:
 
 #### Nightly E2E Testing
 
-Comprehensive end-to-end testing runs every night at 2am UTC:
+> Status (June 2026): the nightly iOS E2E workflow was removed from this repo with the iOS split and has not yet been recreated in unamentis-ios. The description below is the design, not a currently running job.
+
+Comprehensive end-to-end testing designed to run every night at 2am UTC:
 
 **Components Tested:**
 - iOS E2E tests with real API keys (from secrets)
@@ -180,7 +173,7 @@ Multi-layered security scanning catches vulnerabilities before they reach produc
 
 #### Infrastructure (Unleash)
 
-Self-hosted feature flag system with enterprise capabilities:
+Self-hosted feature flag system with full lifecycle capabilities:
 
 ```
 server/feature-flags/
@@ -335,20 +328,20 @@ path_instructions:
 - **TypeScript/React**: Hook dependencies, server/client boundaries, accessibility
 - **CI/CD**: Action pinning, permissions, secrets, caching
 
-**Cost:** FREE for open source projects (normally $24-30/seat/month)
+**Cost:** Free for open source projects
 
-#### Mutation Testing (Implemented)
+#### Mutation Testing (Implemented, Advisory)
 
 Mutation testing proves tests catch bugs, not just hit lines:
 
-**Weekly Workflow:** `.github/workflows/mutation.yml` runs every Sunday at 4am UTC
+**Weekly Workflow:** `.github/workflows/mutation.yml` runs every Sunday at 4am UTC. All mutation steps run with `continue-on-error`, so results are advisory and never fail CI.
 
 **Tools by Platform:**
 | Platform | Tool | Workflow |
 |----------|------|----------|
-| Python | mutmut | Automated in CI |
-| Web | Stryker | Automated in CI |
-| iOS | Muter | Manual trigger |
+| Python | mutmut | Weekly advisory in CI |
+| Web | Stryker | Weekly advisory in CI |
+| iOS | Muter | unamentis-ios repository |
 
 **Configuration:**
 ```yaml
@@ -406,7 +399,7 @@ When mutation testing shows survived mutants in code with clear invariants, prop
 
 #### Chaos Engineering (Implemented)
 
-Voice pipeline resilience testing validates graceful degradation. See [CHAOS_ENGINEERING_RUNBOOK.md](testing/CHAOS_ENGINEERING_RUNBOOK.md).
+Voice pipeline resilience testing validates graceful degradation. See [CHAOS_ENGINEERING_RUNBOOK.md](../testing/CHAOS_ENGINEERING_RUNBOOK.md).
 
 **Test Scenarios:**
 | Category | Scenarios |
@@ -547,7 +540,7 @@ permissions:
 
 | Gate | Threshold | Enforcement Point |
 |------|-----------|-------------------|
-| Code Coverage | 80% minimum | CI (iOS build fails) |
+| Code Coverage | 80% iOS target; server informational | unamentis-ios CI (soft); Codecov reporting here |
 | Latency P50 | 500ms | CI (warns at +10%, fails at +20%) |
 | Latency P99 | 1000ms | CI (warns at +10%, fails at +20%) |
 | SwiftLint | Zero violations (strict) | Pre-commit hook |
@@ -567,7 +560,7 @@ permissions:
 | Pre-merge Bug Detection | Low | > 60% | > 80% |
 | Mean Time to Recovery | TBD | < 4 hours | < 1 hour |
 | Deployment Frequency | ~Weekly | Daily capable | Multiple/day |
-| Test Coverage (iOS) | 80% (enforced) | 80% maintained | 85% |
+| Test Coverage (iOS) | 80% target (soft gate) | 80% enforced | 85% |
 | Latency Regression Detection | Automated | Automated + CI blocking | Predictive alerts |
 | Feature Flag Cleanup | N/A | < 30 days avg | < 14 days avg |
 
@@ -609,14 +602,13 @@ When budget allows, consider these upgrades in priority order:
 # Run lint checks
 ./scripts/lint.sh
 
-# Run quick tests
-./scripts/test-quick.sh
+# Run server tests (the test-quick.sh/test-all.sh iOS runners live in unamentis-ios)
+cd server/management && python -m pytest
+cd server/importers && python -m pytest
+./scripts/test-rust.sh
 
 # Run full health check
 ./scripts/health-check.sh
-
-# Run all tests with coverage
-./scripts/test-all.sh
 
 # Audit feature flags
 ./scripts/feature-flag-audit.sh
@@ -657,17 +649,17 @@ cd server/feature-flags && docker compose up -d
 | Document | Purpose |
 |----------|---------|
 | [QUALITY_INFRASTRUCTURE_PLAN.md](QUALITY_INFRASTRUCTURE_PLAN.md) | Implementation tracking |
-| [LATENCY_TEST_HARNESS_GUIDE.md](LATENCY_TEST_HARNESS_GUIDE.md) | Complete latency testing guide |
-| [design/AUDIO_LATENCY_TEST_HARNESS.md](design/AUDIO_LATENCY_TEST_HARNESS.md) | Latency harness architecture |
-| [IOS_STYLE_GUIDE.md](ios/IOS_STYLE_GUIDE.md) | iOS coding standards |
-| [setup/DEV_ENVIRONMENT.md](setup/DEV_ENVIRONMENT.md) | Developer setup guide |
-| [setup/CODERABBIT_SETUP.md](setup/CODERABBIT_SETUP.md) | CodeRabbit configuration |
+| [LATENCY_TEST_HARNESS_GUIDE.md](../LATENCY_TEST_HARNESS_GUIDE.md) | Complete latency testing guide |
+| [design/AUDIO_LATENCY_TEST_HARNESS.md](../design/AUDIO_LATENCY_TEST_HARNESS.md) | Latency harness architecture |
+| [IOS_STYLE_GUIDE.md](../ios/IOS_STYLE_GUIDE.md) | iOS coding standards |
+| [setup/DEV_ENVIRONMENT.md](../setup/DEV_ENVIRONMENT.md) | Developer setup guide |
+| [setup/CODERABBIT_SETUP.md](../setup/CODERABBIT_SETUP.md) | CodeRabbit configuration |
 
 ---
 
 ## Conclusion
 
-The Code Quality Initiative transforms UnaMentis from a typical small-team project into an enterprise-grade operation. Through systematic automation and intelligent tooling, we achieve:
+The Code Quality Initiative transforms UnaMentis from a typical small-team project into a rigorously automated operation. Through systematic automation and intelligent tooling, we achieve:
 
 1. **Consistency**: Every commit passes the same quality checks
 2. **Visibility**: Real-time insight into engineering health

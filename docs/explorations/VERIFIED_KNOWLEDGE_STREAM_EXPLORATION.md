@@ -1056,15 +1056,15 @@ Who maintains the source reputation database? This is a sensitive responsibility
 
 **Recommendation:** Aggregate from established third parties (Option B) with user overrides. This avoids UnaMentis becoming an arbiter of source quality while leveraging expert assessment.
 
-### 12.4 Monetization
+### 12.4 Operating Costs
 
-Could VKS be a premium feature?
+The full pipeline has real infrastructure costs that shape the design.
 
 **Considerations:**
-- Basic verification (source badges, minimal context) could be free
-- Full pipeline (thorough depth, web cross-referencing, academic search) requires server costs
+- Basic verification (source badges, minimal context) is light enough to run for everyone
+- Full pipeline (thorough depth, web cross-referencing, academic search) requires server resources
 - Email and RSS ingestion have infrastructure costs
-- Subscription tiers could map to verification depth and processing volume
+- Verification depth and processing volume should be configurable so self-hosters can match capability to their own resources
 
 ### 12.5 Scale and Rate Limits
 

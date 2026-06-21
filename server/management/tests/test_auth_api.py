@@ -13,9 +13,10 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock
 from aiohttp import web
 
-from auth.auth_api import AuthAPI, register_auth_routes
+from auth.auth_api import AuthAPI, POLICY_VERSION, register_auth_routes
 from auth.token_service import TokenService, TokenConfig
 from auth.password_service import PasswordService
+from ip_privacy import coarsen_ip
 
 
 class MockConnection:  # ALLOWED: hand-written asyncpg-connection double routing auth_api queries; pre-existing, candidate to migrate to in_memory_db fixture (follow-up)
@@ -194,6 +195,9 @@ class MockConnection:  # ALLOWED: hand-written asyncpg-connection double routing
         if "INSERT INTO auth_audit_log" in query:
             self.data_store.setdefault("audit_logs", []).append(args)
 
+        if "INSERT INTO consent_records" in query:
+            self.data_store.setdefault("consent_records", []).append(args)
+
         if "UPDATE" in query:
             return "UPDATE 1"
 
@@ -291,6 +295,7 @@ class TestRegistration:
                 "password": "SecurePass123!",
                 "display_name": "New User",
                 "age_attestation": True,
+                "accepted_policies_version": POLICY_VERSION,
             }
         )
 
@@ -311,6 +316,7 @@ class TestRegistration:
                 "email": "deviceuser@example.com",
                 "password": "SecurePass123!",
                 "age_attestation": True,
+                "accepted_policies_version": POLICY_VERSION,
                 "device": {
                     "fingerprint": "test-device-fingerprint",
                     "name": "iPhone 15",
@@ -413,6 +419,7 @@ class TestRegistration:
                 "email": "existing@example.com",
                 "password": "SecurePass123!",
                 "age_attestation": True,
+                "accepted_policies_version": POLICY_VERSION,
             }
         )
 
@@ -430,6 +437,7 @@ class TestRegistration:
                 "email": "  User@EXAMPLE.com  ",
                 "password": "SecurePass123!",
                 "age_attestation": True,
+                "accepted_policies_version": POLICY_VERSION,
             }
         )
 
@@ -447,6 +455,7 @@ class TestRegistration:
                 "email": "audit@example.com",
                 "password": "SecurePass123!",
                 "age_attestation": True,
+                "accepted_policies_version": POLICY_VERSION,
             }
         )
 
@@ -500,6 +509,7 @@ class TestRegistration:
                 "email": "ageaudit@example.com",
                 "password": "SecurePass123!",
                 "age_attestation": True,
+                "accepted_policies_version": POLICY_VERSION,
             }
         )
 
@@ -508,6 +518,170 @@ class TestRegistration:
         audit_logs = auth_api.db.data_store.get("audit_logs", [])
         events = [log for log in audit_logs if log[3] == "age_attestation"]
         assert len(events) > 0
+
+    @pytest.mark.asyncio
+    async def test_register_requires_policy_acceptance(self, auth_api):
+        """Registration without accepted_policies_version returns 400."""
+        request = create_mock_request(
+            json_data={
+                "email": "nopolicy@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+            }
+        )
+
+        response = await auth_api.register(request)
+
+        assert response.status == 400
+        data = json.loads(response.body)
+        assert data["error"] == "policy_acceptance_required"
+        # Nothing was created
+        assert auth_api.db.data_store.get("created_users", []) == []
+        assert auth_api.db.data_store.get("consent_records", []) == []
+
+    @pytest.mark.asyncio
+    async def test_register_rejects_blank_policy_acceptance(self, auth_api):
+        """Registration with a blank policy version returns 400."""
+        request = create_mock_request(
+            json_data={
+                "email": "blankpolicy@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+                "accepted_policies_version": "   ",
+            }
+        )
+
+        response = await auth_api.register(request)
+
+        assert response.status == 400
+        data = json.loads(response.body)
+        assert data["error"] == "policy_acceptance_required"
+
+    @pytest.mark.asyncio
+    async def test_register_rejects_non_string_policy_acceptance(self, auth_api):
+        """Registration with a non-string policy version returns 400."""
+        request = create_mock_request(
+            json_data={
+                "email": "boolpolicy@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+                "accepted_policies_version": True,
+            }
+        )
+
+        response = await auth_api.register(request)
+
+        assert response.status == 400
+        data = json.loads(response.body)
+        assert data["error"] == "policy_acceptance_required"
+
+    @pytest.mark.asyncio
+    async def test_register_rejects_overlong_policy_version(self, auth_api):
+        """Policy versions longer than the column width are rejected, not truncated."""
+        request = create_mock_request(
+            json_data={
+                "email": "longpolicy@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+                "accepted_policies_version": "x" * 21,
+            }
+        )
+
+        response = await auth_api.register(request)
+
+        assert response.status == 400
+        data = json.loads(response.body)
+        assert data["error"] == "policy_acceptance_required"
+
+    @pytest.mark.asyncio
+    async def test_register_writes_consent_records(self, auth_api):
+        """Successful registration writes versioned consent rows for the age
+        attestation and the terms/privacy acceptance."""
+        request = create_mock_request(
+            json_data={
+                "email": "consent@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+                "accepted_policies_version": POLICY_VERSION,
+            },
+            headers={"User-Agent": "TestAgent/1.0"},
+        )
+
+        response = await auth_api.register(request)
+
+        assert response.status == 201
+        consent_rows = auth_api.db.data_store.get("consent_records", [])
+        assert len(consent_rows) == 3
+
+        # Args order matches the INSERT in _record_registration_consent:
+        # id, user_id, category, status, granted_at, legal_basis, is_minor,
+        # privacy_policy_version, ip_address_hash, user_agent_hash,
+        # collection_method
+        categories = {row[2] for row in consent_rows}
+        assert categories == {"age_attestation", "terms_of_service", "privacy_policy"}
+
+        created_user_id = auth_api.db.data_store["created_users"][0][0]
+        expected_ip_hash = hashlib.sha256(coarsen_ip("127.0.0.1").encode()).hexdigest()
+        expected_ua_hash = hashlib.sha256(b"TestAgent/1.0").hexdigest()
+        for row in consent_rows:
+            assert row[1] == created_user_id
+            assert row[3] == "granted"
+            assert row[5] == "consent"
+            assert row[6] is False
+            assert row[7] == POLICY_VERSION
+            assert row[8] == expected_ip_hash
+            assert row[9] == expected_ua_hash
+            assert row[10] == "registration_form"
+
+    @pytest.mark.asyncio
+    async def test_register_consent_ip_hash_is_coarsened(self, auth_api):
+        """The consent IP hash is computed over the coarsened network, not the
+        exact host address."""
+        request = create_mock_request(
+            json_data={
+                "email": "coarse@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+                "accepted_policies_version": POLICY_VERSION,
+            },
+            headers={"X-Forwarded-For": "203.0.113.77"},
+        )
+
+        await auth_api.register(request)
+
+        consent_rows = auth_api.db.data_store.get("consent_records", [])
+        assert len(consent_rows) == 3
+        exact_hash = hashlib.sha256(b"203.0.113.77").hexdigest()
+        coarse_hash = hashlib.sha256(b"203.0.113.0/24").hexdigest()
+        assert consent_rows[0][8] == coarse_hash
+        assert consent_rows[0][8] != exact_hash
+
+    @pytest.mark.asyncio
+    async def test_register_sets_age_verified_at(self, auth_api):
+        """The users INSERT populates age_verified_at when the age gate passes."""
+        request = create_mock_request(
+            json_data={
+                "email": "ageverified@example.com",
+                "password": "SecurePass123!",
+                "age_attestation": True,
+                "accepted_policies_version": POLICY_VERSION,
+            }
+        )
+
+        response = await auth_api.register(request)
+
+        assert response.status == 201
+        user_inserts = [
+            (query, args)
+            for query, args in auth_api.db.conn.executed_queries
+            if "INSERT INTO users" in query
+        ]
+        assert len(user_inserts) == 1
+        query, args = user_inserts[0]
+        assert "age_verified_at" in query
+        # The trailing arg is the registration timestamp reused for
+        # age_verified_at, created_at, and updated_at ($7).
+        assert isinstance(args[-1], datetime)
 
 
 # =============================================================================

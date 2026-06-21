@@ -2,13 +2,15 @@ import type { NextConfig } from 'next';
 
 // Content-Security-Policy for the learner-facing voice client.
 //
-// Shipped in REPORT-ONLY mode first (audit finding B6). This client drives a
-// live voice pipeline (WebRTC to OpenAI Realtime, Deepgram/ElevenLabs streaming,
-// audio worklets, blob workers) plus KaTeX and Leaflet, so an untuned enforcing
-// CSP would silently break the pipeline. Report-only lets the browser evaluate
-// the policy and report violations without blocking anything, so the directive
-// set can be verified against the running stack before it is promoted to the
-// enforcing `Content-Security-Policy` header.
+// The policy is now ENFORCED via `Content-Security-Policy` (audit finding B6),
+// with the `Content-Security-Policy-Report-Only` twin kept in parallel for at
+// least one release so any drift keeps reporting even if enforcement has to
+// be relaxed. This client drives a live voice pipeline (WebRTC to OpenAI
+// Realtime, Deepgram/ElevenLabs streaming, audio worklets, blob workers) plus
+// KaTeX and Leaflet, and every directive below was checked against those
+// surfaces. Violations from either header are delivered to /api/csp-report
+// (see report-uri/report-to and the Reporting-Endpoints header below), which
+// forwards them to the Management API log intake.
 //
 // connect-src: OpenAI Realtime SDP exchange (https://api.openai.com) and the
 //   Deepgram/ElevenLabs streaming sockets are reached directly from the browser;
@@ -18,7 +20,7 @@ import type { NextConfig } from 'next';
 const contentSecurityPolicy = [
   "default-src 'self'",
   // 'unsafe-eval'/'unsafe-inline' cover Next.js' dev HMR and inline bootstrap.
-  // Tracked for tightening to nonces/hashes once report-only is verified clean.
+  // Tracked for tightening to nonces/hashes now that reporting is in place.
   "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://unpkg.com",
   "img-src 'self' data: blob: https://server.arcgisonline.com https://tiles.stadiamaps.com https://unpkg.com",
@@ -30,6 +32,10 @@ const contentSecurityPolicy = [
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",
+  // Violation reporting: report-uri is the legacy delivery mechanism,
+  // report-to uses the named endpoint from the Reporting-Endpoints header.
+  'report-uri /api/csp-report',
+  'report-to csp',
 ].join('; ');
 
 const nextConfig: NextConfig = {
@@ -80,8 +86,19 @@ const nextConfig: NextConfig = {
             value: 'max-age=31536000; includeSubDomains',
           },
           {
-            // Report-only until verified against the running voice pipeline,
-            // then promote to 'Content-Security-Policy'. See note above.
+            // Named endpoint for the report-to directive. A relative URL is
+            // resolved against the response URL per the Reporting API.
+            key: 'Reporting-Endpoints',
+            value: 'csp="/api/csp-report"',
+          },
+          {
+            // Enforcing policy (B6 promotion). See note above.
+            key: 'Content-Security-Policy',
+            value: contentSecurityPolicy,
+          },
+          {
+            // Report-only twin kept alongside enforcement for at least one
+            // release so violations keep reporting if enforcement is relaxed.
             key: 'Content-Security-Policy-Report-Only',
             value: contentSecurityPolicy,
           },

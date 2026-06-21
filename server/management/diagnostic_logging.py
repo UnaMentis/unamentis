@@ -47,6 +47,22 @@ from enum import Enum
 
 from ip_privacy import coarsen_ip
 
+# Query parameter names whose values must never be logged. Browser WebSocket
+# clients pass bearer tokens as ?token= (they cannot set upgrade headers), so
+# raw query logging would leak live credentials into log aggregation.
+SENSITIVE_QUERY_KEYS = frozenset(
+    {"token", "key", "secret", "password", "authorization", "api_key", "apikey"}
+)
+
+
+def redact_query(query: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a copy of a query dict with sensitive values redacted."""
+    return {
+        k: ("REDACTED" if k.lower() in SENSITIVE_QUERY_KEYS else v)
+        for k, v in query.items()
+    }
+
+
 # =============================================================================
 # Configuration
 # =============================================================================
@@ -496,7 +512,7 @@ class DiagnosticLogger:
             "client_ip": coarsen_ip(client_ip),
         }
         if query:
-            context["http_query"] = query
+            context["http_query"] = redact_query(dict(query))
         if body and self.config.log_requests:
             # Truncate large bodies
             body_str = (

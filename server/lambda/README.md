@@ -1,6 +1,8 @@
 # UnaMentis Lambda Services
 
-AWS SAM-based serverless backend for UnaMentis voice tutoring platform.
+> **Status (June 2026): Parked for the first beta.** The auth handler is implemented, but the curriculum and metrics data-plane handlers are `not_implemented` stubs with no telemetry ingest. The first beta is served by the aiohttp Management API behind HTTPS (see [docs/reviews/BETA_READINESS_PLAN_2026-05-31.md](../../docs/reviews/BETA_READINESS_PLAN_2026-05-31.md)). Do not deploy this tier for production.
+
+AWS SAM-based serverless backend experiments for the UnaMentis voice AI learning platform.
 
 ## Prerequisites
 
