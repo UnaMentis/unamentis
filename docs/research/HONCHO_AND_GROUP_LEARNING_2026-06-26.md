@@ -41,7 +41,7 @@ Because sessions are many-to-many with peers, Honcho can model **"what does Alic
 
 ### Deployment, license, cost
 
-- Open source (FastAPI server, Docker Compose). License reported as Apache-style; verify current terms before any adoption.
+- Open source (FastAPI server, Docker Compose). Server license verified as **AGPL-3.0-only** (`LICENSE` is verbatim Affero GPLv3; `src/main.py` declares `AGPL-3.0-only`); the Python SDK is **Apache-2.0**. The AGPL copyleft is why an optional Honcho backend must run behind an HTTP boundary rather than link on-device. Confirm with OSS counsel before any adoption.
 - Self-host requires **PostgreSQL + pgvector + Redis + an LLM backend**. Independent reviewers put setup at ~30 minutes versus ~30 seconds for lighter tools like Mem0.
 - Managed cloud: ingestion ~$2.00 / million tokens, unlimited `context()` calls, dreaming included. Free credits for startups.
 - Reported benchmarks: 90.4% LongMem S, 89.9% LoCoMo, using ~5% median context. Strong, but vendor-reported.
