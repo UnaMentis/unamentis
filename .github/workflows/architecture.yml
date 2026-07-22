@@ -31,7 +31,7 @@ jobs:
         with:
           config: solution-explorer.json
           deploy-to: cloudflare
-          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare-api-token: ${{ secrets.UMSE_CLOUDFLARE_API_TOKEN }}
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           cloudflare-project-name: um-solution-explorer
 
