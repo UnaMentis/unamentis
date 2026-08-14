@@ -4,6 +4,27 @@
 **Research Date:** January 19, 2026
 **Status:** Active recommendations based on latest available models
 
+> ## ⚠️ Currency note (added 2026-08-12)
+>
+> **The on-device LLM sections of this document are superseded as of 2026-06-26.** Section 1
+> below, its entry in "Implementation Priorities", and its row in the Quick Reference appendix
+> recommend SmolLM3-3B and frame the on-device LLM as Knowledge Bowl answer validation only.
+> Both claims are wrong now. Do not plan from them.
+>
+> The current on-device model decision is
+> `docs/ios/ON_DEVICE_LLM_MODEL_RECONSIDERATION_2026-06-20.md`, which lives in the **iOS repo**
+> (`unamentis-ios`), not this one:
+> [unamentis-ios/docs/ios/ON_DEVICE_LLM_MODEL_RECONSIDERATION_2026-06-20.md](https://github.com/UnaMentis/unamentis-ios/blob/main/docs/ios/ON_DEVICE_LLM_MODEL_RECONSIDERATION_2026-06-20.md).
+> It decides a RAM-tiered ladder (Gemma 4 E2B at 12 GB, Qwen3-1.7B at 8 GB, Qwen3-0.6B at 6 GB,
+> server fallback below that), and the on-device LLM is the app's default provider for full
+> tutoring turns, not a validation-only component.
+>
+> Current overall status, including the August 2026 landscape refresh, is in
+> [docs/status/2026-08-12-on-device-llm-and-fov-context-stocktake.md](status/2026-08-12-on-device-llm-and-fov-context-stocktake.md).
+>
+> Everything else in this document, including the server LLM, server TTS, and on-device TTS
+> sections, has not been reviewed as part of this note and stands as written.
+
 ## Executive Summary
 
 This document provides comprehensive research and recommendations for AI model selection across all UnaMentis use cases. The AI landscape evolved significantly throughout 2025, with new state-of-the-art models that substantially outperform our current choices.
@@ -20,6 +41,8 @@ This document provides comprehensive research and recommendations for AI model s
 ---
 
 ## 1. On-Device LLM (Knowledge Bowl Answer Validation)
+
+> **SUPERSEDED 2026-06-26** by [unamentis-ios/docs/ios/ON_DEVICE_LLM_MODEL_RECONSIDERATION_2026-06-20.md](https://github.com/UnaMentis/unamentis-ios/blob/main/docs/ios/ON_DEVICE_LLM_MODEL_RECONSIDERATION_2026-06-20.md) (iOS repo). This whole section, including its use case framing, is historical.
 
 ### Use Case Requirements
 
@@ -638,6 +661,7 @@ This document provides comprehensive research and recommendations for AI model s
 ### Immediate (Q1 2026)
 
 1. **Replace Llama 3.2 1B with SmolLM3-3B** - HIGH PRIORITY
+   > **SUPERSEDED 2026-06-26.** SmolLM3-3B was not adopted. See [unamentis-ios/docs/ios/ON_DEVICE_LLM_MODEL_RECONSIDERATION_2026-06-20.md](https://github.com/UnaMentis/unamentis-ios/blob/main/docs/ios/ON_DEVICE_LLM_MODEL_RECONSIDERATION_2026-06-20.md) (iOS repo).
    - Model is 14+ months outdated
    - Significant performance improvements available
    - ~1.5GB download (acceptable for target devices)
@@ -679,6 +703,8 @@ This document provides comprehensive research and recommendations for AI model s
 When evaluating future model updates, use these criteria:
 
 ### On-Device Models
+
+> **Partly superseded 2026-06-26.** The on-device LLM size ceiling below (1-2GB) does not match the decided ladder, whose 12 GB tier is a 3.11 GB artifact. See [unamentis-ios/docs/ios/ON_DEVICE_LLM_MODEL_RECONSIDERATION_2026-06-20.md](https://github.com/UnaMentis/unamentis-ios/blob/main/docs/ios/ON_DEVICE_LLM_MODEL_RECONSIDERATION_2026-06-20.md) (iOS repo). The TTS criteria are unaffected.
 
 1. **Release Date** - Prefer models from last 6 months
 2. **Size** - Must fit within mobile constraints (1-2GB LLM, <500MB TTS)
@@ -749,7 +775,7 @@ This document should be updated when:
 
 | Use Case | Current | Recommended | Priority | Size | Status |
 |----------|---------|-------------|----------|------|--------|
-| On-Device LLM (KB Validation) | Llama 3.2 1B (Sept 2024) | SmolLM3-3B (Dec 2025) | HIGH | ~1.5GB | OUTDATED → UPGRADE |
+| On-Device LLM (KB Validation) | Llama 3.2 1B (Sept 2024) | SmolLM3-3B (Dec 2025) | HIGH | ~1.5GB | **SUPERSEDED 2026-06-26**, see currency note at top |
 | Server LLM (Tutoring) | Not deployed | Qwen3-235B (May 2025) | HIGH | ~120GB | NEW |
 | Server TTS (Pre-gen Audio) | Not deployed | Fish Speech V1.5 (Late 2025) | MEDIUM | ~2GB | NEW |
 | On-Device TTS (Fallback) | Apple Neural TTS | Kyutai Pocket TTS (Jan 13, 2026) | HIGH | ~100MB | **UPGRADE NOW** |
