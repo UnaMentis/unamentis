@@ -1,6 +1,6 @@
 # On-device LLM and FOV context: stocktake
 
-**Status:** live · **Class:** state · **Date:** 2026-08-12
+**Status:** live · **Class:** state · **Date:** 2026-08-12 (repo claims verified that day) · **Last updated:** 2026-08-14 (delivery update, verified against the merged PRs)
 **Supersedes:** [AI_MODEL_SELECTION_2026.md](../AI_MODEL_SELECTION_2026.md) (partial: its on-device LLM sections only, which were already superseded by the June 2026 iOS decision record)
 **Superseded by:** none
 
@@ -42,7 +42,7 @@ Runtime is llama.cpp via the official prebuilt `llama.xcframework` b9821, which 
 and fetched by CI. LFM2.5 was evaluated in June and rejected on license. MLX-Swift was never
 started. LiteRT-LM was evaluated and deferred.
 
-On-device is the default LLM provider in the app. It serves full tutoring turns, barge-in
+On-device is the default LLM provider in the standalone `unamentis-ios` client. (The older client code embedded in this monorepo predates that decision; its routing tables still prefer cloud endpoints and are not authoritative.) It serves full tutoring turns, barge-in
 responses (`BargeInResponder`), and speculative pre-generation (`ResponsePreGenerator`).
 Canned TTS clips (`CannedResponseBank`) cover instant filler. The last substantive commit on
 this path is `0d5d86e`, 2026-06-26, roughly seven weeks ago.
@@ -55,11 +55,10 @@ this path is `0d5d86e`, 2026-06-26, roughly seven weeks ago.
    enable flag was flipped on 2026-06-26. That step was skipped.
 2. **Memory tension.** Gemma 4 sits at 2.5 to 2.9 GB resident. The barge-in goal
    (`unamentis-ios/.claude/goals/barge-in.json`) carries a 600 MB peak-memory criterion, advisory
-   rather than gated, and the 90 minute session budget is a separate long-run check. Jetsam risk
+   rather than gated, and the 90-minute session budget is a separate long-run check. Jetsam risk
    is real alongside Pocket TTS, Parakeet STT, and Silero VAD.
-3. **Housekeeping, since fixed by work package C (merged 2026-08-14, PR #6).** SHA256
-   verification of model downloads
-   is missing (audit finding SEC-5). Dead Core ML endpoints `llama-3b-device` and
+3. **Housekeeping, since fixed by work package C (merged 2026-08-14, PR #6).** Pre-merge
+   state follows. SHA256 verification of model downloads is missing (audit finding SEC-5). Dead Core ML endpoints `llama-3b-device` and
    `llama-1b-device` remain in `UnaMentis/Core/Routing/Models/LLMEndpoint.swift`.
    `unamentis-ios/docs/ios/PERSONAL_ASSISTANT_INTEGRATION_DISCOVERY_2026-06.md` still claims
    `OnDeviceLLMService` is marked incompatible and excluded in `project.yml`, which stopped
@@ -84,12 +83,12 @@ HTTP routes, tests, dashboard panel) and roughly 3,200 lines of Swift in
 
 ### Gaps relative to the foveated-context vision
 
-1. **Curriculum only.** The reading and document path has only
+1. **Curriculum only.** Addressed by package B (PR #7, merged 2026-08-14); pre-merge state follows. The reading and document path has only
    `ReadingFOVContextManager.swift`, which takes 3 raw chunks behind and 2 ahead with suffix
    truncation, no outline and no summaries. The February 2026 reading list feature was never
    integrated into the foveation model.
-2. **No precomputation pass anywhere.** All summaries are lazy, computed at runtime, cached in
-   memory with a 1 hour TTL, and lost on relaunch. `ReadingAudioPreGenerator` and its
+2. **No precomputation pass anywhere.** Addressed for the reading path by package B (PR #7); the curriculum path is still lazy. Pre-merge state follows. All summaries are lazy, computed at runtime, cached in
+   memory with a 1-hour TTL, and lost on relaunch. `ReadingAudioPreGenerator` and its
    `audioPreGenStatusRaw` status field are the template to clone.
 3. **Two resolution levels only.** Full text and one summary step. There is no
    distance-to-position granularity ramp and no level-k summaries.
@@ -113,7 +112,9 @@ still open:
 
 - **F10-3** (medium): token estimation is `text.count / 4`, inaccurate for non-English, code,
   and math, and the 60/30/10 FOV budget splits amplify the error.
-- **F12-1** (high): the pedagogical metadata never reaches the system prompt. ContentDepth AI
+- **F12-1** (high, partially addressed by package A, PR #5: misconception triggers and
+  alternative explanations now reach the working buffer): the broader pedagogical metadata
+  never reaches the system prompt. ContentDepth AI
   instructions, teachback configs, Bloom's levels, learner signals, and misconception triggers
   are modelled but not surfaced to the LLM.
 - **F12-2** (high): no cross-session learner profile. `reset()` clears all buffers, so confusion
@@ -124,7 +125,22 @@ Findings 5 above and F12-1 overlap. Wiring the UMCF back-pocket material through
 
 ## 3. August 2026 landscape refresh
 
-A web scan on 2026-08-12 found four things that bear on the June decision.
+A web scan on 2026-08-12 found four things that bear on the June decision. Unlike the repo
+claims elsewhere in this document, the figures in this section are web-sourced and were not
+independently reproduced; verify against primary sources before acting on a specific number.
+Principal sources: the Liquid AI LFM2.5 announcements
+(<https://www.liquid.ai/blog/introducing-lfm2-5-the-next-generation-of-on-device-ai>, and the
+2026-08-06 LFM2.5-2.6B coverage at
+<https://www.marktechpost.com/2026/08/06/liquid-ai-lfm2-5-2-6b-on-device-agentic-model/>), the
+LFM license terms (<https://www.liquid.ai/lfm-license>), the Qwen3.5 small-series release
+(2026-03-02), the independent iPhone 17 Pro runtime comparison of MLX, llama.cpp, LiteRT-LM,
+and Core ML
+(<https://dev.to/john-rocky/on-device-llm-on-iphone-which-runtime-is-fastest-mlx-vs-llamacpp-vs-litert-lm-vs-coreml-1b42>,
+2026-06-02), the Gemma 4 model card (<https://ai.google.dev/gemma/docs/core/model_card_4>),
+Apple's Foundation Models material
+(<https://machinelearning.apple.com/research/introducing-apple-foundation-models>) with the
+iOS 26.4 context-window reporting
+(<https://www.infoq.com/news/2026/03/apple-foundation-models-context/>).
 
 - **LFM2.5-2.6B** shipped 2026-08-04 to 2026-08-06: 2.69B params, 131K context, under 2.5 GB,
   roughly 30 tok/s on phones per the vendor, strong instruction following and tool calling per
